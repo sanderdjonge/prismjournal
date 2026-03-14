@@ -45,10 +45,11 @@ function getSortValue(trade: Trade, col: string): string | number {
 
 interface DraggableTableProps {
     data: Trade[];
-    onAnalyze: (trade: Trade) => void;
+    onView: (trade: Trade) => void;
+    onEdit: (trade: Trade) => void;
 }
 
-export default function DraggableTable({ data, onAnalyze }: DraggableTableProps) {
+export default function DraggableTable({ data, onView, onEdit }: DraggableTableProps) {
     // Lazy state initialization from localStorage to avoid useEffect setState issues
     const [columns, setColumns] = useState<Column[]>(() => {
         if (typeof window === 'undefined') return DEFAULT_COLUMNS;
@@ -180,7 +181,8 @@ export default function DraggableTable({ data, onAnalyze }: DraggableTableProps)
                                 key={trade.id}
                                 trade={trade}
                                 columns={columns}
-                                onAnalyze={onAnalyze}
+                                onView={onView}
+                                onEdit={onEdit}
                             />
                         ))}
                     </tbody>

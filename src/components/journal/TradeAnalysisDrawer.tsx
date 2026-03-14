@@ -112,8 +112,8 @@ export default function TradeAnalysisDrawer({ trade, isOpen, onClose, onSaved, o
                                     <div className="flex items-center gap-3">
                                         <h2 className="text-3xl font-black text-white tracking-tighter uppercase italic">{trade.symbol}</h2>
                                         <span className={cn("px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border",
-                                            trade.type === 'BUY' ? "text-accent border-accent/20 bg-accent/5" : "text-danger border-danger/20 bg-danger/5")}>
-                                            {trade.type === 'BUY' ? 'Long' : 'Short'}
+                                            trade.type === 'LONG' ? "text-accent border-accent/20 bg-accent/5" : "text-danger border-danger/20 bg-danger/5")}>
+                                            {trade.type === 'LONG' ? 'Long' : 'Short'}
                                         </span>
                                     </div>
                                     <p className="text-[9px] font-black uppercase tracking-widest text-gray-500 mt-1">
