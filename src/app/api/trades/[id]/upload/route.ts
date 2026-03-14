@@ -30,29 +30,19 @@ export async function POST(
     const base64 = buffer.toString('base64');
     const url = `data:${validatedFile.type};base64,${base64}`;
 
-    // Upsert — replace existing screenshot for same trade+timeframe
-    const existing = await prisma.media.findFirst({
-        where: { tradeId: id, timeframe },
+    // Always create new media entry for manual uploads
+    // Multiple screenshots per trade are allowed
+    const media = await prisma.media.create({
+        data: {
+            tradeId: id,
+            url,
+            type: 'MANUAL',
+            timeframe,
+            event: 'OPEN',
+        },
     });
 
-    if (existing) {
-        await prisma.media.update({
-            where: { id: existing.id },
-            data: { url },
-        });
-    } else {
-        await prisma.media.create({
-            data: {
-                tradeId: id,
-                url,
-                type: 'MANUAL',
-                timeframe,
-                event: 'OPEN',
-            },
-        });
-    }
-
-    return NextResponse.json({ url });
+    return NextResponse.json({ id: media.id, url });
 }
 
 export const runtime = 'nodejs';
