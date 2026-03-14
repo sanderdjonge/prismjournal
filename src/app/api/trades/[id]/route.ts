@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { validateBody, tradeUpdateSchema } from '@/lib/validations';
+import { deleteFile } from '@/lib/storage';
 
 export async function GET(
     _request: Request,
@@ -10,10 +11,17 @@ export async function GET(
 
     const media = await prisma.media.findMany({
         where: { tradeId: id },
-        select: { id: true, url: true, timeframe: true },
+        select: { id: true, filename: true, timeframe: true },
     });
 
-    return NextResponse.json({ media });
+    // Return media with URL paths for fetching files
+    const mediaWithUrls = media.map(m => ({
+        id: m.id,
+        url: `/api/media/${m.id}/file`,
+        timeframe: m.timeframe,
+    }));
+
+    return NextResponse.json({ media: mediaWithUrls });
 }
 
 export async function PATCH(
@@ -91,6 +99,18 @@ export async function DELETE(
 ) {
     const { id } = await params;
 
+    // Get all media files for this trade
+    const mediaFiles = await prisma.media.findMany({
+        where: { tradeId: id },
+        select: { filename: true },
+    });
+
+    // Delete all files from storage
+    for (const media of mediaFiles) {
+        await deleteFile(media.filename);
+    }
+
+    // Delete media records and trade
     await prisma.media.deleteMany({ where: { tradeId: id } });
     await prisma.trade.delete({ where: { id } });
 

@@ -57,3 +57,6 @@ backups/*.env.*
 
 # Docker volumes (local)
 docker-volumes/
+
+# File storage (screenshots, etc.)
+storage/

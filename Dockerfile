@@ -49,6 +49,9 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Create storage directory for screenshots
+RUN mkdir -p /app/storage/screenshots && chown -R nextjs:nodejs /app/storage
+
 # Startup script that runs migrations then starts the app
 COPY --chown=nextjs:nodejs docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
