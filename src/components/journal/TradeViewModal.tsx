@@ -14,6 +14,7 @@ interface TradeViewModalProps {
 }
 
 interface MediaItem {
+    id: string;
     url: string;
     timeframe: string;
 }
@@ -242,15 +243,21 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                                         Screenshots
                                     </label>
                                     <div className="grid grid-cols-5 gap-2">
-                                        {media.map((item, index) => (
+                                        {media.map((item) => (
                                             <div
-                                                key={index}
+                                                key={item.id}
                                                 className="relative aspect-square rounded-lg overflow-hidden bg-white/5 group cursor-pointer"
-                                                onClick={() => window.open(item.url, '_blank')}
+                                                onClick={() => {
+                                                    const newWindow = window.open();
+                                                    if (newWindow) {
+                                                        newWindow.document.write(`<img src="${item.url}" style="max-width:100%;max-height:100vh;margin:auto;display:block;" />`);
+                                                        newWindow.document.close();
+                                                    }
+                                                }}
                                             >
                                                 <img
                                                     src={item.url}
-                                                    alt={`Screenshot ${index + 1}`}
+                                                    alt={`Screenshot ${item.timeframe}`}
                                                     className="w-full h-full object-cover"
                                                 />
                                                 <div className="absolute bottom-0 left-0 right-0 bg-black/70 px-1 py-0.5">

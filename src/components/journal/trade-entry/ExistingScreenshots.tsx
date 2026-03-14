@@ -4,13 +4,14 @@ import React from 'react';
 import { X, ExternalLink } from 'lucide-react';
 
 interface MediaItem {
+    id: string;
     url: string;
     timeframe: string;
 }
 
 interface ExistingScreenshotsProps {
     media: MediaItem[];
-    onRemove?: (index: number) => void;
+    onRemove?: (id: string) => void;
     readonly?: boolean;
 }
 
@@ -19,14 +20,14 @@ export function ExistingScreenshots({ media, onRemove, readonly = false }: Exist
 
     return (
         <div className="grid grid-cols-5 gap-2">
-            {media.map((item, index) => (
+            {media.map((item) => (
                 <div
-                    key={index}
+                    key={item.id}
                     className="relative aspect-square rounded-lg overflow-hidden bg-white/5 group"
                 >
                     <img
                         src={item.url}
-                        alt={`Screenshot ${index + 1}`}
+                        alt={`Screenshot ${item.timeframe}`}
                         className="w-full h-full object-cover"
                     />
                     
@@ -35,7 +36,12 @@ export function ExistingScreenshots({ media, onRemove, readonly = false }: Exist
                         type="button"
                         onClick={(e) => {
                             e.stopPropagation();
-                            window.open(item.url, '_blank');
+                            // Open data URL in new tab
+                            const newWindow = window.open();
+                            if (newWindow) {
+                                newWindow.document.write(`<img src="${item.url}" style="max-width:100%;max-height:100vh;margin:auto;display:block;" />`);
+                                newWindow.document.close();
+                            }
                         }}
                         className="absolute top-1 left-1 w-5 h-5 rounded-full bg-black/70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                     >
@@ -46,9 +52,15 @@ export function ExistingScreenshots({ media, onRemove, readonly = false }: Exist
                     {!readonly && onRemove && (
                         <button
                             type="button"
-                            onClick={(e) => {
+                            onClick={async (e) => {
                                 e.stopPropagation();
-                                onRemove(index);
+                                // Delete from database
+                                try {
+                                    await fetch(`/api/media/${item.id}`, { method: 'DELETE' });
+                                    onRemove(item.id);
+                                } catch (err) {
+                                    console.error('Failed to delete media:', err);
+                                }
                             }}
                             className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                         >

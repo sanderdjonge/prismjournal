@@ -14,6 +14,7 @@ import {
 } from './trade-entry';
 
 interface MediaItem {
+    id: string;
     url: string;
     timeframe: string;
 }
@@ -262,8 +263,8 @@ export default function TradeEditModal({ trade, isOpen, onClose, onSaved }: Trad
                                     </label>
                                     <ExistingScreenshots
                                         media={existingMedia}
-                                        onRemove={(index) => {
-                                            const newMedia = existingMedia.filter((_, i) => i !== index);
+                                        onRemove={(id) => {
+                                            const newMedia = existingMedia.filter(m => m.id !== id);
                                             setExistingMedia(newMedia);
                                         }}
                                     />
