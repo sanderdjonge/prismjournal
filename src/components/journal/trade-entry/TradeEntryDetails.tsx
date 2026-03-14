@@ -66,8 +66,8 @@ export function TradeEntryDetails({
                     const data = await res.json();
                     setCustomStrategies(data.strategies || []);
                 }
-            } catch (e) {
-                console.error('Failed to load strategies:', e);
+            } catch {
+                // silently ignore
             } finally {
                 setLoading(false);
             }

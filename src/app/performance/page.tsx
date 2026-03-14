@@ -36,7 +36,7 @@ export default function PerformancePage() {
         fetch(`/api/performance?period=${period}`)
             .then(r => r.json())
             .then(setData)
-            .catch(console.error)
+            .catch(() => { /* silently ignore */ })
             .finally(() => setLoading(false));
     }, [period]);
 
