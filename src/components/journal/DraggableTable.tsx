@@ -19,6 +19,7 @@ import {
 function getSortValue(trade: Trade, col: string): string | number {
     switch (col) {
         case 'time': return trade.entryTime ?? '';
+        case 'exitTime': return trade.exitTime ?? '';
         case 'symbol': return trade.symbol;
         case 'ticket': return trade.ticket;
         case 'side': return trade.type;

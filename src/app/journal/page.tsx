@@ -7,7 +7,7 @@ import DashboardShell from '@/components/layout/DashboardShell';
 import DraggableTable from '@/components/journal/DraggableTable';
 import TradeAnalysisDrawer from '@/components/journal/TradeAnalysisDrawer';
 import TradeEntryModal from '@/components/journal/TradeEntryModal';
-import { Search, Plus, Zap, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Plus, Zap, Calendar, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 
 export type JournalTrade = {
     id: string;
@@ -158,6 +158,32 @@ function JournalContent() {
         fetchTrades(1);
     };
 
+    const handleExportCsv = async () => {
+        try {
+            const params = new URLSearchParams();
+            if (searchQuery) params.set('q', searchQuery);
+            if (filterSide !== 'ALL') params.set('side', filterSide);
+            if (filterResult !== 'ALL') params.set('result', filterResult);
+            if (dateFrom) params.set('from', dateFrom);
+            if (dateTo) params.set('to', dateTo);
+
+            const res = await fetch(`/api/trades/export?${params.toString()}`);
+            if (!res.ok) throw new Error('Export failed');
+            
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `trades_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (err) {
+            console.error('Export failed', err);
+        }
+    };
+
     return (
         <DashboardShell>
             <div className="space-y-6">
@@ -170,12 +196,21 @@ function JournalContent() {
                         </p>
                     </div>
 
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="h-10 px-6 rounded-xl bg-primary text-black font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:brightness-110 shadow-[0_0_20px_rgba(0,242,255,0.3)] transition-all active:scale-95 shrink-0"
-                    >
-                        <Plus size={14} /> New Record
-                    </button>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={handleExportCsv}
+                            className="h-10 px-6 rounded-xl bg-white/5 border border-white/10 text-white font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:bg-white/10 transition-all active:scale-95 shrink-0"
+                        >
+                            <Download size={14} /> Export CSV
+                        </button>
+
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="h-10 px-6 rounded-xl bg-primary text-black font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:brightness-110 shadow-[0_0_20px_rgba(0,242,255,0.3)] transition-all active:scale-95 shrink-0"
+                        >
+                            <Plus size={14} /> New Record
+                        </button>
+                    </div>
                 </div>
 
                 {/* Filters Bar */}

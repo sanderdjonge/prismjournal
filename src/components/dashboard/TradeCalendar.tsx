@@ -134,7 +134,7 @@ export default function TradeCalendar({ data }: TradeCalendarProps) {
                                 <div className="bg-black/95 border border-white/20 rounded-lg px-3 py-2 shadow-xl whitespace-nowrap">
                                     <p className="text-[10px] font-bold text-white">{startOfMonth.date(day.date).format('MMM D, YYYY')}</p>
                                     <p className={cn("text-xs font-black mt-1", style.text)}>
-                                        {day.trades === 0 ? 'No trades' : `${day.trades} trade${day.trades > 1 ? 's' : ''} • ${day.pnl >= 0 ? '+' : ''}{symbol}${day.pnl.toFixed(2)}`}
+                                        {day.trades === 0 ? 'No trades' : `${day.trades} trade${day.trades > 1 ? 's' : ''} • ${symbol}${Math.abs(day.pnl).toFixed(2)}`}
                                     </p>
                                     {day.trades > 0 && (
                                         <p className="text-[9px] text-gray-400 mt-0.5">
