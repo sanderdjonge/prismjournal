@@ -31,7 +31,7 @@ export default function AnalyticsPage() {
         fetch('/api/analytics')
             .then(r => r.json())
             .then(setData)
-            .catch(console.error);
+            .catch(() => { /* silently ignore */ });
     }, []);
 
     const symbolData = data?.symbolData ?? [];
