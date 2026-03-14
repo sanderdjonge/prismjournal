@@ -84,6 +84,8 @@ export default function TradeEditModal({ trade, isOpen, onClose, onSaved }: Trad
             setCompliance(trade.planCompliance === 'FOLLOWED' ? true : trade.planCompliance === 'DEVIATED' ? false : null);
             setNotes(trade.notes || '');
             setComputedPnl(trade.pnl);
+            setScreenshots([]); // Reset new screenshots when loading trade
+            setError(''); // Reset error state
             
             // Load existing media
             fetch(`/api/trades/${trade.id}`)
