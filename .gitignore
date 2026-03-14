@@ -60,3 +60,4 @@ docker-volumes/
 
 # File storage (screenshots, etc.)
 storage/
+.worktrees/
