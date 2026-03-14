@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { deleteFile } from '@/lib/storage';
+import { readFile } from '@/lib/storage';
 import { auth } from '@/lib/auth';
 
-export async function DELETE(
+export async function GET(
     _request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
@@ -15,7 +15,7 @@ export async function DELETE(
 
     const { id } = await params;
 
-    // Get media record with trade and account info
+    // Get media record
     const media = await prisma.media.findUnique({
         where: { id },
         include: {
@@ -36,15 +36,22 @@ export async function DELETE(
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Delete file from storage
-    await deleteFile(media.filename);
+    try {
+        // Read file from storage
+        const fileBuffer = await readFile(media.filename);
 
-    // Delete media record from database
-    await prisma.media.delete({
-        where: { id }
-    });
-
-    return NextResponse.json({ success: true });
+        // Return file with proper content type
+        return new NextResponse(new Uint8Array(fileBuffer), {
+            headers: {
+                'Content-Type': media.mimetype,
+                'Content-Length': media.size.toString(),
+                'Cache-Control': 'private, max-age=3600',
+            },
+        });
+    } catch (error) {
+        console.error('Error reading file:', error);
+        return NextResponse.json({ error: 'File not found' }, { status: 404 });
+    }
 }
 
 export const runtime = 'nodejs';

@@ -1,12 +1,32 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { validateFileUpload, timeframeEnum } from '@/lib/validations';
+import { saveFile, generateFilename } from '@/lib/storage';
+import { auth } from '@/lib/auth';
 
 export async function POST(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const { id } = await params;
+    // Check authentication
+    const session = await auth();
+    if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { id: tradeId } = await params;
+
+    // Verify user owns the trade
+    const trade = await prisma.trade.findFirst({
+        where: {
+            id: tradeId,
+            account: { userId: session.user.id }
+        },
+    });
+
+    if (!trade) {
+        return NextResponse.json({ error: 'Trade not found' }, { status: 404 });
+    }
 
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
@@ -18,31 +38,39 @@ export async function POST(
         return NextResponse.json({ error: fileValidation.error }, { status: 400 });
     }
 
-    // File is guaranteed to be non-null after validation
-    // TypeScript still thinks it could be null, so we use non-null assertion
     const validatedFile = file!;
 
     // Validate timeframe
     const timeframeResult = timeframeEnum.safeParse(timeframeInput || 'UNKNOWN');
     const timeframe = timeframeResult.success ? timeframeResult.data : 'UNKNOWN';
 
-    const buffer = Buffer.from(await validatedFile.arrayBuffer());
-    const base64 = buffer.toString('base64');
-    const url = `data:${validatedFile.type};base64,${base64}`;
+    // Generate unique filename
+    const filename = generateFilename(validatedFile.name);
+    const filepath = `screenshots/${filename}`;
 
-    // Always create new media entry for manual uploads
-    // Multiple screenshots per trade are allowed
+    // Convert file to buffer and save
+    const buffer = Buffer.from(await validatedFile.arrayBuffer());
+    await saveFile(buffer, filename);
+
+    // Create media record in database
     const media = await prisma.media.create({
         data: {
-            tradeId: id,
-            url,
+            tradeId,
+            filename,
+            filepath,
+            mimetype: validatedFile.type,
+            size: validatedFile.size,
             type: 'MANUAL',
             timeframe,
             event: 'OPEN',
         },
     });
 
-    return NextResponse.json({ id: media.id, url });
+    // Return the URL path for fetching the file
+    return NextResponse.json({
+        id: media.id,
+        url: `/api/media/${media.id}/file`
+    });
 }
 
 export const runtime = 'nodejs';

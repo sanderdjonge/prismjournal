@@ -38,8 +38,11 @@ services:
       NODE_ENV: development
       DATABASE_URL: "postgresql://prism_dev:prism_dev_password@db:5432/prism_journal_dev"
       AUTH_TRUST_HOST: "true"
+      STORAGE_PATH: "/app/storage"
     ports:
       - "3002:3000"    # Dev app on port 3002
+    volumes:
+      - prism_dev_storage:/app/storage
     networks:
       - prism-dev-network
 
@@ -60,3 +63,4 @@ networks:
 
 volumes:
   prism_dev_db_data:
+  prism_dev_storage:
