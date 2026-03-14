@@ -173,20 +173,21 @@ export async function GET(request: Request) {
         isActive: !t.exitTime,
     }));
 
-    // --- Calendar data (trades by ENTRY date for current month) ---
+    // --- Calendar data (trades by EXIT date for current month) ---
     const calendarTrades = await prisma.trade.findMany({
         where: {
             accountId: account.id,
             exitTime: { not: null },
+            pnl: { not: null },
         },
-        orderBy: { entryTime: 'desc' },
-        select: { entryTime: true, pnl: true },
+        orderBy: { exitTime: 'desc' },
+        select: { exitTime: true, pnl: true },
     });
 
-    // Aggregate P&L, trades, wins, losses per day by ENTRY date
+    // Aggregate P&L, trades, wins, losses per day by EXIT date
     const calendarMap = new Map<string, { pnl: number; trades: number; wins: number; losses: number }>();
     for (const t of calendarTrades) {
-        const date = t.entryTime.toISOString().split('T')[0];
+        const date = t.exitTime!.toISOString().split('T')[0];
         const existing = calendarMap.get(date) ?? { pnl: 0, trades: 0, wins: 0, losses: 0 };
         existing.pnl += t.pnl ?? 0;
         existing.trades += 1;

@@ -41,6 +41,14 @@ export function TradeRow({ trade, columns, onAnalyze }: TradeRowProps) {
                             </div>
                         </div>
                     )}
+                    {col.id === 'exitTime' && (
+                        <div className="text-xs text-gray-300">
+                            {trade.exitTime ? new Date(trade.exitTime).toLocaleDateString() : '—'}
+                            <div className="text-[10px] text-gray-600">
+                                {trade.exitTime ? new Date(trade.exitTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                            </div>
+                        </div>
+                    )}
                     {col.id === 'ticket' && (
                         <span className="text-gray-500 font-mono text-[10px]">{trade.ticket}</span>
                     )}

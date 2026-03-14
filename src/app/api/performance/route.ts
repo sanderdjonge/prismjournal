@@ -3,7 +3,13 @@ import prisma from '@/lib/prisma';
 import { getDefaultAccount } from '@/lib/getAccount';
 import { calculateProfitFactor } from '../../../../server/utils/analytics_compute';
 
-export async function GET() {
+export async function GET(request: Request) {
+    const { searchParams } = new URL(request.url);
+    const period = searchParams.get('period') || '30';
+    const periodDays = parseInt(period, 10);
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - periodDays);
+
     const account = await getDefaultAccount();
 
     if (!account) {
@@ -20,33 +26,50 @@ export async function GET() {
         });
     }
 
-    const [trades, snapshots] = await Promise.all([
+    const [trades, snapshots, allClosedTrades] = await Promise.all([
         prisma.trade.findMany({
-            where: { accountId: account.id, pnl: { not: null }, exitTime: { not: null } },
+            where: { 
+                accountId: account.id, 
+                pnl: { not: null }, 
+                exitTime: { not: null },
+                entryTime: { gte: startDate }
+            },
             orderBy: { entryTime: 'asc' },
         }),
         prisma.equitySnapshot.findMany({
             where: { accountId: account.id },
             orderBy: { timestamp: 'asc' },
         }),
+        // Get ALL closed trades for equity curve (not just period)
+        prisma.trade.findMany({
+            where: { 
+                accountId: account.id, 
+                pnl: { not: null }, 
+                exitTime: { not: null }
+            },
+            orderBy: { exitTime: 'asc' },
+            select: { exitTime: true, pnl: true },
+        }),
     ]);
 
-    // --- Equity curve ---
+    // --- Equity curve (from ALL closed trades, not just period) ---
     let equityData: { time: string; value: number }[] = [];
-    if (snapshots.length >= 2) {
+    if (allClosedTrades.length > 0) {
+        const byDay = new Map<string, number>();
+        let running = 0;
+        for (const t of allClosedTrades) {
+            running += t.pnl ?? 0;
+            const key = t.exitTime!.toISOString().split('T')[0];
+            byDay.set(key, running);
+        }
+        equityData = Array.from(byDay.entries())
+            .map(([time, value]) => ({ time, value }))
+            .sort((a, b) => a.time.localeCompare(b.time));
+    } else if (snapshots.length >= 2) {
         const byDay = new Map<string, number>();
         for (const s of snapshots) {
             const key = s.timestamp.toISOString().split('T')[0];
             byDay.set(key, s.equity);
-        }
-        equityData = Array.from(byDay.entries()).map(([time, value]) => ({ time, value }));
-    } else if (trades.length > 0) {
-        const byDay = new Map<string, number>();
-        let running = 0;
-        for (const t of trades) {
-            running += t.pnl ?? 0;
-            const key = (t.exitTime ?? t.entryTime).toISOString().split('T')[0];
-            byDay.set(key, running);
         }
         equityData = Array.from(byDay.entries()).map(([time, value]) => ({ time, value }));
     }

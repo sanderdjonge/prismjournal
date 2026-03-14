@@ -21,6 +21,7 @@ interface TradeFormFieldsProps {
     onStopLossChange: (value: string) => void;
     isClosed: boolean;
     onIsClosedChange: (value: boolean) => void;
+    disabled?: boolean;
 }
 
 export function TradeFormFields({
@@ -40,6 +41,7 @@ export function TradeFormFields({
     onStopLossChange,
     isClosed,
     onIsClosedChange,
+    disabled = false,
 }: TradeFormFieldsProps) {
     return (
         <>
@@ -51,25 +53,28 @@ export function TradeFormFields({
                         value={symbol} 
                         onChange={e => onSymbolChange(e.target.value)}
                         placeholder="e.g. NAS100"
-                        className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm font-bold text-white outline-none focus:border-primary/50 transition-all font-mono uppercase"
+                        disabled={disabled}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm font-bold text-white outline-none focus:border-primary/50 transition-all font-mono uppercase disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                 </div>
                 <div className="space-y-1.5">
                     <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1">Direction</label>
                     <div className="flex p-1 bg-white/5 rounded-xl border border-white/10 h-[46px]">
                         <button 
-                            onClick={() => onSideChange('BUY')}
+                            onClick={() => !disabled && onSideChange('BUY')}
+                            disabled={disabled}
                             className={cn(
-                                "flex-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1",
+                                "flex-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1 disabled:cursor-not-allowed",
                                 side === 'BUY' ? "bg-accent text-black shadow-lg" : "text-gray-500 hover:text-white"
                             )}
                         >
                             <TrendingUp size={12} /> Buy
                         </button>
                         <button 
-                            onClick={() => onSideChange('SELL')}
+                            onClick={() => !disabled && onSideChange('SELL')}
+                            disabled={disabled}
                             className={cn(
-                                "flex-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1",
+                                "flex-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1 disabled:cursor-not-allowed",
                                 side === 'SELL' ? "bg-danger text-white shadow-lg" : "text-gray-500 hover:text-white"
                             )}
                         >
@@ -84,7 +89,8 @@ export function TradeFormFields({
                         step="0.01" 
                         value={volume} 
                         onChange={e => onVolumeChange(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm font-bold text-white outline-none focus:border-primary/50 transition-all" 
+                        disabled={disabled}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm font-bold text-white outline-none focus:border-primary/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed" 
                     />
                 </div>
             </div>
@@ -97,7 +103,8 @@ export function TradeFormFields({
                         type="number" 
                         value={entryPrice} 
                         onChange={e => onEntryPriceChange(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm font-bold text-white outline-none focus:border-primary/50 transition-all" 
+                        disabled={disabled}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm font-bold text-white outline-none focus:border-primary/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed" 
                     />
                 </div>
                 <div className="space-y-1.5">
@@ -109,8 +116,9 @@ export function TradeFormFields({
                         value={exitPrice} 
                         onChange={e => onExitPriceChange(e.target.value)}
                         placeholder={isClosed ? "Required for closed trades" : "Leave empty for open trades"}
+                        disabled={disabled}
                         className={cn(
-                            "w-full bg-white/5 border rounded-xl p-3 text-sm font-bold text-white outline-none transition-all",
+                            "w-full bg-white/5 border rounded-xl p-3 text-sm font-bold text-white outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed",
                             isClosed ? "border-danger/50 focus:border-danger" : "border-white/10 focus:border-primary/50"
                         )} 
                     />
@@ -121,9 +129,10 @@ export function TradeFormFields({
             <div className="flex items-center gap-3 p-3 bg-white/[0.02] rounded-xl border border-white/5">
                 <button
                     type="button"
-                    onClick={() => onIsClosedChange(!isClosed)}
+                    onClick={() => !disabled && onIsClosedChange(!isClosed)}
+                    disabled={disabled}
                     className={cn(
-                        "w-6 h-6 rounded-lg flex items-center justify-center transition-all",
+                        "w-6 h-6 rounded-lg flex items-center justify-center transition-all disabled:cursor-not-allowed",
                         isClosed 
                             ? "bg-accent text-black" 
                             : "bg-white/10 text-gray-500 hover:bg-white/20"
@@ -155,7 +164,8 @@ export function TradeFormFields({
                         value={takeProfit} 
                         onChange={e => onTakeProfitChange(e.target.value)}
                         placeholder="Optional"
-                        className="w-full bg-accent/5 border border-accent/10 rounded-xl p-3 text-sm font-bold text-white outline-none focus:border-accent/40 transition-all" 
+                        disabled={disabled}
+                        className="w-full bg-accent/5 border border-accent/10 rounded-xl p-3 text-sm font-bold text-white outline-none focus:border-accent/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed" 
                     />
                 </div>
                 <div className="space-y-1.5">
@@ -167,7 +177,8 @@ export function TradeFormFields({
                         value={stopLoss} 
                         onChange={e => onStopLossChange(e.target.value)}
                         placeholder="Optional"
-                        className="w-full bg-danger/5 border border-danger/10 rounded-xl p-3 text-sm font-bold text-white outline-none focus:border-danger/40 transition-all" 
+                        disabled={disabled}
+                        className="w-full bg-danger/5 border border-danger/10 rounded-xl p-3 text-sm font-bold text-white outline-none focus:border-danger/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed" 
                     />
                 </div>
             </div>

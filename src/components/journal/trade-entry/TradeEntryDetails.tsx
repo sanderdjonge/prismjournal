@@ -20,6 +20,7 @@ interface TradeEntryDetailsProps {
     onMoodChange: (value: string) => void;
     notes: string;
     onNotesChange: (value: string) => void;
+    disabled?: boolean;
 }
 
 const DEFAULT_STRATEGIES = [
@@ -45,6 +46,7 @@ export function TradeEntryDetails({
     onMoodChange,
     notes,
     onNotesChange,
+    disabled = false,
 }: TradeEntryDetailsProps) {
     const [customStrategies, setCustomStrategies] = useState<Strategy[]>([]);
     const [loading, setLoading] = useState(true);

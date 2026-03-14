@@ -6,6 +6,7 @@ import EquityChart from '@/components/dashboard/EquityChart';
 import Gauge from '@/components/dashboard/Gauge';
 import { TrendingUp, ArrowDownLeft, Activity, Target, BarChart3 } from 'lucide-react';
 import { useCurrency } from '@/lib/currency';
+import { cn } from '@/lib/cn';
 
 type EquityPoint = { time: string; value: number };
 type MonthlyReturn = { month: number; value: number };
@@ -26,14 +27,18 @@ const MONTH_LABELS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'
 
 export default function PerformancePage() {
     const [data, setData] = useState<PerfData | null>(null);
+    const [period, setPeriod] = useState<'7' | '30' | '90' | '365'>('30');
+    const [loading, setLoading] = useState(true);
     const { formatPnl, formatAmount } = useCurrency();
 
     useEffect(() => {
-        fetch('/api/performance')
+        setLoading(true);
+        fetch(`/api/performance?period=${period}`)
             .then(r => r.json())
             .then(setData)
-            .catch(console.error);
-    }, []);
+            .catch(console.error)
+            .finally(() => setLoading(false));
+    }, [period]);
 
     const STATS = [
         { id: 'stat_pnl', label: 'Net P&L', val: data ? formatPnl(data.netPnl) : '—', status: data ? (data.netPnl >= 0 ? 'text-accent' : 'text-danger') : 'text-gray-600', icon: TrendingUp },
@@ -44,6 +49,16 @@ export default function PerformancePage() {
 
     const monthlyReturns = data?.monthlyReturns ?? MONTH_LABELS.map((_, i) => ({ month: i, value: 0 }));
 
+    if (loading) {
+        return (
+            <DashboardShell>
+                <div className="flex items-center justify-center min-h-[400px]">
+                    <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                </div>
+            </DashboardShell>
+        );
+    }
+
     return (
         <DashboardShell>
             <div className="space-y-6 pb-10">
@@ -53,6 +68,22 @@ export default function PerformancePage() {
                         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 mt-2">
                             Deep Audit of Equity Evolution & Edge Stability
                         </p>
+                    </div>
+                    <div className="flex gap-2">
+                        {(['7', '30', '90', '365'] as const).map((d) => (
+                            <button
+                                key={d}
+                                onClick={() => setPeriod(d)}
+                                className={cn(
+                                    "px-4 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all duration-300",
+                                    period === d
+                                        ? "bg-primary/20 text-primary border border-primary/30"
+                                        : "bg-white/5 text-gray-500 border border-white/5 hover:bg-white/10 hover:text-white"
+                                )}
+                            >
+                                {d === '365' ? '1Y' : `${d}D`}
+                            </button>
+                        ))}
                     </div>
                 </div>
 
