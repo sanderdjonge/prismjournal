@@ -1,0 +1,62 @@
+# Development Environment Configuration
+# Usage: docker compose -f docker-compose.dev.yml up -d
+# Note: Traefik removed for local macOS development - app exposed directly via port mapping
+
+name: prism-dev
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: prism-dev-db
+    environment:
+      POSTGRES_USER: prism_dev
+      POSTGRES_PASSWORD: prism_dev_password
+      POSTGRES_DB: prism_journal_dev
+    ports:
+      - "5433:5432"    # Dev DB on port 5433 to avoid conflict with prod
+    volumes:
+      - prism_dev_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U prism_dev -d prism_journal_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - prism-dev-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: prism-dev-app
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: "postgresql://prism_dev:prism_dev_password@db:5432/prism_journal_dev"
+      AUTH_TRUST_HOST: "true"
+    ports:
+      - "3002:3000"    # Dev app on port 3002
+    networks:
+      - prism-dev-network
+
+  # Cloudflare tunnel for secure external access
+  prism-dev-tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: prism-dev-tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token eyJhIjoiNWFmZTEzNzQ5MGU2YzBlZmNlNTZhOTEyYmQ4ZWVjY2YiLCJ0IjoiN2I5MzMyNjItM2YxNS00MjA4LTk3MjAtMjIzZmEzOTc5MmU3IiwicyI6Ik56TTVPVFl6TVdNdFpEQTBaUzAwWlRsakxUaGpOVEF0WVRVeFlUUXpZVE5qT0RBeCJ9
+    depends_on:
+      - app
+    networks:
+      - prism-dev-network
+
+networks:
+  prism-dev-network:
+    driver: bridge
+
+volumes:
+  prism_dev_db_data:

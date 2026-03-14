@@ -1,0 +1,392 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// User & Authentication
+// ============================================
+
+model User {
+  id            String           @id @default(cuid())
+  email         String?          @unique
+  name          String?
+  username      String?          @unique
+  password      String?
+  
+  // 2FA Settings (from TradeLens)
+  totpSecret    String?          // Base32 secret for Authenticator apps
+  totpEnabled   Boolean          @default(false)
+  
+  // Profile
+  avatarUrl     String?
+  isActive      Boolean          @default(true)
+  isSuperuser   Boolean          @default(false)
+  lastLoginAt   DateTime?
+  
+  // Settings
+  defaultCurrency String         @default("EUR")
+  
+  // Timestamps
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  
+  // Relations
+  accounts      TradingAccount[]
+  strategies    Strategy[]
+  notifications Notification[]
+  alertConfig   AlertConfig?
+  settings      UserSettings?
+  customStats   CustomStat[]
+}
+
+// ============================================
+// Trading Accounts (Enhanced with Prop Firm)
+// ============================================
+
+model TradingAccount {
+  id              String        @id @default(cuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id])
+  
+  // Basic Info
+  name            String
+  broker          String?
+  accountNumber   String?       @unique
+  bridgeKey       String?       @unique
+  
+  // Account Type (from TradeLens)
+  accountType     AccountType   @default(OWN_MONEY)
+  
+  // Currency & Leverage
+  currency        String        @default("EUR")
+  leverage        Float         @default(100)
+  
+  // Balance Tracking
+  balance         Float?        // Starting balance
+  currentBalance  Float?        // Live balance from MT5
+  currentEquity   Float?        // Live equity from MT5
+  
+  // MT5 Sync Metrics
+  marginUsed      Float?
+  freeMargin      Float?
+  marginLevel     Float?
+  lastSyncTime    DateTime?
+  
+  // Prop Firm Rules (from TradeLens)
+  maxDailyLoss    Float?        // Max daily loss allowed
+  maxTotalDrawdown Float?       // Max total drawdown from starting balance
+  profitTarget    Float?        // Profit target to pass challenge
+  maxPositionSize Float?        // Max lots/contracts per position
+  scalingPlan     String?       // Notes about scaling rules
+  currentPhase    String?       @default("Phase 1") // "Phase 1", "Phase 2", "Funded"
+  lastDailyReset  DateTime?     // Last time daily loss was reset
+  
+  // Status
+  isActive        Boolean       @default(true)
+  isDefault       Boolean       @default(false)
+  notes           String?
+  
+  // Timestamps
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  // Relations
+  trades          Trade[]
+  equitySnapshots EquitySnapshot[]
+  
+  @@index([userId])
+  @@index([bridgeKey])
+}
+
+enum AccountType {
+  PROPFIRM
+  OWN_MONEY
+}
+
+// ============================================
+// Strategies
+// ============================================
+
+model Strategy {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  
+  trades      Trade[]
+  
+  @@index([userId])
+}
+
+// ============================================
+// Trades (Merged from both projects)
+// ============================================
+
+model Trade {
+  id               String        @id @default(cuid())
+  accountId        String
+  account          TradingAccount @relation(fields: [accountId], references: [id])
+  strategyId       String?
+  strategy         Strategy?     @relation(fields: [strategyId], references: [id])
+  
+  // Core trade data
+  ticket           String?       @unique
+  symbol           String
+  direction        TradeDirection
+  status           TradeStatus   @default(OPEN)
+  
+  // Prices
+  entryPrice       Float
+  exitPrice        Float?
+  takeProfit       Float?
+  stopLoss         Float?
+  
+  // Size
+  volume           Float         @default(1.0)
+  lotSize          Float?
+  
+  // Timing
+  entryTime        DateTime
+  exitTime         DateTime?
+  
+  // Results
+  pnl              Float?
+  pnlPercent       Float?
+  normalizedPnl    Float?
+  originalPnl      Float?
+  commission       Float?
+  swap             Float?
+  fees             Float?        @default(0)
+  
+  // Advanced Analytics (from both projects)
+  rMultiple        Float?
+  mae              Float?        // Maximum Adverse Excursion
+  mfe              Float?        // Maximum Favorable Excursion
+  
+  // Psychology & Discipline (from TradeLens)
+  planCompliance   PlanCompliance?
+  mood             String?
+  emotionalState   String?
+  entryRating      Int?          // 1-5
+  exitRating       Int?          // 1-5
+  managementRating Int?          // 1-5
+  followedPlan     Boolean?
+  
+  // Classification (from TradeLens)
+  source           TradeSource   @default(MANUAL)
+  platform         TradePlatform @default(MANUAL)
+  setupType        String?
+  
+  // Notes
+  notes            String?
+  entryReason      String?
+  exitReason       String?
+  lessonsLearned   String?
+  
+  // External reference
+  externalId       String?       // MT5 ticket or TV order ID
+  
+  // Media
+  media            Media[]
+  tags             TradeTag[]
+  
+  // Timestamps
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  
+  @@index([accountId])
+  @@index([accountId, entryTime])
+  @@index([symbol])
+  @@index([status])
+}
+
+enum TradeDirection {
+  LONG
+  SHORT
+}
+
+enum TradeStatus {
+  OPEN
+  CLOSED
+  CANCELLED
+}
+
+enum TradeSource {
+  PAPER
+  LIVE
+  MANUAL
+}
+
+enum TradePlatform {
+  TRADINGVIEW
+  METATRADER5
+  MANUAL
+}
+
+enum PlanCompliance {
+  FOLLOWED
+  DEVIATED
+  PARTIAL
+}
+
+// ============================================
+// Media & Screenshots
+// ============================================
+
+model Media {
+  id        String   @id @default(cuid())
+  tradeId   String
+  trade     Trade    @relation(fields: [tradeId], references: [id])
+  url       String
+  type      String   // "AUTO" or "MANUAL"
+  timeframe String?  // e.g. "M15"
+  event     String   // "OPEN" or "CLOSE"
+  createdAt DateTime @default(now())
+  
+  @@index([tradeId])
+}
+
+model TradeTag {
+  id        String @id @default(cuid())
+  tradeId   String
+  trade     Trade  @relation(fields: [tradeId], references: [id])
+  tag       String
+  
+  @@index([tradeId])
+}
+
+// ============================================
+// Equity Snapshots
+// ============================================
+
+model EquitySnapshot {
+  id        String   @id @default(cuid())
+  accountId String
+  account   TradingAccount @relation(fields: [accountId], references: [id])
+  balance   Float
+  equity    Float
+  timestamp DateTime @default(now())
+
+  @@index([accountId, timestamp])
+}
+
+// ============================================
+// Currency & Exchange Rates
+// ============================================
+
+model Currency {
+  code      String  @id
+  symbol    String
+  name      String
+  isDefault Boolean @default(false)
+}
+
+model ExchangeRate {
+  id        String   @id @default(cuid())
+  fromCode  String
+  toCode    String
+  rate      Float
+  timestamp DateTime @default(now())
+
+  @@index([fromCode, toCode, timestamp])
+}
+
+// ============================================
+// User Settings
+// ============================================
+
+model UserSettings {
+  userId          String @id
+  user            User   @relation(fields: [userId], references: [id])
+  displayCurrency String @default("USD")
+  timezone        String @default("Europe/Amsterdam")
+}
+
+// ============================================
+// Notifications & Alerts
+// ============================================
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+}
+
+model AlertConfig {
+  userId            String  @id
+  user              User    @relation(fields: [userId], references: [id])
+  enableSync        Boolean @default(true)
+  enableTrades      Boolean @default(true)
+  enableRisk        Boolean @default(true)
+  telegramId        String?
+  mddThreshold      Float?
+  // Email notification settings
+  email             String?
+  enableWeeklyDigest Boolean @default(false)
+  enableMddAlerts   Boolean @default(false)
+}
+
+// ============================================
+// Custom Statistics (from TradeLens)
+// ============================================
+
+model CustomStat {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  name         String
+  description  String?
+  filterConfig String   // JSON string with filter configuration
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@index([userId])
+}
+
+// ============================================
+// System Metrics (from TradeLens - for Admin)
+// ============================================
+
+model SystemMetric {
+  id            String   @id @default(cuid())
+  timestamp     DateTime @default(now())
+  dbSizeMb      Float    @default(0)
+  storageSizeMb Float    @default(0)
+  totalUsers    Int      @default(0)
+  totalTrades   Int      @default(0)
+  totalAccounts Int      @default(0)
+  
+  @@index([timestamp])
+}
+
+// ============================================
+// Audit Logs (for Admin Security)
+// ============================================
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String   // Enum value from AuditAction
+  details   String   // JSON string with action details
+  ipAddress String?
+  userAgent String?
+  userId    String?  // User who performed the action (null if not authenticated)
+  createdAt DateTime @default(now())
+  
+  @@index([action])
+  @@index([userId])
+  @@index([createdAt])
+}
