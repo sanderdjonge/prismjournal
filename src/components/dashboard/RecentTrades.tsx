@@ -6,7 +6,7 @@ import { cn } from '@/lib/cn';
 type Trade = {
     id: string;
     symbol: string;
-    type: 'BUY' | 'SELL';
+    direction: 'LONG' | 'SHORT';
     price: string;
     pnl: number;
     time: string;
@@ -43,9 +43,9 @@ export default function RecentTrades({ trades }: RecentTradesProps) {
                         <p className="text-sm font-black tracking-tight text-white">{trade.symbol}</p>
                         <span className={cn(
                             "text-[8px] font-black px-1.5 py-0.5 rounded border uppercase tracking-widest",
-                            trade.type === 'BUY' ? "text-[#10b981] border-[#10b981]/20 bg-[#10b981]/5" : "text-[#f43f5e] border-[#f43f5e]/20 bg-[#f43f5e]/5"
+                            trade.direction === 'LONG' ? "text-[#10b981] border-[#10b981]/20 bg-[#10b981]/5" : "text-[#f43f5e] border-[#f43f5e]/20 bg-[#f43f5e]/5"
                         )}>
-                            {trade.type === 'BUY' ? 'Long' : 'Short'}
+                            {trade.direction === 'LONG' ? 'Long' : 'Short'}
                         </span>
                     </div>
                     <p className="text-[10px] text-gray-500 font-mono mt-0.5 uppercase tracking-widest">
