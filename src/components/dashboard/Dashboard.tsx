@@ -11,7 +11,7 @@ import { useCurrency } from '@/lib/currency';
 type RecentTrade = {
     id: string;
     symbol: string;
-    type: 'BUY' | 'SELL';
+    direction: 'LONG' | 'SHORT';
     price: string;
     pnl: number;
     time: string;
@@ -19,7 +19,7 @@ type RecentTrade = {
 };
 
 type EquityPoint = { time: string; value: number };
-type CalendarDay = { date: string; pnl: number };
+type CalendarDay = { date: string; pnl: number; trades: number; wins: number; losses: number };
 
 type DashboardData = {
     equity: EquityPoint[];
