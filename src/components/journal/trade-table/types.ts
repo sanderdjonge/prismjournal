@@ -9,7 +9,7 @@ export interface Trade {
     id: string;
     ticket: string;
     symbol: string;
-    type: 'BUY' | 'SELL';
+    type: 'LONG' | 'SHORT';
     volume: number;
     entry: number;
     exit: number;

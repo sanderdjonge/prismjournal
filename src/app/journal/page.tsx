@@ -5,7 +5,8 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useDebouncedCallback } from 'use-debounce';
 import DashboardShell from '@/components/layout/DashboardShell';
 import DraggableTable from '@/components/journal/DraggableTable';
-import TradeAnalysisDrawer from '@/components/journal/TradeAnalysisDrawer';
+import TradeViewModal from '@/components/journal/TradeViewModal';
+import TradeEditModal from '@/components/journal/TradeEditModal';
 import TradeEntryModal from '@/components/journal/TradeEntryModal';
 import { Search, Plus, Zap, Calendar, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 
@@ -13,7 +14,7 @@ export type JournalTrade = {
     id: string;
     ticket: string;
     symbol: string;
-    type: 'BUY' | 'SELL';
+    type: 'LONG' | 'SHORT';
     volume: number;
     entry: number;
     exit: number;
@@ -51,7 +52,8 @@ function JournalContent() {
     const [dateFrom, setDateFrom] = useState(searchParams.get('from') || '');
     const [dateTo, setDateTo] = useState(searchParams.get('to') || '');
     const [selectedTrade, setSelectedTrade] = useState<JournalTrade | null>(null);
-    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [pagination, setPagination] = useState<Pagination>({
         page: parseInt(searchParams.get('page') || '1'),
@@ -131,23 +133,41 @@ function JournalContent() {
         updateUrlParams({ page: newPage.toString() });
     };
 
-    const handleAnalyze = (trade: JournalTrade) => {
+    const handleView = (trade: JournalTrade) => {
         setSelectedTrade(trade);
-        setIsDrawerOpen(true);
+        setIsViewModalOpen(true);
     };
 
-    const handleDrawerClose = () => {
-        setIsDrawerOpen(false);
+    const handleEdit = (trade: JournalTrade) => {
+        setSelectedTrade(trade);
+        setIsEditModalOpen(true);
+    };
+
+    const handleViewModalClose = () => {
+        setIsViewModalOpen(false);
         setSelectedTrade(null);
+    };
+
+    const handleEditModalClose = () => {
+        setIsEditModalOpen(false);
+        setSelectedTrade(null);
+    };
+
+    const handleSwitchToEdit = () => {
+        setIsViewModalOpen(false);
+        setIsEditModalOpen(true);
     };
 
     const handleTradeSaved = (updated: JournalTrade) => {
         setTrades(prev => prev.map(t => t.id === updated.id ? { ...t, ...updated } : t));
+        setIsEditModalOpen(false);
+        setSelectedTrade(null);
     };
 
     const handleTradeDeleted = (id: string) => {
         setTrades(prev => prev.filter(t => t.id !== id));
-        setIsDrawerOpen(false);
+        setIsEditModalOpen(false);
+        setIsViewModalOpen(false);
         setSelectedTrade(null);
     };
 
@@ -304,7 +324,7 @@ function JournalContent() {
                             </button>
                         </div>
                     ) : (
-                        <DraggableTable data={trades} onAnalyze={handleAnalyze} />
+                        <DraggableTable data={trades} onView={handleView} onEdit={handleEdit} />
                     )}
                 </div>
 
@@ -366,12 +386,18 @@ function JournalContent() {
                 onSaved={handleTradeAdded}
             />
 
-            <TradeAnalysisDrawer
+            <TradeViewModal
                 trade={selectedTrade}
-                isOpen={isDrawerOpen}
-                onClose={handleDrawerClose}
+                isOpen={isViewModalOpen}
+                onClose={handleViewModalClose}
+                onEdit={handleSwitchToEdit}
+            />
+
+            <TradeEditModal
+                trade={selectedTrade}
+                isOpen={isEditModalOpen}
+                onClose={handleEditModalClose}
                 onSaved={handleTradeSaved}
-                onDeleted={handleTradeDeleted}
             />
         </DashboardShell>
     );

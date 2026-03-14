@@ -1,13 +1,14 @@
 'use client';
 
 import React from 'react';
-import { MoreHorizontal } from 'lucide-react';
+import { Eye, Pencil } from 'lucide-react';
 import type { Trade, Column } from './types';
 
 interface TradeRowProps {
     trade: Trade;
     columns: Column[];
-    onAnalyze: (trade: Trade) => void;
+    onView: (trade: Trade) => void;
+    onEdit: (trade: Trade) => void;
 }
 
 // Helper function to calculate RR
@@ -26,7 +27,7 @@ function calcRR(trade: Trade): number | null {
         : -(Math.abs(trade.exit - trade.entry) / risk);
 }
 
-export function TradeRow({ trade, columns, onAnalyze }: TradeRowProps) {
+export function TradeRow({ trade, columns, onView, onEdit }: TradeRowProps) {
     const rr = calcRR(trade);
 
     return (
@@ -56,8 +57,8 @@ export function TradeRow({ trade, columns, onAnalyze }: TradeRowProps) {
                         <span className="font-bold text-sm text-white tracking-tight">{trade.symbol}</span>
                     )}
                     {col.id === 'side' && (
-                        <span className={`text-xs font-black uppercase ${trade.type === 'BUY' ? 'text-accent' : 'text-danger'}`}>
-                            {trade.type}
+                        <span className={`text-xs font-black uppercase ${trade.type === 'LONG' ? 'text-accent' : 'text-danger'}`}>
+                            {trade.type === 'LONG' ? 'Long' : 'Short'}
                         </span>
                     )}
                     {col.id === 'status' && (
@@ -92,12 +93,22 @@ export function TradeRow({ trade, columns, onAnalyze }: TradeRowProps) {
                         </span>
                     )}
                     {col.id === 'actions' && (
-                        <button
-                            onClick={() => onAnalyze(trade)}
-                            className="w-7 h-7 rounded-lg bg-white/5 border border-white/5 flex items-center justify-center text-gray-500 hover:text-primary hover:border-primary/20 transition-all"
-                        >
-                            <MoreHorizontal size={14} />
-                        </button>
+                        <div className="flex gap-1">
+                            <button
+                                onClick={() => onView(trade)}
+                                className="w-7 h-7 rounded-lg bg-white/5 border border-white/5 flex items-center justify-center text-gray-500 hover:text-secondary hover:border-secondary/20 transition-all"
+                                title="View"
+                            >
+                                <Eye size={14} />
+                            </button>
+                            <button
+                                onClick={() => onEdit(trade)}
+                                className="w-7 h-7 rounded-lg bg-white/5 border border-white/5 flex items-center justify-center text-gray-500 hover:text-primary hover:border-primary/20 transition-all"
+                                title="Edit"
+                            >
+                                <Pencil size={14} />
+                            </button>
+                        </div>
                     )}
                 </td>
             ))}

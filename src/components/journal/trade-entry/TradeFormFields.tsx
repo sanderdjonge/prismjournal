@@ -7,8 +7,8 @@ import { cn } from '@/lib/cn';
 interface TradeFormFieldsProps {
     symbol: string;
     onSymbolChange: (value: string) => void;
-    side: 'BUY' | 'SELL';
-    onSideChange: (value: 'BUY' | 'SELL') => void;
+    side: 'LONG' | 'SHORT';
+    onSideChange: (value: 'LONG' | 'SHORT') => void;
     volume: string;
     onVolumeChange: (value: string) => void;
     entryPrice: string;
@@ -60,25 +60,29 @@ export function TradeFormFields({
                 <div className="space-y-1.5">
                     <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1">Direction</label>
                     <div className="flex p-1 bg-white/5 rounded-xl border border-white/10 h-[46px]">
-                        <button 
-                            onClick={() => !disabled && onSideChange('BUY')}
+                        <button
+                            type="button"
+                            onClick={() => !disabled && onSideChange('LONG')}
                             disabled={disabled}
                             className={cn(
-                                "flex-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1 disabled:cursor-not-allowed",
-                                side === 'BUY' ? "bg-accent text-black shadow-lg" : "text-gray-500 hover:text-white"
+                                "flex-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1",
+                                side === 'LONG' ? "bg-accent text-black shadow-lg" : "text-gray-500 hover:text-white",
+                                disabled && "opacity-50 cursor-not-allowed"
                             )}
                         >
-                            <TrendingUp size={12} /> Buy
+                            <TrendingUp size={12} /> Long
                         </button>
-                        <button 
-                            onClick={() => !disabled && onSideChange('SELL')}
+                        <button
+                            type="button"
+                            onClick={() => !disabled && onSideChange('SHORT')}
                             disabled={disabled}
                             className={cn(
-                                "flex-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1 disabled:cursor-not-allowed",
-                                side === 'SELL' ? "bg-danger text-white shadow-lg" : "text-gray-500 hover:text-white"
+                                "flex-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1",
+                                side === 'SHORT' ? "bg-danger text-white shadow-lg" : "text-gray-500 hover:text-white",
+                                disabled && "opacity-50 cursor-not-allowed"
                             )}
                         >
-                            <TrendingDown size={12} /> Sell
+                            <TrendingDown size={12} /> Short
                         </button>
                     </div>
                 </div>

@@ -3,7 +3,7 @@ import { z } from 'zod';
 /**
  * Trade type enum
  */
-export const tradeTypeEnum = z.enum(['BUY', 'SELL', 'buy', 'sell']);
+export const tradeTypeEnum = z.enum(['LONG', 'SHORT', 'long', 'short']);
 
 /**
  * Trade status enum
@@ -30,7 +30,7 @@ export const timeframeEnum = z.enum(['M1', 'M5', 'M15', 'M30', 'H1', 'H4', 'D1',
  */
 export const tradeCreateSchema = z.object({
   symbol: z.string().min(1, 'Symbol is required').max(20, 'Symbol too long'),
-  type: tradeTypeEnum.transform((val) => val.toUpperCase() as 'BUY' | 'SELL'),
+  type: tradeTypeEnum.transform((val) => val.toUpperCase() as 'LONG' | 'SHORT'),
   volume: z.number().positive('Volume must be positive'),
   entryPrice: z.number().positive('Entry price must be positive'),
   exitPrice: z.number().optional(),
@@ -50,9 +50,19 @@ export type TradeCreateInput = z.infer<typeof tradeCreateSchema>;
  * Schema for updating a trade (PATCH /api/trades/[id])
  */
 export const tradeUpdateSchema = z.object({
+  symbol: z.string().min(1, 'Symbol is required').max(20, 'Symbol too long').optional(),
+  type: tradeTypeEnum.transform((val) => val.toUpperCase() as 'LONG' | 'SHORT').optional(),
+  volume: z.number().positive('Volume must be positive').optional(),
+  entryPrice: z.number().positive('Entry price must be positive').optional(),
+  exitPrice: z.number().optional(),
+  pnl: z.number().optional(),
+  status: tradeStatusEnum.optional(),
+  strategy: z.string().max(100, 'Strategy name too long').optional(),
   mood: moodEnum.optional(),
   planCompliance: planComplianceEnum.optional(),
   notes: z.string().max(5000, 'Notes too long').optional(),
+  takeProfit: z.number().positive('Take profit must be positive').optional().nullable(),
+  stopLoss: z.number().positive('Stop loss must be positive').optional().nullable(),
   entryRating: z.number().int().min(1).max(5).optional(),
   exitRating: z.number().int().min(1).max(5).optional(),
   managementRating: z.number().int().min(1).max(5).optional(),
