@@ -174,8 +174,7 @@ model Trade {
   
   // Psychology & Discipline (from TradeLens)
   planCompliance   PlanCompliance?
-  mood             String?
-  emotionalState   String?
+  mood             Mood?
   entryRating      Int?          // 1-5
   exitRating       Int?          // 1-5
   managementRating Int?          // 1-5
@@ -236,6 +235,15 @@ enum PlanCompliance {
   FOLLOWED
   DEVIATED
   PARTIAL
+}
+
+enum Mood {
+  CALM
+  CONFIDENT
+  NEUTRAL
+  ANXIOUS
+  FOMO
+  REVENGE
 }
 
 // ============================================
@@ -355,7 +363,7 @@ model CustomStat {
   user         User     @relation(fields: [userId], references: [id])
   name         String
   description  String?
-  filterConfig String   // JSON string with filter configuration
+  filterConfig Json     // Filter configuration
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   
