@@ -15,15 +15,16 @@ export async function getDefaultAccount() {
     if (!userId) return null;
 
     // Try to find existing account
-    let account = await prisma.tradingAccount.findFirst({
+    const existing = await prisma.tradingAccount.findFirst({
         where: { userId, isActive: true },
         orderBy: { id: 'asc' },
     });
+    if (existing) return existing;
 
-    // Create default account if none exists
-    if (!account) {
-        const { key, keyId, keyHash } = generateBridgeKey();
-        account = await prisma.tradingAccount.create({
+    // Create default account if none exists, guarding against concurrent creation
+    const { key, keyId, keyHash } = generateBridgeKey();
+    try {
+        return await prisma.tradingAccount.create({
             data: {
                 userId,
                 name: 'Default Account',
@@ -36,9 +37,16 @@ export async function getDefaultAccount() {
                 bridgeKey: key, // kept during transition so existing EA configs still work
             },
         });
+    } catch (e: unknown) {
+        // Another concurrent request already created the account (P2002 unique constraint)
+        if ((e as { code?: string })?.code === 'P2002') {
+            return prisma.tradingAccount.findFirst({
+                where: { userId, isActive: true },
+                orderBy: { id: 'asc' },
+            });
+        }
+        throw e;
     }
-
-    return account;
 }
 
 /**
