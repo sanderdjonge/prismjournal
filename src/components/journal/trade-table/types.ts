@@ -1,3 +1,9 @@
+export interface Tag {
+    id: string;
+    name: string;
+    color?: string | null;
+}
+
 export interface Column {
     id: string;
     label: string;
@@ -27,6 +33,7 @@ export interface Trade {
     strategy?: string | null;
     entryTime?: string | null;
     exitTime?: string | null;
+    tags?: Tag[];
 }
 
 export type SortDir = 'asc' | 'desc';
@@ -43,6 +50,7 @@ export const DEFAULT_COLUMNS: Column[] = [
     { id: 'sl', label: 'SL', visible: true, sortable: true, mobileVisible: false },
     { id: 'status', label: 'Status', visible: true, sortable: true, mobileVisible: false },
     { id: 'rr', label: 'RR', visible: true, sortable: true, mobileVisible: false },
+    { id: 'tags', label: 'Tags', visible: true, sortable: false, mobileVisible: false },
     { id: 'actions', label: '', visible: true, sortable: false, mobileVisible: true },
 ];
 

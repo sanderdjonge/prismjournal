@@ -84,6 +84,26 @@ export function TradeRow({ trade, columns, onView, onEdit }: TradeRowProps) {
                             {rr !== null ? `${rr >= 0 ? '' : ''}${rr.toFixed(1)}R` : '—'}
                         </span>
                     )}
+                    {col.id === 'tags' && (
+                        <div className="flex gap-1 flex-wrap">
+                            {trade.tags && trade.tags.length > 0 ? (
+                                trade.tags.map((tag) => (
+                                    <span
+                                        key={tag.id}
+                                        className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider"
+                                        style={{
+                                            backgroundColor: `${tag.color || '#00f2ff'}20`,
+                                            color: tag.color || '#00f2ff',
+                                        }}
+                                    >
+                                        {tag.name}
+                                    </span>
+                                ))
+                            ) : (
+                                <span className="text-gray-600 text-[10px]">—</span>
+                            )}
+                        </div>
+                    )}
                     {col.id === 'actions' && (
                         <div className="flex gap-1">
                             <button
