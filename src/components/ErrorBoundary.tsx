@@ -36,7 +36,7 @@ export class ErrorBoundary extends Component<Props, State> {
                             {this.state.error?.message ?? 'An unexpected error occurred.'}
                         </p>
                         <button
-                            onClick={() => this.setState({ hasError: false })}
+                            onClick={() => this.setState({ hasError: false, error: undefined })}
                             className="mt-4 px-6 py-2 bg-primary/10 border border-primary/30 text-primary rounded-xl font-black text-xs uppercase tracking-widest hover:bg-primary/20 transition-all"
                         >
                             Try again

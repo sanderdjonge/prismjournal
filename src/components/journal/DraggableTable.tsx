@@ -38,9 +38,12 @@ interface DraggableTableProps {
     data: Trade[];
     onView: (trade: Trade) => void;
     onEdit: (trade: Trade) => void;
+    selectedIds?: Set<string>;
+    onToggleSelect?: (tradeId: string) => void;
+    onSelectAll?: () => void;
 }
 
-export default function DraggableTable({ data, onView, onEdit }: DraggableTableProps) {
+export default function DraggableTable({ data, onView, onEdit, selectedIds, onToggleSelect, onSelectAll }: DraggableTableProps) {
     // Lazy state initialization from localStorage to avoid useEffect setState issues
     const [columns, setColumns] = useState<Column[]>(() => {
         if (typeof window === 'undefined') return DEFAULT_COLUMNS;
@@ -146,6 +149,10 @@ export default function DraggableTable({ data, onView, onEdit }: DraggableTableP
     const safePage = Math.min(page, totalPages - 1);
     const paged = sorted.slice(safePage * perPage, (safePage + 1) * perPage);
 
+    // Selection state for header
+    const allSelected = paged.length > 0 && paged.every(t => selectedIds?.has(t.id));
+    const someSelected = paged.some(t => selectedIds?.has(t.id));
+
     if (!mounted) return null;
 
     return (
@@ -165,6 +172,9 @@ export default function DraggableTable({ data, onView, onEdit }: DraggableTableP
                         sortCol={sortCol}
                         sortDir={sortDir}
                         onSort={handleSort}
+                        allSelected={allSelected}
+                        someSelected={someSelected}
+                        onSelectAll={onSelectAll}
                     />
                     <tbody className="divide-y divide-white/5">
                         {paged.map((trade) => (
@@ -174,6 +184,8 @@ export default function DraggableTable({ data, onView, onEdit }: DraggableTableP
                                 columns={columns}
                                 onView={onView}
                                 onEdit={onEdit}
+                                isSelected={selectedIds?.has(trade.id)}
+                                onToggleSelect={onToggleSelect}
                             />
                         ))}
                     </tbody>

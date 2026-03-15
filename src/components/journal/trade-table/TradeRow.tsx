@@ -11,13 +11,18 @@ interface TradeRowProps {
     columns: Column[];
     onView: (trade: Trade) => void;
     onEdit: (trade: Trade) => void;
+    isSelected?: boolean;
+    onToggleSelect?: (tradeId: string) => void;
 }
 
-export function TradeRow({ trade, columns, onView, onEdit }: TradeRowProps) {
+export function TradeRow({ trade, columns, onView, onEdit, isSelected = false, onToggleSelect }: TradeRowProps) {
     const rr = calcRR(trade);
 
     return (
-        <tr key={trade.id} className="group hover:bg-white/[0.02] transition-colors">
+        <tr key={trade.id} className={cn(
+            "group hover:bg-white/[0.02] transition-colors",
+            isSelected && "bg-primary/5"
+        )}>
             {columns.filter(c => c.visible).map((col) => (
                 <td
                     key={`${trade.id}-${col.id}`}
@@ -26,6 +31,15 @@ export function TradeRow({ trade, columns, onView, onEdit }: TradeRowProps) {
                         !col.mobileVisible && "hidden md:table-cell"
                     )}
                 >
+                    {col.id === 'select' && onToggleSelect && (
+                        <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => onToggleSelect(trade.id)}
+                            className="w-4 h-4 rounded border-white/20 bg-white/5 text-primary focus:ring-primary/50 cursor-pointer"
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    )}
                     {col.id === 'time' && (
                         <div className="text-xs text-gray-300">
                             {trade.entryTime ? new Date(trade.entryTime).toLocaleDateString() : '—'}

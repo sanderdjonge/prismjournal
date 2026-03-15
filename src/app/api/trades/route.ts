@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const dateFrom = searchParams.get('from');
     const dateTo = searchParams.get('to');
     const search = searchParams.get('q'); // Search query
-    const tagFilter = searchParams.get('tag'); // Tag name filter
+    const tagFilter = searchParams.get('tag'); // Tag ID filter
 
     // Pagination
     const page = parseInt(searchParams.get('page') || '1');
@@ -78,25 +78,16 @@ export async function GET(request: NextRequest) {
         ];
     }
 
-    // Tag filter - find trades with a specific tag
+    // Tag filter - find trades with a specific tag (by ID)
     let tagFilterIds: string[] | null = null;
     if (tagFilter) {
-        const tag = await prisma.tag.findFirst({
-            where: { name: tagFilter },
-            select: { id: true },
+        const tradeTags = await prisma.tradeTag.findMany({
+            where: { tagId: tagFilter },
+            select: { tradeId: true },
         });
-        if (tag) {
-            const tradeTags = await prisma.tradeTag.findMany({
-                where: { tagId: tag.id },
-                select: { tradeId: true },
-            });
-            tagFilterIds = tradeTags.map((tt) => tt.tradeId);
-            // If tag exists but no trades have it, return empty
-            if (tagFilterIds.length === 0) {
-                return NextResponse.json({ trades: [], pagination: { page: 1, limit, total: 0, totalPages: 0 } });
-            }
-        } else {
-            // Tag doesn't exist, return empty
+        tagFilterIds = tradeTags.map((tt) => tt.tradeId);
+        // If no trades have this tag, return empty
+        if (tagFilterIds.length === 0) {
             return NextResponse.json({ trades: [], pagination: { page: 1, limit, total: 0, totalPages: 0 } });
         }
     }

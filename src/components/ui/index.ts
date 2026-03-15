@@ -4,3 +4,4 @@ export { Badge } from './Badge';
 export { Input } from './Input';
 export { Skeleton, SkeletonCard, SkeletonRow } from './Skeleton';
 export { Card } from './Card';
+export { ConfirmModal } from './ConfirmModal';

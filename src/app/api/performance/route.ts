@@ -87,7 +87,7 @@ export async function GET(request: Request) {
 
     // Max drawdown from equity curve (balance-based)
     const latestSnap = snapshots.length > 0 ? snapshots[snapshots.length - 1] : null;
-    const accountBalance = latestSnap?.balance ?? 10000;
+    const accountBalance = latestSnap?.balance ?? 0;
     let peak = accountBalance;
     let running = accountBalance;
     let maxDrawdown = 0;
@@ -125,7 +125,7 @@ export async function GET(request: Request) {
 
     // Use latest snapshot balance as base, or fallback to account balance
     const latestSnapshot = snapshots.length > 0 ? snapshots[snapshots.length - 1] : null;
-    const base = latestSnapshot?.balance ?? 10000;
+    const base = latestSnapshot?.balance ?? 0;
     const monthlyReturnsPct = monthlyPnl.map((pnl, i) => ({
         month: i,
         value: base > 0 ? Math.round((pnl / base) * 100 * 10) / 10 : 0,

@@ -39,6 +39,7 @@ export interface Trade {
 export type SortDir = 'asc' | 'desc';
 
 export const DEFAULT_COLUMNS: Column[] = [
+    { id: 'select', label: '', visible: true, sortable: false, mobileVisible: true },
     { id: 'time', label: 'Entry Date', visible: true, sortable: true, mobileVisible: false },
     { id: 'exitTime', label: 'Exit Date', visible: true, sortable: true, mobileVisible: false },
     { id: 'symbol', label: 'Symbol', visible: true, sortable: true, mobileVisible: true },
