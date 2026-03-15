@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-    // Default user
+    // Default user with bridge key (moved from TradingAccount)
     const user = await prisma.user.upsert({
         where: { email: 'sander@prism.io' },
         update: {},
@@ -11,22 +11,25 @@ async function main() {
             id: 'user_default',
             email: 'sander@prism.io',
             name: 'Sander J.',
+            bridgeKeyId: 'prism_defau',  // First 12 chars of bridge key
+            bridgeKeyHash: '$2a$10$dummyHashForDevelopmentPurposesOnly',  // Placeholder hash
         },
     });
 
-    // Default trading account
+    // Default trading account (bridge key now on User)
     const account = await prisma.tradingAccount.upsert({
-        where: { bridgeKey: 'prism_default_key' },
+        where: { id: 'acc_default' },
         update: {},
         create: {
             id: 'acc_default',
             userId: user.id,
-            name: 'Main Account',
+            name: 'MT5 #100012345',
             broker: 'Default Broker',
             accountNumber: '100012345',
+            platform: 'METATRADER5',
+            platformAccountId: '100012345',
             currency: 'USD',
             leverage: 100,
-            bridgeKey: 'prism_default_key',
             isActive: true,
         },
     });
@@ -52,7 +55,9 @@ async function main() {
         });
     }
 
-    console.log('Seed complete. Account bridge key:', account.bridgeKey);
+    console.log('Seed complete.');
+    console.log('User bridge key ID:', user.bridgeKeyId);
+    console.log('Account:', account.name, `(${account.platform})`);
 }
 
 main()
