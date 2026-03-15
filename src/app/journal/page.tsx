@@ -9,10 +9,11 @@ import DraggableTable from '@/components/journal/DraggableTable';
 import TradeViewModal from '@/components/journal/TradeViewModal';
 import TradeEditModal from '@/components/journal/TradeEditModal';
 import TradeEntryModal from '@/components/journal/TradeEntryModal';
-import { SkeletonRow } from '@/components/ui';
+import { SkeletonRow, ConfirmModal } from '@/components/ui';
 import { useTrades, useDeleteTrade, TradeFilters } from '@/hooks/useTrades';
 import { useTags } from '@/hooks/useTags';
-import { Search, Plus, Zap, Calendar, ChevronLeft, ChevronRight, Download, Tag as TagIcon } from 'lucide-react';
+import { useBulkOperations } from '@/hooks/useBulkOperations';
+import { Search, Plus, Zap, Calendar, ChevronLeft, ChevronRight, Download, Tag as TagIcon, Trash2, X } from 'lucide-react';
 
 export type JournalTrade = {
     id: string;
@@ -54,6 +55,14 @@ function JournalContent() {
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    // Bulk selection state
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
+
+    // Bulk operations hook
+    const { bulkDelete, bulkTag, isDeleting } = useBulkOperations();
 
     // Build filters object for React Query
     const filters: TradeFilters = {
@@ -209,6 +218,56 @@ function JournalContent() {
         }
     };
 
+    // Bulk selection handlers
+    const handleToggleSelect = (tradeId: string) => {
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            if (next.has(tradeId)) {
+                next.delete(tradeId);
+            } else {
+                next.add(tradeId);
+            }
+            return next;
+        });
+    };
+
+    const handleSelectAll = () => {
+        const allIds = trades.map(t => t.id);
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            const allSelected = allIds.every(id => next.has(id));
+            if (allSelected) {
+                allIds.forEach(id => next.delete(id));
+            } else {
+                allIds.forEach(id => next.add(id));
+            }
+            return next;
+        });
+    };
+
+    const handleClearSelection = () => {
+        setSelectedIds(new Set());
+    };
+
+    const handleBulkDelete = async () => {
+        try {
+            await bulkDelete(Array.from(selectedIds));
+            setSelectedIds(new Set());
+            setIsDeleteModalOpen(false);
+        } catch {
+            // Error handled in hook
+        }
+    };
+
+    const handleBulkTag = async (tagId: string) => {
+        try {
+            await bulkTag({ tradeIds: Array.from(selectedIds), tagId });
+            setTagDropdownOpen(false);
+        } catch {
+            // Error handled in hook
+        }
+    };
+
     return (
         <DashboardShell>
             <div className="space-y-6">
@@ -295,7 +354,7 @@ function JournalContent() {
                             >
                                 <option value="ALL" className="bg-gray-900">ALL TAGS</option>
                                 {tags.map((tag) => (
-                                    <option key={tag.id} value={tag.name} className="bg-gray-900">
+                                    <option key={tag.id} value={tag.id} className="bg-gray-900">
                                         {tag.name.toUpperCase()}
                                     </option>
                                 ))}
@@ -331,6 +390,67 @@ function JournalContent() {
                     </div>
                 </div>
 
+                {/* Bulk Action Toolbar */}
+                {selectedIds.size > 0 && (
+                    <div className="glass-card border-primary/20 bg-primary/5 px-4 py-3 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-primary">
+                                {selectedIds.size} trade{selectedIds.size !== 1 ? 's' : ''} selected
+                            </span>
+                            <button
+                                onClick={handleClearSelection}
+                                className="text-gray-500 hover:text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-1"
+                            >
+                                <X size={12} /> Clear
+                            </button>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            {/* Tag Dropdown */}
+                            <div className="relative">
+                                <button
+                                    onClick={() => setTagDropdownOpen(!tagDropdownOpen)}
+                                    className="h-8 px-4 rounded-lg bg-white/5 border border-white/10 text-white font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:bg-white/10 transition-all"
+                                >
+                                    <TagIcon size={12} /> Add Tag
+                                </button>
+                                {tagDropdownOpen && (
+                                    <div className="absolute top-full right-0 mt-1 glass-card border-white/10 bg-gray-900/95 rounded-lg overflow-hidden z-20 min-w-[150px]">
+                                        {tags.length === 0 ? (
+                                            <div className="px-3 py-2 text-[10px] text-gray-500">No tags available</div>
+                                        ) : (
+                                            tags.map((tag) => (
+                                                <button
+                                                    key={tag.id}
+                                                    onClick={() => {
+                                                        handleBulkTag(tag.id);
+                                                        setTagDropdownOpen(false);
+                                                    }}
+                                                    className="w-full px-3 py-2 text-left text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 flex items-center gap-2"
+                                                    style={{ color: tag.color || '#00f2ff' }}
+                                                >
+                                                    <span
+                                                        className="w-2 h-2 rounded-full"
+                                                        style={{ backgroundColor: tag.color || '#00f2ff' }}
+                                                    />
+                                                    {tag.name}
+                                                </button>
+                                            ))
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Delete Button */}
+                            <button
+                                onClick={() => setIsDeleteModalOpen(true)}
+                                className="h-8 px-4 rounded-lg bg-danger/10 border border-danger/20 text-danger font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:bg-danger/20 transition-all"
+                            >
+                                <Trash2 size={12} /> Delete
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {/* Main Table Container */}
                 <div className="glass-card border-white/5 bg-black/40 backdrop-blur-md overflow-hidden">
                     {isFetching && !data ? (
@@ -350,7 +470,14 @@ function JournalContent() {
                             </button>
                         </div>
                     ) : (
-                        <DraggableTable data={trades} onView={handleView} onEdit={handleEdit} />
+                        <DraggableTable
+                            data={trades}
+                            onView={handleView}
+                            onEdit={handleEdit}
+                            selectedIds={selectedIds}
+                            onToggleSelect={handleToggleSelect}
+                            onSelectAll={handleSelectAll}
+                        />
                     )}
                 </div>
 
@@ -424,6 +551,18 @@ function JournalContent() {
                 isOpen={isEditModalOpen}
                 onClose={handleEditModalClose}
                 onSaved={handleTradeSaved}
+            />
+
+            {/* Bulk Delete Confirmation Modal */}
+            <ConfirmModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={handleBulkDelete}
+                title="Delete Trades"
+                message={`Are you sure you want to delete ${selectedIds.size} trade${selectedIds.size !== 1 ? 's' : ''}? This action cannot be undone.`}
+                confirmLabel="Delete"
+                variant="danger"
+                isLoading={isDeleting}
             />
         </DashboardShell>
     );
