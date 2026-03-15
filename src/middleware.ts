@@ -10,6 +10,7 @@ export default auth(async (req) => {
   const isSyncApi = nextUrl.pathname === '/api/sync';
   const isTelegramWebhook = nextUrl.pathname === '/api/telegram/webhook';
   const isCronEndpoint = nextUrl.pathname.startsWith('/api/cron');
+  const isHealthEndpoint = nextUrl.pathname === '/api/health';
   const isRegisterEndpoint = nextUrl.pathname === '/api/auth/register';
 
   // ====== RATE LIMITING ======
@@ -32,16 +33,16 @@ export default auth(async (req) => {
     if (rateLimitResponse) return rateLimitResponse;
   }
 
-  // General API rate limiting (skip webhooks and cron endpoints)
-  if (nextUrl.pathname.startsWith('/api/') && !isTelegramWebhook && !isCronEndpoint && !isRegisterEndpoint && !isSyncApi) {
+  // General API rate limiting (skip webhooks, cron, health endpoints)
+  if (nextUrl.pathname.startsWith('/api/') && !isTelegramWebhook && !isCronEndpoint && !isHealthEndpoint && !isRegisterEndpoint && !isSyncApi) {
     const rateLimitResponse = await apiLimiter.check(req, 100);
     if (rateLimitResponse) return rateLimitResponse;
   }
 
   // ====== AUTH ROUTING ======
 
-  // Always allow auth API routes, MT5 sync, Telegram webhook, and cron endpoints
-  if (isApiAuth || isSyncApi || isTelegramWebhook || isCronEndpoint) return;
+  // Always allow auth API routes, MT5 sync, Telegram webhook, cron, and health endpoints
+  if (isApiAuth || isSyncApi || isTelegramWebhook || isCronEndpoint || isHealthEndpoint) return;
 
   // Redirect unauthenticated users to login
   if (!isLoggedIn && !isLoginPage) {
