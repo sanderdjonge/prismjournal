@@ -3,6 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Edit3 } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
 import type { JournalTrade } from '@/app/journal/page';
 import {
     TradeFormFields,
@@ -13,6 +16,7 @@ import {
     ExistingScreenshots,
 } from './trade-entry';
 import { getContractSize, calcPnl } from '@/lib/tradeCalculations';
+import { tradeFormSchema, type TradeFormValues } from '@/lib/validations/tradeForm';
 
 interface MediaItem {
     id: string;
@@ -24,47 +28,71 @@ interface TradeEditModalProps {
     trade: JournalTrade | null;
     isOpen: boolean;
     onClose: () => void;
-    onSaved: (updated: JournalTrade) => void;
+    onSaved: () => void;
 }
 
 export default function TradeEditModal({ trade, isOpen, onClose, onSaved }: TradeEditModalProps) {
-    const [symbol, setSymbol] = useState('');
-    const [side, setSide] = useState<'LONG' | 'SHORT'>('LONG');
-    const [volume, setVolume] = useState('');
-    const [entryPrice, setEntryPrice] = useState('');
-    const [exitPrice, setExitPrice] = useState('');
-    const [takeProfit, setTakeProfit] = useState('');
-    const [stopLoss, setStopLoss] = useState('');
-    const [isClosed, setIsClosed] = useState(false);
-    const [computedPnl, setComputedPnl] = useState<number | null>(null);
-    const [strategy, setStrategy] = useState('Vector Momentum (H1)');
-    const [mood, setMood] = useState<string>('NEUTRAL');
-    const [compliance, setCompliance] = useState<boolean | null>(null);
-    const [notes, setNotes] = useState('');
     const [screenshots, setScreenshots] = useState<File[]>([]);
     const [existingMedia, setExistingMedia] = useState<MediaItem[]>([]);
-    const [saving, setSaving] = useState(false);
-    const [error, setError] = useState('');
+    const [computedPnl, setComputedPnl] = useState<number | null>(null);
+
+    const {
+        register,
+        handleSubmit,
+        setValue,
+        watch,
+        reset,
+        formState: { errors, isSubmitting },
+    } = useForm<TradeFormValues>({
+        resolver: zodResolver(tradeFormSchema),
+        defaultValues: {
+            symbol: '',
+            type: 'LONG',
+            volume: 0.01,
+            entryPrice: 0,
+            exitPrice: '',
+            takeProfit: '',
+            stopLoss: '',
+            isClosed: false,
+            strategy: '',
+            mood: undefined,
+            planCompliance: undefined,
+            notes: '',
+        },
+    });
+
+    // Watch form values
+    const symbol = watch('symbol');
+    const side = watch('type');
+    const volume = watch('volume');
+    const entryPrice = watch('entryPrice');
+    const exitPrice = watch('exitPrice');
+    const isClosed = watch('isClosed');
+    const strategy = watch('strategy');
+    const mood = watch('mood');
+    const planCompliance = watch('planCompliance');
+    const notes = watch('notes');
 
     // Load trade data when modal opens
     useEffect(() => {
-        if (trade) {
-            setSymbol(trade.symbol);
-            setSide(trade.type);
-            setVolume(trade.volume.toString());
-            setEntryPrice(trade.entry.toString());
-            setExitPrice(trade.exit?.toString() || '');
-            setTakeProfit(trade.takeProfit?.toString() || '');
-            setStopLoss(trade.stopLoss?.toString() || '');
-            setIsClosed(!!trade.exitTime);
-            setStrategy(trade.strategy || 'Vector Momentum (H1)');
-            setMood(trade.mood || 'NEUTRAL');
-            setCompliance(trade.planCompliance === 'FOLLOWED' ? true : trade.planCompliance === 'DEVIATED' ? false : null);
-            setNotes(trade.notes || '');
+        if (trade && isOpen) {
+            reset({
+                symbol: trade.symbol,
+                type: trade.type,
+                volume: trade.volume,
+                entryPrice: trade.entry,
+                exitPrice: trade.exit != null ? String(trade.exit) : '',
+                takeProfit: trade.takeProfit != null ? String(trade.takeProfit) : '',
+                stopLoss: trade.stopLoss != null ? String(trade.stopLoss) : '',
+                isClosed: !!trade.exitTime,
+                strategy: trade.strategy || '',
+                mood: trade.mood as TradeFormValues['mood'] || undefined,
+                planCompliance: trade.planCompliance as TradeFormValues['planCompliance'] || undefined,
+                notes: trade.notes || '',
+            });
             setComputedPnl(trade.pnl);
-            setScreenshots([]); // Reset new screenshots when loading trade
-            setError(''); // Reset error state
-            
+            setScreenshots([]);
+
             // Load existing media
             fetch(`/api/trades/${trade.id}`)
                 .then(res => res.json())
@@ -73,14 +101,14 @@ export default function TradeEditModal({ trade, isOpen, onClose, onSaved }: Trad
                 })
                 .catch(() => setExistingMedia([]));
         }
-    }, [trade]);
+    }, [trade, isOpen, reset]);
 
-    // Auto-calculate PnL whenever entry, exit, volume, side or symbol changes
+    // Auto-calculate PnL
     useEffect(() => {
-        const e = parseFloat(entryPrice);
-        const x = parseFloat(exitPrice);
-        const v = parseFloat(volume);
-        if (!isNaN(e) && !isNaN(x) && !isNaN(v) && v > 0 && symbol.trim()) {
+        const e = entryPrice;
+        const x = exitPrice ? Number(exitPrice) : NaN;
+        const v = volume;
+        if (typeof e === 'number' && !isNaN(x) && typeof v === 'number' && v > 0 && symbol?.trim()) {
             const cs = getContractSize(symbol.trim());
             setComputedPnl(Math.round(calcPnl(side, e, x, v, cs) * 100) / 100);
         } else {
@@ -89,41 +117,33 @@ export default function TradeEditModal({ trade, isOpen, onClose, onSaved }: Trad
     }, [entryPrice, exitPrice, volume, side, symbol]);
 
     const handleClose = () => {
-        setError('');
         onClose();
     };
 
-    const handleSubmit = async () => {
+    const onSubmit = async (values: TradeFormValues) => {
         if (!trade) return;
-        if (!symbol.trim()) { setError('Instrument is required.'); return; }
-        if (!volume || isNaN(Number(volume))) { setError('Valid volume is required.'); return; }
-        if (!entryPrice || isNaN(Number(entryPrice))) { setError('Valid entry price is required.'); return; }
-        if (isClosed && (!exitPrice || isNaN(Number(exitPrice)))) { setError('Exit price is required for closed trades.'); return; }
 
-        setSaving(true);
-        setError('');
         try {
             const res = await fetch(`/api/trades/${trade.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    symbol: symbol.trim().toUpperCase(),
-                    type: side,
-                    volume: Number(volume),
-                    entryPrice: Number(entryPrice),
-                    exitPrice: isClosed && exitPrice ? Number(exitPrice) : undefined,
-                    takeProfit: takeProfit ? Number(takeProfit) : undefined,
-                    stopLoss: stopLoss ? Number(stopLoss) : undefined,
-                    pnl: isClosed ? computedPnl ?? undefined : undefined,
-                    status: isClosed ? 'CLOSED' : 'OPEN',
-                    strategy,
-                    mood,
-                    planCompliance: compliance === true ? 'FOLLOWED' : compliance === false ? 'DEVIATED' : undefined,
-                    notes: notes.trim() || undefined,
+                    symbol: values.symbol.trim().toUpperCase(),
+                    type: values.type,
+                    volume: values.volume,
+                    entryPrice: values.entryPrice,
+                    exitPrice: values.isClosed && values.exitPrice ? Number(values.exitPrice) : undefined,
+                    takeProfit: values.takeProfit ? Number(values.takeProfit) : undefined,
+                    stopLoss: values.stopLoss ? Number(values.stopLoss) : undefined,
+                    pnl: values.isClosed ? computedPnl ?? undefined : undefined,
+                    status: values.isClosed ? 'CLOSED' : 'OPEN',
+                    strategy: values.strategy,
+                    mood: values.mood,
+                    planCompliance: values.planCompliance,
+                    notes: values.notes?.trim() || undefined,
                 }),
             });
             if (!res.ok) throw new Error('Server error');
-            const updated = await res.json();
 
             // Upload screenshots if any
             if (screenshots.length > 0) {
@@ -131,7 +151,7 @@ export default function TradeEditModal({ trade, isOpen, onClose, onSaved }: Trad
                     const formData = new FormData();
                     formData.append('file', screenshots[i]);
                     formData.append('timeframe', `SCREENSHOT_${i + 1}`);
-                    
+
                     await fetch(`/api/trades/${trade.id}/upload`, {
                         method: 'POST',
                         body: formData,
@@ -139,26 +159,10 @@ export default function TradeEditModal({ trade, isOpen, onClose, onSaved }: Trad
                 }
             }
 
-            onSaved({
-                ...trade,
-                symbol: symbol.trim().toUpperCase(),
-                type: side,
-                volume: Number(volume),
-                entry: Number(entryPrice),
-                exit: exitPrice ? Number(exitPrice) : trade.exit,
-                takeProfit: takeProfit ? Number(takeProfit) : null,
-                stopLoss: stopLoss ? Number(stopLoss) : null,
-                pnl: computedPnl ?? trade.pnl,
-                strategy,
-                mood,
-                planCompliance: compliance === true ? 'FOLLOWED' : compliance === false ? 'DEVIATED' : undefined,
-                notes,
-            });
-            onClose();
+            toast.success('Trade updated successfully');
+            onSaved();
         } catch {
-            setError('Failed to save trade. Please try again.');
-        } finally {
-            setSaving(false);
+            toast.error('Failed to save trade. Please try again.');
         }
     };
 
@@ -195,77 +199,64 @@ export default function TradeEditModal({ trade, isOpen, onClose, onSaved }: Trad
                             </button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-6 no-scrollbar space-y-6">
-                            {/* Trade Form Fields */}
-                            <TradeFormFields
-                                symbol={symbol}
-                                onSymbolChange={setSymbol}
-                                side={side}
-                                onSideChange={setSide}
-                                volume={volume}
-                                onVolumeChange={setVolume}
-                                entryPrice={entryPrice}
-                                onEntryPriceChange={setEntryPrice}
-                                exitPrice={exitPrice}
-                                onExitPriceChange={setExitPrice}
-                                takeProfit={takeProfit}
-                                onTakeProfitChange={setTakeProfit}
-                                stopLoss={stopLoss}
-                                onStopLossChange={setStopLoss}
-                                isClosed={isClosed}
-                                onIsClosedChange={setIsClosed}
-                            />
+                        <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col overflow-hidden">
+                            <div className="flex-1 overflow-y-auto p-6 no-scrollbar space-y-6">
+                                {/* Trade Form Fields */}
+                                <TradeFormFields
+                                    register={register}
+                                    errors={errors}
+                                    setValue={setValue}
+                                    watch={watch}
+                                />
 
-                            {/* Calculated P&L */}
-                            <div className="grid grid-cols-3 gap-4">
-                                <div className="col-start-3">
-                                    <RiskCalculator computedPnl={computedPnl} />
+                                {/* Calculated P&L */}
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div className="col-start-3">
+                                        <RiskCalculator computedPnl={computedPnl} />
+                                    </div>
                                 </div>
+
+                                {/* Strategy, Compliance, Mood, Notes */}
+                                <TradeEntryDetails
+                                    strategy={strategy ?? ''}
+                                    onStrategyChange={(v) => setValue('strategy', v)}
+                                    compliance={planCompliance === 'FOLLOWED' ? true : planCompliance === 'DEVIATED' ? false : null}
+                                    onComplianceChange={(v) => setValue('planCompliance', v === true ? 'FOLLOWED' : v === false ? 'DEVIATED' : undefined)}
+                                    mood={mood ?? 'NEUTRAL'}
+                                    onMoodChange={(v) => setValue('mood', v as TradeFormValues['mood'])}
+                                    notes={notes ?? ''}
+                                    onNotesChange={(v) => setValue('notes', v)}
+                                />
+
+                                {/* Existing Screenshots */}
+                                {existingMedia.length > 0 && (
+                                    <div className="space-y-3">
+                                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1">
+                                            Existing Screenshots
+                                        </label>
+                                        <ExistingScreenshots
+                                            media={existingMedia}
+                                            onRemove={(id) => {
+                                                const newMedia = existingMedia.filter(m => m.id !== id);
+                                                setExistingMedia(newMedia);
+                                            }}
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Screenshot Upload */}
+                                <ScreenshotUpload
+                                    screenshots={screenshots}
+                                    onScreenshotsChange={setScreenshots}
+                                    maxFiles={5 - existingMedia.length}
+                                />
                             </div>
 
-                            {/* Strategy, Compliance, Mood, Notes */}
-                            <TradeEntryDetails
-                                strategy={strategy}
-                                onStrategyChange={setStrategy}
-                                compliance={compliance}
-                                onComplianceChange={setCompliance}
-                                mood={mood}
-                                onMoodChange={setMood}
-                                notes={notes}
-                                onNotesChange={setNotes}
+                            <TradeFormActions
+                                saving={isSubmitting}
+                                onCancel={handleClose}
                             />
-
-                            {/* Existing Screenshots */}
-                            {existingMedia.length > 0 && (
-                                <div className="space-y-3">
-                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1">
-                                        Existing Screenshots
-                                    </label>
-                                    <ExistingScreenshots
-                                        media={existingMedia}
-                                        onRemove={(id) => {
-                                            const newMedia = existingMedia.filter(m => m.id !== id);
-                                            setExistingMedia(newMedia);
-                                        }}
-                                    />
-                                </div>
-                            )}
-
-                            {/* Screenshot Upload */}
-                            <ScreenshotUpload
-                                screenshots={screenshots}
-                                onScreenshotsChange={setScreenshots}
-                                maxFiles={5 - existingMedia.length}
-                            />
-
-                            {error && <p className="text-danger text-[10px] font-black uppercase tracking-widest">{error}</p>}
-                        </div>
-
-                        <TradeFormActions
-                            saving={saving}
-                            onCancel={handleClose}
-                            onSubmit={handleSubmit}
-                        />
+                        </form>
                     </motion.div>
                 </>
             )}

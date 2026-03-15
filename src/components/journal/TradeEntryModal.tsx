@@ -3,6 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Target } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
 import type { JournalTrade } from '@/app/journal/page';
 import {
     TradeFormFields,
@@ -12,6 +15,7 @@ import {
     ScreenshotUpload,
 } from './trade-entry';
 import { getContractSize, calcPnl } from '@/lib/tradeCalculations';
+import { tradeFormSchema, type TradeFormValues } from '@/lib/validations/tradeForm';
 
 interface TradeEntryModalProps {
     isOpen: boolean;
@@ -19,30 +23,55 @@ interface TradeEntryModalProps {
     onSaved: (trade: JournalTrade) => void;
 }
 
+const defaultValues: TradeFormValues = {
+    symbol: '',
+    type: 'LONG',
+    volume: 0.01,
+    entryPrice: 0,
+    exitPrice: '',
+    takeProfit: '',
+    stopLoss: '',
+    isClosed: false,
+    strategy: '',
+    mood: undefined,
+    planCompliance: undefined,
+    notes: '',
+};
+
 export default function TradeEntryModal({ isOpen, onClose, onSaved }: TradeEntryModalProps) {
-    const [symbol, setSymbol] = useState('');
-    const [side, setSide] = useState<'LONG' | 'SHORT'>('LONG');
-    const [volume, setVolume] = useState('');
-    const [entryPrice, setEntryPrice] = useState('');
-    const [exitPrice, setExitPrice] = useState('');
-    const [takeProfit, setTakeProfit] = useState('');
-    const [stopLoss, setStopLoss] = useState('');
-    const [isClosed, setIsClosed] = useState(false);
-    const [computedPnl, setComputedPnl] = useState<number | null>(null);
-    const [strategy, setStrategy] = useState('Vector Momentum (H1)');
-    const [mood, setMood] = useState<string>('NEUTRAL');
-    const [compliance, setCompliance] = useState<boolean | null>(null);
-    const [notes, setNotes] = useState('');
     const [screenshots, setScreenshots] = useState<File[]>([]);
-    const [saving, setSaving] = useState(false);
-    const [error, setError] = useState('');
+    const [computedPnl, setComputedPnl] = useState<number | null>(null);
+
+    const {
+        register,
+        handleSubmit,
+        setValue,
+        watch,
+        reset,
+        formState: { errors, isSubmitting },
+    } = useForm<TradeFormValues>({
+        resolver: zodResolver(tradeFormSchema),
+        defaultValues,
+    });
+
+    // Watch form values for PnL calculation
+    const symbol = watch('symbol');
+    const side = watch('type');
+    const volume = watch('volume');
+    const entryPrice = watch('entryPrice');
+    const exitPrice = watch('exitPrice');
+    const isClosed = watch('isClosed');
+    const strategy = watch('strategy');
+    const mood = watch('mood');
+    const planCompliance = watch('planCompliance');
+    const notes = watch('notes');
 
     // Auto-calculate PnL whenever entry, exit, volume, side or symbol changes
     useEffect(() => {
-        const e = parseFloat(entryPrice);
-        const x = parseFloat(exitPrice);
-        const v = parseFloat(volume);
-        if (!isNaN(e) && !isNaN(x) && !isNaN(v) && v > 0 && symbol.trim()) {
+        const e = entryPrice;
+        const x = exitPrice ? Number(exitPrice) : NaN;
+        const v = volume;
+        if (typeof e === 'number' && !isNaN(x) && typeof v === 'number' && v > 0 && symbol?.trim()) {
             const cs = getContractSize(symbol.trim());
             setComputedPnl(Math.round(calcPnl(side, e, x, v, cs) * 100) / 100);
         } else {
@@ -50,43 +79,37 @@ export default function TradeEntryModal({ isOpen, onClose, onSaved }: TradeEntry
         }
     }, [entryPrice, exitPrice, volume, side, symbol]);
 
-    const reset = () => {
-        setSymbol(''); setSide('LONG'); setVolume(''); setEntryPrice('');
-        setExitPrice(''); setTakeProfit(''); setStopLoss('');
-        setIsClosed(false);
-        setComputedPnl(null); setStrategy('Vector Momentum (H1)');
-        setMood('NEUTRAL'); setCompliance(null); setNotes(''); setScreenshots([]); setError('');
+    const handleReset = () => {
+        reset(defaultValues);
+        setScreenshots([]);
+        setComputedPnl(null);
     };
 
-    const handleClose = () => { reset(); onClose(); };
+    const handleClose = () => {
+        handleReset();
+        onClose();
+    };
 
-    const handleSubmit = async () => {
-        if (!symbol.trim()) { setError('Instrument is required.'); return; }
-        if (!volume || isNaN(Number(volume))) { setError('Valid volume is required.'); return; }
-        if (!entryPrice || isNaN(Number(entryPrice))) { setError('Valid entry price is required.'); return; }
-        if (isClosed && (!exitPrice || isNaN(Number(exitPrice)))) { setError('Exit price is required for closed trades.'); return; }
-
-        setSaving(true);
-        setError('');
+    const onSubmit = async (values: TradeFormValues) => {
         try {
             // Create the trade
             const res = await fetch('/api/trades', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    symbol: symbol.trim().toUpperCase(),
-                    type: side,
-                    volume: Number(volume),
-                    entryPrice: Number(entryPrice),
-                    exitPrice: isClosed && exitPrice ? Number(exitPrice) : undefined,
-                    takeProfit: takeProfit ? Number(takeProfit) : undefined,
-                    stopLoss: stopLoss ? Number(stopLoss) : undefined,
-                    pnl: isClosed ? computedPnl ?? undefined : undefined,
-                    status: isClosed ? 'CLOSED' : 'OPEN',
-                    strategy,
-                    mood,
-                    planCompliance: compliance === true ? 'FOLLOWED' : compliance === false ? 'DEVIATED' : undefined,
-                    notes: notes.trim() || undefined,
+                    symbol: values.symbol.trim().toUpperCase(),
+                    type: values.type,
+                    volume: values.volume,
+                    entryPrice: values.entryPrice,
+                    exitPrice: values.isClosed && values.exitPrice ? Number(values.exitPrice) : undefined,
+                    takeProfit: values.takeProfit ? Number(values.takeProfit) : undefined,
+                    stopLoss: values.stopLoss ? Number(values.stopLoss) : undefined,
+                    pnl: values.isClosed ? computedPnl ?? undefined : undefined,
+                    status: values.isClosed ? 'CLOSED' : 'OPEN',
+                    strategy: values.strategy,
+                    mood: values.mood,
+                    planCompliance: values.planCompliance,
+                    notes: values.notes?.trim() || undefined,
                 }),
             });
             if (!res.ok) throw new Error('Server error');
@@ -98,7 +121,7 @@ export default function TradeEntryModal({ isOpen, onClose, onSaved }: TradeEntry
                     const formData = new FormData();
                     formData.append('file', screenshots[i]);
                     formData.append('timeframe', `SCREENSHOT_${i + 1}`);
-                    
+
                     await fetch(`/api/trades/${trade.id}/upload`, {
                         method: 'POST',
                         body: formData,
@@ -106,12 +129,11 @@ export default function TradeEntryModal({ isOpen, onClose, onSaved }: TradeEntry
                 }
             }
 
+            toast.success('Trade logged successfully');
             onSaved(trade);
-            reset();
+            handleReset();
         } catch {
-            setError('Failed to save trade. Please try again.');
-        } finally {
-            setSaving(false);
+            toast.error('Failed to save trade. Please try again.');
         }
     };
 
@@ -146,61 +168,48 @@ export default function TradeEntryModal({ isOpen, onClose, onSaved }: TradeEntry
                             </button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-6 no-scrollbar space-y-6">
-                            {/* Trade Form Fields */}
-                            <TradeFormFields
-                                symbol={symbol}
-                                onSymbolChange={setSymbol}
-                                side={side}
-                                onSideChange={setSide}
-                                volume={volume}
-                                onVolumeChange={setVolume}
-                                entryPrice={entryPrice}
-                                onEntryPriceChange={setEntryPrice}
-                                exitPrice={exitPrice}
-                                onExitPriceChange={setExitPrice}
-                                takeProfit={takeProfit}
-                                onTakeProfitChange={setTakeProfit}
-                                stopLoss={stopLoss}
-                                onStopLossChange={setStopLoss}
-                                isClosed={isClosed}
-                                onIsClosedChange={setIsClosed}
-                            />
+                        <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col overflow-hidden">
+                            <div className="flex-1 overflow-y-auto p-6 no-scrollbar space-y-6">
+                                {/* Trade Form Fields */}
+                                <TradeFormFields
+                                    register={register}
+                                    errors={errors}
+                                    setValue={setValue}
+                                    watch={watch}
+                                />
 
-                            {/* Calculated P&L */}
-                            <div className="grid grid-cols-3 gap-4">
-                                <div className="col-start-3">
-                                    <RiskCalculator computedPnl={computedPnl} />
+                                {/* Calculated P&L */}
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div className="col-start-3">
+                                        <RiskCalculator computedPnl={computedPnl} />
+                                    </div>
                                 </div>
+
+                                {/* Strategy, Compliance, Mood, Notes */}
+                                <TradeEntryDetails
+                                    strategy={strategy ?? ''}
+                                    onStrategyChange={(v) => setValue('strategy', v)}
+                                    compliance={planCompliance === 'FOLLOWED' ? true : planCompliance === 'DEVIATED' ? false : null}
+                                    onComplianceChange={(v) => setValue('planCompliance', v === true ? 'FOLLOWED' : v === false ? 'DEVIATED' : undefined)}
+                                    mood={mood ?? 'NEUTRAL'}
+                                    onMoodChange={(v) => setValue('mood', v as TradeFormValues['mood'])}
+                                    notes={notes ?? ''}
+                                    onNotesChange={(v) => setValue('notes', v)}
+                                />
+
+                                {/* Screenshot Upload */}
+                                <ScreenshotUpload
+                                    screenshots={screenshots}
+                                    onScreenshotsChange={setScreenshots}
+                                    maxFiles={5}
+                                />
                             </div>
 
-                            {/* Strategy, Compliance, Mood, Notes */}
-                            <TradeEntryDetails
-                                strategy={strategy}
-                                onStrategyChange={setStrategy}
-                                compliance={compliance}
-                                onComplianceChange={setCompliance}
-                                mood={mood}
-                                onMoodChange={setMood}
-                                notes={notes}
-                                onNotesChange={setNotes}
+                            <TradeFormActions
+                                saving={isSubmitting}
+                                onCancel={handleClose}
                             />
-
-                            {/* Screenshot Upload */}
-                            <ScreenshotUpload
-                                screenshots={screenshots}
-                                onScreenshotsChange={setScreenshots}
-                                maxFiles={5}
-                            />
-
-                            {error && <p className="text-danger text-[10px] font-black uppercase tracking-widest">{error}</p>}
-                        </div>
-
-                        <TradeFormActions
-                            saving={saving}
-                            onCancel={handleClose}
-                            onSubmit={handleSubmit}
-                        />
+                        </form>
                     </motion.div>
                 </>
             )}
