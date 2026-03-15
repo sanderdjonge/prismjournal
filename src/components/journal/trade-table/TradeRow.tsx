@@ -3,28 +3,13 @@
 import React from 'react';
 import { Eye, Pencil } from 'lucide-react';
 import type { Trade, Column } from './types';
+import { calcRR } from '@/lib/tradeCalculations';
 
 interface TradeRowProps {
     trade: Trade;
     columns: Column[];
     onView: (trade: Trade) => void;
     onEdit: (trade: Trade) => void;
-}
-
-// Helper function to calculate RR
-function calcRR(trade: Trade): number | null {
-    if (!trade.stopLoss || !trade.entry || trade.entry === 0) return null;
-    const risk = Math.abs(trade.entry - trade.stopLoss);
-    if (risk === 0) return null;
-    if (!trade.exitTime) {
-        // Open trade — show target RR if TP is set
-        if (!trade.takeProfit) return null;
-        return Math.abs(trade.takeProfit - trade.entry) / risk;
-    }
-    // Closed trade — show actual RR
-    return trade.pnl >= 0
-        ? Math.abs(trade.exit - trade.entry) / risk
-        : -(Math.abs(trade.exit - trade.entry) / risk);
 }
 
 export function TradeRow({ trade, columns, onView, onEdit }: TradeRowProps) {

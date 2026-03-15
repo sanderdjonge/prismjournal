@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Zap, Brain, FileText, CheckCircle2, XCircle, Smile, Meh, Frown, Plus, X, Loader2 } from 'lucide-react';
+import { Zap, Brain, FileText, CheckCircle2, XCircle, Plus, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { MOOD_SELECTOR_OPTIONS } from '@/constants/tradeConfig';
 
 interface Strategy {
     id: string;
@@ -31,11 +32,6 @@ const DEFAULT_STRATEGIES = [
     'Other / Experimental'
 ];
 
-const MOOD_OPTIONS = [
-    { id: 'CALM', icon: Smile, color: 'text-accent', bg: 'bg-accent/10' },
-    { id: 'NEUTRAL', icon: Meh, color: 'text-gray-400', bg: 'bg-white/10' },
-    { id: 'ANXIOUS', icon: Frown, color: 'text-danger', bg: 'bg-danger/10' },
-];
 
 export function TradeEntryDetails({
     strategy,
@@ -237,7 +233,7 @@ export function TradeEntryDetails({
                         <Brain size={10} /> Psychological State
                     </label>
                     <div className="flex gap-2">
-                        {MOOD_OPTIONS.map((m) => (
+                        {MOOD_SELECTOR_OPTIONS.map((m) => (
                             <button 
                                 type="button"
                                 key={m.id} 

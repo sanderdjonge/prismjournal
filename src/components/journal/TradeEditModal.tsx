@@ -12,34 +12,12 @@ import {
     ScreenshotUpload,
     ExistingScreenshots,
 } from './trade-entry';
+import { getContractSize, calcPnl } from '@/lib/tradeCalculations';
 
 interface MediaItem {
     id: string;
     url: string;
     timeframe: string;
-}
-
-// Contract size presets
-const CONTRACT_SIZES: Record<string, number> = {
-    // Forex
-    EURUSD: 100000, GBPUSD: 100000, USDJPY: 100000, AUDUSD: 100000,
-    NZDUSD: 100000, USDCAD: 100000, USDCHF: 100000, EURGBP: 100000,
-    // Metals
-    XAUUSD: 100, XAGUSD: 5000,
-    // Indices (per point)
-    NAS100: 1, US30: 1, SPX500: 1, UK100: 1, GER40: 1, JPN225: 1,
-    // Oil
-    USOIL: 1000, UKOIL: 1000,
-};
-
-function getContractSize(symbol: string): number {
-    const upper = symbol.toUpperCase().replace(/[^A-Z0-9]/g, '');
-    return CONTRACT_SIZES[upper] ?? 1;
-}
-
-function calcPnl(side: 'LONG' | 'SHORT', entry: number, exit: number, volume: number, contractSize: number): number {
-    const direction = side === 'LONG' ? 1 : -1;
-    return direction * (exit - entry) * volume * contractSize;
 }
 
 interface TradeEditModalProps {

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { moodEnum } from './trade';
 
 /**
  * Trade type enum for MT5 sync
@@ -30,7 +31,7 @@ export const syncTradeSchema = z.object({
   stopLoss: z.number().nullable().optional(),
   takeProfit: z.number().nullable().optional(),
   strategy: z.string().max(100, 'Strategy name too long').optional(),
-  mood: z.string().max(50, 'Mood too long').optional(),
+  mood: moodEnum.optional().catch(undefined),
   planCompliance: planComplianceEnum.optional(),
 });
 
