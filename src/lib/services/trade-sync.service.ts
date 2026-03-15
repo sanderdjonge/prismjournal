@@ -4,6 +4,27 @@ import { sendTelegramMessage } from '@/lib/telegram';
 import type { SyncTrade } from '@/lib/validations';
 
 /**
+ * Ensure a tag named `tagName` exists for the user and apply it to the trade.
+ * Safe to call multiple times — idempotent via upsert.
+ */
+async function applyPlatformTag(userId: string, tradeId: string, tagName: string): Promise<void> {
+    try {
+        const tag = await prisma.tag.upsert({
+            where: { userId_name: { userId, name: tagName } },
+            create: { userId, name: tagName, color: '#00f2ff' },
+            update: {},
+        });
+        await prisma.tradeTag.upsert({
+            where: { tradeId_tagId: { tradeId, tagId: tag.id } },
+            create: { tradeId, tagId: tag.id },
+            update: {},
+        });
+    } catch {
+        // Silently ignore errors — tagging must not fail the sync
+    }
+}
+
+/**
  * Find or create a strategy by name for the given user.
  */
 async function resolveStrategy(name: string, userId: string): Promise<string> {
@@ -82,7 +103,7 @@ export async function upsertSyncTrade(
     // BUY/SELL → LONG/SHORT
     const direction = trade.type === 'BUY' ? 'LONG' : 'SHORT';
 
-    await prisma.trade.upsert({
+    const upsertedTrade = await prisma.trade.upsert({
         where: { ticket: trade.ticket },
         create: {
             accountId,
@@ -105,6 +126,11 @@ export async function upsertSyncTrade(
         },
         update: updateData,
     });
+
+    // Auto-apply MT5 platform tag for synced trades
+    if (isNew) {
+        applyPlatformTag(userId, upsertedTrade.id, 'MT5').catch(() => {});
+    }
 
     // Fire notifications asynchronously — errors must not fail the sync
     sendTradeAlert(userId, trade, isNew, isClosed).catch(() => {});

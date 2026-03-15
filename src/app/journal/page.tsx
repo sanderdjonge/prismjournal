@@ -11,7 +11,8 @@ import TradeEditModal from '@/components/journal/TradeEditModal';
 import TradeEntryModal from '@/components/journal/TradeEntryModal';
 import { SkeletonRow } from '@/components/ui';
 import { useTrades, useDeleteTrade, TradeFilters } from '@/hooks/useTrades';
-import { Search, Plus, Zap, Calendar, ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import { useTags } from '@/hooks/useTags';
+import { Search, Plus, Zap, Calendar, ChevronLeft, ChevronRight, Download, Tag as TagIcon } from 'lucide-react';
 
 export type JournalTrade = {
     id: string;
@@ -43,6 +44,7 @@ function JournalContent() {
     const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
     const [filterSide, setFilterSide] = useState<string>(searchParams.get('side') || 'ALL');
     const [filterResult, setFilterResult] = useState<string>(searchParams.get('result') || 'ALL');
+    const [filterTag, setFilterTag] = useState<string>(searchParams.get('tag') || 'ALL');
     const [dateFrom, setDateFrom] = useState(searchParams.get('from') || '');
     const [dateTo, setDateTo] = useState(searchParams.get('to') || '');
     const [page, setPage] = useState(parseInt(searchParams.get('page') || '1'));
@@ -58,6 +60,7 @@ function JournalContent() {
         q: searchQuery || undefined,
         side: filterSide !== 'ALL' ? filterSide : undefined,
         result: filterResult !== 'ALL' ? filterResult : undefined,
+        tag: filterTag !== 'ALL' ? filterTag : undefined,
         from: dateFrom || undefined,
         to: dateTo || undefined,
         page,
@@ -66,6 +69,10 @@ function JournalContent() {
     // React Query hook for fetching trades
     const { data, isFetching, isError, refetch } = useTrades(filters);
     const deleteTrade = useDeleteTrade();
+
+    // Fetch tags for filter dropdown
+    const { data: tagsData } = useTags();
+    const tags = tagsData?.tags ?? [];
 
     // Derived state from React Query
     const trades = (data?.trades as JournalTrade[] | undefined) ?? [];
@@ -109,16 +116,17 @@ function JournalContent() {
         updateUrlParams({
             side: filterSide,
             result: filterResult,
+            tag: filterTag !== 'ALL' ? filterTag : null,
             from: dateFrom || null,
             to: dateTo || null,
         });
-    }, [filterSide, filterResult, dateFrom, dateTo, updateUrlParams]);
+    }, [filterSide, filterResult, filterTag, dateFrom, dateTo, updateUrlParams]);
 
     // Reset to page 1 when filters change
     useEffect(() => {
         setPage(1);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [searchQuery, filterSide, filterResult, dateFrom, dateTo]);
+    }, [searchQuery, filterSide, filterResult, filterTag, dateFrom, dateTo]);
 
     const handlePageChange = (newPage: number) => {
         setPage(newPage);
@@ -275,6 +283,25 @@ function JournalContent() {
                             </button>
                         ))}
                     </div>
+
+                    {/* Tag Filter */}
+                    {tags.length > 0 && (
+                        <div className="glass-card flex items-center gap-1 border-white/5 bg-white/5 p-1">
+                            <TagIcon size={12} className="text-gray-500 ml-1" />
+                            <select
+                                value={filterTag}
+                                onChange={(e) => setFilterTag(e.target.value)}
+                                className="bg-transparent border-none outline-none text-[10px] text-white font-bold uppercase tracking-widest cursor-pointer"
+                            >
+                                <option value="ALL" className="bg-gray-900">ALL TAGS</option>
+                                {tags.map((tag) => (
+                                    <option key={tag.id} value={tag.name} className="bg-gray-900">
+                                        {tag.name.toUpperCase()}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
 
                     <div className="glass-card flex items-center gap-2 border-white/5 bg-white/5 px-3 py-1.5">
                         <Calendar size={12} className="text-gray-500" />
