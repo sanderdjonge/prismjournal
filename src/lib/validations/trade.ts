@@ -13,7 +13,7 @@ export const tradeStatusEnum = z.enum(['OPEN', 'CLOSED']);
 /**
  * Mood enum
  */
-export const moodEnum = z.enum(['CONFIDENT', 'NEUTRAL', 'ANXIOUS', 'FOMO', 'REVENGE']);
+export const moodEnum = z.enum(['CALM', 'CONFIDENT', 'NEUTRAL', 'ANXIOUS', 'FOMO', 'REVENGE']);
 
 /**
  * Plan compliance enum

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { auth } from '@/lib/auth';
 import { validateBody, tradeUpdateSchema } from '@/lib/validations';
 import { deleteFile } from '@/lib/storage';
 
@@ -7,14 +8,27 @@ export async function GET(
     _request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id } = await params;
+
+    // Verify ownership before returning media
+    const trade = await prisma.trade.findFirst({
+        where: { id, account: { userId: session.user.id } },
+        select: { id: true },
+    });
+    if (!trade) {
+        return NextResponse.json({ error: 'Trade not found' }, { status: 404 });
+    }
 
     const media = await prisma.media.findMany({
         where: { tradeId: id },
         select: { id: true, filename: true, timeframe: true },
     });
 
-    // Return media with URL paths for fetching files
     const mediaWithUrls = media.map(m => ({
         id: m.id,
         url: `/api/media/${m.id}/file`,
@@ -28,6 +42,11 @@ export async function PATCH(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id } = await params;
 
     const validation = await validateBody(request, tradeUpdateSchema);
@@ -37,9 +56,9 @@ export async function PATCH(
 
     const body = validation.data;
 
-    // Get the trade to find the account/user for strategy creation
-    const existingTrade = await prisma.trade.findUnique({
-        where: { id },
+    // Verify ownership
+    const existingTrade = await prisma.trade.findFirst({
+        where: { id, account: { userId: session.user.id } },
         include: { account: true },
     });
     if (!existingTrade) {
@@ -65,9 +84,8 @@ export async function PATCH(
         }
     }
 
-    // Build update data object with only provided fields
     const updateData: Record<string, unknown> = {};
-    
+
     if (body.symbol !== undefined) updateData.symbol = body.symbol;
     if (body.type !== undefined) updateData.direction = body.type;
     if (body.volume !== undefined) updateData.volume = body.volume;
@@ -97,20 +115,31 @@ export async function DELETE(
     _request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id } = await params;
 
-    // Get all media files for this trade
+    // Verify ownership before deleting
+    const trade = await prisma.trade.findFirst({
+        where: { id, account: { userId: session.user.id } },
+        select: { id: true },
+    });
+    if (!trade) {
+        return NextResponse.json({ error: 'Trade not found' }, { status: 404 });
+    }
+
     const mediaFiles = await prisma.media.findMany({
         where: { tradeId: id },
         select: { filename: true },
     });
 
-    // Delete all files from storage
     for (const media of mediaFiles) {
         await deleteFile(media.filename);
     }
 
-    // Delete media records and trade
     await prisma.media.deleteMany({ where: { tradeId: id } });
     await prisma.trade.delete({ where: { id } });
 

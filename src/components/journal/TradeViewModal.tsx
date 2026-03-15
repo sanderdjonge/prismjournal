@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Eye, TrendingUp, TrendingDown, Zap, Brain, FileText, CheckCircle2, XCircle, Smile, Meh, Frown, ImageOff } from 'lucide-react';
+import { X, Eye, TrendingUp, TrendingDown, Zap, Brain, FileText, CheckCircle2, XCircle, Meh, ImageOff } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import type { JournalTrade } from '@/app/journal/page';
+import { MOOD_CONFIG } from '@/constants/tradeConfig';
 
 interface TradeViewModalProps {
     trade: JournalTrade | null;
@@ -19,11 +20,6 @@ interface MediaItem {
     timeframe: string;
 }
 
-const MOOD_CONFIG: Record<string, { icon: typeof Smile; color: string; bg: string }> = {
-    CALM: { icon: Smile, color: 'text-accent', bg: 'bg-accent/10' },
-    NEUTRAL: { icon: Meh, color: 'text-gray-400', bg: 'bg-white/10' },
-    ANXIOUS: { icon: Frown, color: 'text-danger', bg: 'bg-danger/10' },
-};
 
 export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: TradeViewModalProps) {
     const [media, setMedia] = useState<MediaItem[]>([]);
@@ -48,8 +44,9 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
     if (!trade) return null;
 
     const isClosed = !!trade.exitTime;
-    const MoodIcon = MOOD_CONFIG[trade.mood || 'NEUTRAL']?.icon || Meh;
-    const moodConfig = MOOD_CONFIG[trade.mood || 'NEUTRAL'] || MOOD_CONFIG.NEUTRAL;
+    const moodKey = (trade.mood || 'NEUTRAL') as keyof typeof MOOD_CONFIG;
+    const MoodIcon = MOOD_CONFIG[moodKey]?.icon || Meh;
+    const moodConfig = MOOD_CONFIG[moodKey] || MOOD_CONFIG.NEUTRAL;
 
     return (
         <AnimatePresence>

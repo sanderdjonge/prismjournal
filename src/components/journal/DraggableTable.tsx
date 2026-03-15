@@ -14,6 +14,7 @@ import {
     STORAGE_KEY_PER_PAGE,
     STORAGE_KEY_SORT,
 } from './trade-table';
+import { calcRROrZero } from '@/lib/tradeCalculations';
 
 // Helper function to get sort value
 function getSortValue(trade: Trade, col: string): string | number {
@@ -28,17 +29,7 @@ function getSortValue(trade: Trade, col: string): string | number {
         case 'tp': return trade.takeProfit ?? 0;
         case 'sl': return trade.stopLoss ?? 0;
         case 'status': return trade.exitTime ? 1 : 0;
-        case 'rr': {
-            if (!trade.stopLoss || !trade.entry || trade.entry === 0) return 0;
-            const risk = Math.abs(trade.entry - trade.stopLoss);
-            if (risk === 0) return 0;
-            if (!trade.exitTime) {
-                return trade.takeProfit ? Math.abs(trade.takeProfit - trade.entry) / risk : 0;
-            }
-            return trade.pnl >= 0
-                ? Math.abs(trade.exit - trade.entry) / risk
-                : -(Math.abs(trade.exit - trade.entry) / risk);
-        }
+        case 'rr': return calcRROrZero(trade);
         default: return 0;
     }
 }
