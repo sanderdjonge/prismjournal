@@ -3,11 +3,14 @@
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useDebouncedCallback } from 'use-debounce';
+import { toast } from 'sonner';
 import DashboardShell from '@/components/layout/DashboardShell';
 import DraggableTable from '@/components/journal/DraggableTable';
 import TradeViewModal from '@/components/journal/TradeViewModal';
 import TradeEditModal from '@/components/journal/TradeEditModal';
 import TradeEntryModal from '@/components/journal/TradeEntryModal';
+import { SkeletonRow } from '@/components/ui';
+import { useTrades, useDeleteTrade, TradeFilters } from '@/hooks/useTrades';
 import { Search, Plus, Zap, Calendar, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 
 export type JournalTrade = {
@@ -32,35 +35,48 @@ export type JournalTrade = {
     exitTime?: string | null;
 };
 
-type Pagination = {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-};
-
 function JournalContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
 
-    // Initialize state from URL params
-    const [trades, setTrades] = useState<JournalTrade[]>([]);
-    const [loading, setLoading] = useState(true);
+    // Filter state (kept as-is to feed into query key)
     const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
     const [filterSide, setFilterSide] = useState<string>(searchParams.get('side') || 'ALL');
     const [filterResult, setFilterResult] = useState<string>(searchParams.get('result') || 'ALL');
     const [dateFrom, setDateFrom] = useState(searchParams.get('from') || '');
     const [dateTo, setDateTo] = useState(searchParams.get('to') || '');
+    const [page, setPage] = useState(parseInt(searchParams.get('page') || '1'));
+
+    // Modal state
     const [selectedTrade, setSelectedTrade] = useState<JournalTrade | null>(null);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [pagination, setPagination] = useState<Pagination>({
-        page: parseInt(searchParams.get('page') || '1'),
-        limit: 50,
-        total: 0,
-        totalPages: 0,
-    });
+
+    // Build filters object for React Query
+    const filters: TradeFilters = {
+        q: searchQuery || undefined,
+        side: filterSide !== 'ALL' ? filterSide : undefined,
+        result: filterResult !== 'ALL' ? filterResult : undefined,
+        from: dateFrom || undefined,
+        to: dateTo || undefined,
+        page,
+    };
+
+    // React Query hook for fetching trades
+    const { data, isFetching, isError, refetch } = useTrades(filters);
+    const deleteTrade = useDeleteTrade();
+
+    // Derived state from React Query
+    const trades = (data?.trades as JournalTrade[] | undefined) ?? [];
+    const pagination = data?.pagination ?? { page: 1, limit: 50, total: 0, totalPages: 1 };
+
+    // Show error toast on fetch failure
+    useEffect(() => {
+        if (isError) {
+            toast.error('Failed to load trades');
+        }
+    }, [isError]);
 
     // Update URL params when filters change
     const updateUrlParams = useCallback((params: Record<string, string | null>) => {
@@ -81,42 +97,12 @@ function JournalContent() {
         router.replace(newUrl, { scroll: false });
     }, [searchParams, router]);
 
-    // Fetch trades with server-side filtering
-    const fetchTrades = useCallback(async (page: number = 1) => {
-        setLoading(true);
-        try {
-            const params = new URLSearchParams();
-
-            if (searchQuery) params.set('q', searchQuery);
-            if (filterSide !== 'ALL') params.set('side', filterSide);
-            if (filterResult !== 'ALL') params.set('result', filterResult);
-            if (dateFrom) params.set('from', dateFrom);
-            if (dateTo) params.set('to', dateTo);
-            params.set('page', page.toString());
-
-            const res = await fetch(`/api/trades?${params.toString()}`);
-            const data = await res.json();
-
-            setTrades(data.trades);
-            setPagination(data.pagination);
-        } catch (err) {
-            console.error('Failed to fetch trades', err);
-        } finally {
-            setLoading(false);
-        }
-    }, [searchQuery, filterSide, filterResult, dateFrom, dateTo]);
-
     // Debounced search to prevent excessive API calls
     const debouncedSearch = useDebouncedCallback((value: string) => {
         setSearchQuery(value);
+        setPage(1); // Reset to page 1 on search
         updateUrlParams({ q: value || null });
     }, 300);
-
-    // Effect to fetch trades when filters change
-    useEffect(() => {
-        fetchTrades(1); // Reset to page 1 when filters change
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [searchQuery, filterSide, filterResult, dateFrom, dateTo]);
 
     // Update URL when filters change
     useEffect(() => {
@@ -128,8 +114,14 @@ function JournalContent() {
         });
     }, [filterSide, filterResult, dateFrom, dateTo, updateUrlParams]);
 
+    // Reset to page 1 when filters change
+    useEffect(() => {
+        setPage(1);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchQuery, filterSide, filterResult, dateFrom, dateTo]);
+
     const handlePageChange = (newPage: number) => {
-        fetchTrades(newPage);
+        setPage(newPage);
         updateUrlParams({ page: newPage.toString() });
     };
 
@@ -158,24 +150,29 @@ function JournalContent() {
         setIsEditModalOpen(true);
     };
 
-    const handleTradeSaved = (updated: JournalTrade) => {
-        setTrades(prev => prev.map(t => t.id === updated.id ? { ...t, ...updated } : t));
+    const handleTradeSaved = () => {
+        // React Query will automatically refetch via invalidation
+        refetch();
         setIsEditModalOpen(false);
         setSelectedTrade(null);
     };
 
-    const handleTradeDeleted = (id: string) => {
-        setTrades(prev => prev.filter(t => t.id !== id));
-        setIsEditModalOpen(false);
-        setIsViewModalOpen(false);
-        setSelectedTrade(null);
+    const handleTradeDeleted = async (id: string) => {
+        try {
+            await deleteTrade.mutateAsync(id);
+            toast.success('Trade deleted');
+            setIsEditModalOpen(false);
+            setIsViewModalOpen(false);
+            setSelectedTrade(null);
+        } catch (err) {
+            toast.error('Failed to delete trade');
+        }
     };
 
-    const handleTradeAdded = (trade: JournalTrade) => {
-        setTrades(prev => [trade, ...prev]);
+    const handleTradeAdded = () => {
+        // React Query will automatically refetch via invalidation
+        refetch();
         setIsModalOpen(false);
-        // Refresh to get accurate pagination
-        fetchTrades(1);
     };
 
     const handleExportCsv = async () => {
@@ -200,7 +197,7 @@ function JournalContent() {
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
         } catch (err) {
-            console.error('Export failed', err);
+            toast.error('Export failed');
         }
     };
 
@@ -309,9 +306,11 @@ function JournalContent() {
 
                 {/* Main Table Container */}
                 <div className="glass-card border-white/5 bg-black/40 backdrop-blur-md overflow-hidden">
-                    {loading ? (
-                        <div className="flex items-center justify-center h-48 text-gray-600 text-[10px] font-black uppercase tracking-widest">
-                            Loading Vault...
+                    {isFetching && !data ? (
+                        <div className="divide-y divide-white/5">
+                            {Array.from({ length: 8 }).map((_, i) => (
+                                <SkeletonRow key={i} />
+                            ))}
                         </div>
                     ) : trades.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-48 gap-3 text-gray-600">
