@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { randomBytes } from 'crypto';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { validateBody, registerSchema } from '@/lib/validations';
+import { generateBridgeKey } from '@/lib/getAccount';
 
 export async function POST(request: Request) {
     try {
@@ -19,12 +19,17 @@ export async function POST(request: Request) {
         }
 
         const hashedPassword = await bcrypt.hash(body.password, 12);
+        
+        // Generate bridge key for the new user
+        const { key, keyId, keyHash } = generateBridgeKey();
 
         const user = await prisma.user.create({
             data: {
                 email: body.email,
                 password: hashedPassword,
                 name: body.name ?? body.email.split('@')[0],
+                bridgeKeyId: keyId,
+                bridgeKeyHash: keyHash,
             },
         });
 
@@ -38,11 +43,17 @@ export async function POST(request: Request) {
                 accountNumber: `MANUAL-${user.id.slice(-8).toUpperCase()}`,
                 currency: 'USD',
                 leverage: 100,
-                bridgeKey: `prism_${randomBytes(24).toString('hex')}`,
+                platform: 'METATRADER5',
+                platformAccountId: `MANUAL-${user.id.slice(-8).toUpperCase()}`,
             },
         });
 
-        return NextResponse.json({ id: user.id, email: user.email, name: user.name });
+        return NextResponse.json({ 
+            id: user.id, 
+            email: user.email, 
+            name: user.name,
+            bridgeKey: key, // Return the bridge key once during registration
+        });
     } catch (error) {
         console.error('Register error:', error);
         return NextResponse.json({ error: String(error) }, { status: 500 });

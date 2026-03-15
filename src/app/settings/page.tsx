@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import DashboardShell from '@/components/layout/DashboardShell';
+import Link from 'next/link';
 import {
     Link as LinkIcon,
     Bell,
@@ -19,6 +20,7 @@ import {
     Smartphone,
     QrCode,
     Key,
+    Wallet,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
@@ -219,6 +221,13 @@ export default function SettingsPage() {
                             {tab.label}
                         </button>
                     ))}
+                    <Link
+                        href="/settings/accounts"
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 border font-bold uppercase tracking-widest text-[10px] text-gray-500 hover:text-white hover:bg-white/5 border-transparent"
+                    >
+                        <Wallet size={16} />
+                        Accounts
+                    </Link>
                 </aside>
 
                 {/* Content Area */}

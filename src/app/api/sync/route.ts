@@ -1,18 +1,28 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getAccountByBridgeKey } from '@/lib/getAccount';
+import { getUserByBridgeKey, getAccountByPlatformId } from '@/lib/getAccount';
 import { validateBody, syncPayloadSchema, type SyncTrade } from '@/lib/validations';
 import { upsertSyncTrade } from '@/lib/services/trade-sync.service';
 import { saveEquitySnapshot } from '@/lib/services/equity.service';
 
+/**
+ * POST /api/sync
+ * 
+ * Sync endpoint for MT5/cTrader bridge.
+ * 
+ * With multi-account support:
+ * - Bridge key authenticates the user (now on User model, not TradingAccount)
+ * - platform + platformAccountId in payload routes to correct account
+ * - If no platform info provided, uses first active account (backwards compatibility)
+ */
 export async function POST(request: Request) {
     const bridgeKey = request.headers.get('X-Bridge-Key');
     if (!bridgeKey) {
         return NextResponse.json({ error: 'Missing X-Bridge-Key' }, { status: 400 });
     }
 
-    const account = await getAccountByBridgeKey(bridgeKey);
-    if (!account) {
+    const user = await getUserByBridgeKey(bridgeKey);
+    if (!user) {
         return NextResponse.json({ error: 'Invalid bridge key' }, { status: 401 });
     }
 
@@ -24,13 +34,58 @@ export async function POST(request: Request) {
     const payload = validation.data;
 
     try {
+        // Determine which account to use
+        let account;
+        
+        if (payload.platformAccountId) {
+            // Multi-account routing: find account by platform + platformAccountId
+            account = await getAccountByPlatformId(
+                user.id,
+                payload.platform ?? 'METATRADER5',
+                payload.platformAccountId
+            );
+            
+            if (!account) {
+                // Auto-create account if it doesn't exist
+                const platform = payload.platform ?? 'METATRADER5';
+                account = await prisma.tradingAccount.create({
+                    data: {
+                        userId: user.id,
+                        name: `${platform} #${payload.platformAccountId}`,
+                        platform: platform,
+                        platformAccountId: payload.platformAccountId,
+                        accountNumber: payload.platformAccountId,
+                        currency: 'USD',
+                        leverage: 100,
+                    },
+                });
+            }
+        } else {
+            // Backwards compatibility: use first active account
+            account = user.accounts[0];
+            
+            if (!account) {
+                // Create default account if none exists
+                account = await prisma.tradingAccount.create({
+                    data: {
+                        userId: user.id,
+                        name: 'Default Account',
+                        platform: 'METATRADER5',
+                        currency: 'USD',
+                        leverage: 100,
+                    },
+                });
+            }
+        }
+
         if (payload.type === 'TRADE_UPDATE') {
             await upsertSyncTrade(account.id, account.userId, payload.trade as SyncTrade);
         } else if (payload.type === 'EQUITY_SNAPSHOT') {
             await saveEquitySnapshot(account.id, account.userId, payload.snapshot);
         }
         return NextResponse.json({ success: true });
-    } catch {
+    } catch (error) {
+        console.error('Sync error:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
