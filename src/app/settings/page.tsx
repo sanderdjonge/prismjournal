@@ -23,6 +23,7 @@ import {
     Wallet,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { APP_VERSION, versionToPhase } from '@/lib/version';
 
 const CURRENCY_OPTIONS = [
     { label: 'USD - United States Dollar', value: 'USD' },
@@ -845,6 +846,13 @@ export default function SettingsPage() {
                         </div>
                     )}
                 </main>
+            </div>
+
+            {/* Version footer */}
+            <div className="mt-16 pt-6 border-t border-white/5 text-center">
+                <p className="text-[11px] text-gray-600 font-mono tracking-widest uppercase">
+                    PrismJournal v{APP_VERSION} — {versionToPhase(APP_VERSION)}
+                </p>
             </div>
         </DashboardShell>
     );
