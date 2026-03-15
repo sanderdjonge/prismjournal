@@ -42,6 +42,7 @@ model User {
   alertConfig   AlertConfig?
   settings      UserSettings?
   customStats   CustomStat[]
+  tags          Tag[]
 }
 
 // ============================================
@@ -266,13 +267,30 @@ model Media {
   @@index([tradeId])
 }
 
+model Tag {
+  id        String     @id @default(cuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  color     String?    @default("#00f2ff")  // hex color for UI badge
+  createdAt DateTime   @default(now())
+
+  trades    TradeTag[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
 model TradeTag {
-  id        String @id @default(cuid())
-  tradeId   String
-  trade     Trade  @relation(fields: [tradeId], references: [id])
-  tag       String
-  
+  id      String @id @default(cuid())
+  tradeId String
+  trade   Trade  @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  tagId   String
+  tag     Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([tradeId, tagId])
   @@index([tradeId])
+  @@index([tagId])
 }
 
 // ============================================
