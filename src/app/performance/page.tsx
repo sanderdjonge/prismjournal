@@ -15,7 +15,7 @@ type PerfData = {
     equity: EquityPoint[];
     netPnl: number;
     maxDrawdown: number;
-    sharpe: number;
+    sharpe: number | null;
     profitFactor: number;
     avgWin: number;
     avgLoss: number;
@@ -43,7 +43,7 @@ export default function PerformancePage() {
     const STATS = [
         { id: 'stat_pnl', label: 'Net P&L', val: data ? formatPnl(data.netPnl) : '—', status: data ? (data.netPnl >= 0 ? 'text-accent' : 'text-danger') : 'text-gray-600', icon: TrendingUp },
         { id: 'stat_dd', label: 'Max Drawdown', val: data ? `${data.maxDrawdown.toFixed(2)}%` : '—', status: 'text-danger', icon: ArrowDownLeft },
-        { id: 'stat_sharpe', label: 'Sharpe Ratio', val: data ? data.sharpe.toFixed(2) : '—', status: 'text-primary', icon: Activity },
+        { id: 'stat_sharpe', label: 'Sharpe Ratio', val: data ? (data.sharpe !== null ? data.sharpe.toFixed(2) : 'N/A') : '—', status: 'text-primary', icon: Activity },
         { id: 'stat_pf', label: 'Profit Factor', val: data ? data.profitFactor.toFixed(2) : '—', status: 'text-accent', icon: Target },
     ];
 
