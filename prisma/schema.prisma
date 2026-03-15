@@ -31,6 +31,10 @@ model User {
   // Settings
   defaultCurrency String         @default("EUR")
   
+  // Bridge Key (moved from TradingAccount - one key per user for multi-account support)
+  bridgeKeyId     String?       @unique  // First 12 chars of the key (plain text, used for lookup)
+  bridgeKeyHash   String?               // bcrypt hash of the full key
+  
   // Timestamps
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
@@ -58,9 +62,10 @@ model TradingAccount {
   name            String
   broker          String?
   accountNumber   String?       @unique
-  bridgeKey       String?       @unique  // Deprecated: kept for existing accounts, will be null after re-generation
-  bridgeKeyId     String?       @unique  // First 12 chars of the key (plain text, used for lookup)
-  bridgeKeyHash   String?               // bcrypt hash of the full key
+  
+  // Platform identification (for multi-account routing)
+  platform        TradePlatform @default(METATRADER5)
+  platformAccountId String?     // MT5 login ID, cTrader account ID, etc.
   
   // Account Type (from TradeLens)
   accountType     AccountType   @default(OWN_MONEY)
@@ -103,7 +108,7 @@ model TradingAccount {
   equitySnapshots EquitySnapshot[]
   
   @@index([userId])
-  @@index([bridgeKey])
+  @@unique([userId, platform, platformAccountId])
 }
 
 enum AccountType {
@@ -140,7 +145,7 @@ model Trade {
   strategy         Strategy?     @relation(fields: [strategyId], references: [id])
   
   // Core trade data
-  ticket           String?       @unique
+  ticket           String?       @unique  // External platform ticket/ID (MT5 ticket, cTrader position ID, etc.)
   symbol           String
   direction        TradeDirection
   status           TradeStatus   @default(OPEN)
@@ -229,6 +234,7 @@ enum TradeSource {
 enum TradePlatform {
   TRADINGVIEW
   METATRADER5
+  CTRADER
   MANUAL
 }
 

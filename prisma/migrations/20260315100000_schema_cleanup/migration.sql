@@ -8,6 +8,19 @@ ALTER TABLE "Trade"
   DROP COLUMN IF EXISTS "emotionalState",
   ALTER COLUMN "mood" TYPE "Mood" USING "mood"::"Mood";
 
--- AlterTable: convert filterConfig from text to jsonb
-ALTER TABLE "CustomStat"
-  ALTER COLUMN "filterConfig" TYPE JSONB USING "filterConfig"::JSONB;
+-- CreateTable: Create CustomStat table if it doesn't exist (was missing from earlier migrations)
+CREATE TABLE IF NOT EXISTS "CustomStat" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "filterConfig" JSONB NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "CustomStat_pkey" PRIMARY KEY ("id")
+);
+
+CREATE INDEX IF NOT EXISTS "CustomStat_userId_idx" ON "CustomStat"("userId");
+
+ALTER TABLE "CustomStat" ADD CONSTRAINT "CustomStat_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

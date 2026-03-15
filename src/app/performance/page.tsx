@@ -7,6 +7,7 @@ import Gauge from '@/components/dashboard/Gauge';
 import { TrendingUp, ArrowDownLeft, Activity, Target, BarChart3 } from 'lucide-react';
 import { useCurrency } from '@/lib/currency';
 import { cn } from '@/lib/cn';
+import { useAccounts } from '@/hooks/useAccounts';
 
 type EquityPoint = { time: string; value: number };
 type MonthlyReturn = { month: number; value: number };
@@ -21,6 +22,7 @@ type PerfData = {
     avgLoss: number;
     expectancy: number;
     monthlyReturns: MonthlyReturn[];
+    accountCount?: number;
 };
 
 const MONTH_LABELS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
@@ -30,15 +32,20 @@ export default function PerformancePage() {
     const [period, setPeriod] = useState<'7' | '30' | '90' | '365'>('30');
     const [loading, setLoading] = useState(true);
     const { formatPnl, formatAmount } = useCurrency();
+    const { selectedAccountId } = useAccounts();
 
     useEffect(() => {
         setLoading(true);
-        fetch(`/api/performance?period=${period}`)
+        const params = new URLSearchParams({ period });
+        if (selectedAccountId) {
+            params.set('accountId', selectedAccountId);
+        }
+        fetch(`/api/performance?${params.toString()}`)
             .then(r => r.json())
             .then(setData)
             .catch(() => { /* silently ignore */ })
             .finally(() => setLoading(false));
-    }, [period]);
+    }, [period, selectedAccountId]);
 
     const STATS = [
         { id: 'stat_pnl', label: 'Net P&L', val: data ? formatPnl(data.netPnl) : '—', status: data ? (data.netPnl >= 0 ? 'text-accent' : 'text-danger') : 'text-gray-600', icon: TrendingUp },

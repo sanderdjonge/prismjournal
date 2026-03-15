@@ -52,9 +52,20 @@ export {
   syncTradeSchema,
   syncEquitySnapshotSchema,
   syncTradeTypeEnum,
+  syncPlatformEnum,
   type SyncPayload,
   type TradeUpdatePayload,
   type EquitySnapshotPayload,
   type SyncTrade,
   type SyncEquitySnapshot,
 } from './sync';
+
+// Account validation
+export {
+  createAccountSchema,
+  updateAccountSchema,
+  accountPlatformEnum,
+  accountTypeEnum,
+  type CreateAccountInput,
+  type UpdateAccountInput,
+} from './account';
