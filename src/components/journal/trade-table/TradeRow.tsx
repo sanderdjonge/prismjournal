@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Eye, Pencil } from 'lucide-react';
+import { cn } from '@/lib/cn';
 import type { Trade, Column } from './types';
 import { calcRR } from '@/lib/tradeCalculations';
 
@@ -18,7 +19,13 @@ export function TradeRow({ trade, columns, onView, onEdit }: TradeRowProps) {
     return (
         <tr key={trade.id} className="group hover:bg-white/[0.02] transition-colors">
             {columns.filter(c => c.visible).map((col) => (
-                <td key={`${trade.id}-${col.id}`} className="px-4 py-2.5 whitespace-nowrap">
+                <td
+                    key={`${trade.id}-${col.id}`}
+                    className={cn(
+                        "px-4 py-2.5 whitespace-nowrap",
+                        !col.mobileVisible && "hidden md:table-cell"
+                    )}
+                >
                     {col.id === 'time' && (
                         <div className="text-xs text-gray-300">
                             {trade.entryTime ? new Date(trade.entryTime).toLocaleDateString() : '—'}

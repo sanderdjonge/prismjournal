@@ -3,6 +3,7 @@
 import React from 'react';
 import { Reorder } from 'framer-motion';
 import { GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
+import { cn } from '@/lib/cn';
 import type { Column, SortDir } from './types';
 
 interface TableHeaderProps {
@@ -13,12 +14,12 @@ interface TableHeaderProps {
     onSort: (colId: string) => void;
 }
 
-export function TableHeader({ 
-    columns, 
-    onReorderColumns, 
-    sortCol, 
-    sortDir, 
-    onSort 
+export function TableHeader({
+    columns,
+    onReorderColumns,
+    sortCol,
+    sortDir,
+    onSort
 }: TableHeaderProps) {
     return (
         <thead className="bg-white/5">
@@ -34,7 +35,11 @@ export function TableHeader({
                         key={col.id}
                         value={col}
                         as="th"
-                        className={`px-4 py-3 select-none ${col.sortable ? 'cursor-pointer hover:bg-white/5' : 'cursor-grab active:cursor-grabbing'} transition-colors`}
+                        className={cn(
+                            "px-4 py-3 select-none transition-colors",
+                            col.sortable ? 'cursor-pointer hover:bg-white/5' : 'cursor-grab active:cursor-grabbing',
+                            !col.mobileVisible && "hidden md:table-cell"
+                        )}
                         onClick={() => col.sortable && onSort(col.id)}
                     >
                         <div className="flex items-center gap-1.5">
