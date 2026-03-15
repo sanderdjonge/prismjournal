@@ -7,9 +7,24 @@ import {
     Zap,
     ShieldAlert,
     Info,
-    RefreshCcw
 } from 'lucide-react';
 import { useCurrency } from '@/lib/currency';
+import { CONTRACT_SIZES } from '@/lib/tradeCalculations';
+
+/** Approximate pip value in USD per lot for each instrument group */
+function getPipValue(symbol: string): number {
+    const upper = symbol.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const cs = CONTRACT_SIZES[upper];
+    if (!cs) return 10; // fallback
+    if (upper.includes('JPY')) return (cs * 0.01) / 150; // approximate ¥/$ rate
+    if (upper === 'XAUUSD') return cs * 0.01;             // gold: 1 pip = 0.01
+    if (upper === 'XAGUSD') return cs * 0.001;            // silver: 1 pip = 0.001
+    if (cs === 1000) return 1;                             // oil: 1 pip = $0.001 * 1000 = $1 approx
+    if (cs === 1) return 1;                                // indices: 1 point = $1
+    return cs * 0.0001;                                    // forex standard
+}
+
+const INSTRUMENTS = Object.keys(CONTRACT_SIZES);
 
 export default function CalculatorPage() {
     const [balance, setBalance] = useState<number>(100000);
@@ -18,29 +33,16 @@ export default function CalculatorPage() {
     const [pair, setPair] = useState<string>('EURUSD');
     const { formatAmount, symbol } = useCurrency();
 
-    // Derived values using useMemo instead of useEffect + setState
-    const { lots, riskAmount } = useMemo(() => {
+    const { lots, riskAmount, pipValue } = useMemo(() => {
         const riskVal = balance * (riskPercent / 100);
-
-        // Standard 1 Lot = 100,000 units
-        // 1 Pip in EURUSD = 0.0001
-        // Value of 1 Pip for 1 Lot = $10 (for USD based)
-        // Formula: Lot Size = Risk Amount / (Stop Loss in Pips * Value of 1 Pip)
-
-        let pipValue = 10; // Default for many USD pairs
-        if (pair.includes('JPY')) pipValue = 1000 / 150; // Approximated
-
-        const calculatedLots = riskVal / (stopLossPips * pipValue);
+        const pv = getPipValue(pair);
+        const calculatedLots = stopLossPips > 0 ? riskVal / (stopLossPips * pv) : 0;
         return {
             lots: Number(calculatedLots.toFixed(2)),
-            riskAmount: riskVal
+            riskAmount: riskVal,
+            pipValue: pv,
         };
     }, [balance, riskPercent, stopLossPips, pair]);
-
-    const calculateSize = () => {
-        // This function is kept for the manual "Re-compute" button
-        // but the values are already computed via useMemo
-    };
 
     return (
         <DashboardShell>
@@ -69,11 +71,9 @@ export default function CalculatorPage() {
                                     onChange={(e) => setPair(e.target.value)}
                                     className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-lg font-black text-white outline-none focus:border-primary/50 transition-all appearance-none"
                                 >
-                                    <option>EURUSD</option>
-                                    <option>GBPUSD</option>
-                                    <option>USDJPY</option>
-                                    <option>XAUUSD (Gold)</option>
-                                    <option>NAS100</option>
+                                    {INSTRUMENTS.map(inst => (
+                                        <option key={inst} value={inst}>{inst}</option>
+                                    ))}
                                 </select>
                             </div>
 
@@ -110,12 +110,6 @@ export default function CalculatorPage() {
                             </div>
                         </div>
 
-                        <button
-                            onClick={calculateSize}
-                            className="w-full py-5 rounded-2xl bg-white/5 border border-white/10 text-xs font-black uppercase tracking-[0.3em] text-gray-400 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center gap-3"
-                        >
-                            <RefreshCcw size={16} /> Re-compute Edge
-                        </button>
                     </div>
 
                     {/* Results Display */}
@@ -143,7 +137,7 @@ export default function CalculatorPage() {
                             <div className="pt-6 border-t border-white/5 space-y-3">
                                 <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-gray-600">
                                     <span>Pip Value (Approx)</span>
-                                    <span className="text-white">{symbol}10.00</span>
+                                    <span className="text-white">{symbol}{pipValue.toFixed(2)}/lot</span>
                                 </div>
                                 <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-gray-600">
                                     <span>Risk/Reward Ratio</span>
