@@ -500,18 +500,27 @@ export default function SettingsPage() {
                                                 <h5 className="text-sm font-bold text-white">Weekly Performance Digest</h5>
                                                 <p className="text-[10px] text-gray-500">Receive a weekly summary of your trading performance</p>
                                             </div>
-                                            <button
-                                                onClick={() => setNotifs((prev) => ({ ...prev, enableWeeklyDigestEmail: !prev.enableWeeklyDigestEmail }))}
-                                                className={cn(
-                                                    "w-12 h-6 rounded-full transition-all relative shrink-0",
-                                                    notifs.enableWeeklyDigestEmail ? "bg-primary/40" : "bg-white/10"
-                                                )}
-                                            >
-                                                <div className={cn(
-                                                    "absolute top-1 w-4 h-4 rounded-full transition-all shadow-lg",
-                                                    notifs.enableWeeklyDigestEmail ? "right-1 bg-primary" : "left-1 bg-gray-700"
-                                                )} />
-                                            </button>
+                                            <div className="flex items-center gap-3">
+                                                <a
+                                                    href="/api/cron/digest/preview"
+                                                    target="_blank"
+                                                    className="text-[10px] font-black uppercase tracking-widest text-primary hover:text-primary/80 transition-colors"
+                                                >
+                                                    Preview →
+                                                </a>
+                                                <button
+                                                    onClick={() => setNotifs((prev) => ({ ...prev, enableWeeklyDigestEmail: !prev.enableWeeklyDigestEmail }))}
+                                                    className={cn(
+                                                        "w-12 h-6 rounded-full transition-all relative shrink-0",
+                                                        notifs.enableWeeklyDigestEmail ? "bg-primary/40" : "bg-white/10"
+                                                    )}
+                                                >
+                                                    <div className={cn(
+                                                        "absolute top-1 w-4 h-4 rounded-full transition-all shadow-lg",
+                                                        notifs.enableWeeklyDigestEmail ? "right-1 bg-primary" : "left-1 bg-gray-700"
+                                                    )} />
+                                                </button>
+                                            </div>
                                         </div>
                                         <div className="flex items-center justify-between py-2">
                                             <div>
