@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getDefaultAccount } from '@/lib/getAccount';
-import { calculateProfitFactor } from '../../../../server/utils/analytics_compute';
+import { calculateProfitFactor } from '@/lib/analytics';
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
