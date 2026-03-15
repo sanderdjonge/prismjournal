@@ -3,7 +3,11 @@ import prisma from '@/lib/prisma';
 import { getDefaultAccount } from '@/lib/getAccount';
 import { calculateProfitFactor } from '@/lib/analytics';
 
-export async function GET() {
+export async function GET(request: Request) {
+    const { searchParams } = new URL(request.url);
+    const from = searchParams.get('from');
+    const to = searchParams.get('to');
+
     const account = await getDefaultAccount();
 
     if (!account) {
@@ -18,8 +22,18 @@ export async function GET() {
         });
     }
 
+    // Build date filter
+    const dateFilter: { gte?: Date; lte?: Date } = {};
+    if (from) dateFilter.gte = new Date(from);
+    if (to) dateFilter.lte = new Date(to);
+
     const trades = await prisma.trade.findMany({
-        where: { accountId: account.id, pnl: { not: null }, exitTime: { not: null } },
+        where: {
+            accountId: account.id,
+            pnl: { not: null },
+            exitTime: { not: null },
+            ...(Object.keys(dateFilter).length > 0 && { entryTime: dateFilter }),
+        },
         orderBy: { entryTime: 'asc' },
     });
 
@@ -66,7 +80,10 @@ export async function GET() {
 
     // --- Session distribution (by entry hour) - ALL trades, not just closed with PnL ---
     const allTradesForHours = await prisma.trade.findMany({
-        where: { accountId: account.id },
+        where: {
+            accountId: account.id,
+            ...(Object.keys(dateFilter).length > 0 && { entryTime: dateFilter }),
+        },
         select: { entryTime: true, pnl: true, exitTime: true },
     });
 
