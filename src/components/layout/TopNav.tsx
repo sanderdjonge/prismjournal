@@ -15,6 +15,7 @@ import { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { cn } from '@/lib/cn';
 import NotificationCenter from './NotificationCenter';
+import AccountSwitcher from './AccountSwitcher';
 
 const MENU_ITEMS = [
     { label: 'Dashboard', href: '/' },
@@ -83,6 +84,9 @@ export default function TopNav() {
 
                 {/* Right Side Tools */}
                 <div className="flex items-center gap-4 md:gap-6">
+                    {/* Account Switcher */}
+                    <AccountSwitcher />
+
                     {/* Notification Center */}
                     <NotificationCenter />
 
