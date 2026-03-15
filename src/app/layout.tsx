@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Providers from "@/components/Providers";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -27,10 +28,12 @@ export default function RootLayout({
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className="antialiased min-h-screen">
         <Providers>
-          <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_50%,_rgba(0,102,255,0.05)_0%,_transparent_50%)] pointer-events-none" />
-          <main className="relative z-10">
-            {children}
-          </main>
+          <ErrorBoundary>
+            <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_50%,_rgba(0,102,255,0.05)_0%,_transparent_50%)] pointer-events-none" />
+            <main className="relative z-10">
+              {children}
+            </main>
+          </ErrorBoundary>
         </Providers>
       </body>
     </html>
