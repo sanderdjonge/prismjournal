@@ -23,7 +23,9 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
     "@prisma/client": "^6.5.0",
+    "@tanstack/react-query": "^5.90.21",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "dayjs": "^1.11.20",
@@ -36,8 +38,10 @@
     "qrcode": "^1.5.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-hook-form": "^7.71.2",
     "recharts": "^3.8.0",
     "resend": "^6.9.3",
+    "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",
     "use-debounce": "^10.1.0",
     "zod": "^3.24.2"
