@@ -6,7 +6,7 @@ import Gauge from '@/components/dashboard/Gauge';
 import {
     ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ComposedChart, Line,
 } from 'recharts';
-import { Target, Zap } from 'lucide-react';
+import { Target, Zap, X } from 'lucide-react';
 import { useCurrency } from '@/lib/currency';
 
 type SymbolRow = { symbol: string; profit: number; winRate: number };
@@ -25,14 +25,21 @@ type AnalyticsData = {
 
 export default function AnalyticsPage() {
     const [data, setData] = useState<AnalyticsData | null>(null);
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
     const { formatAmount } = useCurrency();
 
     useEffect(() => {
-        fetch('/api/analytics')
+        const params = new URLSearchParams();
+        if (dateFrom) params.set('from', dateFrom);
+        if (dateTo) params.set('to', dateTo);
+        const url = `/api/analytics${params.toString() ? `?${params.toString()}` : ''}`;
+
+        fetch(url)
             .then(r => r.json())
             .then(setData)
             .catch(() => { /* silently ignore */ });
-    }, []);
+    }, [dateFrom, dateTo]);
 
     const symbolData = data?.symbolData ?? [];
     const expectancyData = data?.expectancyData ?? [];
@@ -49,6 +56,33 @@ export default function AnalyticsPage() {
                             Advanced Statistical Performance Audit // Live Compute
                         </p>
                     </div>
+                </div>
+
+                {/* Date Range Selector */}
+                <div className="flex items-center gap-4 glass-card p-4 border-white/5 bg-white/5 rounded-xl">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Date Range</span>
+                    <input
+                        type="date"
+                        value={dateFrom}
+                        onChange={e => setDateFrom(e.target.value)}
+                        className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm font-bold text-white outline-none focus:border-primary/50"
+                    />
+                    <span className="text-gray-600 font-bold">→</span>
+                    <input
+                        type="date"
+                        value={dateTo}
+                        onChange={e => setDateTo(e.target.value)}
+                        className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm font-bold text-white outline-none focus:border-primary/50"
+                    />
+                    {(dateFrom || dateTo) && (
+                        <button
+                            onClick={() => { setDateFrom(''); setDateTo(''); }}
+                            className="flex items-center gap-1 text-xs text-gray-500 hover:text-white font-bold uppercase tracking-widest transition-colors"
+                        >
+                            <X size={12} />
+                            Clear
+                        </button>
+                    )}
                 </div>
 
                 {/* Gauges Row */}
