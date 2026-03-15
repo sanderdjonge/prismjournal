@@ -1,9 +1,18 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET;
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
     if (!BOT_TOKEN) return NextResponse.json({ ok: false });
+
+    // Verify webhook secret if configured
+    if (WEBHOOK_SECRET) {
+        const secretHeader = request.headers.get('x-telegram-bot-api-secret-token');
+        if (secretHeader !== WEBHOOK_SECRET) {
+            return NextResponse.json({ ok: false }, { status: 401 });
+        }
+    }
 
     const update = await request.json();
     const message = update?.message;
