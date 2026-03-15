@@ -5,7 +5,6 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY;
 // Initialize Resend client lazily
 function getResendClient(): Resend | null {
   if (!RESEND_API_KEY) {
-    console.error('RESEND_API_KEY not configured');
     return null;
   }
   return new Resend(RESEND_API_KEY);
@@ -355,13 +354,11 @@ export async function sendWeeklyDigestEmail(data: WeeklyDigestData): Promise<Ema
     });
 
     if (error) {
-      console.error('Failed to send weekly digest email:', error);
       return { success: false, error: error.message };
     }
 
     return { success: true, messageId: result?.id };
   } catch (e) {
-    console.error('Failed to send weekly digest email:', e);
     return { success: false, error: String(e) };
   }
 }

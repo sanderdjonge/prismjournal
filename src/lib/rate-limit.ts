@@ -37,13 +37,14 @@ export function rateLimit(config: RateLimitConfig): RateLimitResult {
       if (!token || now - token.lastReset > config.interval) {
         tokenCache.set(ip, { count: 1, lastReset: now });
 
-        // Clean up old entries to prevent memory leaks
+        // Clean up old entries to prevent memory leaks — evict least-recently-active IPs
         if (tokenCache.size > config.uniqueTokenPerInterval) {
-          // Remove oldest entries (first in Map)
           const entriesToDelete = tokenCache.size - config.uniqueTokenPerInterval + 1;
-          const keys = Array.from(tokenCache.keys());
-          for (let i = 0; i < Math.min(entriesToDelete, keys.length); i++) {
-            tokenCache.delete(keys[i]);
+          const sortedEntries = Array.from(tokenCache.entries()).sort(
+            ([, a], [, b]) => a.lastReset - b.lastReset
+          );
+          for (let i = 0; i < Math.min(entriesToDelete, sortedEntries.length); i++) {
+            tokenCache.delete(sortedEntries[i][0]);
           }
         }
         return null;

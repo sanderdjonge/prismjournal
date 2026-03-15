@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { generateSecret, generateURI } from 'otplib';
+import { authLimiter } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
+    const rateLimitResult = await authLimiter.check(request, 5);
+    if (rateLimitResult) return rateLimitResult;
+
     try {
         const session = await auth();
         if (!session?.user?.id) {

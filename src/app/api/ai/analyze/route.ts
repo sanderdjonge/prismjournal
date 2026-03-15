@@ -1,18 +1,20 @@
-import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getAIClient, NEBUL_MODEL } from '@/lib/ai';
+import { withAuth } from '@/lib/api/withAuth';
+import { badRequest, internalError, ok } from '@/lib/api/responses';
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request: NextRequest) => {
     let body: { prompt?: string; trade?: Record<string, unknown> };
     try {
         body = await request.json();
     } catch {
-        return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+        return badRequest('Invalid JSON');
     }
 
     const { prompt, trade } = body;
 
     if (!prompt && !trade) {
-        return NextResponse.json({ error: 'Provide a prompt or trade object' }, { status: 400 });
+        return badRequest('Provide a prompt or trade object');
     }
 
     const userMessage = prompt ?? `Analyze this trade and provide actionable feedback:\n${JSON.stringify(trade, null, 2)}`;
@@ -31,11 +33,10 @@ export async function POST(request: Request) {
         });
 
         const content = response.choices[0]?.message?.content ?? '';
-        return NextResponse.json({ result: content, model: response.model });
-    } catch (error) {
-        console.error('AI analysis error:', error);
-        return NextResponse.json({ error: 'AI request failed' }, { status: 500 });
+        return ok({ result: content, model: response.model });
+    } catch {
+        return internalError();
     }
-}
+});
 
 export const runtime = 'nodejs';

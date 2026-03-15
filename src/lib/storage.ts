@@ -7,7 +7,12 @@ const unlink = promisify(fs.unlink);
 const access = promisify(fs.access);
 
 // Storage directory - outside of public for security
-const STORAGE_ROOT = process.env.STORAGE_PATH || path.join(process.cwd(), 'storage');
+const rawStoragePath = process.env.STORAGE_PATH || path.join(process.cwd(), 'storage');
+const FORBIDDEN_PATHS = ['/', '/etc', '/usr', '/bin', '/sbin', '/var', '/sys', '/proc'];
+if (FORBIDDEN_PATHS.includes(rawStoragePath)) {
+    throw new Error(`STORAGE_PATH "${rawStoragePath}" is a system directory and cannot be used`);
+}
+const STORAGE_ROOT = rawStoragePath;
 const SCREENSHOTS_DIR = path.join(STORAGE_ROOT, 'screenshots');
 
 // Ensure storage directory exists
@@ -40,14 +45,16 @@ export async function deleteFile(filename: string): Promise<void> {
     const filepath = path.join(SCREENSHOTS_DIR, filename);
     try {
         await unlink(filepath);
-    } catch (error) {
+    } catch {
         // File might not exist, ignore error
-        console.warn(`Failed to delete file ${filename}:`, error);
     }
 }
 
 // Read file from storage
 export async function readFile(filename: string): Promise<Buffer> {
+    if (!/^\d+-[a-z0-9]+\.(png|jpg|jpeg|webp|gif)$/i.test(filename)) {
+        throw new Error('Invalid filename');
+    }
     const filepath = path.join(SCREENSHOTS_DIR, filename);
     return fs.promises.readFile(filepath);
 }

@@ -49,7 +49,7 @@ export default function Dashboard() {
         fetch(`/api/dashboard?period=${period}`)
             .then(r => r.json())
             .then(setData)
-            .catch(console.error)
+            .catch(() => { /* silently ignore */ })
             .finally(() => setLoading(false));
     }, [period]);
 

@@ -41,6 +41,12 @@ services:
       STORAGE_PATH: "/app/storage"
     ports:
       - "3002:3000"    # Dev app on port 3002
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     volumes:
       - prism_dev_storage:/app/storage
     networks:
@@ -51,7 +57,7 @@ services:
     image: cloudflare/cloudflared:latest
     container_name: prism-dev-tunnel
     restart: unless-stopped
-    command: tunnel --no-autoupdate run --token eyJhIjoiNWFmZTEzNzQ5MGU2YzBlZmNlNTZhOTEyYmQ4ZWVjY2YiLCJ0IjoiN2I5MzMyNjItM2YxNS00MjA4LTk3MjAtMjIzZmEzOTc5MmU3IiwicyI6Ik56TTVPVFl6TVdNdFpEQTBaUzAwWlRsakxUaGpOVEF0WVRVeFlUUXpZVE5qT0RBeCJ9
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
     depends_on:
       - app
     networks:

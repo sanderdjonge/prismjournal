@@ -25,10 +25,8 @@ yarn-error.log*
 
 # Local env files - IMPORTANT: Never commit .env files with secrets!
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
 
 # Vercel
 .vercel

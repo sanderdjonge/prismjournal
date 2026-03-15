@@ -31,8 +31,8 @@ export default function NotificationCenter({ className }: NotificationCenterProp
       const data = await res.json();
       setNotifications(data.notifications || []);
       setUnreadCount(data.unreadCount || 0);
-    } catch (error) {
-      console.error('Failed to fetch notifications:', error);
+    } catch {
+      // silently ignore fetch errors
     }
   };
 
@@ -65,8 +65,8 @@ export default function NotificationCenter({ className }: NotificationCenterProp
       });
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       setUnreadCount(0);
-    } catch (error) {
-      console.error('Failed to mark all as read:', error);
+    } catch {
+      // silently ignore
     } finally {
       setLoading(false);
     }
@@ -84,8 +84,8 @@ export default function NotificationCenter({ className }: NotificationCenterProp
         prev.map(n => (n.id === id ? { ...n, isRead: true } : n))
       );
       setUnreadCount(prev => Math.max(0, prev - 1));
-    } catch (error) {
-      console.error('Failed to mark as read:', error);
+    } catch {
+      // silently ignore
     }
   };
 
@@ -102,8 +102,8 @@ export default function NotificationCenter({ className }: NotificationCenterProp
       if (notification && !notification.isRead) {
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
-    } catch (error) {
-      console.error('Failed to delete notification:', error);
+    } catch {
+      // silently ignore
     }
   };
 
@@ -118,8 +118,8 @@ export default function NotificationCenter({ className }: NotificationCenterProp
       });
       setNotifications([]);
       setUnreadCount(0);
-    } catch (error) {
-      console.error('Failed to clear all:', error);
+    } catch {
+      // silently ignore
     } finally {
       setLoading(false);
     }

@@ -58,6 +58,12 @@ services:
       AUTH_TRUST_HOST: "true"
     ports:
       - "3001:3000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.prism-app.rule=Host(`prism.localhost`)"

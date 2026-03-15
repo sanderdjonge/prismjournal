@@ -57,7 +57,9 @@ model TradingAccount {
   name            String
   broker          String?
   accountNumber   String?       @unique
-  bridgeKey       String?       @unique
+  bridgeKey       String?       @unique  // Deprecated: kept for existing accounts, will be null after re-generation
+  bridgeKeyId     String?       @unique  // First 12 chars of the key (plain text, used for lookup)
+  bridgeKeyHash   String?               // bcrypt hash of the full key
   
   // Account Type (from TradeLens)
   accountType     AccountType   @default(OWN_MONEY)
