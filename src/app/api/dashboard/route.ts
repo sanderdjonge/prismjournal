@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getDefaultAccount } from '@/lib/getAccount';
-import { calculateProfitFactor } from '../../../../server/utils/analytics_compute';
+import { calculateProfitFactor } from '@/lib/analytics';
 import { formatDistanceToNow } from '@/lib/formatTime';
 
 export async function GET(request: Request) {
