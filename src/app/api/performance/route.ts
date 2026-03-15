@@ -98,19 +98,21 @@ export async function GET(request: Request) {
         if (dd > maxDrawdown) maxDrawdown = dd;
     }
 
-    // Sharpe ratio (monthly returns)
+    // Sharpe ratio (monthly returns) - returns null when insufficient data
     const monthlyMap = new Map<string, number>();
     for (const t of trades) {
         const key = `${t.entryTime.getFullYear()}-${t.entryTime.getMonth()}`;
         monthlyMap.set(key, (monthlyMap.get(key) ?? 0) + (t.pnl ?? 0));
     }
     const monthlyReturns = Array.from(monthlyMap.values());
-    let sharpe = 0;
+    let sharpe: number | null = null;
     if (monthlyReturns.length >= 2) {
         const mean = monthlyReturns.reduce((a, b) => a + b, 0) / monthlyReturns.length;
         const variance = monthlyReturns.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / monthlyReturns.length;
         const stdDev = Math.sqrt(variance);
-        sharpe = stdDev > 0 ? Math.round((mean / stdDev) * Math.sqrt(12) * 100) / 100 : 0;
+        if (stdDev > 0) {
+            sharpe = Math.round((mean / stdDev) * Math.sqrt(12) * 100) / 100;
+        }
     }
 
     // Monthly return matrix (current year, percentage)

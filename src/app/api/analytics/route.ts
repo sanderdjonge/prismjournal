@@ -64,13 +64,32 @@ export async function GET() {
     const step = Math.max(1, Math.floor(expectancyData.length / 20));
     const sampledExpectancy = expectancyData.filter((_, i) => i % step === 0 || i === expectancyData.length - 1);
 
-    // --- Session distribution (by entry hour) ---
-    const sessionCounts = Array(24).fill(0);
-    for (const t of trades) {
-        const hour = t.entryTime.getHours();
-        sessionCounts[hour] += 1;
+    // --- Session distribution (by entry hour) - ALL trades, not just closed with PnL ---
+    const allTradesForHours = await prisma.trade.findMany({
+        where: { accountId: account.id },
+        select: { entryTime: true, pnl: true, exitTime: true },
+    });
+
+    const hourBuckets = Array.from({ length: 24 }, (_, h) => ({
+        hour: h,
+        count: 0,
+        wins: 0,
+        losses: 0,
+        totalPnl: 0,
+    }));
+
+    for (const trade of allTradesForHours) {
+        const h = trade.entryTime.getUTCHours();
+        hourBuckets[h].count++;
+        if (trade.pnl != null) {
+            hourBuckets[h].totalPnl += trade.pnl;
+            if (trade.pnl > 0) hourBuckets[h].wins++;
+            else if (trade.pnl < 0) hourBuckets[h].losses++;
+        }
     }
-    const sessionData = sessionCounts.map((count, hour) => ({ hour, count }));
+
+    // Return all 24 hours (chart expects full array)
+    const sessionData = hourBuckets;
 
     // --- Key metrics ---
     const pnlValues = trades.map(t => ({ pnl: t.pnl ?? 0 }));
