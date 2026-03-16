@@ -103,11 +103,11 @@ export const apiLimiter = rateLimit({
 
 /**
  * Rate limiter for sync endpoint
- * 100 requests per minute (same as general API but tracked separately)
+ * 600 requests per minute — MT5 EA sends bursts of history on startup
  */
 export const syncLimiter = rateLimit({
   interval: 60 * 1000, // 1 minute
-  uniqueTokenPerInterval: 100, // Lower unique token count for sync
+  uniqueTokenPerInterval: 500,
 });
 
 /**

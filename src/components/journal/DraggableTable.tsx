@@ -31,6 +31,7 @@ function getSortValue(trade: Trade, col: string): string | number {
         case 'status': return trade.exitTime ? 1 : 0;
         case 'rr': return calcRROrZero(trade);
         case 'account': return trade.accountName ?? '';
+        case 'tags': return trade.tags?.[0]?.name ?? '';
         default: return 0;
     }
 }

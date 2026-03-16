@@ -1,5 +1,5 @@
 import { withAuth } from '@/lib/api/withAuth';
-import { ok, notFound } from '@/lib/api/responses';
+import { ok, notFound, internalError } from '@/lib/api/responses';
 import prisma from '@/lib/prisma';
 import { validateBody, updateAccountSchema } from '@/lib/validations';
 
@@ -50,17 +50,22 @@ export const PATCH = withAuth(async (req, ctx, session) => {
 export const DELETE = withAuth(async (_req, ctx, session) => {
     const { id } = await (ctx.params as Promise<{ id: string }>);
 
-    const existing = await prisma.tradingAccount.findFirst({
-        where: { id, userId: session.user.id },
-    });
-    if (!existing) return notFound('');
+    try {
+        const existing = await prisma.tradingAccount.findFirst({
+            where: { id, userId: session.user.id },
+        });
+        if (!existing) return notFound('Account');
 
-    const account = await prisma.tradingAccount.update({
-        where: { id },
-        data: { isActive: false },
-    });
+        const account = await prisma.tradingAccount.update({
+            where: { id },
+            data: { isActive: false },
+        });
 
-    return ok({ account });
+        return ok({ account });
+    } catch (error) {
+        console.error('DELETE /api/accounts/[id] error:', error);
+        return internalError();
+    }
 });
 
 export const runtime = 'nodejs';

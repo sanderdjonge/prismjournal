@@ -140,11 +140,12 @@ function JournalContent() {
         });
     }, [filterSide, filterResult, filterTag, dateFrom, dateTo, updateUrlParams]);
 
-    // Reset to page 1 when filters change
+    // Reset to page 1 and clear selection when filters change
     useEffect(() => {
         setPage(1);
+        setSelectedIds(new Set());
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [searchQuery, filterSide, filterResult, filterTag, dateFrom, dateTo]);
+    }, [searchQuery, filterSide, filterResult, filterTag, dateFrom, dateTo, selectedAccountId]);
 
     const handlePageChange = (newPage: number) => {
         setPage(newPage);
@@ -177,10 +178,10 @@ function JournalContent() {
     };
 
     const handleTradeSaved = () => {
-        // React Query will automatically refetch via invalidation
         refetch();
         setIsEditModalOpen(false);
         setSelectedTrade(null);
+        setSelectedIds(new Set());
     };
 
     const handleTradeDeleted = async (id: string) => {
@@ -430,7 +431,7 @@ function JournalContent() {
 
                 {/* Bulk Action Toolbar */}
                 {selectedIds.size > 0 && (
-                    <div className="glass-card border-primary/20 bg-primary/5 px-4 py-3 flex items-center justify-between">
+                    <div className="glass-card border-primary/20 bg-primary/5 px-4 py-3 flex items-center justify-between overflow-visible relative z-[50]">
                         <div className="flex items-center gap-3">
                             <span className="text-[10px] font-black uppercase tracking-widest text-primary">
                                 {selectedIds.size} trade{selectedIds.size !== 1 ? 's' : ''} selected
@@ -453,7 +454,7 @@ function JournalContent() {
                                         <Wallet size={12} /> Move to Account
                                     </button>
                                     {accountDropdownOpen && (
-                                        <div className="absolute top-full right-0 mt-1 glass-card border-white/10 bg-gray-900/95 rounded-lg overflow-hidden z-20 min-w-[180px]">
+                                        <div className="absolute top-full right-0 mt-1 glass-card border-white/10 bg-gray-900/95 rounded-lg overflow-hidden z-[500] min-w-[180px]">
                                             {accounts.map((acc) => (
                                                 <button
                                                     key={acc.id}
@@ -477,7 +478,7 @@ function JournalContent() {
                                     <TagIcon size={12} /> Add Tag
                                 </button>
                                 {tagDropdownOpen && (
-                                    <div className="absolute top-full right-0 mt-1 glass-card border-white/10 bg-gray-900/95 rounded-lg overflow-hidden z-20 min-w-[150px]">
+                                    <div className="absolute top-full right-0 mt-1 glass-card border-white/10 bg-gray-900/95 rounded-lg overflow-hidden z-[500] min-w-[150px]">
                                         {tags.length === 0 ? (
                                             <div className="px-3 py-2 text-[10px] text-gray-500">No tags available</div>
                                         ) : (

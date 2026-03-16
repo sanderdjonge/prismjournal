@@ -52,7 +52,7 @@ export const DEFAULT_COLUMNS: Column[] = [
     { id: 'sl', label: 'SL', visible: true, sortable: true, mobileVisible: false },
     { id: 'status', label: 'Status', visible: true, sortable: true, mobileVisible: false },
     { id: 'rr', label: 'RR', visible: true, sortable: true, mobileVisible: false },
-    { id: 'tags', label: 'Tags', visible: true, sortable: false, mobileVisible: false },
+    { id: 'tags', label: 'Tags', visible: true, sortable: true, mobileVisible: false },
     { id: 'account', label: 'Account', visible: false, sortable: true, mobileVisible: false },
     { id: 'actions', label: '', visible: true, sortable: false, mobileVisible: true },
 ];

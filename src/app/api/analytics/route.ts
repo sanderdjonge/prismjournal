@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getDefaultAccount } from '@/lib/getAccount';
+import { auth } from '@/lib/auth';
+import { getAllUserAccounts } from '@/lib/getAccount';
 import { calculateProfitFactor } from '@/lib/analytics';
 
 export async function GET(request: Request) {
@@ -8,9 +9,10 @@ export async function GET(request: Request) {
     const from = searchParams.get('from');
     const to = searchParams.get('to');
 
-    const account = await getDefaultAccount();
+    const session = await auth();
+    const userId = session?.user?.id;
 
-    if (!account) {
+    if (!userId) {
         return NextResponse.json({
             symbolData: [],
             expectancyData: [],
@@ -22,6 +24,24 @@ export async function GET(request: Request) {
         });
     }
 
+    const allAccounts = await getAllUserAccounts(userId);
+    const accountIds = allAccounts.map((a) => a.id);
+
+    if (accountIds.length === 0) {
+        return NextResponse.json({
+            symbolData: [],
+            expectancyData: [],
+            sessionData: Array.from({ length: 24 }, (_, i) => ({ hour: i, count: 0 })),
+            profitFactor: 0,
+            expectancy: 0,
+            avgRR: 0,
+            meanDrawdown: 0,
+        });
+    }
+
+    const accountFilter = searchParams.get('account');
+    const filteredIds = accountFilter && accountIds.includes(accountFilter) ? [accountFilter] : accountIds;
+
     // Build date filter
     const dateFilter: { gte?: Date; lte?: Date } = {};
     if (from) dateFilter.gte = new Date(from);
@@ -29,7 +49,7 @@ export async function GET(request: Request) {
 
     const trades = await prisma.trade.findMany({
         where: {
-            accountId: account.id,
+            accountId: { in: filteredIds },
             pnl: { not: null },
             exitTime: { not: null },
             ...(Object.keys(dateFilter).length > 0 && { entryTime: dateFilter }),
@@ -81,7 +101,7 @@ export async function GET(request: Request) {
     // --- Session distribution (by entry hour) - ALL trades, not just closed with PnL ---
     const allTradesForHours = await prisma.trade.findMany({
         where: {
-            accountId: account.id,
+            accountId: { in: filteredIds },
             ...(Object.keys(dateFilter).length > 0 && { entryTime: dateFilter }),
         },
         select: { entryTime: true, pnl: true, exitTime: true },

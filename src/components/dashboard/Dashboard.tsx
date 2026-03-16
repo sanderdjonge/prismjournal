@@ -7,6 +7,7 @@ import RecentTrades from './RecentTrades';
 import Gauge from './Gauge';
 import { cn } from '@/lib/cn';
 import { useCurrency } from '@/lib/currency';
+import { useAccounts } from '@/hooks/useAccounts';
 
 type RecentTrade = {
     id: string;
@@ -43,15 +44,18 @@ export default function Dashboard() {
     const [period, setPeriod] = useState<'7' | '30' | '90' | '365'>('30');
     const [loading, setLoading] = useState(true);
     const { formatAmount, formatPnl, symbol } = useCurrency();
+    const { selectedAccountId } = useAccounts();
 
     useEffect(() => {
         setLoading(true);
-        fetch(`/api/dashboard?period=${period}`)
+        const params = new URLSearchParams({ period });
+        if (selectedAccountId) params.set('account', selectedAccountId);
+        fetch(`/api/dashboard?${params.toString()}`)
             .then(r => r.json())
             .then(setData)
             .catch(() => { /* silently ignore */ })
             .finally(() => setLoading(false));
-    }, [period]);
+    }, [period, selectedAccountId]);
 
     const stats = {
         equity: data?.equity ?? [],

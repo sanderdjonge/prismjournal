@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getDefaultAccount } from '@/lib/getAccount';
+import { auth } from '@/lib/auth';
+import { getAllUserAccounts } from '@/lib/getAccount';
 import { calculateProfitFactor } from '@/lib/analytics';
 import { formatDistanceToNow } from '@/lib/formatTime';
 
@@ -11,9 +12,10 @@ export async function GET(request: Request) {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - periodDays);
 
-    const account = await getDefaultAccount();
+    const session = await auth();
+    const userId = session?.user?.id;
 
-    if (!account) {
+    if (!userId) {
         return NextResponse.json({
             equity: [],
             trades: [],
@@ -32,17 +34,42 @@ export async function GET(request: Request) {
         });
     }
 
+    const allAccounts = await getAllUserAccounts(userId);
+    const accountIds = allAccounts.map((a) => a.id);
+
+    if (accountIds.length === 0) {
+        return NextResponse.json({
+            equity: [],
+            trades: [],
+            calendar: [],
+            winRate: 0,
+            profitFactor: 0,
+            totalTrades: 0,
+            totalPnl: 0,
+            expectancy: 0,
+            maxDrawdown: 0,
+            avgRMultiple: 0,
+            bestTrade: 0,
+            worstTrade: 0,
+            consecutiveWins: 0,
+            consecutiveLosses: 0,
+        });
+    }
+
+    const accountFilter = searchParams.get('account');
+    const filteredIds = accountFilter && accountIds.includes(accountFilter) ? [accountFilter] : accountIds;
+
     const [trades, snapshots, allClosedTrades] = await Promise.all([
         prisma.trade.findMany({
             where: {
-                accountId: account.id,
+                accountId: { in: filteredIds },
                 entryTime: { gte: startDate }
             },
             orderBy: { entryTime: 'desc' },
         }),
         prisma.equitySnapshot.findMany({
             where: {
-                accountId: account.id,
+                accountId: { in: filteredIds },
                 timestamp: { gte: startDate }
             },
             orderBy: { timestamp: 'asc' },
@@ -50,7 +77,7 @@ export async function GET(request: Request) {
         // Get ALL closed trades for equity curve (not just period)
         prisma.trade.findMany({
             where: {
-                accountId: account.id,
+                accountId: { in: filteredIds },
                 exitTime: { not: null },
                 pnl: { not: null },
             },
@@ -158,7 +185,7 @@ export async function GET(request: Request) {
 
     // --- Recent trades (last 5, formatted for RecentTrades component) ---
     const recent = await prisma.trade.findMany({
-        where: { accountId: account.id },
+        where: { accountId: { in: filteredIds } },
         orderBy: { entryTime: 'desc' },
         take: 5,
     });
@@ -176,7 +203,7 @@ export async function GET(request: Request) {
     // --- Calendar data (trades by EXIT date for current month) ---
     const calendarTrades = await prisma.trade.findMany({
         where: {
-            accountId: account.id,
+            accountId: { in: filteredIds },
             exitTime: { not: null },
             pnl: { not: null },
         },
