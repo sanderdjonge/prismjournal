@@ -62,6 +62,7 @@ function JournalContent() {
 
     // Bulk selection state
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [isAllSelected, setIsAllSelected] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
 
@@ -144,11 +145,13 @@ function JournalContent() {
     useEffect(() => {
         setPage(1);
         setSelectedIds(new Set());
+        setIsAllSelected(false);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchQuery, filterSide, filterResult, filterTag, dateFrom, dateTo, selectedAccountId]);
 
     const handlePageChange = (newPage: number) => {
         setPage(newPage);
+        setIsAllSelected(false);
         updateUrlParams({ page: newPage.toString() });
     };
 
@@ -241,22 +244,35 @@ function JournalContent() {
         });
     };
 
-    const handleSelectAll = () => {
-        const allIds = trades.map(t => t.id);
-        setSelectedIds(prev => {
-            const next = new Set(prev);
-            const allSelected = allIds.every(id => next.has(id));
-            if (allSelected) {
-                allIds.forEach(id => next.delete(id));
-            } else {
-                allIds.forEach(id => next.add(id));
-            }
-            return next;
-        });
+    const handleSelectAll = async () => {
+        if (isAllSelected) {
+            setSelectedIds(new Set());
+            setIsAllSelected(false);
+            return;
+        }
+        try {
+            const params = new URLSearchParams();
+            if (searchQuery) params.set('q', searchQuery);
+            if (filterSide !== 'ALL') params.set('side', filterSide);
+            if (filterResult !== 'ALL') params.set('result', filterResult);
+            if (filterTag !== 'ALL') params.set('tag', filterTag);
+            if (dateFrom) params.set('from', dateFrom);
+            if (dateTo) params.set('to', dateTo);
+            if (selectedAccountId) params.set('account', selectedAccountId);
+            params.set('idsOnly', 'true');
+            const res = await fetch(`/api/trades?${params.toString()}`);
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            setSelectedIds(new Set(data.ids));
+            setIsAllSelected(true);
+        } catch {
+            toast.error('Failed to select all trades');
+        }
     };
 
     const handleClearSelection = () => {
         setSelectedIds(new Set());
+        setIsAllSelected(false);
     };
 
     const handleBulkDelete = async () => {
@@ -442,6 +458,22 @@ function JournalContent() {
                             >
                                 <X size={12} /> Clear
                             </button>
+                            {selectedIds.size > 0 && !isAllSelected && pagination.total > selectedIds.size && (
+                                <button
+                                    onClick={handleSelectAll}
+                                    className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline"
+                                >
+                                    Select all {pagination.total} trades
+                                </button>
+                            )}
+                            {isAllSelected && (
+                                <button
+                                    onClick={() => { setSelectedIds(new Set()); setIsAllSelected(false); }}
+                                    className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white"
+                                >
+                                    Clear selection
+                                </button>
+                            )}
                         </div>
                         <div className="flex items-center gap-2">
                             {/* Move to Account Dropdown */}
