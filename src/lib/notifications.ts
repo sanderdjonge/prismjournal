@@ -2,7 +2,7 @@ import prisma from './prisma';
 import { sendTelegramMessage } from './telegram';
 import { sendMddAlertEmail } from './email';
 
-export type NotificationType = 'TRADE_OPEN' | 'TRADE_CLOSE' | 'MDD_ALERT' | 'SYNC_ERROR' | 'SYSTEM';
+export type NotificationType = 'TRADE_OPEN' | 'TRADE_CLOSE' | 'MDD_ALERT' | 'SYNC_ERROR' | 'SYSTEM' | 'RULE_VIOLATION';
 
 interface CreateNotificationParams {
   userId: string;
@@ -165,5 +165,43 @@ export async function notifySyncError(userId: string, error: string) {
     message: `MT5 sync error: ${error}`,
     sendTelegram: alertConfig.enableSync,
     telegramId: alertConfig.telegramId,
+  });
+}
+
+/**
+ * Create a rule violation notification for prop firm accounts
+ */
+export async function notifyRuleViolation(
+  userId: string,
+  params: {
+    accountName: string;
+    ruleType: string;
+    severity: 'WARNING' | 'CRITICAL' | 'BREACH';
+    description: string;
+    accountId: string;
+    violationId: string;
+  }
+) {
+  const alertConfig = await prisma.alertConfig.findUnique({
+    where: { userId },
+  });
+
+  // Determine emoji based on severity
+  const severityEmoji = {
+    WARNING: '⚠️',
+    CRITICAL: '🚨',
+    BREACH: '❌',
+  }[params.severity];
+
+  const title = `${severityEmoji} Rule Violation: ${params.ruleType.replace(/_/g, ' ')}`;
+  const message = `${params.accountName}: ${params.description}`;
+
+  return createNotification({
+    userId,
+    type: 'RULE_VIOLATION',
+    title,
+    message,
+    sendTelegram: alertConfig?.enableRisk ?? false,
+    telegramId: alertConfig?.telegramId,
   });
 }

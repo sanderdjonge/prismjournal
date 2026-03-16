@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { notifyRuleViolation } from '@/lib/notifications';
 
 /**
  * Daily Snapshot Cron Job
@@ -134,7 +135,7 @@ export async function GET(request: NextRequest) {
 
                 // Create violations if limits breached
                 if (isDailyLimitBreached) {
-                    await (prisma as any).ruleViolation.create({
+                    const violation = await (prisma as any).ruleViolation.create({
                         data: {
                             accountId: account.id,
                             ruleType: 'DAILY_LOSS_LIMIT',
@@ -145,10 +146,20 @@ export async function GET(request: NextRequest) {
                         },
                     });
                     results.violationsDetected++;
+                    
+                    // Send notification
+                    await notifyRuleViolation(account.userId, {
+                        accountName: account.name,
+                        ruleType: 'DAILY_LOSS_LIMIT',
+                        severity: 'BREACH',
+                        description: violation.description,
+                        accountId: account.id,
+                        violationId: violation.id,
+                    });
                 }
 
                 if (isMaxDrawdownBreached) {
-                    await (prisma as any).ruleViolation.create({
+                    const violation = await (prisma as any).ruleViolation.create({
                         data: {
                             accountId: account.id,
                             ruleType: 'MAX_DRAWDOWN',
@@ -159,11 +170,21 @@ export async function GET(request: NextRequest) {
                         },
                     });
                     results.violationsDetected++;
+                    
+                    // Send notification
+                    await notifyRuleViolation(account.userId, {
+                        accountName: account.name,
+                        ruleType: 'MAX_DRAWDOWN',
+                        severity: 'BREACH',
+                        description: violation.description,
+                        accountId: account.id,
+                        violationId: violation.id,
+                    });
                 }
 
                 // Check for warning thresholds (80% of limit)
                 if (dailyLossPercentOfLimit >= 80 && !isDailyLimitBreached) {
-                    await (prisma as any).ruleViolation.create({
+                    const violation = await (prisma as any).ruleViolation.create({
                         data: {
                             accountId: account.id,
                             ruleType: 'DAILY_LOSS_LIMIT',
@@ -174,10 +195,20 @@ export async function GET(request: NextRequest) {
                         },
                     });
                     results.violationsDetected++;
+                    
+                    // Send notification
+                    await notifyRuleViolation(account.userId, {
+                        accountName: account.name,
+                        ruleType: 'DAILY_LOSS_LIMIT',
+                        severity: 'WARNING',
+                        description: violation.description,
+                        accountId: account.id,
+                        violationId: violation.id,
+                    });
                 }
 
                 if (currentDrawdown >= account.propFirm.maxDrawdown * 0.8 && !isMaxDrawdownBreached) {
-                    await (prisma as any).ruleViolation.create({
+                    const violation = await (prisma as any).ruleViolation.create({
                         data: {
                             accountId: account.id,
                             ruleType: 'MAX_DRAWDOWN',
@@ -188,6 +219,16 @@ export async function GET(request: NextRequest) {
                         },
                     });
                     results.violationsDetected++;
+                    
+                    // Send notification
+                    await notifyRuleViolation(account.userId, {
+                        accountName: account.name,
+                        ruleType: 'MAX_DRAWDOWN',
+                        severity: 'WARNING',
+                        description: violation.description,
+                        accountId: account.id,
+                        violationId: violation.id,
+                    });
                 }
 
                 results.accountsProcessed++;
