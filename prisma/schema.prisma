@@ -489,7 +489,7 @@ enum Mood {
 model Media {
   id        String   @id @default(cuid())
   tradeId   String
-  trade     Trade    @relation(fields: [tradeId], references: [id])
+  trade     Trade    @relation(fields: [tradeId], references: [id], onDelete: Cascade)
   filename  String   // Stored filename (e.g., "abc123.png")
   filepath  String   // Relative path from storage root (e.g., "screenshots/abc123.png")
   mimetype  String   // MIME type (e.g., "image/png")
