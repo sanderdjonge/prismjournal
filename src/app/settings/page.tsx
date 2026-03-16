@@ -36,9 +36,12 @@ import {
     ChevronRight,
     Tag,
     Trash2,
+    ChevronUp,
+    ChevronDown,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { APP_VERSION, versionToPhase } from '@/lib/version';
+import PropFirmReferenceTable from '@/components/prop-firm/PropFirmReferenceTable';
 
 const CURRENCY_OPTIONS = [
     { label: 'USD - United States Dollar', value: 'USD' },
@@ -218,6 +221,7 @@ function SettingsContent() {
     // Prop firms state
     const [propFirms, setPropFirms] = useState<PropFirm[]>([]);
     const [propFirmsLoading, setPropFirmsLoading] = useState(true);
+    const [propFirmsExpanded, setPropFirmsExpanded] = useState(false);
     
     // Add account modal state
     const [showAddAccount, setShowAddAccount] = useState(false);
@@ -1856,6 +1860,27 @@ function SettingsContent() {
                                     </div>
                                 </>
                             ))}
+
+                            {/* Prop Firm Reference */}
+                            {propFirms.length > 0 && (
+                                <div className="glass-card border-white/5 overflow-hidden">
+                                    <button
+                                        onClick={() => setPropFirmsExpanded(e => !e)}
+                                        className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-white/[0.02] transition-colors"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <Building2 size={16} className="text-primary" />
+                                            <span className="text-xs font-black uppercase tracking-widest text-white">Prop Firm Reference</span>
+                                        </div>
+                                        {propFirmsExpanded ? <ChevronUp size={16} className="text-gray-500" /> : <ChevronDown size={16} className="text-gray-500" />}
+                                    </button>
+                                    {propFirmsExpanded && (
+                                        <div className="border-t border-white/5 px-6 py-4">
+                                            <PropFirmReferenceTable firms={propFirms} />
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     )}
 
