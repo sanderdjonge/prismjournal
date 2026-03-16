@@ -6,6 +6,7 @@ import {
     User,
     ChevronDown,
     Calculator,
+    HelpCircle,
     LogOut,
     Menu,
     X,
@@ -22,8 +23,9 @@ const MENU_ITEMS = [
     { label: 'Performance', href: '/performance' },
     { label: 'Journal', href: '/journal' },
     { label: 'Analytics', href: '/analytics' },
-    { label: 'Prop Firms', href: '/pages/prop-firms' },
+    { label: 'Accounts', href: '/pages/accounts' },
     { label: 'Calculator', href: '/calculator', icon: Calculator },
+    { label: 'Help', href: '/pages/help', icon: HelpCircle },
     { label: 'Account', href: '/settings' },
 ];
 
