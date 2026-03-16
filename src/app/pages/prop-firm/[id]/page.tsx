@@ -485,6 +485,21 @@ function PropFirmAccountContent() {
                                 })}
                             </div>
                         </div>
+
+                        {/* Daily Performance Report */}
+                        <div className="glass-card p-6 border-white/5">
+                            <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                                <BarChart3 size={20} className="text-primary" />
+                                Daily Performance
+                            </h2>
+                            <div className="text-center py-8 text-gray-400">
+                                <BarChart3 size={32} className="mx-auto mb-2 opacity-50" />
+                                <p className="text-sm">Daily snapshots will appear here</p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Run the daily snapshot cron to generate data
+                                </p>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Right Column - Stats & Violations */}
