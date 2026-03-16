@@ -93,7 +93,7 @@ export default function TradeEditModal({ trade, isOpen, onClose, onSaved }: Trad
                 type: trade.type,
                 volume: trade.volume,
                 entryPrice: trade.entry,
-                exitPrice: trade.exit != null ? String(trade.exit) : '',
+                exitPrice: trade.exitTime && trade.exit ? String(trade.exit) : '',
                 takeProfit: trade.takeProfit != null ? String(trade.takeProfit) : '',
                 stopLoss: trade.stopLoss != null ? String(trade.stopLoss) : '',
                 isClosed: !!trade.exitTime,

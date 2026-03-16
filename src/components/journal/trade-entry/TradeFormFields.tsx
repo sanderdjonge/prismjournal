@@ -103,18 +103,23 @@ export function TradeFormFields({
                     )}
                 </div>
                 <div className="space-y-1.5">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1">
+                    <label className={cn(
+                        "text-[9px] font-black uppercase tracking-widest px-1",
+                        isClosed ? "text-gray-500" : "text-gray-700"
+                    )}>
                         Exit Price {isClosed && <span className="text-danger">*</span>}
                     </label>
                     <input
                         type="number"
                         step="0.00001"
                         {...register('exitPrice')}
-                        placeholder={isClosed ? "Required for closed trades" : "Leave empty for open trades"}
-                        disabled={disabled}
+                        placeholder={isClosed ? "Required for closed trades" : "—"}
+                        disabled={disabled || !isClosed}
                         className={cn(
-                            "w-full bg-white/5 border rounded-xl p-3 text-sm font-bold text-white outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed",
-                            isClosed ? "border-danger/50 focus:border-danger" : "border-white/10 focus:border-primary/50"
+                            "w-full border rounded-xl p-3 text-sm font-bold outline-none transition-all disabled:opacity-30 disabled:cursor-not-allowed",
+                            isClosed
+                                ? "bg-white/5 border-danger/50 text-white focus:border-danger"
+                                : "bg-white/[0.02] border-white/5 text-gray-600"
                         )}
                     />
                     {errors.exitPrice && (

@@ -1,18 +1,31 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getDefaultAccount } from '@/lib/getAccount';
+import { auth } from '@/lib/auth';
+import { getAllUserAccounts } from '@/lib/getAccount';
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
-    const account = await getDefaultAccount();
 
-    if (!account) {
+    const session = await auth();
+    const userId = session?.user?.id;
+
+    if (!userId) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const allAccounts = await getAllUserAccounts(userId);
+    const accountIds = allAccounts.map((a) => a.id);
+
+    if (accountIds.length === 0) {
         return NextResponse.json({ error: 'No account found' }, { status: 404 });
     }
 
+    const accountFilter = searchParams.get('account');
+    const filteredIds = accountFilter && accountIds.includes(accountFilter) ? [accountFilter] : accountIds;
+
     // Build filter conditions
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = { accountId: account.id };
+    const where: any = { accountId: { in: filteredIds } };
 
     const side = searchParams.get('side');
     if (side && side !== 'ALL') {

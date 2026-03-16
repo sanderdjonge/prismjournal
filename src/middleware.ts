@@ -27,9 +27,9 @@ export default auth(async (req) => {
     if (rateLimitResponse) return rateLimitResponse;
   }
 
-  // Rate limit sync endpoint (100 per minute)
+  // Rate limit sync endpoint (600 per minute — MT5 sends bursts on startup)
   if (isSyncApi) {
-    const rateLimitResponse = await syncLimiter.check(req, 100);
+    const rateLimitResponse = await syncLimiter.check(req, 600);
     if (rateLimitResponse) return rateLimitResponse;
   }
 

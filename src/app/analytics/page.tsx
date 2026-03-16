@@ -8,6 +8,7 @@ import {
 } from 'recharts';
 import { Target, Zap, X } from 'lucide-react';
 import { useCurrency } from '@/lib/currency';
+import { useAccounts } from '@/hooks/useAccounts';
 
 type SymbolRow = { symbol: string; profit: number; winRate: number };
 type ExpectancyRow = { trade: number; val: number };
@@ -28,18 +29,20 @@ export default function AnalyticsPage() {
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
     const { formatAmount } = useCurrency();
+    const { selectedAccountId } = useAccounts();
 
     useEffect(() => {
         const params = new URLSearchParams();
         if (dateFrom) params.set('from', dateFrom);
         if (dateTo) params.set('to', dateTo);
+        if (selectedAccountId) params.set('account', selectedAccountId);
         const url = `/api/analytics${params.toString() ? `?${params.toString()}` : ''}`;
 
         fetch(url)
             .then(r => r.json())
             .then(setData)
             .catch(() => { /* silently ignore */ });
-    }, [dateFrom, dateTo]);
+    }, [dateFrom, dateTo, selectedAccountId]);
 
     const symbolData = data?.symbolData ?? [];
     const expectancyData = data?.expectancyData ?? [];

@@ -84,7 +84,10 @@ export async function upsertSyncTrade(
     const updateData: Record<string, unknown> = {};
     if (trade.exitPrice != null) updateData.exitPrice = trade.exitPrice;
     if (trade.pnl != null) updateData.pnl = trade.pnl;
-    if (trade.exitTime) updateData.exitTime = new Date(trade.exitTime);
+    if (trade.exitTime) {
+        updateData.exitTime = new Date(trade.exitTime);
+        updateData.status = 'CLOSED';
+    }
     if (trade.commission != null) updateData.commission = trade.commission;
     if (trade.swap != null) updateData.swap = trade.swap;
     if (trade.stopLoss != null) updateData.stopLoss = trade.stopLoss;
@@ -110,6 +113,7 @@ export async function upsertSyncTrade(
             ticket: trade.ticket,
             symbol: trade.symbol,
             direction,
+            status: trade.exitTime ? 'CLOSED' : 'OPEN',
             volume: trade.volume,
             entryPrice: trade.entryPrice ?? 0,
             exitPrice: trade.exitPrice,
