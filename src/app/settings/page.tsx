@@ -34,6 +34,8 @@ import {
     CheckCircle,
     Calendar,
     ChevronRight,
+    Tag,
+    Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { APP_VERSION, versionToPhase } from '@/lib/version';
@@ -151,7 +153,7 @@ function SettingsContent() {
 
     // Update active tab when URL param changes
     useEffect(() => {
-        if (tabParam && ['connectors', 'preferences', 'notifications', 'security', 'accounts'].includes(tabParam)) {
+        if (tabParam && ['connectors', 'preferences', 'notifications', 'security', 'accounts', 'tags'].includes(tabParam)) {
             setActiveTab(tabParam);
         }
     }, [tabParam]);
@@ -240,6 +242,16 @@ function SettingsContent() {
     });
     const [addingAccount, setAddingAccount] = useState(false);
 
+    // Tags state
+    const [tags, setTags] = useState<{ id: string; name: string; color: string; tradeCount: number }[]>([]);
+    const [tagsLoading, setTagsLoading] = useState(true);
+    const [editingTagId, setEditingTagId] = useState<string | null>(null);
+    const [editingTagName, setEditingTagName] = useState('');
+    const [editingTagColor, setEditingTagColor] = useState('#00f2ff');
+    const [newTagName, setNewTagName] = useState('');
+    const [newTagColor, setNewTagColor] = useState('#00f2ff');
+    const [addingTag, setAddingTag] = useState(false);
+
     // Inline account detail state
     const [viewingAccountId, setViewingAccountId] = useState<string | null>(null);
     const [viewingAccountDetails, setViewingAccountDetails] = useState<any | null>(null);
@@ -283,6 +295,7 @@ function SettingsContent() {
 
         loadAccountsData();
         loadPropFirms();
+        loadTags();
     }, []);
     
     const loadAccountDetails = async (accountId: string) => {
@@ -324,6 +337,20 @@ function SettingsContent() {
             // error handled by loading state
         } finally {
             setPropFirmsLoading(false);
+        }
+    };
+
+    const loadTags = async () => {
+        try {
+            const res = await fetch('/api/tags');
+            if (res.ok) {
+                const data = await res.json();
+                setTags(data.tags);
+            }
+        } catch (error) {
+            // error handled by loading state
+        } finally {
+            setTagsLoading(false);
         }
     };
 
@@ -525,6 +552,7 @@ function SettingsContent() {
         { id: 'notifications', label: 'Notifications', icon: Bell },
         { id: 'security', label: 'Security', icon: Shield },
         { id: 'accounts', label: 'Accounts', icon: Wallet },
+        { id: 'tags', label: 'Tags', icon: Tag },
     ];
 
     type ToggleKey = 'telegramAlerts' | 'weeklyDigest' | 'volatilityWarnings' | 'inAppToast';
@@ -1828,6 +1856,182 @@ function SettingsContent() {
                                     </div>
                                 </>
                             ))}
+                        </div>
+                    )}
+
+                    {activeTab === 'tags' && (
+                        <div className="space-y-8 animate-fade-in">
+                            <div>
+                                <h3 className="text-2xl font-black text-white tracking-tighter uppercase italic mb-2">Tag Management</h3>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Organize your trades with custom tags</p>
+                            </div>
+
+                            {/* Add new tag */}
+                            <div className="glass-card p-6 border-white/5 bg-white/5">
+                                <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 mb-4">Create New Tag</h4>
+                                <div className="flex items-center gap-4">
+                                    <input
+                                        type="text"
+                                        value={newTagName}
+                                        onChange={(e) => setNewTagName(e.target.value)}
+                                        placeholder="Tag name"
+                                        className="flex-1 px-4 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                    />
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="color"
+                                            value={newTagColor}
+                                            onChange={(e) => setNewTagColor(e.target.value)}
+                                            className="w-10 h-10 rounded-lg border border-white/10 cursor-pointer"
+                                        />
+                                        <span className="text-[10px] font-mono text-gray-500">{newTagColor}</span>
+                                    </div>
+                                    <button
+                                        onClick={async () => {
+                                            if (!newTagName.trim()) return;
+                                            setAddingTag(true);
+                                            try {
+                                                const res = await fetch('/api/tags', {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({ name: newTagName.trim(), color: newTagColor }),
+                                                });
+                                                if (res.ok) {
+                                                    const data = await res.json();
+                                                    setTags(prev => [...prev, { ...data, tradeCount: 0 }]);
+                                                    setNewTagName('');
+                                                    setNewTagColor('#00f2ff');
+                                                }
+                                            } catch (error) {
+                                                // error handled by loading state
+                                            } finally {
+                                                setAddingTag(false);
+                                            }
+                                        }}
+                                        disabled={addingTag || !newTagName.trim()}
+                                        className="px-4 py-2 rounded-lg bg-primary text-black text-xs font-bold uppercase hover:brightness-110 transition-all disabled:opacity-50 flex items-center gap-2"
+                                    >
+                                        {addingTag ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                                        Add Tag
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Tags list */}
+                            <div className="glass-card p-6 border-white/5 bg-white/5">
+                                <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 mb-4">Your Tags</h4>
+                                
+                                {tagsLoading ? (
+                                    <div className="flex items-center justify-center py-8">
+                                        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                                    </div>
+                                ) : tags.length === 0 ? (
+                                    <div className="text-center py-8 text-gray-500">
+                                        <Tag size={32} className="mx-auto mb-2 opacity-50" />
+                                        <p className="text-sm">No tags yet. Create your first tag above.</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {tags.map((tag) => (
+                                            <div
+                                                key={tag.id}
+                                                className="flex items-center justify-between p-3 rounded-lg border border-white/5 hover:border-white/10 transition-all"
+                                            >
+                                                {editingTagId === tag.id ? (
+                                                    <>
+                                                        <div className="flex items-center gap-3 flex-1">
+                                                            <input
+                                                                type="text"
+                                                                value={editingTagName}
+                                                                onChange={(e) => setEditingTagName(e.target.value)}
+                                                                className="flex-1 px-3 py-1 bg-black/40 border border-white/10 rounded text-white text-sm outline-none focus:border-primary/50"
+                                                            />
+                                                            <input
+                                                                type="color"
+                                                                value={editingTagColor}
+                                                                onChange={(e) => setEditingTagColor(e.target.value)}
+                                                                className="w-8 h-8 rounded border border-white/10 cursor-pointer"
+                                                            />
+                                                        </div>
+                                                        <div className="flex items-center gap-2 ml-4">
+                                                            <button
+                                                                onClick={async () => {
+                                                                    try {
+                                                                        const res = await fetch(`/api/tags/${tag.id}`, {
+                                                                            method: 'PATCH',
+                                                                            headers: { 'Content-Type': 'application/json' },
+                                                                            body: JSON.stringify({ name: editingTagName.trim(), color: editingTagColor }),
+                                                                        });
+                                                                        if (res.ok) {
+                                                                            const data = await res.json();
+                                                                            setTags(prev => prev.map(t => t.id === tag.id ? data : t));
+                                                                            setEditingTagId(null);
+                                                                        }
+                                                                    } catch (error) {
+                                                                        // error handled
+                                                                    }
+                                                                }}
+                                                                className="p-2 rounded-lg bg-accent/20 text-accent hover:bg-accent/30 transition-all"
+                                                            >
+                                                                <Check size={14} />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setEditingTagId(null)}
+                                                                className="p-2 rounded-lg border border-white/10 text-gray-400 hover:bg-white/5 transition-all"
+                                                            >
+                                                                <X size={14} />
+                                                            </button>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <div className="flex items-center gap-3">
+                                                            <div
+                                                                className="w-4 h-4 rounded-full"
+                                                                style={{ backgroundColor: tag.color }}
+                                                            />
+                                                            <span className="text-white font-medium">{tag.name}</span>
+                                                            <span className="text-[10px] text-gray-500 font-mono">
+                                                                {tag.tradeCount} trade{tag.tradeCount !== 1 ? 's' : ''}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                onClick={() => {
+                                                                    setEditingTagId(tag.id);
+                                                                    setEditingTagName(tag.name);
+                                                                    setEditingTagColor(tag.color);
+                                                                }}
+                                                                className="p-2 rounded-lg border border-white/10 text-gray-400 hover:bg-white/5 hover:text-white transition-all"
+                                                                title="Edit"
+                                                            >
+                                                                <Edit2 size={14} />
+                                                            </button>
+                                                            <button
+                                                                onClick={async () => {
+                                                                    if (!confirm(`Delete tag "${tag.name}"? This will remove it from all trades.`)) return;
+                                                                    try {
+                                                                        const res = await fetch(`/api/tags/${tag.id}`, { method: 'DELETE' });
+                                                                        if (res.ok) {
+                                                                            setTags(prev => prev.filter(t => t.id !== tag.id));
+                                                                        }
+                                                                    } catch (error) {
+                                                                        // error handled
+                                                                    }
+                                                                }}
+                                                                className="p-2 rounded-lg border border-white/10 text-gray-400 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 transition-all"
+                                                                title="Delete"
+                                                            >
+                                                                <Trash2 size={14} />
+                                                            </button>
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
 
