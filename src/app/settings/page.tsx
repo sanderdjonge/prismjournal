@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import DashboardShell from '@/components/layout/DashboardShell';
-import Link from 'next/link';
 import {
     Link as LinkIcon,
     Bell,
@@ -21,6 +21,11 @@ import {
     QrCode,
     Key,
     Wallet,
+    Edit2,
+    Archive,
+    X,
+    Plus,
+    Building2,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { APP_VERSION, versionToPhase } from '@/lib/version';
@@ -50,8 +55,98 @@ interface NotifState {
     enableMddEmailAlerts: boolean;
 }
 
-export default function SettingsPage() {
-    const [activeTab, setActiveTab] = useState('connectors');
+interface TradingAccount {
+    id: string;
+    name: string;
+    broker: string | null;
+    accountNumber: string | null;
+    platform: string;
+    platformAccountId: string | null;
+    currency: string;
+    leverage: number;
+    accountType: string;
+    isActive: boolean;
+    currentBalance: number | null;
+    currentEquity: number | null;
+    tradeCount: number;
+    closedTradeCount: number;
+    totalPnl: number;
+    createdAt: string;
+    // Prop firm fields
+    propFirmId: string | null;
+    propFirm: {
+        id: string;
+        name: string;
+        slug: string;
+        challengeType: string;
+        dailyLossLimit: number;
+        maxDrawdown: number;
+        drawdownType: string;
+        phasesConfig: string;
+    } | null;
+    accountSize: number | null;
+    profitSplit: number | null;
+    allowNewsTrading: boolean | null;
+    allowWeekendHolding: boolean | null;
+    allowEA: boolean | null;
+    // Prop firm rule overrides
+    maxDailyLoss: number | null;
+    maxTotalDrawdown: number | null;
+    profitTarget: number | null;
+}
+
+interface PropFirm {
+    id: string;
+    name: string;
+    slug: string;
+    description: string | null;
+    website: string | null;
+    challengeType: string;
+    dailyLossLimit: number;
+    maxDrawdown: number;
+    drawdownType: string;
+    allowNewsTrading: boolean;
+    allowWeekendHolding: boolean;
+    allowEA: boolean;
+    phasesConfig: string;
+    hasScalingPlan: boolean;
+    scalingConfig: string | null;
+    popularity: number;
+}
+
+interface BridgeKeyInfo {
+    bridgeKey: string | null;
+    bridgeKeyId: string | null;
+    isHashed: boolean;
+    syncUrl: string;
+}
+
+const PLATFORM_LABELS: Record<string, string> = {
+    METATRADER5: 'MT5',
+    CTRADER: 'cTrader',
+    TRADINGVIEW: 'TradingView',
+    MANUAL: 'Manual',
+};
+
+const PLATFORM_COLORS: Record<string, string> = {
+    METATRADER5: 'bg-orange-500/20 text-orange-400',
+    CTRADER: 'bg-blue-500/20 text-blue-400',
+    TRADINGVIEW: 'bg-green-500/20 text-green-400',
+    MANUAL: 'bg-gray-500/20 text-gray-400',
+};
+
+function SettingsContent() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const tabParam = searchParams.get('tab');
+    const [activeTab, setActiveTab] = useState(tabParam || 'connectors');
+
+    // Update active tab when URL param changes
+    useEffect(() => {
+        if (tabParam && ['connectors', 'preferences', 'notifications', 'security', 'accounts'].includes(tabParam)) {
+            setActiveTab(tabParam);
+        }
+    }, [tabParam]);
 
     // Preferences state
     const [currency, setCurrency] = useState('USD');
@@ -96,6 +191,47 @@ export default function SettingsPage() {
     const [disable2FAPassword, setDisable2FAPassword] = useState('');
     const [showDisable2FA, setShowDisable2FA] = useState(false);
 
+    // Accounts state
+    const [accounts, setAccounts] = useState<TradingAccount[]>([]);
+    const [bridgeInfo, setBridgeInfo] = useState<BridgeKeyInfo | null>(null);
+    const [accountsLoading, setAccountsLoading] = useState(true);
+    const [newBridgeKey, setNewBridgeKey] = useState<string | null>(null);
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editName, setEditName] = useState('');
+    const [editBroker, setEditBroker] = useState('');
+    const [accountsSaving, setAccountsSaving] = useState(false);
+    // Prop firm rule override edit state
+    const [editMaxDailyLoss, setEditMaxDailyLoss] = useState<string>('');
+    const [editMaxDrawdown, setEditMaxDrawdown] = useState<string>('');
+    const [editProfitTarget, setEditProfitTarget] = useState<string>('');
+    
+    // Prop firms state
+    const [propFirms, setPropFirms] = useState<PropFirm[]>([]);
+    const [propFirmsLoading, setPropFirmsLoading] = useState(true);
+    
+    // Add account modal state
+    const [showAddAccount, setShowAddAccount] = useState(false);
+    const [newAccount, setNewAccount] = useState<{
+        name: string;
+        broker: string;
+        platform: 'METATRADER5' | 'CTRADER' | 'TRADINGVIEW' | 'MANUAL';
+        platformAccountId: string;
+        accountType: 'PROPFIRM' | 'OWN_MONEY';
+        propFirmId: string;
+        accountSize: string;
+        currency: string;
+    }>({
+        name: '',
+        broker: '',
+        platform: 'METATRADER5',
+        platformAccountId: '',
+        accountType: 'OWN_MONEY',
+        propFirmId: '',
+        accountSize: '',
+        currency: 'USD',
+    });
+    const [addingAccount, setAddingAccount] = useState(false);
+
     useEffect(() => {
         fetch('/api/settings')
             .then((r) => r.json())
@@ -131,7 +267,47 @@ export default function SettingsPage() {
                 if (data.syncUrl) setSyncUrl(data.syncUrl);
             })
             .catch(() => {});
+
+        loadAccountsData();
+        loadPropFirms();
     }, []);
+    
+    const loadPropFirms = async () => {
+        try {
+            const res = await fetch('/api/prop-firms');
+            if (res.ok) {
+                const data = await res.json();
+                setPropFirms(data.propFirms);
+            }
+        } catch (error) {
+            // error handled by loading state
+        } finally {
+            setPropFirmsLoading(false);
+        }
+    };
+
+    const loadAccountsData = async () => {
+        try {
+            const [accountsRes, bridgeRes] = await Promise.all([
+                fetch('/api/accounts'),
+                fetch('/api/account/bridge'),
+            ]);
+            
+            if (accountsRes.ok) {
+                const data = await accountsRes.json();
+                setAccounts(data.accounts);
+            }
+            
+            if (bridgeRes.ok) {
+                const data = await bridgeRes.json();
+                setBridgeInfo(data);
+            }
+        } catch (error) {
+            // error handled by loading state
+        } finally {
+            setAccountsLoading(false);
+        }
+    };
 
     async function handleCopy(text: string, label: string) {
         await navigator.clipboard.writeText(text);
@@ -184,11 +360,125 @@ export default function SettingsPage() {
         }
     }
 
+    const handleRegenerateKey = async () => {
+        if (!confirm('Are you sure? This will invalidate your current bridge key. You\'ll need to update your EA/cBot configuration.')) {
+            return;
+        }
+        
+        setRegenerating(true);
+        try {
+            const res = await fetch('/api/account/bridge', { method: 'POST' });
+            if (res.ok) {
+                const data = await res.json();
+                setNewBridgeKey(data.bridgeKey);
+                setBridgeInfo(prev => prev ? {
+                    ...prev,
+                    bridgeKeyId: data.bridgeKeyId,
+                    isHashed: true,
+                } : null);
+            }
+        } catch (error) {
+            // error handled by loading state
+        } finally {
+            setRegenerating(false);
+        }
+    };
+
+    const handleStartEdit = (account: TradingAccount) => {
+        setEditingId(account.id);
+        setEditName(account.name);
+        setEditBroker(account.broker || '');
+        // Set prop firm rule overrides
+        setEditMaxDailyLoss(account.maxDailyLoss?.toString() || '');
+        setEditMaxDrawdown(account.maxTotalDrawdown?.toString() || '');
+        setEditProfitTarget(account.profitTarget?.toString() || '');
+    };
+
+    const handleCancelEdit = () => {
+        setEditingId(null);
+        setEditName('');
+        setEditBroker('');
+        setEditMaxDailyLoss('');
+        setEditMaxDrawdown('');
+        setEditProfitTarget('');
+    };
+
+    const handleSaveEdit = async () => {
+        if (!editingId) return;
+        
+        setAccountsSaving(true);
+        try {
+            const res = await fetch(`/api/accounts/${editingId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: editName,
+                    broker: editBroker || null,
+                    // Prop firm rule overrides
+                    maxDailyLoss: editMaxDailyLoss ? parseFloat(editMaxDailyLoss) : null,
+                    maxTotalDrawdown: editMaxDrawdown ? parseFloat(editMaxDrawdown) : null,
+                    profitTarget: editProfitTarget ? parseFloat(editProfitTarget) : null,
+                }),
+            });
+            
+            if (res.ok) {
+                setAccounts(prev => prev.map(a =>
+                    a.id === editingId
+                        ? {
+                            ...a,
+                            name: editName,
+                            broker: editBroker || null,
+                            maxDailyLoss: editMaxDailyLoss ? parseFloat(editMaxDailyLoss) : null,
+                            maxTotalDrawdown: editMaxDrawdown ? parseFloat(editMaxDrawdown) : null,
+                            profitTarget: editProfitTarget ? parseFloat(editProfitTarget) : null,
+                        }
+                        : a
+                ));
+                setEditingId(null);
+            }
+        } catch (error) {
+            // error handled by saving state
+        } finally {
+            setAccountsSaving(false);
+        }
+    };
+
+    const handleArchive = async (accountId: string) => {
+        if (!confirm('Are you sure you want to archive this account? It will no longer appear in your active accounts.')) {
+            return;
+        }
+        
+        try {
+            const res = await fetch(`/api/accounts/${accountId}`, { method: 'DELETE' });
+            if (res.ok) {
+                // Remove the account from the list entirely
+                setAccounts(prev => prev.filter(a => a.id !== accountId));
+            } else {
+                const errorData = await res.json().catch(() => ({}));
+                console.error('Failed to archive account:', errorData);
+                alert('Failed to archive account. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error archiving account:', error);
+            alert('An error occurred while archiving the account.');
+        }
+    };
+
+    const formatCurrency = (value: number | null | undefined, currency: string | null | undefined) => {
+        const safeValue = value ?? 0;
+        const safeCurrency = currency ?? 'USD';
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: safeCurrency,
+        }).format(safeValue);
+    };
+
     const tabs = [
         { id: 'connectors', label: 'Connector Hub', icon: LinkIcon },
         { id: 'preferences', label: 'Preferences', icon: Globe },
         { id: 'notifications', label: 'Notifications', icon: Bell },
         { id: 'security', label: 'Security', icon: Shield },
+        { id: 'accounts', label: 'Accounts', icon: Wallet },
     ];
 
     type ToggleKey = 'telegramAlerts' | 'weeklyDigest' | 'volatilityWarnings' | 'inAppToast';
@@ -222,13 +512,6 @@ export default function SettingsPage() {
                             {tab.label}
                         </button>
                     ))}
-                    <Link
-                        href="/settings/accounts"
-                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 border font-bold uppercase tracking-widest text-[10px] text-gray-500 hover:text-white hover:bg-white/5 border-transparent"
-                    >
-                        <Wallet size={16} />
-                        Accounts
-                    </Link>
                 </aside>
 
                 {/* Content Area */}
@@ -276,7 +559,7 @@ export default function SettingsPage() {
                                     <ul className="space-y-2 text-xs text-gray-400">
                                         <li className="flex items-start gap-2">
                                             <span className="text-primary mt-0.5">&#x2022;</span>
-                                            Check <span className="text-white font-bold">&quot;Allow WebRequest for listed URL&quot;</span>
+                                            Check <span className="text-white font-bold">"Allow WebRequest for listed URL"</span>
                                         </li>
                                         <li className="flex items-start gap-2">
                                             <span className="text-primary mt-0.5">&#x2022;</span>
@@ -319,7 +602,17 @@ export default function SettingsPage() {
                                         <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">Bridge Key</label>
                                         <div className="flex items-center gap-2">
                                             <div className="flex-1 glass-card px-4 py-3 border-white/5 bg-black/40 font-mono text-sm text-white truncate">
-                                                {showKey ? (bridgeKey || 'Loading...') : bridgeKey ? '••••••••••••••••••••••••••••••••' : 'Loading...'}
+                                                {bridgeInfo?.isHashed ? (
+                                                    showKey ? (
+                                                        <span className="text-yellow-400">Key hidden (hashed) - regenerate to view</span>
+                                                    ) : (
+                                                        '••••••••••••••••••••••••••••••••'
+                                                    )
+                                                ) : bridgeKey ? (
+                                                    showKey ? bridgeKey : '••••••••••••••••••••••••••••••••'
+                                                ) : (
+                                                    <span className="text-gray-500">No key set - click Regenerate to create one</span>
+                                                )}
                                             </div>
                                             <button
                                                 onClick={() => setShowKey(!showKey)}
@@ -330,7 +623,8 @@ export default function SettingsPage() {
                                             </button>
                                             <button
                                                 onClick={() => handleCopy(bridgeKey, 'key')}
-                                                className="px-3 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all"
+                                                disabled={!bridgeKey}
+                                                className="px-3 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all disabled:opacity-50"
                                                 title="Copy"
                                             >
                                                 {copied === 'key' ? <Check size={16} className="text-primary" /> : <Copy size={16} className="text-gray-500" />}
@@ -359,7 +653,7 @@ export default function SettingsPage() {
                                 <div className="glass-card p-5 border-white/5 bg-white/5">
                                     <p className="text-xs text-gray-400 leading-relaxed">
                                         Once the EA is running, check the MT5 <span className="text-white font-bold">Experts</span> tab for
-                                        <span className="text-primary font-mono"> &quot;PrismSync EA started&quot;</span>. Equity snapshots will sync every 60 seconds
+                                        <span className="text-primary font-mono"> "PrismSync EA started"</span>. Equity snapshots will sync every 60 seconds
                                         and trades will appear in your journal automatically.
                                     </p>
                                 </div>
@@ -831,6 +1125,487 @@ export default function SettingsPage() {
                         </div>
                     )}
 
+                    {activeTab === 'accounts' && (
+                        <div className="space-y-8 animate-fade-in">
+                            {/* Header */}
+                            <div>
+                                <h3 className="text-2xl font-black text-white tracking-tighter uppercase italic mb-2">
+                                    Trading Accounts
+                                </h3>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+                                    Manage your connected trading accounts
+                                </p>
+                            </div>
+
+                            {accountsLoading ? (
+                                <div className="flex items-center justify-center min-h-[200px]">
+                                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                                </div>
+                            ) : (
+                                <>
+                                    {/* Add Account Modal */}
+                                    {showAddAccount && (
+                                        <div className="glass-card p-6 border-white/5 bg-white/5 mb-6">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">
+                                                    Add New Account
+                                                </h4>
+                                                <button
+                                                    onClick={() => setShowAddAccount(false)}
+                                                    className="p-1 rounded hover:bg-white/5 transition-all"
+                                                >
+                                                    <X size={16} className="text-gray-500" />
+                                                </button>
+                                            </div>
+                                            
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                                        Account Name *
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={newAccount.name}
+                                                        onChange={(e) => setNewAccount(prev => ({ ...prev, name: e.target.value }))}
+                                                        placeholder="e.g., FTMO Challenge $100K"
+                                                        className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                                    />
+                                                </div>
+                                                
+                                                <div className="space-y-2">
+                                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                                        Broker
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={newAccount.broker}
+                                                        onChange={(e) => setNewAccount(prev => ({ ...prev, broker: e.target.value }))}
+                                                        placeholder="e.g., IC Markets"
+                                                        className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                                    />
+                                                </div>
+                                                
+                                                <div className="space-y-2">
+                                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                                        Platform
+                                                    </label>
+                                                    <select
+                                                        value={newAccount.platform}
+                                                        onChange={(e) => setNewAccount(prev => ({ ...prev, platform: e.target.value as any }))}
+                                                        className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all"
+                                                    >
+                                                        <option value="METATRADER5">MetaTrader 5</option>
+                                                        <option value="CTRADER">cTrader</option>
+                                                        <option value="TRADINGVIEW">TradingView</option>
+                                                        <option value="MANUAL">Manual</option>
+                                                    </select>
+                                                </div>
+                                                
+                                                <div className="space-y-2">
+                                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                                        Platform Account ID
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={newAccount.platformAccountId}
+                                                        onChange={(e) => setNewAccount(prev => ({ ...prev, platformAccountId: e.target.value }))}
+                                                        placeholder="e.g., MT5 login ID or cTrader account"
+                                                        className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                                    />
+                                                    <p className="text-[9px] text-gray-600">The account number from your trading platform (used for sync)</p>
+                                                </div>
+                                                
+                                                <div className="space-y-2">
+                                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                                        Account Type
+                                                    </label>
+                                                    <select
+                                                        value={newAccount.accountType}
+                                                        onChange={(e) => setNewAccount(prev => ({ ...prev, accountType: e.target.value as any }))}
+                                                        className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all"
+                                                    >
+                                                        <option value="OWN_MONEY">Own Money</option>
+                                                        <option value="PROPFIRM">Prop Firm</option>
+                                                    </select>
+                                                </div>
+                                                
+                                                {newAccount.accountType === 'PROPFIRM' && (
+                                                    <>
+                                                        <div className="space-y-2">
+                                                            <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                                                Prop Firm
+                                                            </label>
+                                                            <select
+                                                                value={newAccount.propFirmId}
+                                                                onChange={(e) => setNewAccount(prev => ({ ...prev, propFirmId: e.target.value }))}
+                                                                className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all"
+                                                            >
+                                                                <option value="">Select a prop firm...</option>
+                                                                {propFirms.map((firm) => (
+                                                                    <option key={firm.id} value={firm.id}>
+                                                                        {firm.name}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                        
+                                                        <div className="space-y-2">
+                                                            <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                                                Account Size
+                                                            </label>
+                                                            <select
+                                                                value={newAccount.accountSize}
+                                                                onChange={(e) => setNewAccount(prev => ({ ...prev, accountSize: e.target.value }))}
+                                                                className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all"
+                                                            >
+                                                                <option value="">Select size...</option>
+                                                                <option value="5000">$5,000</option>
+                                                                <option value="10000">$10,000</option>
+                                                                <option value="25000">$25,000</option>
+                                                                <option value="50000">$50,000</option>
+                                                                <option value="100000">$100,000</option>
+                                                                <option value="200000">$200,000</option>
+                                                                <option value="300000">$300,000</option>
+                                                                <option value="custom">Custom...</option>
+                                                            </select>
+                                                        </div>
+                                                        {newAccount.accountSize === 'custom' && (
+                                                            <div className="space-y-2">
+                                                                <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                                                    Custom Amount ($)
+                                                                </label>
+                                                                <input
+                                                                    type="number"
+                                                                    onChange={(e) => setNewAccount(prev => ({ ...prev, accountSize: e.target.value }))}
+                                                                    placeholder="Enter custom amount"
+                                                                    className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                                                />
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                )}
+                                                
+                                                <div className="space-y-2">
+                                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                                        Currency
+                                                    </label>
+                                                    <select
+                                                        value={newAccount.currency}
+                                                        onChange={(e) => setNewAccount(prev => ({ ...prev, currency: e.target.value }))}
+                                                        className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all"
+                                                    >
+                                                        <option value="USD">USD</option>
+                                                        <option value="EUR">EUR</option>
+                                                        <option value="GBP">GBP</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="flex items-center justify-end gap-3 mt-6">
+                                                <button
+                                                    onClick={() => setShowAddAccount(false)}
+                                                    className="px-4 py-2 rounded-lg border border-white/10 text-gray-400 text-xs font-bold uppercase hover:bg-white/5 transition-all"
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    onClick={async () => {
+                                                        if (!newAccount.name.trim()) return;
+                                                        
+                                                        setAddingAccount(true);
+                                                        try {
+                                                            const res = await fetch('/api/accounts', {
+                                                                method: 'POST',
+                                                                headers: { 'Content-Type': 'application/json' },
+                                                                body: JSON.stringify({
+                                                                    name: newAccount.name,
+                                                                    broker: newAccount.broker || undefined,
+                                                                    platform: newAccount.platform,
+                                                                    platformAccountId: newAccount.platformAccountId || undefined,
+                                                                    accountType: newAccount.accountType,
+                                                                    propFirmId: newAccount.propFirmId || undefined,
+                                                                    accountSize: newAccount.accountSize ? parseFloat(newAccount.accountSize) : undefined,
+                                                                    currency: newAccount.currency,
+                                                                }),
+                                                            });
+                                                            
+                                                            if (res.ok) {
+                                                                const data = await res.json();
+                                                                setAccounts(prev => [...prev, data.account]);
+                                                                setShowAddAccount(false);
+                                                                setNewAccount({
+                                                                    name: '',
+                                                                    broker: '',
+                                                                    platform: 'METATRADER5',
+                                                                    platformAccountId: '',
+                                                                    accountType: 'OWN_MONEY',
+                                                                    propFirmId: '',
+                                                                    accountSize: '',
+                                                                    currency: 'USD',
+                                                                });
+                                                            }
+                                                        } catch (error) {
+                                                            // error handled by loading state
+                                                        } finally {
+                                                            setAddingAccount(false);
+                                                        }
+                                                    }}
+                                                    disabled={addingAccount || !newAccount.name.trim()}
+                                                    className="px-4 py-2 rounded-lg bg-primary text-black text-xs font-bold uppercase hover:brightness-110 transition-all disabled:opacity-50 flex items-center gap-2"
+                                                >
+                                                    {addingAccount ? (
+                                                        <Loader2 size={14} className="animate-spin" />
+                                                    ) : (
+                                                        <Plus size={14} />
+                                                    )}
+                                                    Add Account
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Accounts List */}
+                                    <div className="glass-card p-6 border-white/5 bg-white/5">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">
+                                                Connected Accounts
+                                            </h4>
+                                            <div className="flex items-center gap-3">
+                                                <button
+                                                    onClick={() => setShowAddAccount(true)}
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/30 text-primary text-[10px] font-bold uppercase tracking-wide hover:bg-primary/20 transition-all"
+                                                >
+                                                    <Plus size={12} />
+                                                    Add Account
+                                                </button>
+                                                <span className="text-xs text-gray-500">
+                                                    {accounts.filter(a => a.isActive).length} active
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {accounts.length === 0 ? (
+                                            <div className="text-center py-8">
+                                                <Wallet className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                                                <p className="text-gray-400 text-sm">No accounts yet</p>
+                                                <p className="text-gray-500 text-xs mt-1 mb-4">
+                                                    Create an account manually or sync from MT5/cTrader
+                                                </p>
+                                                <button
+                                                    onClick={() => setShowAddAccount(true)}
+                                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-black text-xs font-bold uppercase hover:brightness-110 transition-all"
+                                                >
+                                                    <Plus size={14} />
+                                                    Add Your First Account
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-3">
+                                                {accounts.map((account) => (
+                                                    <div
+                                                        key={account.id}
+                                                        className={cn(
+                                                            "glass-card p-4 border-white/5 bg-black/20",
+                                                            !account.isActive && "opacity-50"
+                                                        )}
+                                                    >
+                                                        {editingId === account.id ? (
+                                                            // Edit mode
+                                                            <div className="space-y-3">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="flex-1">
+                                                                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-600 block mb-1">
+                                                                            Name
+                                                                        </label>
+                                                                        <input
+                                                                            type="text"
+                                                                            value={editName}
+                                                                            onChange={(e) => setEditName(e.target.value)}
+                                                                            className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm"
+                                                                        />
+                                                                    </div>
+                                                                    <div className="flex-1">
+                                                                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-600 block mb-1">
+                                                                            Broker
+                                                                        </label>
+                                                                        <input
+                                                                            type="text"
+                                                                            value={editBroker}
+                                                                            onChange={(e) => setEditBroker(e.target.value)}
+                                                                            className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm"
+                                                                            placeholder="Optional"
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                                {/* Prop Firm Rule Overrides */}
+                                                                {account.propFirm && (
+                                                                    <div className="p-3 rounded-lg bg-purple-500/5 border border-purple-500/20">
+                                                                        <div className="text-[9px] font-black uppercase tracking-widest text-purple-400 mb-2">
+                                                                            Rule Overrides (leave empty to use prop firm defaults)
+                                                                        </div>
+                                                                        <div className="grid grid-cols-3 gap-2">
+                                                                            <div>
+                                                                                <label className="text-[8px] font-bold uppercase tracking-wider text-gray-500 block mb-1">
+                                                                                    Daily Loss %
+                                                                                </label>
+                                                                                <input
+                                                                                    type="number"
+                                                                                    step="0.1"
+                                                                                    value={editMaxDailyLoss}
+                                                                                    onChange={(e) => setEditMaxDailyLoss(e.target.value)}
+                                                                                    className="w-full px-2 py-1.5 bg-black/40 border border-white/10 rounded text-white text-xs"
+                                                                                    placeholder={`Default: ${account.propFirm.dailyLossLimit}%`}
+                                                                                />
+                                                                            </div>
+                                                                            <div>
+                                                                                <label className="text-[8px] font-bold uppercase tracking-wider text-gray-500 block mb-1">
+                                                                                    Max DD %
+                                                                                </label>
+                                                                                <input
+                                                                                    type="number"
+                                                                                    step="0.1"
+                                                                                    value={editMaxDrawdown}
+                                                                                    onChange={(e) => setEditMaxDrawdown(e.target.value)}
+                                                                                    className="w-full px-2 py-1.5 bg-black/40 border border-white/10 rounded text-white text-xs"
+                                                                                    placeholder={`Default: ${account.propFirm.maxDrawdown}%`}
+                                                                                />
+                                                                            </div>
+                                                                            <div>
+                                                                                <label className="text-[8px] font-bold uppercase tracking-wider text-gray-500 block mb-1">
+                                                                                    Target %
+                                                                                </label>
+                                                                                <input
+                                                                                    type="number"
+                                                                                    step="0.1"
+                                                                                    value={editProfitTarget}
+                                                                                    onChange={(e) => setEditProfitTarget(e.target.value)}
+                                                                                    className="w-full px-2 py-1.5 bg-black/40 border border-white/10 rounded text-white text-xs"
+                                                                                    placeholder="From config"
+                                                                                />
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                                <div className="flex items-center justify-end gap-2">
+                                                                    <button
+                                                                        onClick={handleCancelEdit}
+                                                                        className="px-3 py-1.5 rounded-lg border border-white/10 text-gray-400 hover:bg-white/5 text-xs font-bold uppercase"
+                                                                    >
+                                                                        <X size={14} className="inline mr-1" />
+                                                                        Cancel
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={handleSaveEdit}
+                                                                        disabled={accountsSaving}
+                                                                        className="px-3 py-1.5 rounded-lg bg-primary text-black text-xs font-bold uppercase hover:brightness-110 disabled:opacity-50"
+                                                                    >
+                                                                        {accountsSaving ? (
+                                                                            <Loader2 size={14} className="inline animate-spin mr-1" />
+                                                                        ) : (
+                                                                            <Save size={14} className="inline mr-1" />
+                                                                        )}
+                                                                        Save
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            // View mode
+                                                            <div className="flex items-start justify-between">
+                                                                <div className="flex-1">
+                                                                    <div className="flex items-center gap-2 mb-1">
+                                                                        <span className="text-white font-bold">{account.name}</span>
+                                                                        <span className={cn(
+                                                                            "px-2 py-0.5 rounded text-[10px] font-bold uppercase",
+                                                                            PLATFORM_COLORS[account.platform] || PLATFORM_COLORS.MANUAL
+                                                                        )}>
+                                                                            {PLATFORM_LABELS[account.platform] || account.platform}
+                                                                        </span>
+                                                                        {account.platformAccountId && (
+                                                                            <span className="text-gray-500 text-xs">
+                                                                                #{account.platformAccountId}
+                                                                            </span>
+                                                                        )}
+                                                                        {account.propFirm && (
+                                                                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-400">
+                                                                                {account.propFirm.name}
+                                                                            </span>
+                                                                        )}
+                                                                        {!account.isActive && (
+                                                                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-red-500/20 text-red-400">
+                                                                                Archived
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="flex items-center gap-4 text-xs text-gray-400">
+                                                                        {account.broker && (
+                                                                            <span>Broker: {account.broker}</span>
+                                                                        )}
+                                                                        <span>{account.tradeCount} trades</span>
+                                                                        <span className={account.totalPnl >= 0 ? 'text-green-400' : 'text-red-400'}>
+                                                                            {formatCurrency(account.totalPnl, account.currency)} P&L
+                                                                        </span>
+                                                                    </div>
+                                                                    {/* Prop Firm Rules Summary */}
+                                                                    {account.propFirm && (
+                                                                        <div className="mt-2 flex flex-wrap items-center gap-3 text-[10px]">
+                                                                            <span className="text-gray-500">
+                                                                                Daily Loss: <span className="text-orange-400 font-bold">{account.propFirm.dailyLossLimit}%</span>
+                                                                            </span>
+                                                                            <span className="text-gray-500">
+                                                                                Max DD: <span className="text-orange-400 font-bold">{account.propFirm.maxDrawdown}%</span>
+                                                                            </span>
+                                                                            {account.accountSize && (
+                                                                                <span className="text-gray-500">
+                                                                                    Size: <span className="text-white font-bold">{formatCurrency(account.accountSize, account.currency)}</span>
+                                                                                </span>
+                                                                            )}
+                                                                            {account.profitSplit && (
+                                                                                <span className="text-gray-500">
+                                                                                    Split: <span className="text-green-400 font-bold">{account.profitSplit}%</span>
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    {account.propFirm && (
+                                                                        <button
+                                                                            onClick={() => router.push(`/pages/prop-firm/${account.id}?from=settings`)}
+                                                                            className="p-2 rounded-lg border border-purple-500/30 hover:bg-purple-500/10 text-purple-400 transition-all"
+                                                                            title="View Challenge Progress"
+                                                                        >
+                                                                            <Building2 size={14} />
+                                                                        </button>
+                                                                    )}
+                                                                    <button
+                                                                        onClick={() => handleStartEdit(account)}
+                                                                        className="p-2 rounded-lg border border-white/10 hover:bg-white/5 transition-all"
+                                                                        title="Edit"
+                                                                    >
+                                                                        <Edit2 size={14} />
+                                                                    </button>
+                                                                    {account.isActive && (
+                                                                        <button
+                                                                            onClick={() => handleArchive(account.id)}
+                                                                            className="p-2 rounded-lg border border-white/10 hover:bg-red-500/10 hover:border-red-500/30 text-gray-400 hover:text-red-400 transition-all"
+                                                                            title="Archive"
+                                                                        >
+                                                                            <Archive size={14} />
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    )}
+
                     {showSaveButton && (
                         <div className="mt-auto pt-10 flex items-center gap-4 border-t border-white/5">
                             <button
@@ -855,5 +1630,19 @@ export default function SettingsPage() {
                 </p>
             </div>
         </DashboardShell>
+    );
+}
+
+export default function SettingsPage() {
+    return (
+        <Suspense fallback={
+            <DashboardShell>
+                <div className="flex items-center justify-center min-h-[60vh]">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+            </DashboardShell>
+        }>
+            <SettingsContent />
+        </Suspense>
     );
 }

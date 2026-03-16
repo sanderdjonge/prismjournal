@@ -22,6 +22,13 @@ export const createAccountSchema = z.object({
   currency: z.string().length(3, 'Currency must be 3 characters').optional().default('USD'),
   leverage: z.number().int().min(1).max(1000).optional().default(100),
   accountType: accountTypeEnum.optional().default('OWN_MONEY'),
+  // Prop firm fields
+  propFirmId: z.string().optional().nullable(),
+  accountSize: z.number().positive().optional().nullable(),
+  profitSplit: z.number().min(0).max(100).optional().nullable(),
+  allowNewsTrading: z.boolean().optional().nullable(),
+  allowWeekendHolding: z.boolean().optional().nullable(),
+  allowEA: z.boolean().optional().nullable(),
 });
 
 /**
@@ -33,6 +40,17 @@ export const updateAccountSchema = z.object({
   accountNumber: z.string().max(50).optional(),
   isActive: z.boolean().optional(),
   notes: z.string().max(1000).optional(),
+  // Prop firm fields
+  propFirmId: z.string().optional().nullable(),
+  accountSize: z.number().positive().optional().nullable(),
+  profitSplit: z.number().min(0).max(100).optional().nullable(),
+  allowNewsTrading: z.boolean().optional().nullable(),
+  allowWeekendHolding: z.boolean().optional().nullable(),
+  allowEA: z.boolean().optional().nullable(),
+  // Prop firm rule overrides
+  maxDailyLoss: z.number().min(0).max(100).optional().nullable(),
+  maxTotalDrawdown: z.number().min(0).max(100).optional().nullable(),
+  profitTarget: z.number().min(0).max(1000).optional().nullable(),
 });
 
 export type CreateAccountInput = z.infer<typeof createAccountSchema>;
