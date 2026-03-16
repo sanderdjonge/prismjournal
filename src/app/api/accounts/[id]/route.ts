@@ -4,7 +4,7 @@ import prisma from '@/lib/prisma';
 import { validateBody, updateAccountSchema } from '@/lib/validations';
 
 export const GET = withAuth(async (_req, ctx, session) => {
-    const id = (ctx.params as { id: string }).id;
+    const { id } = await (ctx.params as Promise<{ id: string }>);
 
     const account = await prisma.tradingAccount.findFirst({
         where: { id, userId: session.user.id },
@@ -29,7 +29,7 @@ export const GET = withAuth(async (_req, ctx, session) => {
 });
 
 export const PATCH = withAuth(async (req, ctx, session) => {
-    const id = (ctx.params as { id: string }).id;
+    const { id } = await (ctx.params as Promise<{ id: string }>);
 
     const existing = await prisma.tradingAccount.findFirst({
         where: { id, userId: session.user.id },
@@ -48,7 +48,7 @@ export const PATCH = withAuth(async (req, ctx, session) => {
 });
 
 export const DELETE = withAuth(async (_req, ctx, session) => {
-    const id = (ctx.params as { id: string }).id;
+    const { id } = await (ctx.params as Promise<{ id: string }>);
 
     const existing = await prisma.tradingAccount.findFirst({
         where: { id, userId: session.user.id },

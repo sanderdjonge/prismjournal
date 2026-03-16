@@ -2,7 +2,6 @@ import { withAuth } from '@/lib/api/withAuth';
 import { ok, badRequest } from '@/lib/api/responses';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
-import { getDefaultAccount } from '@/lib/getAccount';
 
 const bulkDeleteSchema = z.object({
     action: z.literal('delete'),
@@ -15,19 +14,22 @@ const bulkTagSchema = z.object({
     tagId: z.string(),
 });
 
-const bulkSchema = z.discriminatedUnion('action', [bulkDeleteSchema, bulkTagSchema]);
+const bulkAccountSchema = z.object({
+    action: z.literal('account'),
+    tradeIds: z.array(z.string()).min(1).max(100),
+    accountId: z.string(),
+});
+
+const bulkSchema = z.discriminatedUnion('action', [bulkDeleteSchema, bulkTagSchema, bulkAccountSchema]);
 
 export const POST = withAuth(async (req, _ctx, session) => {
     const body = await req.json().catch(() => null);
     const parsed = bulkSchema.safeParse(body);
     if (!parsed.success) return badRequest('Invalid request body');
 
-    const account = await getDefaultAccount();
-    if (!account) return badRequest('No account found');
-
-    // Verify all tradeIds belong to this user's account
+    // Verify all tradeIds belong to this user (any of their accounts)
     const trades = await prisma.trade.findMany({
-        where: { id: { in: parsed.data.tradeIds }, accountId: account.id },
+        where: { id: { in: parsed.data.tradeIds }, account: { userId: session.user.id } },
         select: { id: true },
     });
     const validIds = trades.map((t) => t.id);
@@ -60,6 +62,21 @@ export const POST = withAuth(async (req, _ctx, session) => {
             )
         );
         return ok({ tagged: validIds.length });
+    }
+
+    if (parsed.data.action === 'account') {
+        const { accountId } = parsed.data;
+        // Verify account belongs to this user
+        const account = await prisma.tradingAccount.findFirst({
+            where: { id: accountId, userId: session.user.id, isActive: true },
+        });
+        if (!account) return badRequest('Account not found');
+
+        await prisma.trade.updateMany({
+            where: { id: { in: validIds } },
+            data: { accountId },
+        });
+        return ok({ moved: validIds.length });
     }
 
     return badRequest('Unknown action');

@@ -5,8 +5,7 @@ import prisma from '@/lib/prisma';
 // Get challenge progress for an account
 export const GET = withAuth(async (req, ctx, session) => {
     const userId = session.user.id;
-    const params = ctx.params as { id: string };
-    const accountId = params.id;
+    const { id: accountId } = await (ctx.params as Promise<{ id: string }>);
 
     // Verify account belongs to user
     const account = await prisma.tradingAccount.findFirst({

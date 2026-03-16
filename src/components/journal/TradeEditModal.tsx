@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Edit3 } from 'lucide-react';
+import { X, Edit3, Tag as TagIcon, Plus } from 'lucide-react';
+import { useTags, useCreateTag } from '@/hooks/useTags';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
@@ -17,6 +18,7 @@ import {
 } from './trade-entry';
 import { getContractSize, calcPnl } from '@/lib/tradeCalculations';
 import { tradeFormSchema, type TradeFormValues } from '@/lib/validations/tradeForm';
+import { useAccounts } from '@/hooks/useAccounts';
 
 interface MediaItem {
     id: string;
@@ -35,6 +37,16 @@ export default function TradeEditModal({ trade, isOpen, onClose, onSaved }: Trad
     const [screenshots, setScreenshots] = useState<File[]>([]);
     const [existingMedia, setExistingMedia] = useState<MediaItem[]>([]);
     const [computedPnl, setComputedPnl] = useState<number | null>(null);
+    const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+    const [newTagName, setNewTagName] = useState('');
+    const [showTagInput, setShowTagInput] = useState(false);
+
+    const { data: tagsData } = useTags();
+    const createTag = useCreateTag();
+    const allTags = tagsData?.tags ?? [];
+
+    const { accounts } = useAccounts();
+    const [editAccountId, setEditAccountId] = useState<string | undefined>(undefined);
 
     const {
         register,
@@ -92,6 +104,12 @@ export default function TradeEditModal({ trade, isOpen, onClose, onSaved }: Trad
             });
             setComputedPnl(trade.pnl);
             setScreenshots([]);
+            setNewTagName('');
+            setShowTagInput(false);
+            setEditAccountId((trade as { accountId?: string }).accountId ?? undefined);
+            // Load existing tags from trade data
+            const existingTagIds = (trade as { tags?: { id: string }[] }).tags?.map(t => t.id) ?? [];
+            setSelectedTagIds(existingTagIds);
 
             // Load existing media
             fetch(`/api/trades/${trade.id}`)
@@ -141,9 +159,17 @@ export default function TradeEditModal({ trade, isOpen, onClose, onSaved }: Trad
                     mood: values.mood,
                     planCompliance: values.planCompliance,
                     notes: values.notes?.trim() || undefined,
+                    accountId: editAccountId || undefined,
                 }),
             });
             if (!res.ok) throw new Error('Server error');
+
+            // Sync tags
+            await fetch(`/api/trades/${trade.id}/tags`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tagIds: selectedTagIds }),
+            });
 
             // Upload screenshots if any
             if (screenshots.length > 0) {
@@ -201,6 +227,26 @@ export default function TradeEditModal({ trade, isOpen, onClose, onSaved }: Trad
 
                         <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col overflow-hidden">
                             <div className="flex-1 overflow-y-auto p-6 no-scrollbar space-y-6">
+                                {/* Account Selector */}
+                                {accounts && accounts.length > 1 && (
+                                    <div>
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">
+                                            Account
+                                        </label>
+                                        <select
+                                            value={editAccountId || ''}
+                                            onChange={(e) => setEditAccountId(e.target.value || undefined)}
+                                            className="w-full px-3 py-2.5 bg-black/40 border border-white/10 rounded-xl text-white text-sm focus:border-primary/50 focus:outline-none"
+                                        >
+                                            {accounts.map((acc) => (
+                                                <option key={acc.id} value={acc.id}>
+                                                    {acc.name}{acc.propFirm ? ` (${acc.propFirm.name})` : ''}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
+
                                 {/* Trade Form Fields */}
                                 <TradeFormFields
                                     register={register}
@@ -227,6 +273,80 @@ export default function TradeEditModal({ trade, isOpen, onClose, onSaved }: Trad
                                     notes={notes ?? ''}
                                     onNotesChange={(v) => setValue('notes', v)}
                                 />
+
+                                {/* Tags */}
+                                <div>
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 flex items-center gap-1">
+                                        <TagIcon size={10} /> Tags
+                                    </label>
+                                    <div className="flex flex-wrap gap-2 mb-2">
+                                        {allTags.map((tag) => {
+                                            const selected = selectedTagIds.includes(tag.id);
+                                            return (
+                                                <button
+                                                    key={tag.id}
+                                                    type="button"
+                                                    onClick={() => setSelectedTagIds(prev =>
+                                                        selected ? prev.filter(id => id !== tag.id) : [...prev, tag.id]
+                                                    )}
+                                                    className="px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider border transition-all"
+                                                    style={selected ? {
+                                                        backgroundColor: `${tag.color || '#00f2ff'}20`,
+                                                        color: tag.color || '#00f2ff',
+                                                        borderColor: `${tag.color || '#00f2ff'}40`,
+                                                    } : {
+                                                        backgroundColor: 'transparent',
+                                                        color: '#6b7280',
+                                                        borderColor: 'rgba(255,255,255,0.1)',
+                                                    }}
+                                                >
+                                                    {tag.name}
+                                                </button>
+                                            );
+                                        })}
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowTagInput(!showTagInput)}
+                                            className="px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider border border-white/10 text-gray-500 hover:text-white hover:border-white/20 transition-all flex items-center gap-1"
+                                        >
+                                            <Plus size={9} /> New
+                                        </button>
+                                    </div>
+                                    {showTagInput && (
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="text"
+                                                value={newTagName}
+                                                onChange={(e) => setNewTagName(e.target.value)}
+                                                onKeyDown={async (e) => {
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault();
+                                                        if (!newTagName.trim()) return;
+                                                        const tag = await createTag.mutateAsync({ name: newTagName.trim() });
+                                                        setSelectedTagIds(prev => [...prev, tag.id]);
+                                                        setNewTagName('');
+                                                        setShowTagInput(false);
+                                                    }
+                                                }}
+                                                placeholder="Tag name (Enter to create)"
+                                                className="flex-1 px-3 py-1.5 bg-black/40 border border-white/10 rounded-lg text-white text-xs focus:border-primary/50 focus:outline-none"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={async () => {
+                                                    if (!newTagName.trim()) return;
+                                                    const tag = await createTag.mutateAsync({ name: newTagName.trim() });
+                                                    setSelectedTagIds(prev => [...prev, tag.id]);
+                                                    setNewTagName('');
+                                                    setShowTagInput(false);
+                                                }}
+                                                className="px-3 py-1.5 bg-primary/20 border border-primary/30 rounded-lg text-primary text-xs font-bold hover:bg-primary/30 transition-all"
+                                            >
+                                                Create
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
 
                                 {/* Existing Screenshots */}
                                 {existingMedia.length > 0 && (

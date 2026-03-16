@@ -34,6 +34,7 @@ export interface Trade {
     entryTime?: string | null;
     exitTime?: string | null;
     tags?: Tag[];
+    accountName?: string | null;
 }
 
 export type SortDir = 'asc' | 'desc';
@@ -52,6 +53,7 @@ export const DEFAULT_COLUMNS: Column[] = [
     { id: 'status', label: 'Status', visible: true, sortable: true, mobileVisible: false },
     { id: 'rr', label: 'RR', visible: true, sortable: true, mobileVisible: false },
     { id: 'tags', label: 'Tags', visible: true, sortable: false, mobileVisible: false },
+    { id: 'account', label: 'Account', visible: false, sortable: true, mobileVisible: false },
     { id: 'actions', label: '', visible: true, sortable: false, mobileVisible: true },
 ];
 

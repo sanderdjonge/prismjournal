@@ -12,6 +12,7 @@ export interface AccountInfo {
     currentBalance: number | null;
     currentEquity: number | null;
     isActive: boolean;
+    propFirm?: { id: string; name: string } | null;
 }
 
 interface UseAccountsReturn {

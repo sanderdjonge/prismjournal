@@ -13,7 +13,8 @@ import { SkeletonRow, ConfirmModal } from '@/components/ui';
 import { useTrades, useDeleteTrade, TradeFilters } from '@/hooks/useTrades';
 import { useTags } from '@/hooks/useTags';
 import { useBulkOperations } from '@/hooks/useBulkOperations';
-import { Search, Plus, Zap, Calendar, ChevronLeft, ChevronRight, Download, Tag as TagIcon, Trash2, X } from 'lucide-react';
+import { useAccounts } from '@/hooks/useAccounts';
+import { Search, Plus, Zap, Calendar, ChevronLeft, ChevronRight, Download, Tag as TagIcon, Trash2, X, Wallet } from 'lucide-react';
 
 export type JournalTrade = {
     id: string;
@@ -35,6 +36,9 @@ export type JournalTrade = {
     strategy?: string | null;
     entryTime?: string | null;
     exitTime?: string | null;
+    tags?: { id: string; name: string; color?: string | null }[];
+    accountName?: string | null;
+    accountId?: string | null;
 };
 
 function JournalContent() {
@@ -62,7 +66,11 @@ function JournalContent() {
     const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
 
     // Bulk operations hook
-    const { bulkDelete, bulkTag, isDeleting } = useBulkOperations();
+    const { bulkDelete, bulkTag, bulkAccount, isDeleting } = useBulkOperations();
+    const [accountDropdownOpen, setAccountDropdownOpen] = useState(false);
+
+    // Account switcher (syncs with topnav)
+    const { accounts, selectedAccountId, selectAccount } = useAccounts();
 
     // Build filters object for React Query
     const filters: TradeFilters = {
@@ -72,6 +80,7 @@ function JournalContent() {
         tag: filterTag !== 'ALL' ? filterTag : undefined,
         from: dateFrom || undefined,
         to: dateTo || undefined,
+        account: selectedAccountId || undefined,
         page,
     };
 
@@ -259,6 +268,16 @@ function JournalContent() {
         }
     };
 
+    const handleBulkAccount = async (accountId: string) => {
+        try {
+            await bulkAccount({ tradeIds: Array.from(selectedIds), accountId });
+            setAccountDropdownOpen(false);
+            setSelectedIds(new Set());
+        } catch {
+            // Error handled in hook
+        }
+    };
+
     const handleBulkTag = async (tagId: string) => {
         try {
             await bulkTag({ tradeIds: Array.from(selectedIds), tagId });
@@ -343,6 +362,25 @@ function JournalContent() {
                         ))}
                     </div>
 
+                    {/* Account Filter */}
+                    {accounts.length > 1 && (
+                        <div className="glass-card flex items-center gap-1 border-white/5 bg-white/5 p-1">
+                            <Wallet size={12} className="text-gray-500 ml-1" />
+                            <select
+                                value={selectedAccountId || ''}
+                                onChange={(e) => selectAccount(e.target.value || null)}
+                                className="bg-transparent border-none outline-none text-[10px] text-white font-bold uppercase tracking-widest cursor-pointer"
+                            >
+                                <option value="" className="bg-gray-900">ALL ACCOUNTS</option>
+                                {accounts.map((acc) => (
+                                    <option key={acc.id} value={acc.id} className="bg-gray-900">
+                                        {acc.name.toUpperCase()}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
                     {/* Tag Filter */}
                     {tags.length > 0 && (
                         <div className="glass-card flex items-center gap-1 border-white/5 bg-white/5 p-1">
@@ -405,6 +443,31 @@ function JournalContent() {
                             </button>
                         </div>
                         <div className="flex items-center gap-2">
+                            {/* Move to Account Dropdown */}
+                            {accounts.length > 1 && (
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setAccountDropdownOpen(!accountDropdownOpen)}
+                                        className="h-8 px-4 rounded-lg bg-white/5 border border-white/10 text-white font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:bg-white/10 transition-all"
+                                    >
+                                        <Wallet size={12} /> Move to Account
+                                    </button>
+                                    {accountDropdownOpen && (
+                                        <div className="absolute top-full right-0 mt-1 glass-card border-white/10 bg-gray-900/95 rounded-lg overflow-hidden z-20 min-w-[180px]">
+                                            {accounts.map((acc) => (
+                                                <button
+                                                    key={acc.id}
+                                                    onClick={() => handleBulkAccount(acc.id)}
+                                                    className="w-full px-3 py-2 text-left text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 text-gray-300 hover:text-white flex items-center gap-2"
+                                                >
+                                                    {acc.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             {/* Tag Dropdown */}
                             <div className="relative">
                                 <button

@@ -12,11 +12,18 @@ interface BulkTagRequest {
     tagId: string;
 }
 
-type BulkRequest = BulkDeleteRequest | BulkTagRequest;
+interface BulkAccountRequest {
+    action: 'account';
+    tradeIds: string[];
+    accountId: string;
+}
+
+type BulkRequest = BulkDeleteRequest | BulkTagRequest | BulkAccountRequest;
 
 interface BulkResponse {
     deleted?: number;
     tagged?: number;
+    moved?: number;
 }
 
 async function bulkOperation(request: BulkRequest): Promise<BulkResponse> {
@@ -60,9 +67,22 @@ export function useBulkOperations() {
         },
     });
 
+    const bulkAccount = useMutation({
+        mutationFn: ({ tradeIds, accountId }: { tradeIds: string[]; accountId: string }) =>
+            bulkOperation({ action: 'account', tradeIds, accountId }),
+        onSuccess: (data) => {
+            toast.success(`${data.moved} trades moved`);
+            queryClient.invalidateQueries({ queryKey: ['trades'] });
+        },
+        onError: (error: Error) => {
+            toast.error(error.message || 'Failed to move trades');
+        },
+    });
+
     return {
         bulkDelete: bulkDelete.mutateAsync,
         bulkTag: bulkTag.mutateAsync,
+        bulkAccount: bulkAccount.mutateAsync,
         isDeleting: bulkDelete.isPending,
         isTagging: bulkTag.isPending,
     };
