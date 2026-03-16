@@ -30,6 +30,8 @@ export const GET = withAuth(async (req, ctx, session) => {
                     allowNewsTrading: true,
                     allowWeekendHolding: true,
                     allowEA: true,
+                    hasScalingPlan: true,
+                    scalingConfig: true,
                 },
             },
             challengePhases: {
