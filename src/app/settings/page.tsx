@@ -490,17 +490,22 @@ function SettingsContent() {
         }
         
         try {
+            console.log('[handleArchive] Archiving account:', accountId);
             const res = await fetch(`/api/accounts/${accountId}`, { method: 'DELETE' });
+            console.log('[handleArchive] Response status:', res.status);
+            
             if (res.ok) {
-                // Remove the account from the list entirely
-                setAccounts(prev => prev.filter(a => a.id !== accountId));
+                const data = await res.json();
+                console.log('[handleArchive] Success:', data);
+                // Reload accounts to reflect the change
+                await loadAccountsData();
             } else {
-                const errorData = await res.json().catch(() => ({}));
-                console.error('Failed to archive account:', errorData);
-                alert('Failed to archive account. Please try again.');
+                const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+                console.error('[handleArchive] Failed:', errorData);
+                alert(`Failed to archive account: ${errorData.error || 'Please try again.'}`);
             }
         } catch (error) {
-            console.error('Error archiving account:', error);
+            console.error('[handleArchive] Error:', error);
             alert('An error occurred while archiving the account.');
         }
     };

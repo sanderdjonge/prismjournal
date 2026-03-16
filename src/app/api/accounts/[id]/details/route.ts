@@ -7,6 +7,12 @@ export const GET = withAuth(async (req, ctx, session) => {
     const userId = session.user.id;
     const { id: accountId } = await (ctx.params as Promise<{ id: string }>);
 
+    console.log('[GET /api/accounts/[id]/details] Request:', {
+        accountId,
+        userId,
+        timestamp: new Date().toISOString()
+    });
+
     // Use type assertion to bypass TypeScript issues with Prisma client types
     const account = await (prisma as any).tradingAccount.findFirst({
         where: { id: accountId, userId },
