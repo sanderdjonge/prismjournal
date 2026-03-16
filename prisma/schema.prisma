@@ -103,9 +103,28 @@ model TradingAccount {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   
+  // Prop Firm Reference
+  propFirmId      String?
+  propFirm        PropFirm?       @relation(fields: [propFirmId], references: [id])
+  
+  // Challenge Tracking
+  currentPhaseId  String?
+  
+  // Enhanced Prop Firm Fields
+  accountSize     Float?        // Challenge account size (e.g., 100000)
+  profitSplit     Float?        // Percentage trader gets (e.g., 80.0 = 80%)
+  
+  // Restrictions (override from prop firm defaults)
+  allowNewsTrading    Boolean?
+  allowWeekendHolding Boolean?
+  allowEA            Boolean?
+  
   // Relations
   trades          Trade[]
   equitySnapshots EquitySnapshot[]
+  challengePhases ChallengePhase[]
+  violations      RuleViolation[]
+  dailySnapshots  DailyAccountSnapshot[]
   
   @@index([userId])
   @@unique([userId, platform, platformAccountId])
@@ -114,6 +133,216 @@ model TradingAccount {
 enum AccountType {
   PROPFIRM
   OWN_MONEY
+}
+
+// ============================================
+// Prop Firm Profiles (Predefined configurations)
+// ============================================
+
+model PropFirm {
+  id              String   @id @default(cuid())
+  name            String   @unique  // e.g., "FTMO", "The Funded Trader"
+  slug            String   @unique  // URL-friendly identifier
+  
+  // Description
+  description     String?
+  website         String?
+  logoUrl         String?
+  
+  // Challenge Configuration
+  challengeType   ChallengeType  @default(TWO_PHASE)
+  
+  // Default Rules
+  dailyLossLimit  Float    @default(5.0)  // Percentage (e.g., 5.0 = 5%)
+  maxDrawdown     Float    @default(10.0) // Percentage
+  drawdownType    DrawdownType @default(STATIC)
+  
+  // Restrictions
+  allowNewsTrading    Boolean @default(true)
+  allowWeekendHolding Boolean @default(true)
+  allowEA            Boolean @default(true)
+  
+  // Phases Configuration (stored as JSON)
+  phasesConfig    String   // JSON with phase configurations
+  
+  // Scaling Plan
+  hasScalingPlan  Boolean  @default(false)
+  scalingConfig   String?  // JSON with scaling rules
+  
+  // Status
+  isActive        Boolean  @default(true)
+  popularity      Int      @default(0)  // For sorting
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  accounts        TradingAccount[]
+  
+  @@index([name])
+  @@index([slug])
+}
+
+enum ChallengeType {
+  ONE_PHASE
+  TWO_PHASE
+  THREE_PHASE
+}
+
+enum DrawdownType {
+  STATIC        // Fixed from starting balance
+  TRAILING      // Follows account high
+}
+
+// ============================================
+// Prop Firm Challenge Phase
+// ============================================
+
+model ChallengePhase {
+  id              String   @id @default(cuid())
+  accountId       String
+  account         TradingAccount @relation(fields: [accountId], references: [id])
+  
+  // Phase Info
+  phaseNumber     Int      // 1, 2, or 3
+  phaseName       String   // "Phase 1", "Verification", "Funded"
+  
+  // Targets
+  profitTarget    Float?   // Percentage target (e.g., 10.0 = 10%)
+  profitTargetAmount Float? // Actual dollar amount
+  
+  // Limits
+  dailyLossLimit  Float    // Percentage
+  maxDrawdown     Float    // Percentage
+  
+  // Requirements
+  minTradingDays  Int?
+  timeLimitDays   Int?
+  
+  // Progress
+  status          PhaseStatus @default(IN_PROGRESS)
+  startedAt       DateTime @default(now())
+  completedAt     DateTime?
+  failedAt        DateTime?
+  failureReason   String?
+  
+  // Metrics (updated daily)
+  currentProgress Float?   // Percentage toward profit target
+  currentDrawdown Float?   // Current drawdown percentage
+  dailyPnl        Float?   // Today's P&L
+  tradingDaysCount Int     @default(0)
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  violations      RuleViolation[]
+  
+  @@index([accountId])
+  @@index([status])
+}
+
+enum PhaseStatus {
+  IN_PROGRESS
+  PASSED
+  FAILED
+  SKIPPED
+}
+
+// ============================================
+// Rule Violations
+// ============================================
+
+model RuleViolation {
+  id              String   @id @default(cuid())
+  accountId       String
+  account         TradingAccount @relation(fields: [accountId], references: [id])
+  phaseId         String?
+  phase           ChallengePhase? @relation(fields: [phaseId], references: [id])
+  
+  // Violation Details
+  ruleType        RuleType
+  severity        ViolationSeverity
+  
+  // Values
+  limitValue      Float    // The rule limit
+  actualValue     Float    // What actually happened
+  
+  // Context
+  description     String
+  tradeId         String?  // Related trade if applicable
+  
+  // Resolution
+  isResolved      Boolean  @default(false)
+  resolvedAt      DateTime?
+  resolutionNotes String?
+  
+  // Timestamps
+  occurredAt      DateTime @default(now())
+  createdAt       DateTime @default(now())
+  
+  @@index([accountId])
+  @@index([ruleType])
+  @@index([occurredAt])
+}
+
+enum RuleType {
+  DAILY_LOSS_LIMIT
+  MAX_DRAWDOWN
+  NEWS_TRADING
+  WEEKEND_HOLDING
+  POSITION_SIZE
+  TIME_LIMIT
+  MIN_TRADING_DAYS
+}
+
+enum ViolationSeverity {
+  WARNING      // Approaching limit
+  CRITICAL     // At limit
+  BREACH       // Exceeded limit (account failed)
+}
+
+// ============================================
+// Daily Account Snapshot
+// ============================================
+
+model DailyAccountSnapshot {
+  id              String   @id @default(cuid())
+  accountId       String
+  account         TradingAccount @relation(fields: [accountId], references: [id])
+  
+  // Date
+  snapshotDate    DateTime @db.Date
+  
+  // Balance Tracking
+  startingBalance Float
+  endingBalance   Float
+  endingEquity    Float
+  
+  // P&L
+  dailyPnl        Float
+  dailyPnlPercent Float
+  
+  // Drawdown
+  currentDrawdown Float
+  maxDrawdown     Float
+  highWaterMark   Float
+  
+  // Limits Check
+  dailyLossUsed   Float    // Percentage of daily loss used
+  isDailyLimitBreached Boolean @default(false)
+  isMaxDrawdownBreached Boolean @default(false)
+  
+  // Progress
+  profitProgress  Float?   // Percentage toward target
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  
+  @@unique([accountId, snapshotDate])
+  @@index([accountId, snapshotDate])
 }
 
 // ============================================
