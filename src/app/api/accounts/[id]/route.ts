@@ -49,21 +49,56 @@ export const PATCH = withAuth(async (req, ctx, session) => {
 
 export const DELETE = withAuth(async (_req, ctx, session) => {
     const { id } = await (ctx.params as Promise<{ id: string }>);
+    const userId = session.user.id;
+
+    console.log('[DELETE /api/accounts/[id]] Request received:', {
+        accountId: id,
+        userId,
+        timestamp: new Date().toISOString()
+    });
 
     try {
-        const existing = await prisma.tradingAccount.findFirst({
-            where: { id, userId: session.user.id },
+        // First, check if the account exists at all
+        const accountExists = await prisma.tradingAccount.findUnique({
+            where: { id },
+            select: { id: true, userId: true, name: true, isActive: true },
         });
-        if (!existing) return notFound('Account');
 
+        if (!accountExists) {
+            console.log('[DELETE /api/accounts/[id]] Account not found:', { accountId: id });
+            return notFound('Account');
+        }
+
+        // Check if the account belongs to the user
+        if (accountExists.userId !== userId) {
+            console.log('[DELETE /api/accounts/[id]] Account belongs to different user:', {
+                accountId: id,
+                accountUserId: accountExists.userId,
+                requestUserId: userId
+            });
+            return notFound('Account'); // Return 404 to not reveal existence
+        }
+
+        // Check if already archived
+        if (!accountExists.isActive) {
+            console.log('[DELETE /api/accounts/[id]] Account already archived:', { accountId: id });
+            return ok({ account: accountExists, message: 'Account was already archived' });
+        }
+
+        // Perform soft delete
         const account = await prisma.tradingAccount.update({
             where: { id },
             data: { isActive: false },
         });
 
+        console.log('[DELETE /api/accounts/[id]] Account archived successfully:', {
+            accountId: id,
+            accountName: account.name
+        });
+
         return ok({ account });
     } catch (error) {
-        console.error('DELETE /api/accounts/[id] error:', error);
+        console.error('[DELETE /api/accounts/[id]] Error:', error);
         return internalError();
     }
 });
