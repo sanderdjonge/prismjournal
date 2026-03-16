@@ -61,6 +61,8 @@ interface Violation {
     description: string;
     occurredAt: string;
     isResolved: boolean;
+    resolvedAt?: string | null;
+    resolutionNotes?: string | null;
 }
 
 interface AccountDetails {
@@ -117,6 +119,8 @@ function PropFirmAccountContent() {
     const [account, setAccount] = useState<AccountDetails | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [acknowledgingId, setAcknowledgingId] = useState<string | null>(null);
+    const [showAllViolations, setShowAllViolations] = useState(false);
 
     useEffect(() => {
         async function fetchAccountDetails() {
@@ -177,6 +181,44 @@ function PropFirmAccountContent() {
             MIN_TRADING_DAYS: 'Minimum Trading Days',
         };
         return labels[ruleType] || ruleType;
+    };
+
+    const handleAcknowledgeViolation = async (violationId: string) => {
+        if (!confirm('Acknowledge this violation? It will be marked as resolved.')) {
+            return;
+        }
+        
+        setAcknowledgingId(violationId);
+        try {
+            const res = await fetch(`/api/violations/${violationId}/acknowledge`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ acknowledged: true }),
+            });
+            
+            if (res.ok) {
+                // Update the violation in the local state
+                setAccount(prev => {
+                    if (!prev) return prev;
+                    return {
+                        ...prev,
+                        violations: prev.violations.map(v =>
+                            v.id === violationId
+                                ? { ...v, isResolved: true, resolvedAt: new Date().toISOString() }
+                                : v
+                        ),
+                    };
+                });
+            } else {
+                const error = await res.json().catch(() => ({ error: 'Unknown error' }));
+                alert(`Failed to acknowledge: ${error.error || 'Please try again'}`);
+            }
+        } catch (err) {
+            console.error('Error acknowledging violation:', err);
+            alert('An error occurred. Please try again.');
+        } finally {
+            setAcknowledgingId(null);
+        }
     };
 
     if (loading) {
@@ -525,12 +567,22 @@ function PropFirmAccountContent() {
                             </div>
                         )}
 
-                        {/* Recent Violations */}
+                        {/* Violations */}
                         <div className="glass-card p-6 border-white/5">
-                            <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                                <AlertTriangle size={20} className="text-primary" />
-                                Recent Violations
-                            </h2>
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                                    <AlertTriangle size={20} className="text-primary" />
+                                    Violations
+                                </h2>
+                                {account.violations.length > 5 && (
+                                    <button
+                                        onClick={() => setShowAllViolations(!showAllViolations)}
+                                        className="text-xs text-primary hover:text-primary/80 transition-all"
+                                    >
+                                        {showAllViolations ? 'Show Less' : `Show All (${account.violations.length})`}
+                                    </button>
+                                )}
+                            </div>
                             {account.violations.length === 0 ? (
                                 <div className="text-center py-6">
                                     <CheckCircle size={32} className="mx-auto text-green-400 mb-2" />
@@ -538,23 +590,52 @@ function PropFirmAccountContent() {
                                 </div>
                             ) : (
                                 <div className="space-y-3">
-                                    {account.violations.slice(0, 5).map((violation) => (
+                                    {(showAllViolations ? account.violations : account.violations.slice(0, 5)).map((violation) => (
                                         <div
                                             key={violation.id}
                                             className={cn(
-                                                "p-3 rounded-lg border",
-                                                getSeverityColor(violation.severity)
+                                                "p-3 rounded-lg border transition-all",
+                                                violation.isResolved
+                                                    ? "opacity-50 border-gray-500/30 bg-gray-500/5"
+                                                    : getSeverityColor(violation.severity)
                                             )}
                                         >
                                             <div className="flex items-center justify-between mb-1">
-                                                <span className="text-xs font-bold uppercase">
-                                                    {getRuleTypeLabel(violation.ruleType)}
-                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs font-bold uppercase">
+                                                        {getRuleTypeLabel(violation.ruleType)}
+                                                    </span>
+                                                    {violation.isResolved && (
+                                                        <span className="flex items-center gap-1 text-xs text-green-400">
+                                                            <CheckCircle size={12} />
+                                                            Acknowledged
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <span className="text-xs text-gray-400">
                                                     {new Date(violation.occurredAt).toLocaleDateString()}
                                                 </span>
                                             </div>
-                                            <p className="text-xs text-gray-300">{violation.description}</p>
+                                            <p className="text-xs text-gray-300 mb-2">{violation.description}</p>
+                                            {!violation.isResolved && (
+                                                <button
+                                                    onClick={() => handleAcknowledgeViolation(violation.id)}
+                                                    disabled={acknowledgingId === violation.id}
+                                                    className={cn(
+                                                        "text-xs px-3 py-1 rounded-lg transition-all",
+                                                        "bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white",
+                                                        "border border-white/10 hover:border-white/20",
+                                                        acknowledgingId === violation.id && "opacity-50 cursor-not-allowed"
+                                                    )}
+                                                >
+                                                    {acknowledgingId === violation.id ? 'Acknowledging...' : 'Acknowledge'}
+                                                </button>
+                                            )}
+                                            {violation.isResolved && violation.resolvedAt && (
+                                                <p className="text-xs text-gray-500">
+                                                    Resolved: {new Date(violation.resolvedAt).toLocaleDateString()}
+                                                </p>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
