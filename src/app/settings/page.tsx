@@ -291,7 +291,8 @@ function SettingsContent() {
 
         fetch('/api/account/bridge')
             .then((r) => r.json())
-            .then((data) => {
+            .then((data: BridgeKeyInfo) => {
+                setBridgeInfo(data);
                 if (data.bridgeKey) setBridgeKey(data.bridgeKey);
                 if (data.syncUrl) setSyncUrl(data.syncUrl);
             })
