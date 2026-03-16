@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { generateBridgeKey } from '@/lib/getAccount';
@@ -8,7 +8,7 @@ import { generateBridgeKey } from '@/lib/getAccount';
  * Returns the bridge key info for the current user.
  * The bridge key is now per-user (not per-account) for multi-account support.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
     const session = await auth();
     const userId = session?.user?.id;
     
@@ -28,7 +28,12 @@ export async function GET() {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const syncUrl = `${process.env.NEXTAUTH_URL ?? 'http://localhost:3000'}/api/sync`;
+    // Derive sync URL from the request host so it works with any tunnel/domain
+    const forwardedHost = request.headers.get('x-forwarded-host');
+    const forwardedProto = request.headers.get('x-forwarded-proto') ?? 'https';
+    const host = forwardedHost ?? request.headers.get('host') ?? 'localhost:3000';
+    const proto = forwardedHost ? forwardedProto : (host.startsWith('localhost') ? 'http' : 'https');
+    const syncUrl = `${proto}://${host}/api/sync`;
 
     return NextResponse.json({
         // For hashed keys, we can't show the full key (user must regenerate if lost)
