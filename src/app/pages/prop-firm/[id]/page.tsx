@@ -91,6 +91,8 @@ interface AccountDetails {
         allowNewsTrading: boolean;
         allowWeekendHolding: boolean;
         allowEA: boolean;
+        hasScalingPlan: boolean;
+        scalingConfig: string | null;
     } | null;
     challengePhases: ChallengePhase[];
     violations: Violation[];
@@ -761,6 +763,124 @@ function PropFirmAccountContent() {
                                 </div>
                             </div>
                         )}
+
+                        {/* Scaling Plan - Only show for funded accounts with scaling plan */}
+                        {account.propFirm?.hasScalingPlan && account.propFirm.scalingConfig && (() => {
+                            // Check if this is a funded account (all phases passed or current phase is "Funded")
+                            const allPhasesPassed = account.challengePhases.length > 0 &&
+                                account.challengePhases.every(p => p.status === 'PASSED');
+                            const hasFundedPhase = account.challengePhases.some(p =>
+                                p.phaseName.toLowerCase().includes('funded') && p.status === 'IN_PROGRESS'
+                            );
+                            
+                            if (!allPhasesPassed && !hasFundedPhase) return null;
+                            
+                            let scalingConfig: {
+                                initialBalance?: number;
+                                increment?: number;
+                                conditions?: { profitMonths?: number; minProfit?: number; maxDrawdown?: number };
+                                type?: string;
+                                levels?: Array<{ profit: number; balanceIncrease: number }>;
+                            } | null = null;
+                            
+                            try {
+                                scalingConfig = JSON.parse(account.propFirm.scalingConfig);
+                            } catch {
+                                return null;
+                            }
+                            
+                            if (!scalingConfig) return null;
+                            
+                            return (
+                                <div className="glass-card p-6 border-white/5">
+                                    <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                                        <TrendingUp size={20} className="text-primary" />
+                                        Scaling Plan
+                                    </h2>
+                                    
+                                    {/* FTMO-style scaling */}
+                                    {scalingConfig.initialBalance && scalingConfig.increment && (
+                                        <div className="space-y-4">
+                                            <p className="text-sm text-gray-400">
+                                                Scale your account up to {formatCurrency(scalingConfig.initialBalance + (scalingConfig.increment || 0) * 4, account.currency)}
+                                            </p>
+                                            
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between text-xs text-gray-400">
+                                                    <span>Current: {formatCurrency(accountSize, account.currency)}</span>
+                                                    <span>Max: {formatCurrency(scalingConfig.initialBalance, account.currency)}</span>
+                                                </div>
+                                                <div className="h-2 bg-black/40 rounded-full overflow-hidden">
+                                                    <div
+                                                        className="h-full bg-gradient-to-r from-primary to-green-400 rounded-full"
+                                                        style={{
+                                                            width: `${Math.min(100, (accountSize / (scalingConfig.initialBalance || accountSize)) * 100)}%`
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                            
+                                            {scalingConfig.conditions && (
+                                                <div className="p-3 rounded-lg bg-black/20 border border-white/5">
+                                                    <p className="text-xs text-gray-400 mb-2">Requirements per scale:</p>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {scalingConfig.conditions.profitMonths && (
+                                                            <span className="text-xs px-2 py-1 rounded bg-white/5 text-gray-300">
+                                                                {scalingConfig.conditions.profitMonths} profitable months
+                                                            </span>
+                                                        )}
+                                                        {scalingConfig.conditions.minProfit && (
+                                                            <span className="text-xs px-2 py-1 rounded bg-white/5 text-gray-300">
+                                                                {scalingConfig.conditions.minProfit}%+ profit
+                                                            </span>
+                                                        )}
+                                                        {scalingConfig.conditions.maxDrawdown && (
+                                                            <span className="text-xs px-2 py-1 rounded bg-white/5 text-gray-300">
+                                                                {`<${scalingConfig.conditions.maxDrawdown}% DD`}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            
+                                            <p className="text-xs text-gray-500">
+                                                Each scale: +{formatCurrency(scalingConfig.increment, account.currency)} balance
+                                            </p>
+                                        </div>
+                                    )}
+                                    
+                                    {/* The5ers-style level-based scaling */}
+                                    {scalingConfig.type === 'automatic' && scalingConfig.levels && (
+                                        <div className="space-y-4">
+                                            <p className="text-sm text-gray-400">
+                                                Automatic scaling based on performance
+                                            </p>
+                                            
+                                            <div className="space-y-2">
+                                                {scalingConfig.levels.map((level, index) => (
+                                                    <div
+                                                        key={index}
+                                                        className="flex items-center justify-between p-3 rounded-lg bg-black/20 border border-white/5"
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
+                                                                {index + 1}
+                                                            </div>
+                                                            <span className="text-sm text-gray-300">
+                                                                {level.profit}% profit
+                                                            </span>
+                                                        </div>
+                                                        <span className="text-sm font-bold text-green-400">
+                                                            +{level.balanceIncrease}%
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })()}
 
                         {/* Compliance Status */}
                         <div className="glass-card p-6 border-white/5">
