@@ -109,6 +109,17 @@ export async function GET(request: NextRequest) {
         where.id = { in: tagFilterIds };
     }
 
+    // idsOnly mode — return all matching IDs, no pagination
+    const idsOnly = searchParams.get('idsOnly') === 'true';
+    if (idsOnly) {
+        const ids = await prisma.trade.findMany({
+            where,
+            select: { id: true },
+            orderBy: { entryTime: 'desc' },
+        });
+        return NextResponse.json({ ids: ids.map(t => t.id) });
+    }
+
     const [trades, total] = await Promise.all([
         prisma.trade.findMany({
             where,
