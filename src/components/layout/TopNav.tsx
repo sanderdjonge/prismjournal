@@ -22,6 +22,7 @@ const MENU_ITEMS = [
     { label: 'Performance', href: '/performance' },
     { label: 'Journal', href: '/journal' },
     { label: 'Analytics', href: '/analytics' },
+    { label: 'Prop Firms', href: '/pages/prop-firms' },
     { label: 'Calculator', href: '/calculator', icon: Calculator },
     { label: 'Account', href: '/settings' },
 ];
