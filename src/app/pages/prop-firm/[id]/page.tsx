@@ -18,6 +18,7 @@ import {
     Loader2,
     ChevronRight,
     AlertCircle,
+    PieChart,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
@@ -109,6 +110,16 @@ interface AccountDetails {
     } | null;
 }
 
+interface AnalyticsData {
+    symbolData: Array<{ symbol: string; profit: number; winRate: number }>;
+    expectancyData: Array<{ trade: number; val: number }>;
+    sessionData: Array<{ hour: number; count: number }>;
+    profitFactor: number;
+    expectancy: number;
+    avgRR: number;
+    meanDrawdown: number;
+}
+
 function PropFirmAccountContent() {
     const params = useParams();
     const router = useRouter();
@@ -121,6 +132,8 @@ function PropFirmAccountContent() {
     const [error, setError] = useState<string | null>(null);
     const [acknowledgingId, setAcknowledgingId] = useState<string | null>(null);
     const [showAllViolations, setShowAllViolations] = useState(false);
+    const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+    const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
     useEffect(() => {
         async function fetchAccountDetails() {
@@ -147,6 +160,40 @@ function PropFirmAccountContent() {
 
         fetchAccountDetails();
     }, [accountId]);
+
+    // Fetch analytics data for this account
+    useEffect(() => {
+        async function fetchAnalytics() {
+            if (!account) return;
+            
+            setAnalyticsLoading(true);
+            try {
+                // Get challenge start date from the first phase
+                const firstPhase = account.challengePhases[0];
+                const fromDate = firstPhase?.startedAt
+                    ? new Date(firstPhase.startedAt).toISOString().split('T')[0]
+                    : undefined;
+                
+                const url = new URL(`/api/analytics`, window.location.origin);
+                url.searchParams.set('account', accountId);
+                if (fromDate) {
+                    url.searchParams.set('from', fromDate);
+                }
+                
+                const res = await fetch(url.toString());
+                if (res.ok) {
+                    const data = await res.json();
+                    setAnalytics(data);
+                }
+            } catch (err) {
+                console.error('Error fetching analytics:', err);
+            } finally {
+                setAnalyticsLoading(false);
+            }
+        }
+        
+        fetchAnalytics();
+    }, [accountId, account]);
 
     const formatCurrency = (value: number | null | undefined, currency: string = 'USD') => {
         const safeValue = value ?? 0;
@@ -499,6 +546,139 @@ function PropFirmAccountContent() {
                                     Run the daily snapshot cron to generate data
                                 </p>
                             </div>
+                        </div>
+
+                        {/* Challenge Analytics */}
+                        <div className="glass-card p-6 border-white/5">
+                            <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                                <PieChart size={20} className="text-primary" />
+                                Challenge Analytics
+                            </h2>
+                            
+                            {analyticsLoading ? (
+                                <div className="flex items-center justify-center py-8">
+                                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                                </div>
+                            ) : !analytics || analytics.symbolData.length === 0 ? (
+                                <div className="text-center py-8 text-gray-400">
+                                    <PieChart size={32} className="mx-auto mb-2 opacity-50" />
+                                    <p className="text-sm">No trade data available</p>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Analytics will appear after trades are synced
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="space-y-6">
+                                    {/* Key Stats Row */}
+                                    <div className="grid grid-cols-4 gap-4">
+                                        <div className="text-center p-3 rounded-lg bg-black/20 border border-white/5">
+                                            <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Profit Factor</p>
+                                            <p className={cn(
+                                                "text-lg font-bold",
+                                                analytics.profitFactor >= 1.5 ? "text-green-400" :
+                                                analytics.profitFactor >= 1 ? "text-yellow-400" : "text-red-400"
+                                            )}>
+                                                {analytics.profitFactor.toFixed(2)}
+                                            </p>
+                                        </div>
+                                        <div className="text-center p-3 rounded-lg bg-black/20 border border-white/5">
+                                            <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Expectancy</p>
+                                            <p className={cn(
+                                                "text-lg font-bold",
+                                                analytics.expectancy >= 0 ? "text-green-400" : "text-red-400"
+                                            )}>
+                                                {formatCurrency(analytics.expectancy, account?.currency)}
+                                            </p>
+                                        </div>
+                                        <div className="text-center p-3 rounded-lg bg-black/20 border border-white/5">
+                                            <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Avg R:R</p>
+                                            <p className={cn(
+                                                "text-lg font-bold",
+                                                analytics.avgRR >= 1 ? "text-green-400" :
+                                                analytics.avgRR >= 0.5 ? "text-yellow-400" : "text-red-400"
+                                            )}>
+                                                {analytics.avgRR.toFixed(2)}
+                                            </p>
+                                        </div>
+                                        <div className="text-center p-3 rounded-lg bg-black/20 border border-white/5">
+                                            <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Avg DD</p>
+                                            <p className="text-lg font-bold text-orange-400">
+                                                {analytics.meanDrawdown.toFixed(1)}%
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Symbol Performance */}
+                                    <div>
+                                        <h3 className="text-sm font-bold text-gray-300 mb-3">Symbol Performance</h3>
+                                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                                            {analytics.symbolData.slice(0, 8).map((symbol) => (
+                                                <div
+                                                    key={symbol.symbol}
+                                                    className="flex items-center justify-between p-2 rounded-lg bg-black/20 border border-white/5"
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="text-sm font-bold text-white">{symbol.symbol}</span>
+                                                        <span className={cn(
+                                                            "text-xs px-2 py-0.5 rounded",
+                                                            symbol.winRate >= 60 ? "bg-green-500/20 text-green-400" :
+                                                            symbol.winRate >= 40 ? "bg-yellow-500/20 text-yellow-400" :
+                                                            "bg-red-500/20 text-red-400"
+                                                        )}>
+                                                            {symbol.winRate}% WR
+                                                        </span>
+                                                    </div>
+                                                    <span className={cn(
+                                                        "text-sm font-bold",
+                                                        symbol.profit >= 0 ? "text-green-400" : "text-red-400"
+                                                    )}>
+                                                        {formatCurrency(symbol.profit, account?.currency)}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Session Distribution */}
+                                    <div>
+                                        <h3 className="text-sm font-bold text-gray-300 mb-3">Trading Hours</h3>
+                                        <div className="grid grid-cols-12 gap-1">
+                                            {analytics.sessionData.slice(0, 12).map((session) => {
+                                                const maxCount = Math.max(...analytics.sessionData.map(s => s.count), 1);
+                                                const height = (session.count / maxCount) * 100;
+                                                return (
+                                                    <div key={session.hour} className="flex flex-col items-center">
+                                                        <div className="w-full h-12 flex items-end justify-center">
+                                                            <div
+                                                                className="w-full bg-primary/60 rounded-t"
+                                                                style={{ height: `${Math.max(height, 2)}%` }}
+                                                            />
+                                                        </div>
+                                                        <span className="text-[9px] text-gray-500 mt-1">{session.hour}</span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                        <div className="grid grid-cols-12 gap-1 mt-1">
+                                            {analytics.sessionData.slice(12, 24).map((session) => {
+                                                const maxCount = Math.max(...analytics.sessionData.map(s => s.count), 1);
+                                                const height = (session.count / maxCount) * 100;
+                                                return (
+                                                    <div key={session.hour} className="flex flex-col items-center">
+                                                        <div className="w-full h-12 flex items-end justify-center">
+                                                            <div
+                                                                className="w-full bg-primary/60 rounded-t"
+                                                                style={{ height: `${Math.max(height, 2)}%` }}
+                                                            />
+                                                        </div>
+                                                        <span className="text-[9px] text-gray-500 mt-1">{session.hour}</span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
