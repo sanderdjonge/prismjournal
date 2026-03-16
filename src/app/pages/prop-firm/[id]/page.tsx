@@ -567,6 +567,83 @@ function PropFirmAccountContent() {
                             </div>
                         )}
 
+                        {/* Compliance Status */}
+                        <div className="glass-card p-6 border-white/5">
+                            <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                                <Shield size={20} className="text-primary" />
+                                Compliance Status
+                            </h2>
+                            <div className="space-y-3">
+                                {/* Daily Loss Status */}
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-gray-400">Daily Loss</span>
+                                    <div className="flex items-center gap-2">
+                                        {account.latestSnapshot?.isDailyLimitBreached ? (
+                                            <span className="px-2 py-1 rounded text-xs font-bold bg-red-500/20 text-red-400">
+                                                Breached
+                                            </span>
+                                        ) : (dailyLossPercent >= dailyLossLimit * 0.8) ? (
+                                            <span className="px-2 py-1 rounded text-xs font-bold bg-orange-500/20 text-orange-400">
+                                                At Risk
+                                            </span>
+                                        ) : (
+                                            <span className="px-2 py-1 rounded text-xs font-bold bg-green-500/20 text-green-400">
+                                                Healthy
+                                            </span>
+                                        )}
+                                        <span className="text-xs text-gray-500">
+                                            {formatPercent(dailyLossPercent)} / {dailyLossLimit}%
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                {/* Max Drawdown Status */}
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-gray-400">Max Drawdown</span>
+                                    <div className="flex items-center gap-2">
+                                        {account.latestSnapshot?.isMaxDrawdownBreached ? (
+                                            <span className="px-2 py-1 rounded text-xs font-bold bg-red-500/20 text-red-400">
+                                                Breached
+                                            </span>
+                                        ) : (drawdownPercent >= maxDrawdown * 0.8) ? (
+                                            <span className="px-2 py-1 rounded text-xs font-bold bg-orange-500/20 text-orange-400">
+                                                At Risk
+                                            </span>
+                                        ) : (
+                                            <span className="px-2 py-1 rounded text-xs font-bold bg-green-500/20 text-green-400">
+                                                Healthy
+                                            </span>
+                                        )}
+                                        <span className="text-xs text-gray-500">
+                                            {formatPercent(drawdownPercent)} / {maxDrawdown}%
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Clean Trading Days Streak */}
+                                <div className="pt-3 border-t border-white/5">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-sm text-gray-400">Clean Days Streak</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-lg font-bold text-green-400">
+                                                {account.violations.filter(v => !v.isResolved && v.severity === 'BREACH').length === 0
+                                                    ? (currentPhase?.tradingDaysCount || 0)
+                                                    : 0
+                                                }
+                                            </span>
+                                            <span className="text-xs text-gray-500">days</span>
+                                        </div>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        {account.violations.filter(v => !v.isResolved).length === 0
+                                            ? 'No active violations'
+                                            : `${account.violations.filter(v => !v.isResolved).length} unresolved violation(s)`
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Violations */}
                         <div className="glass-card p-6 border-white/5">
                             <div className="flex items-center justify-between mb-4">
