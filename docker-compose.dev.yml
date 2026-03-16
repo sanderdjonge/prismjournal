@@ -49,6 +49,32 @@ services:
       start_period: 40s
     volumes:
       - prism_dev_storage:/app/storage
+      - ./backups:/app/backups:ro
+    networks:
+      - prism-dev-network
+
+  # Automated database backup — dumps to ./backups/ (host filesystem, survives everything)
+  backup:
+    image: postgres:15-alpine
+    container_name: prism-dev-backup
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGPORT: 5432
+      PGUSER: prism_dev
+      PGPASSWORD: prism_dev_password
+      PGDATABASE: prism_journal_dev
+      BACKUP_KEEP_HOURLY: "24"
+      BACKUP_KEEP_DAILY: "30"
+      BACKUP_KEEP_WEEKLY: "12"
+    volumes:
+      - ./backups:/backups
+      - ./scripts/db-backup.sh:/scripts/db-backup.sh:ro
+      - ./scripts/db-backup-entrypoint.sh:/scripts/db-backup-entrypoint.sh:ro
+    entrypoint: ["/bin/sh", "/scripts/db-backup-entrypoint.sh"]
     networks:
       - prism-dev-network
 

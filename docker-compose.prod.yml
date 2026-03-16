@@ -48,6 +48,33 @@ services:
       AUTH_TRUST_HOST: "true"
     ports:
       - "3000:3000"
+    volumes:
+      - ./backups:/app/backups:ro
+    networks:
+      - prism-prod-network
+
+  # Automated database backup — dumps to ./backups/ (host filesystem, survives everything)
+  backup:
+    image: postgres:15-alpine
+    container_name: prism-prod-backup
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGPORT: 5432
+      PGUSER: ${POSTGRES_USER:-prism_user}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-prism_password}
+      PGDATABASE: ${POSTGRES_DB:-prism_journal}
+      BACKUP_KEEP_HOURLY: "24"
+      BACKUP_KEEP_DAILY: "30"
+      BACKUP_KEEP_WEEKLY: "12"
+    volumes:
+      - ./backups:/backups
+      - ./scripts/db-backup.sh:/scripts/db-backup.sh:ro
+      - ./scripts/db-backup-entrypoint.sh:/scripts/db-backup-entrypoint.sh:ro
+    entrypoint: ["/bin/sh", "/scripts/db-backup-entrypoint.sh"]
     networks:
       - prism-prod-network
 
