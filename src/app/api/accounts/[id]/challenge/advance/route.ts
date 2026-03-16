@@ -12,8 +12,7 @@ interface AdvanceRequest {
 // Advance or modify challenge phase
 export const POST = withAuth(async (req, ctx, session) => {
     const userId = session.user.id;
-    const params = ctx.params as { id: string };
-    const accountId = params.id;
+    const { id: accountId } = await (ctx.params as Promise<{ id: string }>);
 
     // Parse request body
     let body: AdvanceRequest;

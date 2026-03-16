@@ -88,6 +88,14 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-6 no-scrollbar space-y-6">
+                            {/* Account badge */}
+                            {(trade as { accountName?: string }).accountName && (
+                                <div className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-xl">
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-500">Account:</span>
+                                    <span className="text-xs font-bold text-white">{(trade as { accountName?: string }).accountName}</span>
+                                </div>
+                            )}
+
                             {/* Row 1: Instrument + Side + Volume */}
                             <div className="grid grid-cols-3 gap-4">
                                 <div className="space-y-1.5">

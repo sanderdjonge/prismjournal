@@ -14,6 +14,7 @@ export const tradeFormSchema = z.object({
     mood: z.enum(['CALM', 'CONFIDENT', 'NEUTRAL', 'ANXIOUS', 'FOMO', 'REVENGE']).optional(),
     planCompliance: z.enum(['FOLLOWED', 'DEVIATED', 'PARTIAL']).optional(),
     notes: z.string().max(5000).optional(),
+    accountId: z.string().optional(),
 }).refine(
     (data) => !data.isClosed || (data.exitPrice !== undefined && data.exitPrice !== '' && !isNaN(Number(data.exitPrice))),
     { message: 'Exit price is required when closing a trade', path: ['exitPrice'] }

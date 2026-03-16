@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { validateBody, tradeUpdateSchema } from '@/lib/validations';
 import { deleteFile } from '@/lib/storage';
+import { getAllUserAccounts } from '@/lib/getAccount';
 
 export async function GET(
     _request: Request,
@@ -92,7 +93,16 @@ export async function PATCH(
     if (body.entryPrice !== undefined) updateData.entryPrice = body.entryPrice;
     if (body.exitPrice !== undefined) updateData.exitPrice = body.exitPrice;
     if (body.pnl !== undefined) updateData.pnl = body.pnl;
-    if (body.status !== undefined) updateData.status = body.status;
+    if (body.status !== undefined) {
+        updateData.status = body.status;
+        if (body.status === 'CLOSED' && !existingTrade.exitTime) {
+            updateData.exitTime = new Date();
+        } else if (body.status === 'OPEN') {
+            updateData.exitTime = null;
+            updateData.exitPrice = null;
+            updateData.pnl = null;
+        }
+    }
     if (strategyId !== undefined) updateData.strategyId = strategyId;
     if (body.mood !== undefined) updateData.mood = body.mood;
     if (body.planCompliance !== undefined) updateData.planCompliance = body.planCompliance;
@@ -102,6 +112,13 @@ export async function PATCH(
     if (body.entryRating !== undefined) updateData.entryRating = body.entryRating;
     if (body.exitRating !== undefined) updateData.exitRating = body.exitRating;
     if (body.managementRating !== undefined) updateData.managementRating = body.managementRating;
+
+    // Account reassignment
+    if (body.accountId && body.accountId !== existingTrade.accountId) {
+        const userAccounts = await getAllUserAccounts(existingTrade.account.userId);
+        const targetAccount = userAccounts.find(a => a.id === body.accountId);
+        if (targetAccount) updateData.accountId = targetAccount.id;
+    }
 
     const trade = await prisma.trade.update({
         where: { id },

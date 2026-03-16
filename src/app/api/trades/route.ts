@@ -1,13 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getDefaultAccount } from '@/lib/getAccount';
+import { getDefaultAccount, getAllUserAccounts } from '@/lib/getAccount';
+import { auth } from '@/lib/auth';
 import { formatDistanceToNow } from '@/lib/formatTime';
 import { validateBody, tradeCreateSchema } from '@/lib/validations';
 import { Prisma } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
-    const account = await getDefaultAccount();
-    if (!account) return NextResponse.json({ trades: [], pagination: { page: 1, limit: 50, total: 0, totalPages: 0 } });
+    const session = await auth();
+    const userId = session?.user?.id;
+    if (!userId) return NextResponse.json({ trades: [], pagination: { page: 1, limit: 50, total: 0, totalPages: 0 } });
+
+    const allAccounts = await getAllUserAccounts(userId);
+    if (allAccounts.length === 0) return NextResponse.json({ trades: [], pagination: { page: 1, limit: 50, total: 0, totalPages: 0 } });
+
+    const accountIds = allAccounts.map((a) => a.id);
 
     const searchParams = request.nextUrl.searchParams;
 
@@ -19,14 +26,19 @@ export async function GET(request: NextRequest) {
     const dateTo = searchParams.get('to');
     const search = searchParams.get('q'); // Search query
     const tagFilter = searchParams.get('tag'); // Tag ID filter
+    const accountFilter = searchParams.get('account'); // Specific account ID filter
 
     // Pagination
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
 
-    // Build where clause
+    // Build where clause — optionally restrict to specific account
+    const filteredAccountIds = accountFilter && accountIds.includes(accountFilter)
+        ? [accountFilter]
+        : accountIds;
+
     const where: Prisma.TradeWhereInput = {
-        accountId: account.id,
+        accountId: { in: filteredAccountIds },
     };
 
     // Symbol filter (case-insensitive contains)
@@ -103,6 +115,7 @@ export async function GET(request: NextRequest) {
             orderBy: { entryTime: 'desc' },
             include: {
                 strategy: true,
+                account: { select: { name: true } },
                 tags: {
                     include: {
                         tag: {
@@ -138,6 +151,8 @@ export async function GET(request: NextRequest) {
         entryTime: t.entryTime.toISOString(),
         exitTime: t.exitTime?.toISOString() ?? null,
         tags: t.tags.map((tt) => tt.tag),
+        accountId: t.accountId,
+        accountName: t.account?.name ?? null,
     }));
 
     return NextResponse.json({
@@ -152,8 +167,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: Request) {
-    const account = await getDefaultAccount();
-    if (!account) return NextResponse.json({ error: 'No account configured' }, { status: 500 });
+    const defaultAccount = await getDefaultAccount();
+    if (!defaultAccount) return NextResponse.json({ error: 'No account configured' }, { status: 500 });
 
     const validation = await validateBody(request, tradeCreateSchema);
     if (!validation.success) {
@@ -161,6 +176,15 @@ export async function POST(request: Request) {
     }
 
     const body = validation.data;
+
+    // Use provided accountId or fall back to default account
+    let account = defaultAccount;
+    if (body.accountId && body.accountId !== defaultAccount.id) {
+        const specified = await prisma.tradingAccount.findFirst({
+            where: { id: body.accountId, userId: defaultAccount.userId, isActive: true },
+        });
+        if (specified) account = specified;
+    }
 
     // Find or create strategy
     let strategyId: string | null = null;

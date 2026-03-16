@@ -17,12 +17,12 @@ export const GET = withAuth(async (_req, _ctx, session) => {
         include: { _count: { select: { trades: true } } },
     });
     
-    return ok(tags.map(tag => ({
+    return ok({ tags: tags.map(tag => ({
         id: tag.id,
         name: tag.name,
         color: tag.color,
         tradeCount: tag._count.trades,
-    })));
+    })) });
 });
 
 export const POST = withAuth(async (req, _ctx, session) => {

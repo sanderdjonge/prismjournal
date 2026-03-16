@@ -118,6 +118,11 @@ export function TradeRow({ trade, columns, onView, onEdit, isSelected = false, o
                             )}
                         </div>
                     )}
+                    {col.id === 'account' && (
+                        <span className="text-xs text-gray-400 truncate max-w-[120px] block">
+                            {trade.accountName || '—'}
+                        </span>
+                    )}
                     {col.id === 'actions' && (
                         <div className="flex gap-1">
                             <button

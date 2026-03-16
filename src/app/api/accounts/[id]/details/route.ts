@@ -5,8 +5,7 @@ import { NextResponse } from 'next/server';
 
 export const GET = withAuth(async (req, ctx, session) => {
     const userId = session.user.id;
-    const params = ctx.params as { id: string };
-    const accountId = params.id;
+    const { id: accountId } = await (ctx.params as Promise<{ id: string }>);
 
     // Use type assertion to bypass TypeScript issues with Prisma client types
     const account = await (prisma as any).tradingAccount.findFirst({

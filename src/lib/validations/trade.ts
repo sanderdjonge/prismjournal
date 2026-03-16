@@ -42,6 +42,7 @@ export const tradeCreateSchema = z.object({
   notes: z.string().max(5000, 'Notes too long').optional(),
   takeProfit: z.number().positive('Take profit must be positive').optional(),
   stopLoss: z.number().positive('Stop loss must be positive').optional(),
+  accountId: z.string().optional(),
 });
 
 export type TradeCreateInput = z.infer<typeof tradeCreateSchema>;
@@ -66,6 +67,7 @@ export const tradeUpdateSchema = z.object({
   entryRating: z.number().int().min(1).max(5).optional(),
   exitRating: z.number().int().min(1).max(5).optional(),
   managementRating: z.number().int().min(1).max(5).optional(),
+  accountId: z.string().optional(),
 });
 
 export type TradeUpdateInput = z.infer<typeof tradeUpdateSchema>;

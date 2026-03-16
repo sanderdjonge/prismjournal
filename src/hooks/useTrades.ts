@@ -9,6 +9,7 @@ export interface TradeFilters {
     to?: string;
     symbol?: string;
     tag?: string;
+    account?: string;
     page?: number;
     limit?: number;
 }

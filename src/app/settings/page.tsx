@@ -26,6 +26,14 @@ import {
     X,
     Plus,
     Building2,
+    ArrowLeft,
+    Target,
+    DollarSign,
+    BarChart3,
+    AlertTriangle,
+    CheckCircle,
+    Calendar,
+    ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { APP_VERSION, versionToPhase } from '@/lib/version';
@@ -232,6 +240,11 @@ function SettingsContent() {
     });
     const [addingAccount, setAddingAccount] = useState(false);
 
+    // Inline account detail state
+    const [viewingAccountId, setViewingAccountId] = useState<string | null>(null);
+    const [viewingAccountDetails, setViewingAccountDetails] = useState<any | null>(null);
+    const [viewingAccountLoading, setViewingAccountLoading] = useState(false);
+
     useEffect(() => {
         fetch('/api/settings')
             .then((r) => r.json())
@@ -272,6 +285,34 @@ function SettingsContent() {
         loadPropFirms();
     }, []);
     
+    const loadAccountDetails = async (accountId: string) => {
+        setViewingAccountLoading(true);
+        setViewingAccountDetails(null);
+        try {
+            const res = await fetch(`/api/accounts/${accountId}/details?_t=${Date.now()}`, {
+                cache: 'no-store',
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setViewingAccountDetails(data.account);
+            }
+        } catch {
+            // ignore
+        } finally {
+            setViewingAccountLoading(false);
+        }
+    };
+
+    const handleViewAccount = (accountId: string) => {
+        setViewingAccountId(accountId);
+        loadAccountDetails(accountId);
+    };
+
+    const handleBackToAccounts = () => {
+        setViewingAccountId(null);
+        setViewingAccountDetails(null);
+    };
+
     const loadPropFirms = async () => {
         try {
             const res = await fetch('/api/prop-firms');
@@ -1127,17 +1168,196 @@ function SettingsContent() {
 
                     {activeTab === 'accounts' && (
                         <div className="space-y-8 animate-fade-in">
+                            {/* Inline Account Detail View */}
+                            {viewingAccountId && (
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            onClick={handleBackToAccounts}
+                                            className="p-2 rounded-lg border border-white/10 hover:bg-white/5 transition-all"
+                                        >
+                                            <ArrowLeft size={16} />
+                                        </button>
+                                        <h3 className="text-2xl font-black text-white tracking-tighter uppercase italic">
+                                            {viewingAccountDetails?.name || 'Account Detail'}
+                                        </h3>
+                                        {viewingAccountDetails?.propFirm && (
+                                            <span className="px-3 py-1 rounded-lg text-xs font-bold bg-purple-500/20 text-purple-400">
+                                                {viewingAccountDetails.propFirm.name}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {viewingAccountLoading ? (
+                                        <div className="flex items-center justify-center min-h-[200px]">
+                                            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                                        </div>
+                                    ) : viewingAccountDetails ? (() => {
+                                        const acct = viewingAccountDetails;
+                                        const currentPhase = acct.challengePhases?.find((p: any) => p.status === 'IN_PROGRESS');
+                                        const phasesConfig = acct.phasesConfig || [];
+                                        const accountSize = acct.accountSize || 10000;
+                                        const currentBalance = acct.currentBalance || accountSize;
+                                        const totalPnl = acct.totalPnl || 0;
+                                        const progressPercent = currentPhase?.currentProgress || ((currentBalance - accountSize) / accountSize * 100);
+                                        const dailyLossPercent = acct.latestSnapshot?.dailyLossUsed || 0;
+                                        const dailyLossLimit = currentPhase?.dailyLossLimit || acct.propFirm?.dailyLossLimit || 5;
+                                        const drawdownPercent = acct.latestSnapshot?.currentDrawdown || acct.challengePhases?.[0]?.currentDrawdown || 0;
+                                        const maxDrawdown = currentPhase?.maxDrawdown || acct.propFirm?.maxDrawdown || 10;
+                                        return (
+                                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                                <div className="lg:col-span-2 space-y-6">
+                                                    <div className="glass-card p-6 border-white/5">
+                                                        <div className="flex items-center justify-between mb-6">
+                                                            <h4 className="text-base font-bold text-white flex items-center gap-2">
+                                                                <Target size={18} className="text-primary" />
+                                                                Challenge Progress
+                                                            </h4>
+                                                            {currentPhase && (
+                                                                <span className={cn("px-3 py-1 rounded-lg text-xs font-bold", currentPhase.status === 'IN_PROGRESS' && "bg-blue-500/20 text-blue-400", currentPhase.status === 'PASSED' && "bg-green-500/20 text-green-400", currentPhase.status === 'FAILED' && "bg-red-500/20 text-red-400")}>{currentPhase.phaseName}</span>
+                                                            )}
+                                                        </div>
+                                                        <div className="mb-6">
+                                                            <div className="flex items-center justify-between mb-2">
+                                                                <span className="text-sm text-gray-400">Profit Target Progress</span>
+                                                                <span className="text-sm font-bold text-white">{progressPercent.toFixed(2)}% / {(currentPhase?.profitTarget || 10)}%</span>
+                                                            </div>
+                                                            <div className="h-4 bg-black/40 rounded-full overflow-hidden">
+                                                                <div className={cn("h-full rounded-full transition-all duration-500", progressPercent >= (currentPhase?.profitTarget || 10) ? "bg-green-500" : "bg-gradient-to-r from-primary to-blue-400")} style={{ width: `${Math.min(100, (progressPercent / (currentPhase?.profitTarget || 10)) * 100)}%` }} />
+                                                            </div>
+                                                            <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
+                                                                <span>${totalPnl.toFixed(2)} realized</span>
+                                                                <span>Target: ${((currentPhase?.profitTargetAmount || (accountSize * (currentPhase?.profitTarget || 10) / 100))).toFixed(2)}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <div className="p-4 rounded-xl bg-black/20 border border-white/5">
+                                                                <div className="flex items-center justify-between mb-2">
+                                                                    <span className="text-xs text-gray-400 uppercase tracking-wider">Daily Loss Used</span>
+                                                                    <span className={cn("text-sm font-bold", dailyLossPercent >= dailyLossLimit * 0.8 ? "text-red-400" : "text-white")}>{dailyLossPercent.toFixed(2)}%</span>
+                                                                </div>
+                                                                <div className="h-2 bg-black/40 rounded-full overflow-hidden">
+                                                                    <div className={cn("h-full rounded-full transition-all", dailyLossPercent >= dailyLossLimit ? "bg-red-500" : dailyLossPercent >= dailyLossLimit * 0.8 ? "bg-orange-500" : "bg-yellow-500")} style={{ width: `${Math.min(100, (dailyLossPercent / dailyLossLimit) * 100)}%` }} />
+                                                                </div>
+                                                                <p className="text-xs text-gray-500 mt-2">Limit: {dailyLossLimit}%</p>
+                                                            </div>
+                                                            <div className="p-4 rounded-xl bg-black/20 border border-white/5">
+                                                                <div className="flex items-center justify-between mb-2">
+                                                                    <span className="text-xs text-gray-400 uppercase tracking-wider">Current Drawdown</span>
+                                                                    <span className={cn("text-sm font-bold", drawdownPercent >= maxDrawdown * 0.8 ? "text-red-400" : "text-white")}>{drawdownPercent.toFixed(2)}%</span>
+                                                                </div>
+                                                                <div className="h-2 bg-black/40 rounded-full overflow-hidden">
+                                                                    <div className={cn("h-full rounded-full transition-all", drawdownPercent >= maxDrawdown ? "bg-red-500" : drawdownPercent >= maxDrawdown * 0.8 ? "bg-orange-500" : "bg-green-500")} style={{ width: `${Math.min(100, (drawdownPercent / maxDrawdown) * 100)}%` }} />
+                                                                </div>
+                                                                <p className="text-xs text-gray-500 mt-2">Limit: {maxDrawdown}%</p>
+                                                            </div>
+                                                        </div>
+                                                        {currentPhase?.minTradingDays && (
+                                                            <div className="mt-4 p-4 rounded-xl bg-black/20 border border-white/5">
+                                                                <div className="flex items-center justify-between">
+                                                                    <div className="flex items-center gap-2"><Calendar size={16} className="text-gray-400" /><span className="text-sm text-gray-400">Trading Days</span></div>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="text-lg font-bold text-white">{currentPhase.tradingDaysCount}</span>
+                                                                        <span className="text-sm text-gray-400">/ {currentPhase.minTradingDays} minimum</span>
+                                                                        {currentPhase.tradingDaysCount >= currentPhase.minTradingDays && <CheckCircle size={16} className="text-green-400" />}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    {phasesConfig.length > 0 && (
+                                                        <div className="glass-card p-6 border-white/5">
+                                                            <h4 className="text-base font-bold text-white mb-4 flex items-center gap-2"><BarChart3 size={18} className="text-primary" />Challenge Phases</h4>
+                                                            <div className="space-y-3">
+                                                                {phasesConfig.map((phase: any) => {
+                                                                    const dbPhase = acct.challengePhases?.find((p: any) => p.phaseNumber === phase.phaseNumber);
+                                                                    const isActive = dbPhase?.status === 'IN_PROGRESS';
+                                                                    const isPassed = dbPhase?.status === 'PASSED';
+                                                                    const isFailed = dbPhase?.status === 'FAILED';
+                                                                    return (
+                                                                        <div key={phase.phaseNumber} className={cn("p-4 rounded-xl border transition-all", isActive && "border-primary/50 bg-primary/5", isPassed && "border-green-500/30 bg-green-500/5", isFailed && "border-red-500/30 bg-red-500/5", !isActive && !isPassed && !isFailed && "border-white/5 bg-black/20")}>
+                                                                            <div className="flex items-center justify-between">
+                                                                                <div className="flex items-center gap-3">
+                                                                                    <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold", isActive && "bg-primary text-white", isPassed && "bg-green-500 text-white", isFailed && "bg-red-500 text-white", !isActive && !isPassed && !isFailed && "bg-gray-700 text-gray-400")}>{phase.phaseNumber}</div>
+                                                                                    <div>
+                                                                                        <p className="font-bold text-white">{phase.phaseName}</p>
+                                                                                        <p className="text-xs text-gray-400">Target: {phase.profitTarget}% • DD: {phase.maxDrawdown}%</p>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div className="flex items-center gap-2">
+                                                                                    {isPassed && <span className="px-2 py-1 rounded text-xs font-bold bg-green-500/20 text-green-400">Passed</span>}
+                                                                                    {isFailed && <span className="px-2 py-1 rounded text-xs font-bold bg-red-500/20 text-red-400">Failed</span>}
+                                                                                    {isActive && <span className="px-2 py-1 rounded text-xs font-bold bg-blue-500/20 text-blue-400">In Progress</span>}
+                                                                                    {!isActive && !isPassed && !isFailed && dbPhase && <ChevronRight size={16} className="text-gray-500" />}
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="space-y-6">
+                                                    <div className="glass-card p-6 border-white/5">
+                                                        <h4 className="text-base font-bold text-white mb-4 flex items-center gap-2"><DollarSign size={18} className="text-primary" />Account Stats</h4>
+                                                        <div className="space-y-3">
+                                                            <div className="flex items-center justify-between"><span className="text-sm text-gray-400">Account Size</span><span className="font-bold text-white">${accountSize.toLocaleString()}</span></div>
+                                                            <div className="flex items-center justify-between"><span className="text-sm text-gray-400">Current Balance</span><span className="font-bold text-white">${currentBalance.toLocaleString()}</span></div>
+                                                            <div className="flex items-center justify-between"><span className="text-sm text-gray-400">Total P&L</span><span className={cn("font-bold", totalPnl >= 0 ? "text-green-400" : "text-red-400")}>${totalPnl.toFixed(2)}</span></div>
+                                                            <div className="flex items-center justify-between"><span className="text-sm text-gray-400">Profit Split</span><span className="font-bold text-green-400">{acct.profitSplit || 80}%</span></div>
+                                                            <div className="flex items-center justify-between"><span className="text-sm text-gray-400">Total Trades</span><span className="font-bold text-white">{acct.tradeCount}</span></div>
+                                                        </div>
+                                                    </div>
+                                                    {acct.propFirm && (
+                                                        <div className="glass-card p-6 border-white/5">
+                                                            <h4 className="text-base font-bold text-white mb-4 flex items-center gap-2"><Shield size={18} className="text-primary" />Trading Rules</h4>
+                                                            <div className="space-y-3">
+                                                                <div className="flex items-center justify-between text-sm"><span className="text-gray-400">Daily Loss Limit</span><span className="text-orange-400 font-bold">{acct.propFirm.dailyLossLimit}%</span></div>
+                                                                <div className="flex items-center justify-between text-sm"><span className="text-gray-400">Max Drawdown</span><span className="text-orange-400 font-bold">{acct.propFirm.maxDrawdown}%</span></div>
+                                                                <div className="flex items-center justify-between text-sm"><span className="text-gray-400">Drawdown Type</span><span className="text-white">{acct.propFirm.drawdownType}</span></div>
+                                                                <hr className="border-white/5" />
+                                                                <div className="flex items-center justify-between text-sm"><span className="text-gray-400">News Trading</span><span className={acct.propFirm.allowNewsTrading ? "text-green-400" : "text-red-400"}>{acct.propFirm.allowNewsTrading ? "Allowed" : "Restricted"}</span></div>
+                                                                <div className="flex items-center justify-between text-sm"><span className="text-gray-400">Weekend Holding</span><span className={acct.propFirm.allowWeekendHolding ? "text-green-400" : "text-red-400"}>{acct.propFirm.allowWeekendHolding ? "Allowed" : "Restricted"}</span></div>
+                                                                <div className="flex items-center justify-between text-sm"><span className="text-gray-400">EA Trading</span><span className={acct.propFirm.allowEA ? "text-green-400" : "text-red-400"}>{acct.propFirm.allowEA ? "Allowed" : "Restricted"}</span></div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    <div className="glass-card p-6 border-white/5">
+                                                        <h4 className="text-base font-bold text-white mb-4 flex items-center gap-2"><AlertTriangle size={18} className="text-primary" />Recent Violations</h4>
+                                                        {!acct.violations?.length ? (
+                                                            <div className="text-center py-4"><CheckCircle size={28} className="mx-auto text-green-400 mb-2" /><p className="text-sm text-gray-400">No violations recorded</p></div>
+                                                        ) : (
+                                                            <div className="space-y-2">
+                                                                {acct.violations.slice(0, 5).map((v: any) => (
+                                                                    <div key={v.id} className={cn("p-3 rounded-lg border", v.severity === 'WARNING' ? "text-yellow-400 bg-yellow-500/10 border-yellow-500/30" : v.severity === 'CRITICAL' ? "text-orange-400 bg-orange-500/10 border-orange-500/30" : "text-red-400 bg-red-500/10 border-red-500/30")}>
+                                                                        <div className="flex items-center justify-between mb-1"><span className="text-xs font-bold uppercase">{v.ruleType.replace(/_/g, ' ')}</span><span className="text-xs text-gray-400">{new Date(v.occurredAt).toLocaleDateString()}</span></div>
+                                                                        <p className="text-xs text-gray-300">{v.description}</p>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })() : (
+                                        <p className="text-gray-400 text-sm">Failed to load account details.</p>
+                                    )}
+                                </div>
+                            )}
+
                             {/* Header */}
-                            <div>
+                            {!viewingAccountId && <div>
                                 <h3 className="text-2xl font-black text-white tracking-tighter uppercase italic mb-2">
                                     Trading Accounts
                                 </h3>
                                 <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">
                                     Manage your connected trading accounts
                                 </p>
-                            </div>
+                            </div>}
 
-                            {accountsLoading ? (
+                            {!viewingAccountId && (accountsLoading ? (
                                 <div className="flex items-center justify-center min-h-[200px]">
                                     <Loader2 className="w-8 h-8 animate-spin text-primary" />
                                 </div>
@@ -1480,7 +1700,7 @@ function SettingsContent() {
                                                                                     value={editProfitTarget}
                                                                                     onChange={(e) => setEditProfitTarget(e.target.value)}
                                                                                     className="w-full px-2 py-1.5 bg-black/40 border border-white/10 rounded text-white text-xs"
-                                                                                    placeholder="From config"
+                                                                                    placeholder={(() => { try { const p = JSON.parse(account.propFirm.phasesConfig); return `Phase 1: ${p[0]?.profitTarget ?? '?'}%`; } catch { return 'e.g. 10'; } })()}
                                                                                 />
                                                                             </div>
                                                                         </div>
@@ -1570,7 +1790,7 @@ function SettingsContent() {
                                                                 <div className="flex items-center gap-2">
                                                                     {account.propFirm && (
                                                                         <button
-                                                                            onClick={() => router.push(`/pages/prop-firm/${account.id}?from=settings`)}
+                                                                            onClick={() => handleViewAccount(account.id)}
                                                                             className="p-2 rounded-lg border border-purple-500/30 hover:bg-purple-500/10 text-purple-400 transition-all"
                                                                             title="View Challenge Progress"
                                                                         >
@@ -1602,7 +1822,7 @@ function SettingsContent() {
                                         )}
                                     </div>
                                 </>
-                            )}
+                            ))}
                         </div>
                     )}
 
