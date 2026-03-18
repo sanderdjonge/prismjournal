@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, createContext, useContext } from 'react';
 
 export interface AccountInfo {
     id: string;
@@ -41,7 +41,19 @@ function setCookie(name: string, value: string, days: number = 365): void {
     document.cookie = `${name}=${value}; expires=${expires}; path=/; SameSite=Lax`;
 }
 
-export function useAccounts(): UseAccountsReturn {
+// Shared context — single source of truth for all consumers
+export const AccountsContext = createContext<UseAccountsReturn>({
+    accounts: [],
+    selectedAccountId: null,
+    selectedAccount: null,
+    loading: true,
+    error: null,
+    selectAccount: () => {},
+    refresh: async () => {},
+});
+
+// Internal hook used only by AccountsProvider
+export function useAccountsState(): UseAccountsReturn {
     const [accounts, setAccounts] = useState<AccountInfo[]>([]);
     const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
@@ -51,23 +63,20 @@ export function useAccounts(): UseAccountsReturn {
         try {
             setLoading(true);
             setError(null);
-            
+
             const res = await fetch('/api/accounts');
             if (!res.ok) throw new Error('Failed to load accounts');
-            
+
             const data = await res.json();
             const activeAccounts = (data.accounts || []).filter((a: AccountInfo) => a.isActive);
             setAccounts(activeAccounts);
-            
+
             // Get stored selection from cookie
             const storedId = getCookie(ACCOUNT_COOKIE_NAME);
-            
+
             // Validate stored ID is still valid
             if (storedId && activeAccounts.some((a: AccountInfo) => a.id === storedId)) {
                 setSelectedAccountId(storedId);
-            } else if (activeAccounts.length > 0) {
-                // Default to first account or "all" (null)
-                setSelectedAccountId(null);
             } else {
                 setSelectedAccountId(null);
             }
@@ -87,12 +96,11 @@ export function useAccounts(): UseAccountsReturn {
         if (accountId) {
             setCookie(ACCOUNT_COOKIE_NAME, accountId);
         } else {
-            // Clear cookie for "all accounts" view
             document.cookie = `${ACCOUNT_COOKIE_NAME}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
         }
     }, []);
 
-    const selectedAccount = selectedAccountId 
+    const selectedAccount = selectedAccountId
         ? accounts.find(a => a.id === selectedAccountId) || null
         : null;
 
@@ -105,6 +113,11 @@ export function useAccounts(): UseAccountsReturn {
         selectAccount,
         refresh: loadAccounts,
     };
+}
+
+// Hook for all consumers — reads from context
+export function useAccounts(): UseAccountsReturn {
+    return useContext(AccountsContext);
 }
 
 // Utility to get selected account ID from server-side cookies
