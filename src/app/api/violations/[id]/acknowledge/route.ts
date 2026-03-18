@@ -21,7 +21,7 @@ export const POST = withAuth(async (req, ctx, session) => {
     }
 
     // Get the violation and verify it belongs to user's account
-    const violation = await (prisma as any).ruleViolation.findUnique({
+    const violation = await prisma.ruleViolation.findUnique({
         where: { id: violationId },
         include: {
             account: {
@@ -43,7 +43,7 @@ export const POST = withAuth(async (req, ctx, session) => {
     }
 
     // Update the violation
-    const updated = await (prisma as any).ruleViolation.update({
+    const updated = await prisma.ruleViolation.update({
         where: { id: violationId },
         data: {
             isResolved: true,

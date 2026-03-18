@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS "PropFirm" (
     "allowNewsTrading" BOOLEAN DEFAULT true,
     "allowWeekendHolding" BOOLEAN DEFAULT true,
     "allowEA" BOOLEAN DEFAULT true,
-    "phasesConfig" TEXT,
+    "phasesConfig" TEXT NOT NULL DEFAULT '[]',
     "hasScalingPlan" BOOLEAN DEFAULT false,
     "scalingConfig" TEXT,
     "isActive" BOOLEAN DEFAULT true,

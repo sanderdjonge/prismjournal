@@ -7,14 +7,7 @@ export const GET = withAuth(async (req, ctx, session) => {
     const userId = session.user.id;
     const { id: accountId } = await (ctx.params as Promise<{ id: string }>);
 
-    console.log('[GET /api/accounts/[id]/details] Request:', {
-        accountId,
-        userId,
-        timestamp: new Date().toISOString()
-    });
-
-    // Use type assertion to bypass TypeScript issues with Prisma client types
-    const account = await (prisma as any).tradingAccount.findFirst({
+    const account = await prisma.tradingAccount.findFirst({
         where: { id: accountId, userId },
         include: {
             propFirm: {
@@ -59,7 +52,7 @@ export const GET = withAuth(async (req, ctx, session) => {
     // Get latest daily snapshot if exists
     let latestSnapshot = null;
     try {
-        latestSnapshot = await (prisma as any).dailyAccountSnapshot.findFirst({
+        latestSnapshot = await prisma.dailyAccountSnapshot.findFirst({
             where: { accountId: account.id },
             orderBy: { snapshotDate: 'desc' },
         });

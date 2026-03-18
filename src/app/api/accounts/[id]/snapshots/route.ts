@@ -22,7 +22,7 @@ export const GET = withAuth(async (_req, ctx, session) => {
     // Get all daily snapshots for the account
     let snapshots: any[] = [];
     try {
-        snapshots = await (prisma as any).dailyAccountSnapshot.findMany({
+        snapshots = await prisma.dailyAccountSnapshot.findMany({
             where: { accountId: id },
             orderBy: { snapshotDate: 'asc' },
         });
