@@ -21,9 +21,9 @@ export default auth(async (req) => {
     if (rateLimitResponse) return rateLimitResponse;
   }
 
-  // Rate limit login page (10 per minute)
+  // Rate limit login page (100 per minute for dev)
   if (isLoginPage) {
-    const rateLimitResponse = await loginLimiter.check(req, 10);
+    const rateLimitResponse = await loginLimiter.check(req, 100);
     if (rateLimitResponse) return rateLimitResponse;
   }
 
@@ -35,7 +35,7 @@ export default auth(async (req) => {
 
   // General API rate limiting (skip webhooks, cron, health endpoints)
   if (nextUrl.pathname.startsWith('/api/') && !isTelegramWebhook && !isCronEndpoint && !isHealthEndpoint && !isRegisterEndpoint && !isSyncApi) {
-    const rateLimitResponse = await apiLimiter.check(req, 100);
+    const rateLimitResponse = await apiLimiter.check(req, 1000);
     if (rateLimitResponse) return rateLimitResponse;
   }
 
