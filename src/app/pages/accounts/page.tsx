@@ -981,7 +981,40 @@ function AccountsContent() {
                                 </div>
                             </div>
 
-                            {editingAccount.propFirmId && (
+                            {/* Prop Firm Selection - Always show */}
+                            <div className="pt-4 border-t border-white/10">
+                                <h4 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-4">Prop Firm (Optional)</h4>
+                                
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                        Select Prop Firm
+                                    </label>
+                                    <select
+                                        value={editForm.propFirmId}
+                                        onChange={(e) => {
+                                            const selectedFirm = propFirms.find(f => f.id === e.target.value);
+                                            setEditForm(prev => ({
+                                                ...prev,
+                                                propFirmId: e.target.value,
+                                                // Auto-fill defaults from prop firm
+                                                maxDailyLoss: selectedFirm ? (selectedFirm.dailyLossLimit?.toString() || prev.maxDailyLoss) : '',
+                                                maxTotalDrawdown: selectedFirm ? (selectedFirm.maxDrawdown?.toString() || prev.maxTotalDrawdown) : '',
+                                                profitTarget: selectedFirm && selectedFirm.phasesConfig ?
+                                                    (JSON.parse(selectedFirm.phasesConfig)[0]?.profitTarget?.toString() || '') : prev.profitTarget,
+                                            }));
+                                        }}
+                                        className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all"
+                                    >
+                                        <option value="">None (Own Money Account)</option>
+                                        {propFirms.map(firm => (
+                                            <option key={firm.id} value={firm.id}>{firm.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Prop Firm Settings - Show when prop firm selected */}
+                            {editForm.propFirmId && (
                                 <>
                                     <div className="pt-4 border-t border-white/10">
                                         <h4 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-4">Prop Firm Settings</h4>
