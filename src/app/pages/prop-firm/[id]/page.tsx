@@ -326,7 +326,7 @@ function PropFirmAccountContent() {
                 {/* Header */}
                 <div className="flex items-center gap-4">
                     <button
-                        onClick={() => router.push(fromPage === 'settings' ? '/settings?tab=accounts' : '/settings')}
+                        onClick={() => router.push('/pages/accounts')}
                         className="p-2 rounded-lg border border-white/10 hover:bg-white/5 transition-all"
                     >
                         <ArrowLeft size={20} />
