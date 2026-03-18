@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getDefaultAccount, getAllUserAccounts } from '@/lib/getAccount';
+import { getAllUserAccounts } from '@/lib/getAccount';
 import { auth } from '@/lib/auth';
 import { formatDistanceToNow } from '@/lib/formatTime';
 import { validateBody, tradeCreateSchema } from '@/lib/validations';
@@ -8,8 +8,8 @@ import { Prisma } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
     const session = await auth();
-    const userId = session?.user?.id;
-    if (!userId) return NextResponse.json({ trades: [], pagination: { page: 1, limit: 50, total: 0, totalPages: 0 } });
+    if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const userId = session.user.id;
 
     const allAccounts = await getAllUserAccounts(userId);
     if (allAccounts.length === 0) return NextResponse.json({ trades: [], pagination: { page: 1, limit: 50, total: 0, totalPages: 0 } });
@@ -28,9 +28,9 @@ export async function GET(request: NextRequest) {
     const tagFilter = searchParams.get('tag'); // Tag ID filter
     const accountFilter = searchParams.get('account'); // Specific account ID filter
 
-    // Pagination
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '50');
+    // Pagination — cap limit to 500 to prevent runaway queries
+    const limit = Math.min(500, Math.max(1, parseInt(searchParams.get('limit') || '50') || 50));
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1);
 
     // Build where clause — optionally restrict to specific account
     const filteredAccountIds = accountFilter && accountIds.includes(accountFilter)
@@ -178,8 +178,16 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: Request) {
-    const defaultAccount = await getDefaultAccount();
-    if (!defaultAccount) return NextResponse.json({ error: 'No account configured' }, { status: 500 });
+    const session = await auth();
+    if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const userId = session.user.id;
+
+    // Resolve default account for this user
+    const defaultAccount = await prisma.tradingAccount.findFirst({
+        where: { userId, isActive: true },
+        orderBy: { createdAt: 'asc' },
+    });
+    if (!defaultAccount) return NextResponse.json({ error: 'No account configured' }, { status: 400 });
 
     const validation = await validateBody(request, tradeCreateSchema);
     if (!validation.success) {
@@ -192,7 +200,7 @@ export async function POST(request: Request) {
     let account = defaultAccount;
     if (body.accountId && body.accountId !== defaultAccount.id) {
         const specified = await prisma.tradingAccount.findFirst({
-            where: { id: body.accountId, userId: defaultAccount.userId, isActive: true },
+            where: { id: body.accountId, userId, isActive: true },
         });
         if (specified) account = specified;
     }

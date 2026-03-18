@@ -65,7 +65,16 @@ export async function getUserByBridgeKey(bridgeKey: string) {
 
     if (userByHash?.bridgeKeyHash) {
         const valid = await bcrypt.compare(bridgeKey, userByHash.bridgeKeyHash);
-        return valid ? userByHash : null;
+        if (!valid) return null;
+        // Lazy rehash: upgrade cost-10 hashes to cost-8 for faster sync
+        if (bcrypt.getRounds(userByHash.bridgeKeyHash) > 8) {
+            const newHash = bcrypt.hashSync(bridgeKey, 8);
+            await prisma.user.update({
+                where: { id: userByHash.id },
+                data: { bridgeKeyHash: newHash },
+            });
+        }
+        return userByHash;
     }
 
     return null;
@@ -111,7 +120,7 @@ export async function getAccountByBridgeKey(bridgeKey: string) {
 export function generateBridgeKey() {
     const key = `prism_${randomBytes(24).toString('hex')}`;
     const keyId = key.slice(0, 12);
-    const keyHash = bcrypt.hashSync(key, 10);
+    const keyHash = bcrypt.hashSync(key, 8);
     return { key, keyId, keyHash };
 }
 

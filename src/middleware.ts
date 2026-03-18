@@ -2,10 +2,16 @@ import { auth } from '@/lib/auth';
 import { authLimiter, loginLimiter, apiLimiter, syncLimiter } from '@/lib/rate-limit';
 import { NextResponse } from 'next/server';
 
+const LOGIN_RATE_LIMIT = parseInt(process.env.RATE_LIMIT_LOGIN ?? '10');
+const API_RATE_LIMIT = parseInt(process.env.RATE_LIMIT_API ?? '100');
+const SYNC_RATE_LIMIT = parseInt(process.env.RATE_LIMIT_SYNC ?? '600');
+
 export default auth(async (req) => {
   const { nextUrl } = req;
   const isLoggedIn = !!req.auth;
   const isLoginPage = nextUrl.pathname === '/login';
+  const isForgotPasswordPage = nextUrl.pathname === '/forgot-password';
+  const isResetPasswordPage = nextUrl.pathname === '/reset-password';
   const isApiAuth = nextUrl.pathname.startsWith('/api/auth');
   const isSyncApi = nextUrl.pathname === '/api/sync';
   const isTelegramWebhook = nextUrl.pathname === '/api/telegram/webhook';
@@ -21,21 +27,22 @@ export default auth(async (req) => {
     if (rateLimitResponse) return rateLimitResponse;
   }
 
-  // Rate limit login page (100 per minute for dev)
+  // Rate limit login page — configurable via RATE_LIMIT_LOGIN env var (default: 10/min)
   if (isLoginPage) {
-    const rateLimitResponse = await loginLimiter.check(req, 100);
+    const rateLimitResponse = await loginLimiter.check(req, LOGIN_RATE_LIMIT);
     if (rateLimitResponse) return rateLimitResponse;
   }
 
-  // Rate limit sync endpoint (600 per minute — MT5 sends bursts on startup)
+  // Rate limit sync endpoint — configurable via RATE_LIMIT_SYNC env var (default: 600/min, MT5 sends bursts on startup)
   if (isSyncApi) {
-    const rateLimitResponse = await syncLimiter.check(req, 600);
+    const rateLimitResponse = await syncLimiter.check(req, SYNC_RATE_LIMIT);
     if (rateLimitResponse) return rateLimitResponse;
   }
 
-  // General API rate limiting (skip webhooks, cron, health endpoints)
+  // General API rate limiting — configurable via RATE_LIMIT_API env var (default: 100/min)
+  // Skips webhooks, cron, and health endpoints
   if (nextUrl.pathname.startsWith('/api/') && !isTelegramWebhook && !isCronEndpoint && !isHealthEndpoint && !isRegisterEndpoint && !isSyncApi) {
-    const rateLimitResponse = await apiLimiter.check(req, 1000);
+    const rateLimitResponse = await apiLimiter.check(req, API_RATE_LIMIT);
     if (rateLimitResponse) return rateLimitResponse;
   }
 
@@ -43,6 +50,9 @@ export default auth(async (req) => {
 
   // Always allow auth API routes, MT5 sync, Telegram webhook, cron, and health endpoints
   if (isApiAuth || isSyncApi || isTelegramWebhook || isCronEndpoint || isHealthEndpoint) return;
+
+  // Allow unauthenticated access to password reset pages
+  if (isForgotPasswordPage || isResetPasswordPage) return;
 
   // Redirect unauthenticated users to login
   if (!isLoggedIn && !isLoginPage) {

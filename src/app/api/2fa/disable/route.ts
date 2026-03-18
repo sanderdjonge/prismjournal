@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { auth, usedTotpCodes, cleanupUsedCodes } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { verifySync } from 'otplib';
@@ -50,11 +50,21 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: '2FA secret not found' }, { status: 400 });
         }
 
+        // TOTP replay protection
+        cleanupUsedCodes();
+        const codeKey = `${session.user.id}:${code}`;
+        if (usedTotpCodes.has(codeKey)) {
+            return NextResponse.json({ error: 'Invalid verification code' }, { status: 400 });
+        }
+
         // Verify using otplib v13 API
         const result = verifySync({ secret: user.totpSecret, token: code });
         if (!result.valid) {
             return NextResponse.json({ error: 'Invalid verification code' }, { status: 400 });
         }
+
+        // Mark code as used for 90 seconds
+        usedTotpCodes.set(codeKey, Date.now() + 90_000);
 
         // Disable 2FA
         await prisma.user.update({

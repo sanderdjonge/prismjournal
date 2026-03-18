@@ -14,6 +14,11 @@ export function withAuth(handler: AuthedHandler) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    return handler(req, ctx, session as Session & { user: { id: string } });
+    try {
+      return await handler(req, ctx, session as Session & { user: { id: string } });
+    } catch (error) {
+      console.error('[withAuth]', req.url, error);
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    }
   };
 }

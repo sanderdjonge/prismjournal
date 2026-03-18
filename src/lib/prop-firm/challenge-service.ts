@@ -60,13 +60,12 @@ export async function checkPhaseAdvancement(accountId: string): Promise<Advancem
         return null;
     }
 
-    // Parse phases config
+    // phasesConfig is already parsed by Prisma (Json type)
     let phasesConfig: PhaseConfig[] = [];
-    try {
-        phasesConfig = JSON.parse(account.propFirm.phasesConfig);
-    } catch {
+    if (!Array.isArray(account.propFirm.phasesConfig)) {
         return null;
     }
+    phasesConfig = account.propFirm.phasesConfig as unknown as PhaseConfig[];
 
     // Get current phase config
     const phaseConfig = phasesConfig.find(p => p.phaseNumber === currentPhase.phaseNumber);
@@ -221,13 +220,11 @@ export async function initializeChallengePhases(
         throw new Error('Prop firm not found');
     }
 
-    // Parse phases config
-    let phasesConfig: PhaseConfig[] = [];
-    try {
-        phasesConfig = JSON.parse(propFirm.phasesConfig);
-    } catch {
+    // phasesConfig is already parsed by Prisma (Json type)
+    if (!Array.isArray(propFirm.phasesConfig)) {
         throw new Error('Invalid phases configuration');
     }
+    const phasesConfig = propFirm.phasesConfig as unknown as PhaseConfig[];
 
     const now = new Date();
 

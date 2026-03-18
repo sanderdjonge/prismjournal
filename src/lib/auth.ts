@@ -4,6 +4,18 @@ import prisma from './prisma';
 import bcrypt from 'bcryptjs';
 import { verifySync } from 'otplib';
 
+// TOTP replay protection: track used codes for 90 seconds
+export const usedTotpCodes = new Map<string, number>();
+
+export function cleanupUsedCodes(): void {
+    const now = Date.now();
+    for (const [key, expiry] of usedTotpCodes) {
+        if (now > expiry) {
+            usedTotpCodes.delete(key);
+        }
+    }
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
     session: { strategy: 'jwt' },
     providers: [
@@ -31,13 +43,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
                 if (!isValid) return null;
 
+                // Reject deactivated accounts
+                if (!user.isActive) return null;
+
                 // Check if 2FA is enabled
                 if (user.totpEnabled && user.totpSecret) {
                     const totpCode = credentials.totpCode as string;
-                    
+
                     if (!totpCode) {
                         // Return special object to indicate 2FA is required
                         throw new Error('2FA_REQUIRED');
+                    }
+
+                    // TOTP replay protection
+                    cleanupUsedCodes();
+                    const codeKey = `${user.id}:${totpCode}`;
+                    if (usedTotpCodes.has(codeKey)) {
+                        throw new Error('INVALID_2FA_CODE');
                     }
 
                     // Verify TOTP code using otplib v13 API
@@ -45,6 +67,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     if (!result.valid) {
                         throw new Error('INVALID_2FA_CODE');
                     }
+
+                    // Mark code as used for 90 seconds
+                    usedTotpCodes.set(codeKey, Date.now() + 90_000);
                 }
 
                 return { 

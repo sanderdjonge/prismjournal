@@ -55,8 +55,8 @@ export async function POST(request: Request) {
             bridgeKey: key, // Return the bridge key once during registration
         });
     } catch (error) {
-        console.error('Register error:', error);
-        return NextResponse.json({ error: String(error) }, { status: 500 });
+        console.error('[register]', error);
+        return NextResponse.json({ error: 'Registration failed. Please try again.' }, { status: 500 });
     }
 }
 

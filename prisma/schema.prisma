@@ -40,13 +40,14 @@ model User {
   updatedAt     DateTime         @updatedAt
   
   // Relations
-  accounts      TradingAccount[]
-  strategies    Strategy[]
-  notifications Notification[]
-  alertConfig   AlertConfig?
-  settings      UserSettings?
-  customStats   CustomStat[]
-  tags          Tag[]
+  accounts           TradingAccount[]
+  strategies         Strategy[]
+  notifications      Notification[]
+  alertConfig        AlertConfig?
+  settings           UserSettings?
+  customStats        CustomStat[]
+  tags               Tag[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 // ============================================
@@ -163,11 +164,11 @@ model PropFirm {
   allowEA            Boolean @default(true)
   
   // Phases Configuration (stored as JSON)
-  phasesConfig    String   // JSON with phase configurations
-  
+  phasesConfig    Json     // JSON with phase configurations
+
   // Scaling Plan
   hasScalingPlan  Boolean  @default(false)
-  scalingConfig   String?  // JSON with scaling rules
+  scalingConfig   Json?    // JSON with scaling rules
   
   // Status
   isActive        Boolean  @default(true)
@@ -439,6 +440,8 @@ model Trade {
   
   @@index([accountId])
   @@index([accountId, entryTime])
+  @@index([accountId, exitTime, pnl])
+  @@index([accountId, status, exitTime])
   @@index([symbol])
   @@index([status])
 }
@@ -646,7 +649,7 @@ model SystemMetric {
 model AuditLog {
   id        String   @id @default(cuid())
   action    String   // Enum value from AuditAction
-  details   String   // JSON string with action details
+  details   Json     // JSON with action details
   ipAddress String?
   userAgent String?
   userId    String?  // User who performed the action (null if not authenticated)
@@ -655,4 +658,24 @@ model AuditLog {
   @@index([action])
   @@index([userId])
   @@index([createdAt])
+}
+
+// ============================================
+// Password Reset Tokens
+// ============================================
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenId   String   @unique  // First 8 chars of raw token for efficient lookup
+  token     String   @unique  // Hashed token for security
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+  @@index([token])
+  @@index([tokenId])
+  @@index([expiresAt])
 }

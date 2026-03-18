@@ -78,6 +78,7 @@ interface AccountDetails {
     currentBalance: number | null;
     currentEquity: number | null;
     totalPnl: number;
+    todayPnl: number;
     tradeCount: number;
     propFirm: {
         id: string;
@@ -303,22 +304,32 @@ function PropFirmAccountContent() {
 
     // Calculate progress
     const accountSize = account.accountSize || 10000;
-    const currentBalance = account.currentBalance || accountSize;
     const totalPnl = account.totalPnl || 0;
-    const progressPercent = currentPhase?.currentProgress || 
+    // Derive currentBalance from sync data when available, fall back to accountSize + totalPnl
+    const currentBalance = account.currentBalance ?? (accountSize + totalPnl);
+    const progressPercent = currentPhase?.currentProgress ||
         ((currentBalance - accountSize) / accountSize * 100);
 
-    // Daily loss calculation
-    // dailyLossUsed is stored as percent-of-limit (0-100), e.g. 84 means 84% of limit used.
-    const dailyLossPercentOfLimit = account.latestSnapshot?.dailyLossUsed || 0;
+    // Daily loss — prefer snapshot (set by cron), fall back to today's live trades
     const dailyLossLimit = currentPhase?.dailyLossLimit || account.propFirm?.dailyLossLimit || 5;
-    // Convert to the actual raw percentage lost (e.g. 4.2% of account balance).
+    let dailyLossPercentOfLimit: number;
+    if (account.latestSnapshot) {
+        // Snapshot stores dailyLossUsed as percent-of-limit (0–100)
+        dailyLossPercentOfLimit = account.latestSnapshot.dailyLossUsed || 0;
+    } else {
+        // Live fallback: today's losing P&L as % of limit
+        const todayLoss = account.todayPnl < 0 ? Math.abs(account.todayPnl) : 0;
+        const todayLossOfBalance = (todayLoss / accountSize) * 100;
+        dailyLossPercentOfLimit = Math.min(100, (todayLossOfBalance / dailyLossLimit) * 100);
+    }
+    // Actual % of account balance lost today
     const dailyLossPercent = (dailyLossPercentOfLimit * dailyLossLimit) / 100;
 
-    // Drawdown calculation
-    const drawdownPercent = account.latestSnapshot?.currentDrawdown || 
-        account.challengePhases[0]?.currentDrawdown || 0;
+    // Drawdown — prefer snapshot, fall back to live balance vs account size
     const maxDrawdown = currentPhase?.maxDrawdown || account.propFirm?.maxDrawdown || 10;
+    const drawdownPercent = account.latestSnapshot?.currentDrawdown
+        ?? account.challengePhases[0]?.currentDrawdown
+        ?? Math.max(0, ((accountSize - currentBalance) / accountSize) * 100);
 
     return (
         <DashboardShell>
@@ -546,10 +557,8 @@ function PropFirmAccountContent() {
                             </h2>
                             <div className="text-center py-8 text-gray-400">
                                 <BarChart3 size={32} className="mx-auto mb-2 opacity-50" />
-                                <p className="text-sm">Daily snapshots will appear here</p>
-                                <p className="text-xs text-gray-500 mt-1">
-                                    Run the daily snapshot cron to generate data
-                                </p>
+                                <p className="text-sm">No daily data yet</p>
+                                <p className="text-xs text-gray-500 mt-1">Snapshots are generated automatically each day</p>
                             </div>
                         </div>
 
@@ -606,9 +615,9 @@ function PropFirmAccountContent() {
                                             </p>
                                         </div>
                                         <div className="text-center p-3 rounded-lg bg-black/20 border border-white/5">
-                                            <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Avg DD</p>
+                                            <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Avg Loss</p>
                                             <p className="text-lg font-bold text-orange-400">
-                                                {analytics.meanDrawdown.toFixed(1)}%
+                                                {formatCurrency(analytics.meanDrawdown, account?.currency)}
                                             </p>
                                         </div>
                                     </div>
@@ -647,39 +656,30 @@ function PropFirmAccountContent() {
                                     {/* Session Distribution */}
                                     <div>
                                         <h3 className="text-sm font-bold text-gray-300 mb-3">Trading Hours</h3>
-                                        <div className="grid grid-cols-12 gap-1">
-                                            {analytics.sessionData.slice(0, 12).map((session) => {
-                                                const maxCount = Math.max(...analytics.sessionData.map(s => s.count), 1);
-                                                const height = (session.count / maxCount) * 100;
-                                                return (
-                                                    <div key={session.hour} className="flex flex-col items-center">
-                                                        <div className="w-full h-12 flex items-end justify-center">
-                                                            <div
-                                                                className="w-full bg-primary/60 rounded-t"
-                                                                style={{ height: `${Math.max(height, 2)}%` }}
-                                                            />
+                                        {(() => {
+                                            const maxCount = Math.max(...analytics.sessionData.map(s => s.count), 1);
+                                            return (
+                                                <div className="flex items-end gap-px h-12 mb-1">
+                                                    {analytics.sessionData.map((s) => (
+                                                        <div
+                                                            key={s.hour}
+                                                            className="flex-1 rounded-t transition-all group/bar relative cursor-default"
+                                                            style={{ height: s.count > 0 ? `${Math.max((s.count / maxCount) * 100, 4)}%` : '4px' }}
+                                                        >
+                                                            <div className={`w-full h-full rounded-t ${s.count > 0 ? 'bg-primary/50 group-hover/bar:bg-primary/80' : 'bg-white/5'} transition-colors`} />
+                                                            {s.count > 0 && (
+                                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 rounded bg-black/90 border border-white/10 text-[9px] font-black text-white whitespace-nowrap opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none z-10">
+                                                                    {s.hour.toString().padStart(2, '0')}:00
+                                                                    <span className="block text-primary text-center">{s.count} trade{s.count !== 1 ? 's' : ''}</span>
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                        <span className="text-[9px] text-gray-500 mt-1">{session.hour}</span>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                        <div className="grid grid-cols-12 gap-1 mt-1">
-                                            {analytics.sessionData.slice(12, 24).map((session) => {
-                                                const maxCount = Math.max(...analytics.sessionData.map(s => s.count), 1);
-                                                const height = (session.count / maxCount) * 100;
-                                                return (
-                                                    <div key={session.hour} className="flex flex-col items-center">
-                                                        <div className="w-full h-12 flex items-end justify-center">
-                                                            <div
-                                                                className="w-full bg-primary/60 rounded-t"
-                                                                style={{ height: `${Math.max(height, 2)}%` }}
-                                                            />
-                                                        </div>
-                                                        <span className="text-[9px] text-gray-500 mt-1">{session.hour}</span>
-                                                    </div>
-                                                );
-                                            })}
+                                                    ))}
+                                                </div>
+                                            );
+                                        })()}
+                                        <div className="flex justify-between text-[8px] font-black text-gray-700 uppercase tracking-widest mt-1">
+                                            <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span>
                                         </div>
                                     </div>
                                 </div>

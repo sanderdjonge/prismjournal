@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getDefaultAccount } from '@/lib/getAccount';
+import { auth } from '@/lib/auth';
 import { sendTestEmail } from '@/lib/email';
-import { validateBody, notificationSettingsSchema, testEmailSchema } from '@/lib/validations';
+import { validateBody, notificationSettingsSchema } from '@/lib/validations';
 
-const DEFAULTS = { 
-    enableSync: true, 
-    enableTrades: true, 
-    enableRisk: true, 
-    telegramId: null as string | null, 
+const DEFAULTS = {
+    enableSync: true,
+    enableTrades: true,
+    enableRisk: true,
+    telegramId: null as string | null,
     mddThreshold: null as number | null,
     // Email notification settings
     email: null as string | null,
@@ -17,15 +17,17 @@ const DEFAULTS = {
 };
 
 export async function GET() {
-    const account = await getDefaultAccount();
-    if (!account) return NextResponse.json(DEFAULTS);
-    const config = await prisma.alertConfig.findUnique({ where: { userId: account.userId } });
+    const session = await auth();
+    if (!session?.user?.id) return NextResponse.json(DEFAULTS);
+    const userId = session.user.id;
+    const config = await prisma.alertConfig.findUnique({ where: { userId } });
     return NextResponse.json(config ?? DEFAULTS);
 }
 
 export async function PATCH(request: Request) {
-    const account = await getDefaultAccount();
-    if (!account) return NextResponse.json({ error: 'No account' }, { status: 500 });
+    const session = await auth();
+    if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const userId = session.user.id;
 
     const validation = await validateBody(request, notificationSettingsSchema);
     if (!validation.success) {
@@ -35,9 +37,9 @@ export async function PATCH(request: Request) {
     const body = validation.data;
 
     const config = await prisma.alertConfig.upsert({
-        where: { userId: account.userId },
+        where: { userId },
         update: { ...body },
-        create: { userId: account.userId, ...DEFAULTS, ...body },
+        create: { userId, ...DEFAULTS, ...body },
     });
 
     return NextResponse.json(config);
@@ -45,16 +47,20 @@ export async function PATCH(request: Request) {
 
 /**
  * POST /api/settings/notifications
- * Send a test email to verify email configuration
+ * Send a test email to the authenticated user's registered email address
  */
-export async function POST(request: Request) {
+export async function POST() {
     try {
-        const validation = await validateBody(request, testEmailSchema);
-        if (!validation.success) {
-            return validation.response;
+        const session = await auth();
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { email } = validation.data;
+        const email = session.user.email;
+        if (!email) {
+            return NextResponse.json({ success: false, error: 'No email address on account' }, { status: 400 });
+        }
+
         const result = await sendTestEmail(email);
         return NextResponse.json(result);
     } catch (error) {

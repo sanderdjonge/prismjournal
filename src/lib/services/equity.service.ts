@@ -46,12 +46,10 @@ export async function saveEquitySnapshot(
     // Fire alerts asynchronously — errors must not fail the sync
     sendDrawdownAlert(userId, snapshot.balance, snapshot.equity).catch(() => {});
 
-    const recentSnapshots = await prisma.equitySnapshot.findMany({
+    const peakResult = await prisma.equitySnapshot.aggregate({
+        _max: { equity: true },
         where: { accountId },
-        orderBy: { timestamp: 'desc' },
-        take: 100,
-        select: { equity: true },
     });
-    const peakEquity = Math.max(...recentSnapshots.map(s => s.equity));
+    const peakEquity = peakResult._max.equity ?? 0;
     checkMddAlert(userId, accountId, snapshot.equity, peakEquity).catch(() => {});
 }

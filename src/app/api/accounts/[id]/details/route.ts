@@ -49,6 +49,15 @@ export const GET = withAuth(async (req, ctx, session) => {
         _count: true,
     });
 
+    // Today's P&L (for live daily loss calculation when no snapshot exists)
+    const todayStart = new Date();
+    todayStart.setUTCHours(0, 0, 0, 0);
+    const todayStats = await prisma.trade.aggregate({
+        where: { accountId: account.id, exitTime: { gte: todayStart }, pnl: { not: null } },
+        _sum: { pnl: true },
+    });
+    const todayPnl = todayStats._sum?.pnl ?? 0;
+
     // Get latest daily snapshot if exists
     let latestSnapshot = null;
     try {
@@ -60,15 +69,8 @@ export const GET = withAuth(async (req, ctx, session) => {
         // Table might not exist yet
     }
 
-    // Parse phases config from prop firm
-    let phasesConfig = null;
-    if (account.propFirm?.phasesConfig) {
-        try {
-            phasesConfig = JSON.parse(account.propFirm.phasesConfig);
-        } catch {
-            // Ignore parse errors
-        }
-    }
+    // phasesConfig is already parsed by Prisma (Json type)
+    const phasesConfig = account.propFirm?.phasesConfig ?? null;
 
     const response = ok({
         account: {
@@ -76,6 +78,7 @@ export const GET = withAuth(async (req, ctx, session) => {
             tradeCount: account._count?.trades ?? 0,
             closedTradeCount: stats._count,
             totalPnl: stats._sum?.pnl ?? 0,
+            todayPnl,
             phasesConfig,
             latestSnapshot,
         },
