@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getDefaultAccount } from '@/lib/getAccount';
+import { auth } from '@/lib/auth';
 
 /**
  * GET /api/notifications
@@ -8,13 +8,12 @@ import { getDefaultAccount } from '@/lib/getAccount';
  */
 export async function GET() {
   try {
-    const account = await getDefaultAccount();
-    if (!account) {
-      return NextResponse.json({ notifications: [], unreadCount: 0 });
-    }
+    const session = await auth();
+    if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const userId = session.user.id;
 
     const notifications = await prisma.notification.findMany({
-      where: { userId: account.userId },
+      where: { userId },
       orderBy: { createdAt: 'desc' },
       take: 50,
     });
@@ -34,10 +33,9 @@ export async function GET() {
  */
 export async function POST(request: Request) {
   try {
-    const account = await getDefaultAccount();
-    if (!account) {
-      return NextResponse.json({ error: 'No account' }, { status: 401 });
-    }
+    const session = await auth();
+    if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const userId = session.user.id;
 
     const body = await request.json();
     const { type, title, message } = body;
@@ -48,7 +46,7 @@ export async function POST(request: Request) {
 
     const notification = await prisma.notification.create({
       data: {
-        userId: account.userId,
+        userId,
         type,
         title,
         message,
@@ -68,22 +66,21 @@ export async function POST(request: Request) {
  */
 export async function PATCH(request: Request) {
   try {
-    const account = await getDefaultAccount();
-    if (!account) {
-      return NextResponse.json({ error: 'No account' }, { status: 401 });
-    }
+    const session = await auth();
+    if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const userId = session.user.id;
 
     const body = await request.json();
     const { ids, markAll } = body;
 
     if (markAll) {
       await prisma.notification.updateMany({
-        where: { userId: account.userId, isRead: false },
+        where: { userId, isRead: false },
         data: { isRead: true },
       });
     } else if (ids && Array.isArray(ids)) {
       await prisma.notification.updateMany({
-        where: { id: { in: ids }, userId: account.userId },
+        where: { id: { in: ids }, userId },
         data: { isRead: true },
       });
     }
@@ -101,21 +98,20 @@ export async function PATCH(request: Request) {
  */
 export async function DELETE(request: Request) {
   try {
-    const account = await getDefaultAccount();
-    if (!account) {
-      return NextResponse.json({ error: 'No account' }, { status: 401 });
-    }
+    const session = await auth();
+    if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const userId = session.user.id;
 
     const body = await request.json();
     const { ids, clearAll } = body;
 
     if (clearAll) {
       await prisma.notification.deleteMany({
-        where: { userId: account.userId },
+        where: { userId },
       });
     } else if (ids && Array.isArray(ids)) {
       await prisma.notification.deleteMany({
-        where: { id: { in: ids }, userId: account.userId },
+        where: { id: { in: ids }, userId },
       });
     }
 

@@ -1,28 +1,16 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { auth } from '@/lib/auth';
 import { getAllUserAccounts } from '@/lib/getAccount';
 import { calculateProfitFactor } from '@/lib/analytics';
+import { withAuth } from '@/lib/api/withAuth';
+import type { Session } from 'next-auth';
 
-export async function GET(request: Request) {
+export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, unknown>, session: Session & { user: { id: string } }) => {
     const { searchParams } = new URL(request.url);
     const from = searchParams.get('from');
     const to = searchParams.get('to');
 
-    const session = await auth();
-    const userId = session?.user?.id;
-
-    if (!userId) {
-        return NextResponse.json({
-            symbolData: [],
-            expectancyData: [],
-            sessionData: Array.from({ length: 24 }, (_, i) => ({ hour: i, count: 0 })),
-            profitFactor: 0,
-            expectancy: 0,
-            avgRR: 0,
-            meanDrawdown: 0,
-        });
-    }
+    const userId = session.user.id;
 
     const allAccounts = await getAllUserAccounts(userId);
     const accountIds = allAccounts.map((a) => a.id);
@@ -163,6 +151,6 @@ export async function GET(request: Request) {
         avgRR,
         meanDrawdown,
     });
-}
+});
 
 export const runtime = 'nodejs';

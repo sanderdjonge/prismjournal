@@ -26,6 +26,9 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
+    const session = await auth();
+    if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     const account = await getDefaultAccount();
     if (!account) return NextResponse.json({ error: 'No account' }, { status: 500 });
 

@@ -115,7 +115,22 @@ export default function AnalyticsPage() {
                                     <BarChart data={symbolData}>
                                         <XAxis dataKey="symbol" axisLine={false} tickLine={false} tick={{ fill: '#4b5563', fontSize: 8, fontWeight: 900 }} />
                                         <YAxis hide />
-                                        <Tooltip contentStyle={{ backgroundColor: '#0a0a0a', border: 'none', borderRadius: '8px' }} />
+                                        <Tooltip
+                                            cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                                            content={({ active, payload }) => {
+                                                if (!active || !payload?.length) return null;
+                                                const d = payload[0].payload;
+                                                return (
+                                                    <div className="bg-black/90 border border-white/10 rounded-lg px-3 py-2 text-[10px] font-black space-y-1">
+                                                        <p className="text-white uppercase tracking-widest">{d.symbol}</p>
+                                                        <p className={d.profit >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                                                            P&L: {d.profit >= 0 ? '+' : ''}{formatAmount(d.profit)}
+                                                        </p>
+                                                        <p className="text-gray-400">Win rate: {d.winRate}%</p>
+                                                    </div>
+                                                );
+                                            }}
+                                        />
                                         <Bar dataKey="profit" radius={[2, 2, 0, 0]}>
                                             {symbolData.map((entry, i) => (
                                                 <Cell key={i} fill={entry.profit >= 0 ? '#10b981' : '#f43f5e'} fillOpacity={0.6} />
@@ -141,6 +156,21 @@ export default function AnalyticsPage() {
                                     <ComposedChart data={expectancyData}>
                                         <XAxis dataKey="trade" axisLine={false} tickLine={false} tick={{ fill: '#4b5563', fontSize: 8, fontWeight: 900 }} />
                                         <YAxis hide />
+                                        <Tooltip
+                                            cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1 }}
+                                            content={({ active, payload }) => {
+                                                if (!active || !payload?.length) return null;
+                                                const d = payload[0].payload;
+                                                return (
+                                                    <div className="bg-black/90 border border-white/10 rounded-lg px-3 py-2 text-[10px] font-black space-y-1">
+                                                        <p className="text-gray-400">Trade #{d.trade}</p>
+                                                        <p className={d.val >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                                                            Avg P&L: {d.val >= 0 ? '+' : ''}{formatAmount(d.val)}
+                                                        </p>
+                                                    </div>
+                                                );
+                                            }}
+                                        />
                                         <Line type="monotone" dataKey="val" stroke="#7000ff" strokeWidth={2} dot={false} />
                                     </ComposedChart>
                                 </ResponsiveContainer>
@@ -161,10 +191,17 @@ export default function AnalyticsPage() {
                             {sessionData.map((s) => (
                                 <div
                                     key={s.hour}
-                                    className="flex-1 bg-primary/30 rounded-t transition-all group/bar relative"
-                                    style={{ height: s.count > 0 ? `${Math.max((s.count / maxSession) * 100, 4)}%` : '0%' }}
-                                    title={`${s.hour.toString().padStart(2, '0')}:00 — ${s.count} trade${s.count !== 1 ? 's' : ''}`}
-                                />
+                                    className="flex-1 rounded-t transition-all group/bar relative cursor-default"
+                                    style={{ height: s.count > 0 ? `${Math.max((s.count / maxSession) * 100, 4)}%` : '4px' }}
+                                >
+                                    <div className={`w-full h-full rounded-t ${s.count > 0 ? 'bg-primary/40 group-hover/bar:bg-primary/70' : 'bg-white/5'} transition-colors`} />
+                                    {s.count > 0 && (
+                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 rounded bg-black/90 border border-white/10 text-[9px] font-black text-white whitespace-nowrap opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none z-10">
+                                            {s.hour.toString().padStart(2, '0')}:00
+                                            <span className="block text-primary text-center">{s.count} trade{s.count !== 1 ? 's' : ''}</span>
+                                        </div>
+                                    )}
+                                </div>
                             ))}
                         </div>
                         <div className="flex justify-between text-[7px] font-black text-gray-700 uppercase tracking-widest">

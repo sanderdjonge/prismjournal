@@ -56,12 +56,12 @@ export const GET = withAuth(async (request: NextRequest, ctx: Record<string, unk
             where: { accountId: { in: accountIds } },
             orderBy: { timestamp: 'asc' },
         }),
-        // Get ALL closed trades for equity curve (not just period)
+        // Get closed trades from startDate for equity curve
         prisma.trade.findMany({
-            where: { 
-                accountId: { in: accountIds }, 
-                pnl: { not: null }, 
-                exitTime: { not: null }
+            where: {
+                accountId: { in: accountIds },
+                pnl: { not: null },
+                exitTime: { gte: startDate, not: null },
             },
             orderBy: { exitTime: 'asc' },
             select: { exitTime: true, pnl: true },

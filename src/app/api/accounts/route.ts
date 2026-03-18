@@ -4,11 +4,18 @@ import prisma from '@/lib/prisma';
 import { validateBody, createAccountSchema } from '@/lib/validations';
 import { initializeChallengePhases } from '@/lib/prop-firm/challenge-service';
 
-export const GET = withAuth(async (_req, _ctx, session) => {
+export const GET = withAuth(async (req, _ctx, session) => {
     const userId = session.user.id;
+    
+    // Check if we should include archived accounts
+    const url = new URL(req.url);
+    const includeArchived = url.searchParams.get('includeArchived') === 'true';
 
     const accounts = await prisma.tradingAccount.findMany({
-        where: { userId },
+        where: {
+            userId,
+            ...(includeArchived ? {} : { isActive: true }),
+        },
         orderBy: [{ isActive: 'desc' }, { createdAt: 'asc' }],
         include: { 
             _count: { select: { trades: true } },
@@ -27,21 +34,25 @@ export const GET = withAuth(async (_req, _ctx, session) => {
         },
     });
 
-    const accountsWithStats = await Promise.all(
-        accounts.map(async (account) => {
-            const stats = await prisma.trade.aggregate({
-                where: { accountId: account.id, status: 'CLOSED' },
-                _sum: { pnl: true },
-                _count: true,
-            });
-            return {
-                ...account,
-                tradeCount: account._count.trades,
-                closedTradeCount: stats._count,
-                totalPnl: stats._sum?.pnl ?? 0,
-            };
-        })
-    );
+    const tradeSummaries = await prisma.trade.groupBy({
+        by: ['accountId'],
+        where: {
+            accountId: { in: accounts.map(a => a.id) },
+            status: 'CLOSED',
+        },
+        _sum: { pnl: true },
+        _count: { id: true },
+    });
+
+    const accountsWithStats = accounts.map((account) => {
+        const summary = tradeSummaries.find(s => s.accountId === account.id);
+        return {
+            ...account,
+            tradeCount: account._count.trades,
+            closedTradeCount: summary?._count?.id ?? 0,
+            totalPnl: summary?._sum?.pnl ?? 0,
+        };
+    });
 
     return ok({ accounts: accountsWithStats });
 });

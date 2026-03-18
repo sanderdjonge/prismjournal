@@ -37,6 +37,7 @@ type DashboardData = {
     worstTrade: number;
     consecutiveWins: number;
     consecutiveLosses: number;
+    avgDurationMinutes?: number;
 };
 
 export default function Dashboard() {
@@ -72,6 +73,7 @@ export default function Dashboard() {
         worstTrade: data?.worstTrade ?? 0,
         consecutiveWins: data?.consecutiveWins ?? 0,
         consecutiveLosses: data?.consecutiveLosses ?? 0,
+        avgDurationMinutes: data?.avgDurationMinutes,
     };
 
     if (loading) {
@@ -108,38 +110,38 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {/* Key Metrics Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                <StatCard
-                    label="Total P&L"
-                    value={formatPnl(stats.totalPnl)}
-                    variant={stats.totalPnl >= 0 ? 'profit' : 'loss'}
-                />
-                <StatCard
-                    label="Win Rate"
-                    value={`${stats.winRate.toFixed(1)}%`}
-                    subLabel={`${Math.round(stats.winRate / 100 * stats.totalTrades)}W / ${stats.totalTrades - Math.round(stats.winRate / 100 * stats.totalTrades)}L`}
-                    variant={stats.winRate >= 50 ? 'profit' : 'loss'}
-                />
-                <StatCard
-                    label="Profit Factor"
-                    value={stats.profitFactor > 0 ? stats.profitFactor.toFixed(2) : '—'}
-                />
-                <StatCard
-                    label="Avg R-Multiple"
-                    value={`${stats.avgRMultiple.toFixed(2)}R`}
-                    variant={stats.avgRMultiple >= 0 ? 'profit' : 'loss'}
-                />
-                <StatCard
-                    label="Expectancy"
-                    value={`${stats.expectancy >= 0 ? '+' : ''}${symbol}${Math.abs(stats.expectancy).toFixed(2)}`}
-                    variant={stats.expectancy >= 0 ? 'profit' : 'loss'}
-                />
-                <StatCard
-                    label="Max Drawdown"
-                    value={`-${formatAmount(stats.maxDrawdown)}`}
-                    variant="loss"
-                />
+            {/* Two Column Metrics Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Key Metrics Widget */}
+                <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
+                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-500 mb-6">Key Metrics</h3>
+                    <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+                        <MetricRow label="Total P&L" value={formatPnl(stats.totalPnl)} variant={stats.totalPnl >= 0 ? 'profit' : 'loss'} />
+                        <MetricRow label="Win Rate" value={`${stats.winRate.toFixed(1)}%`} subValue={`${Math.round(stats.winRate / 100 * stats.totalTrades)}W / ${stats.totalTrades - Math.round(stats.winRate / 100 * stats.totalTrades)}L`} variant={stats.winRate >= 50 ? 'profit' : 'loss'} />
+                        <MetricRow label="Profit Factor" value={stats.profitFactor > 0 ? stats.profitFactor.toFixed(2) : '—'} />
+                        <MetricRow label="Avg R-Multiple" value={`${stats.avgRMultiple.toFixed(2)}R`} variant={stats.avgRMultiple >= 0 ? 'profit' : 'loss'} />
+                        <MetricRow label="Expectancy" value={`${stats.expectancy >= 0 ? '+' : ''}${symbol}${Math.abs(stats.expectancy).toFixed(2)}`} variant={stats.expectancy >= 0 ? 'profit' : 'loss'} />
+                        <MetricRow label="Max Drawdown" value={`-${formatAmount(stats.maxDrawdown)}`} variant="loss" />
+                    </div>
+                </div>
+
+                {/* Performance Breakdown Widget */}
+                <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
+                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-500 mb-6">Performance Breakdown</h3>
+                    <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+                        <MetricRow label="Total Trades" value={stats.totalTrades.toString()} />
+                        <MetricRow label="Avg Duration" value={
+                            stats.avgDurationMinutes == null || stats.avgDurationMinutes === 0 ? '—' :
+                            stats.avgDurationMinutes < 60
+                                ? `${Math.round(stats.avgDurationMinutes)}m`
+                                : `${Math.floor(stats.avgDurationMinutes / 60)}h ${Math.round(stats.avgDurationMinutes % 60)}m`
+                        } />
+                        <MetricRow label="Best Trade" value={`+${formatAmount(stats.bestTrade)}`} variant="profit" />
+                        <MetricRow label="Worst Trade" value={`-${formatAmount(stats.worstTrade)}`} variant="loss" />
+                        <MetricRow label="Win Streak" value={stats.consecutiveWins.toString()} variant="profit" />
+                        <MetricRow label="Loss Streak" value={stats.consecutiveLosses.toString()} variant="loss" />
+                    </div>
+                </div>
             </div>
 
             {/* Main Content Grid */}
@@ -170,29 +172,16 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {/* Secondary Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Trade Calendar */}
-                <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl overflow-hidden">
+            {/* Calendar + Recent Trades */}
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                {/* Trade Calendar — 3/4 width */}
+                <div className="lg:col-span-3 glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl overflow-hidden">
                     <TradeCalendar data={stats.calendar} />
                 </div>
 
-                {/* Recent Trades */}
+                {/* Recent Trades — 1/4 width */}
                 <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl overflow-hidden">
                     <RecentTrades trades={stats.trades} />
-                </div>
-            </div>
-
-            {/* Performance Breakdown */}
-            <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
-                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-500 mb-6">Performance Breakdown</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-                    <BreakdownItem label="Total Trades" value={stats.totalTrades.toString()} />
-                    <BreakdownItem label="Best Trade" value={`+${formatAmount(stats.bestTrade)}`} variant="profit" />
-                    <BreakdownItem label="Worst Trade" value={`-${formatAmount(stats.worstTrade)}`} variant="loss" />
-                    <BreakdownItem label="Win Streak" value={stats.consecutiveWins.toString()} variant="profit" />
-                    <BreakdownItem label="Loss Streak" value={stats.consecutiveLosses.toString()} variant="loss" />
-                    <BreakdownItem label="Avg Duration" value="—" />
                 </div>
             </div>
         </div>
@@ -230,12 +219,12 @@ function StatCard({
 }
 
 // Breakdown Item Component
-function BreakdownItem({ 
-    label, 
-    value, 
-    variant = 'neutral' 
-}: { 
-    label: string; 
+function BreakdownItem({
+    label,
+    value,
+    variant = 'neutral'
+}: {
+    label: string;
     value: string;
     variant?: 'profit' | 'loss' | 'neutral';
 }) {
@@ -249,6 +238,38 @@ function BreakdownItem({
                 variant === 'neutral' && "text-white"
             )}>
                 {value}
+            </div>
+        </div>
+    );
+}
+
+// Metric Row Component (for two-column widget layout)
+function MetricRow({
+    label,
+    value,
+    subValue,
+    variant = 'neutral'
+}: {
+    label: string;
+    value: string;
+    subValue?: string;
+    variant?: 'profit' | 'loss' | 'neutral';
+}) {
+    return (
+        <div className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
+            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">{label}</div>
+            <div className="text-right">
+                <div className={cn(
+                    "text-sm font-black",
+                    variant === 'profit' && "text-accent",
+                    variant === 'loss' && "text-danger",
+                    variant === 'neutral' && "text-white"
+                )}>
+                    {value}
+                </div>
+                {subValue && (
+                    <div className="text-[10px] text-gray-600 font-medium">{subValue}</div>
+                )}
             </div>
         </div>
     );

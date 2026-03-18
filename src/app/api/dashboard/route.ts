@@ -1,65 +1,48 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { auth } from '@/lib/auth';
 import { getAllUserAccounts } from '@/lib/getAccount';
 import { calculateProfitFactor } from '@/lib/analytics';
 import { formatDistanceToNow } from '@/lib/formatTime';
+import { withAuth } from '@/lib/api/withAuth';
+import type { Session } from 'next-auth';
 
-export async function GET(request: Request) {
+const emptyResponse = {
+    equity: [],
+    trades: [],
+    calendar: [],
+    winRate: 0,
+    profitFactor: 0,
+    totalTrades: 0,
+    totalPnl: 0,
+    expectancy: 0,
+    maxDrawdown: 0,
+    avgRMultiple: 0,
+    bestTrade: 0,
+    worstTrade: 0,
+    consecutiveWins: 0,
+    consecutiveLosses: 0,
+};
+
+export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, unknown>, session: Session & { user: { id: string } }) => {
     const { searchParams } = new URL(request.url);
     const period = searchParams.get('period') || '30';
     const periodDays = parseInt(period, 10);
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - periodDays);
 
-    const session = await auth();
-    const userId = session?.user?.id;
-
-    if (!userId) {
-        return NextResponse.json({
-            equity: [],
-            trades: [],
-            calendar: [],
-            winRate: 0,
-            profitFactor: 0,
-            totalTrades: 0,
-            totalPnl: 0,
-            expectancy: 0,
-            maxDrawdown: 0,
-            avgRMultiple: 0,
-            bestTrade: 0,
-            worstTrade: 0,
-            consecutiveWins: 0,
-            consecutiveLosses: 0,
-        });
-    }
+    const userId = session.user.id;
 
     const allAccounts = await getAllUserAccounts(userId);
     const accountIds = allAccounts.map((a) => a.id);
 
     if (accountIds.length === 0) {
-        return NextResponse.json({
-            equity: [],
-            trades: [],
-            calendar: [],
-            winRate: 0,
-            profitFactor: 0,
-            totalTrades: 0,
-            totalPnl: 0,
-            expectancy: 0,
-            maxDrawdown: 0,
-            avgRMultiple: 0,
-            bestTrade: 0,
-            worstTrade: 0,
-            consecutiveWins: 0,
-            consecutiveLosses: 0,
-        });
+        return NextResponse.json(emptyResponse);
     }
 
     const accountFilter = searchParams.get('account');
     const filteredIds = accountFilter && accountIds.includes(accountFilter) ? [accountFilter] : accountIds;
 
-    const [trades, snapshots, allClosedTrades] = await Promise.all([
+    const [trades, allClosedTrades] = await Promise.all([
         prisma.trade.findMany({
             where: {
                 accountId: { in: filteredIds },
@@ -67,18 +50,11 @@ export async function GET(request: Request) {
             },
             orderBy: { entryTime: 'desc' },
         }),
-        prisma.equitySnapshot.findMany({
-            where: {
-                accountId: { in: filteredIds },
-                timestamp: { gte: startDate }
-            },
-            orderBy: { timestamp: 'asc' },
-        }),
-        // Get ALL closed trades for equity curve (not just period)
+        // Get closed trades from startDate for equity curve
         prisma.trade.findMany({
             where: {
                 accountId: { in: filteredIds },
-                exitTime: { not: null },
+                exitTime: { gte: startDate, not: null },
                 pnl: { not: null },
             },
             orderBy: { exitTime: 'asc' },
@@ -87,9 +63,9 @@ export async function GET(request: Request) {
     ]);
 
     // --- Equity curve ---
-    // Build from ALL closed trades, not just period trades
+    // Build from closed trades within period
     let equityData: { time: string; value: number }[] = [];
-    
+
     if (allClosedTrades.length > 0) {
         // Build equity curve from cumulative P&L by day
         const byDay = new Map<string, number>();
@@ -122,7 +98,7 @@ export async function GET(request: Request) {
     let maxDrawdown = 0;
     let peak = 0;
     let runningPnl = 0;
-    const sortedByExit = [...closedTrades].sort((a, b) => 
+    const sortedByExit = [...closedTrades].sort((a, b) =>
         (a.exitTime?.getTime() ?? 0) - (b.exitTime?.getTime() ?? 0)
     );
     for (const t of sortedByExit) {
@@ -222,8 +198,8 @@ export async function GET(request: Request) {
         else if ((t.pnl ?? 0) < 0) existing.losses += 1;
         calendarMap.set(date, existing);
     }
-    const calendarData = Array.from(calendarMap.entries()).map(([date, data]) => ({ 
-        date, 
+    const calendarData = Array.from(calendarMap.entries()).map(([date, data]) => ({
+        date,
         pnl: data.pnl,
         trades: data.trades,
         wins: data.wins,
@@ -247,6 +223,6 @@ export async function GET(request: Request) {
         consecutiveLosses,
         avgDurationMinutes,
     });
-}
+});
 
 export const runtime = 'nodejs';
