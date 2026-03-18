@@ -51,12 +51,6 @@ export const DELETE = withAuth(async (_req, ctx, session) => {
     const { id } = await (ctx.params as Promise<{ id: string }>);
     const userId = session.user.id;
 
-    console.log('[DELETE /api/accounts/[id]] Request received:', {
-        accountId: id,
-        userId,
-        timestamp: new Date().toISOString()
-    });
-
     try {
         // First, check if the account exists at all
         const accountExists = await prisma.tradingAccount.findUnique({
@@ -65,23 +59,16 @@ export const DELETE = withAuth(async (_req, ctx, session) => {
         });
 
         if (!accountExists) {
-            console.log('[DELETE /api/accounts/[id]] Account not found:', { accountId: id });
             return notFound('Account');
         }
 
         // Check if the account belongs to the user
         if (accountExists.userId !== userId) {
-            console.log('[DELETE /api/accounts/[id]] Account belongs to different user:', {
-                accountId: id,
-                accountUserId: accountExists.userId,
-                requestUserId: userId
-            });
             return notFound('Account'); // Return 404 to not reveal existence
         }
 
         // Check if already archived
         if (!accountExists.isActive) {
-            console.log('[DELETE /api/accounts/[id]] Account already archived:', { accountId: id });
             return ok({ account: accountExists, message: 'Account was already archived' });
         }
 
@@ -89,11 +76,6 @@ export const DELETE = withAuth(async (_req, ctx, session) => {
         const account = await prisma.tradingAccount.update({
             where: { id },
             data: { isActive: false },
-        });
-
-        console.log('[DELETE /api/accounts/[id]] Account archived successfully:', {
-            accountId: id,
-            accountName: account.name
         });
 
         return ok({ account });

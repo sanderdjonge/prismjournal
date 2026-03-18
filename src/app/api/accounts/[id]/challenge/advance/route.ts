@@ -47,12 +47,12 @@ export const POST = withAuth(async (req, ctx, session) => {
     }
 
     // Get current phases
-    const phases = await (prisma as any).challengePhase.findMany({
+    const phases = await prisma.challengePhase.findMany({
         where: { accountId },
         orderBy: { phaseNumber: 'asc' },
     });
 
-    const currentPhase = phases?.find((p: any) => p.status === 'IN_PROGRESS');
+    const currentPhase = phases?.find((p) => p.status === 'IN_PROGRESS');
 
     if (!currentPhase) {
         return badRequest('No active challenge phase found');
@@ -62,47 +62,49 @@ export const POST = withAuth(async (req, ctx, session) => {
 
     switch (body.action) {
         case 'advance': {
-            // Mark current phase as passed
-            await (prisma as any).challengePhase.update({
-                where: { id: currentPhase.id },
-                data: {
-                    status: 'PASSED',
-                    completedAt: now,
-                },
-            });
-
             // Find next phase
-            const nextPhase = phases?.find((p: any) => p.phaseNumber === currentPhase.phaseNumber + 1);
+            const nextPhase = phases?.find((p) => p.phaseNumber === currentPhase.phaseNumber + 1);
 
-            if (nextPhase) {
-                // Activate next phase
-                await (prisma as any).challengePhase.update({
-                    where: { id: nextPhase.id },
+            await prisma.$transaction(async (tx) => {
+                // Mark current phase as passed
+                await tx.challengePhase.update({
+                    where: { id: currentPhase.id },
                     data: {
-                        status: 'IN_PROGRESS',
-                        startedAt: now,
+                        status: 'PASSED',
+                        completedAt: now,
                     },
                 });
 
-                // Update account's current phase
-                await prisma.tradingAccount.update({
-                    where: { id: accountId },
-                    data: { currentPhaseId: nextPhase.id },
-                });
-            } else {
-                // No more phases - account is funded
-                await prisma.tradingAccount.update({
-                    where: { id: accountId },
-                    data: {
-                        currentPhase: 'Funded',
-                        currentPhaseId: null,
-                    },
-                });
-            }
+                if (nextPhase) {
+                    // Activate next phase
+                    await tx.challengePhase.update({
+                        where: { id: nextPhase.id },
+                        data: {
+                            status: 'IN_PROGRESS',
+                            startedAt: now,
+                        },
+                    });
+
+                    // Update account's current phase
+                    await tx.tradingAccount.update({
+                        where: { id: accountId },
+                        data: { currentPhaseId: nextPhase.id },
+                    });
+                } else {
+                    // No more phases - account is funded
+                    await tx.tradingAccount.update({
+                        where: { id: accountId },
+                        data: {
+                            currentPhase: 'Funded',
+                            currentPhaseId: null,
+                        },
+                    });
+                }
+            });
 
             return ok({
                 success: true,
-                message: nextPhase 
+                message: nextPhase
                     ? `Advanced to ${nextPhase.phaseName}`
                     : 'Congratulations! Challenge completed - you are now funded!',
                 previousPhase: currentPhase.phaseName,
@@ -115,36 +117,38 @@ export const POST = withAuth(async (req, ctx, session) => {
                 return badRequest('Target phase required for regression');
             }
 
-            // Mark current phase as skipped
-            await (prisma as any).challengePhase.update({
-                where: { id: currentPhase.id },
-                data: {
-                    status: 'SKIPPED',
-                },
-            });
-
             // Find target phase
-            const targetPhaseData = phases?.find((p: any) => p.phaseNumber === body.targetPhase);
+            const targetPhaseData = phases?.find((p) => p.phaseNumber === body.targetPhase);
 
             if (!targetPhaseData) {
                 return badRequest('Target phase not found');
             }
 
-            // Activate target phase
-            await (prisma as any).challengePhase.update({
-                where: { id: targetPhaseData.id },
-                data: {
-                    status: 'IN_PROGRESS',
-                    startedAt: now,
-                    tradingDaysCount: 0,
-                    currentProgress: 0,
-                    currentDrawdown: 0,
-                },
-            });
+            await prisma.$transaction(async (tx) => {
+                // Mark current phase as skipped
+                await tx.challengePhase.update({
+                    where: { id: currentPhase.id },
+                    data: {
+                        status: 'SKIPPED',
+                    },
+                });
 
-            await prisma.tradingAccount.update({
-                where: { id: accountId },
-                data: { currentPhaseId: targetPhaseData.id },
+                // Activate target phase
+                await tx.challengePhase.update({
+                    where: { id: targetPhaseData.id },
+                    data: {
+                        status: 'IN_PROGRESS',
+                        startedAt: now,
+                        tradingDaysCount: 0,
+                        currentProgress: 0,
+                        currentDrawdown: 0,
+                    },
+                });
+
+                await tx.tradingAccount.update({
+                    where: { id: accountId },
+                    data: { currentPhaseId: targetPhaseData.id },
+                });
             });
 
             return ok({
@@ -156,22 +160,24 @@ export const POST = withAuth(async (req, ctx, session) => {
         }
 
         case 'fail': {
-            // Mark current phase as failed
-            await (prisma as any).challengePhase.update({
-                where: { id: currentPhase.id },
-                data: {
-                    status: 'FAILED',
-                    failedAt: now,
-                    failureReason: body.reason || 'Manual failure acknowledgment',
-                },
-            });
+            await prisma.$transaction(async (tx) => {
+                // Mark current phase as failed
+                await tx.challengePhase.update({
+                    where: { id: currentPhase.id },
+                    data: {
+                        status: 'FAILED',
+                        failedAt: now,
+                        failureReason: body.reason || 'Manual failure acknowledgment',
+                    },
+                });
 
-            await prisma.tradingAccount.update({
-                where: { id: accountId },
-                data: {
-                    isActive: false,
-                    currentPhaseId: null,
-                },
+                await tx.tradingAccount.update({
+                    where: { id: accountId },
+                    data: {
+                        isActive: false,
+                        currentPhaseId: null,
+                    },
+                });
             });
 
             return ok({

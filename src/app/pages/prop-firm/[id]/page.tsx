@@ -94,6 +94,7 @@ interface AccountDetails {
         hasScalingPlan: boolean;
         scalingConfig: string | null;
     } | null;
+    currentPhase: string | null;
     challengePhases: ChallengePhase[];
     violations: Violation[];
     phasesConfig: PhaseConfig[] | null;
@@ -151,7 +152,6 @@ function PropFirmAccountContent() {
                     throw new Error('Failed to fetch account details');
                 }
                 const data = await res.json();
-                console.log('Fetched account details:', data.account?.id, data.account?.name);
                 setAccount(data.account);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'An error occurred');
@@ -309,8 +309,11 @@ function PropFirmAccountContent() {
         ((currentBalance - accountSize) / accountSize * 100);
 
     // Daily loss calculation
-    const dailyLossPercent = account.latestSnapshot?.dailyLossUsed || 0;
+    // dailyLossUsed is stored as percent-of-limit (0-100), e.g. 84 means 84% of limit used.
+    const dailyLossPercentOfLimit = account.latestSnapshot?.dailyLossUsed || 0;
     const dailyLossLimit = currentPhase?.dailyLossLimit || account.propFirm?.dailyLossLimit || 5;
+    // Convert to the actual raw percentage lost (e.g. 4.2% of account balance).
+    const dailyLossPercent = (dailyLossPercentOfLimit * dailyLossLimit) / 100;
 
     // Drawdown calculation
     const drawdownPercent = account.latestSnapshot?.currentDrawdown || 
@@ -399,7 +402,7 @@ function PropFirmAccountContent() {
                                         <span className="text-xs text-gray-400 uppercase tracking-wider">Daily Loss Used</span>
                                         <span className={cn(
                                             "text-sm font-bold",
-                                            dailyLossPercent >= dailyLossLimit * 0.8 ? "text-red-400" : "text-white"
+                                            dailyLossPercentOfLimit >= 80 ? "text-red-400" : "text-white"
                                         )}>
                                             {formatPercent(dailyLossPercent)}
                                         </span>
@@ -408,10 +411,10 @@ function PropFirmAccountContent() {
                                         <div
                                             className={cn(
                                                 "h-full rounded-full transition-all",
-                                                dailyLossPercent >= dailyLossLimit ? "bg-red-500" :
-                                                dailyLossPercent >= dailyLossLimit * 0.8 ? "bg-orange-500" : "bg-yellow-500"
+                                                dailyLossPercentOfLimit >= 100 ? "bg-red-500" :
+                                                dailyLossPercentOfLimit >= 80 ? "bg-orange-500" : "bg-yellow-500"
                                             )}
-                                            style={{ width: `${Math.min(100, (dailyLossPercent / dailyLossLimit) * 100)}%` }}
+                                            style={{ width: `${Math.min(100, dailyLossPercentOfLimit)}%` }}
                                         />
                                     </div>
                                     <p className="text-xs text-gray-500 mt-2">Limit: {dailyLossLimit}%</p>
@@ -766,14 +769,15 @@ function PropFirmAccountContent() {
 
                         {/* Scaling Plan - Only show for funded accounts with scaling plan */}
                         {account.propFirm?.hasScalingPlan && account.propFirm.scalingConfig && (() => {
-                            // Check if this is a funded account (all phases passed or current phase is "Funded")
+                            // Check if this is a funded account (all phases passed, account is marked Funded, or a funded phase is active)
                             const allPhasesPassed = account.challengePhases.length > 0 &&
                                 account.challengePhases.every(p => p.status === 'PASSED');
+                            const isFundedAccount = account.currentPhase === 'Funded';
                             const hasFundedPhase = account.challengePhases.some(p =>
                                 p.phaseName.toLowerCase().includes('funded') && p.status === 'IN_PROGRESS'
                             );
-                            
-                            if (!allPhasesPassed && !hasFundedPhase) return null;
+
+                            if (!allPhasesPassed && !isFundedAccount && !hasFundedPhase) return null;
                             
                             let scalingConfig: {
                                 initialBalance?: number;
@@ -897,7 +901,7 @@ function PropFirmAccountContent() {
                                             <span className="px-2 py-1 rounded text-xs font-bold bg-red-500/20 text-red-400">
                                                 Breached
                                             </span>
-                                        ) : (dailyLossPercent >= dailyLossLimit * 0.8) ? (
+                                        ) : (dailyLossPercentOfLimit >= 80) ? (
                                             <span className="px-2 py-1 rounded text-xs font-bold bg-orange-500/20 text-orange-400">
                                                 At Risk
                                             </span>

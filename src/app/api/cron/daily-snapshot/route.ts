@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { notifyRuleViolation } from '@/lib/notifications';
+import { updateTradingDaysCount, autoAdvancePhaseIfNeeded } from '@/lib/prop-firm/challenge-service';
 
 /**
  * Daily Snapshot Cron Job
- * 
+ *
  * This endpoint should be called by a cron scheduler (e.g., Vercel Cron, GitHub Actions, or external cron service)
  * It creates daily snapshots for all active prop firm accounts and checks for rule violations.
- * 
+ *
  * Recommended schedule: Run daily at 00:05 UTC (after midnight to capture previous day's data)
- * 
+ *
  * Security: Should be protected by a cron secret header
  */
 
@@ -18,7 +19,8 @@ export async function GET(request: NextRequest) {
     const cronSecret = request.headers.get('x-cron-secret');
     const expectedSecret = process.env.CRON_SECRET;
 
-    if (expectedSecret && cronSecret !== expectedSecret) {
+    // Fix 4: fail-closed — reject if either secret is missing or they don't match
+    if (!cronSecret || !expectedSecret || cronSecret !== expectedSecret) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -27,6 +29,9 @@ export async function GET(request: NextRequest) {
         const yesterday = new Date(now);
         yesterday.setDate(yesterday.getDate() - 1);
         const snapshotDate = yesterday.toISOString().split('T')[0]; // YYYY-MM-DD
+
+        // Update trading days count for all active prop firm accounts (Fix 3)
+        await updateTradingDaysCount();
 
         // Get all active prop firm accounts
         const accounts = await prisma.tradingAccount.findMany({
@@ -88,9 +93,9 @@ export async function GET(request: NextRequest) {
                 const highWaterMark = Math.max(startingBalance, currentBalance);
                 const currentDrawdown = Math.max(0, ((highWaterMark - currentEquity) / startingBalance) * 100);
 
-                // Calculate daily loss used (percentage of daily limit)
+                // Fix 1: only count a loss when dailyPnl is actually negative
                 const dailyLossLimit = account.propFirm.dailyLossLimit;
-                const dailyLossUsed = Math.max(0, (Math.abs(dailyPnl) / startingBalance) * 100);
+                const dailyLossUsed = dailyPnl < 0 ? (Math.abs(dailyPnl) / startingBalance) * 100 : 0;
                 const dailyLossPercentOfLimit = (dailyLossUsed / dailyLossLimit) * 100;
 
                 // Check for violations
@@ -101,7 +106,8 @@ export async function GET(request: NextRequest) {
                 const profitProgress = ((currentBalance - startingBalance) / startingBalance) * 100;
 
                 // Check if snapshot already exists for this date
-                const existingSnapshot = await (prisma as any).dailyAccountSnapshot.findUnique({
+                // Fix 5: use prisma.dailyAccountSnapshot instead of (prisma as any).dailyAccountSnapshot
+                const existingSnapshot = await prisma.dailyAccountSnapshot.findUnique({
                     where: {
                         accountId_snapshotDate: {
                             accountId: account.id,
@@ -112,7 +118,8 @@ export async function GET(request: NextRequest) {
 
                 if (!existingSnapshot) {
                     // Create daily snapshot
-                    await (prisma as any).dailyAccountSnapshot.create({
+                    // Fix 5: use prisma.dailyAccountSnapshot instead of (prisma as any).dailyAccountSnapshot
+                    await prisma.dailyAccountSnapshot.create({
                         data: {
                             accountId: account.id,
                             snapshotDate: yesterday,
@@ -131,104 +138,113 @@ export async function GET(request: NextRequest) {
                         },
                     });
                     results.snapshotsCreated++;
-                }
 
-                // Create violations if limits breached
-                if (isDailyLimitBreached) {
-                    const violation = await (prisma as any).ruleViolation.create({
-                        data: {
-                            accountId: account.id,
+                    // Fix 2: violation creation moved inside !existingSnapshot guard to prevent duplicates on re-runs
+
+                    // Create violations if limits breached
+                    if (isDailyLimitBreached) {
+                        // Fix 5: use prisma.ruleViolation instead of (prisma as any).ruleViolation
+                        const violation = await prisma.ruleViolation.create({
+                            data: {
+                                accountId: account.id,
+                                ruleType: 'DAILY_LOSS_LIMIT',
+                                severity: 'BREACH',
+                                limitValue: dailyLossLimit,
+                                actualValue: dailyLossUsed,
+                                description: `Daily loss limit breached: ${dailyLossUsed.toFixed(2)}% used of ${dailyLossLimit}% limit`,
+                            },
+                        });
+                        results.violationsDetected++;
+
+                        // Send notification
+                        await notifyRuleViolation(account.userId, {
+                            accountName: account.name,
                             ruleType: 'DAILY_LOSS_LIMIT',
                             severity: 'BREACH',
-                            limitValue: dailyLossLimit,
-                            actualValue: dailyLossUsed,
-                            description: `Daily loss limit breached: ${dailyLossUsed.toFixed(2)}% used of ${dailyLossLimit}% limit`,
-                        },
-                    });
-                    results.violationsDetected++;
-                    
-                    // Send notification
-                    await notifyRuleViolation(account.userId, {
-                        accountName: account.name,
-                        ruleType: 'DAILY_LOSS_LIMIT',
-                        severity: 'BREACH',
-                        description: violation.description,
-                        accountId: account.id,
-                        violationId: violation.id,
-                    });
-                }
-
-                if (isMaxDrawdownBreached) {
-                    const violation = await (prisma as any).ruleViolation.create({
-                        data: {
+                            description: violation.description,
                             accountId: account.id,
+                            violationId: violation.id,
+                        });
+                    }
+
+                    if (isMaxDrawdownBreached) {
+                        // Fix 5: use prisma.ruleViolation instead of (prisma as any).ruleViolation
+                        const violation = await prisma.ruleViolation.create({
+                            data: {
+                                accountId: account.id,
+                                ruleType: 'MAX_DRAWDOWN',
+                                severity: 'BREACH',
+                                limitValue: account.propFirm.maxDrawdown,
+                                actualValue: currentDrawdown,
+                                description: `Max drawdown breached: ${currentDrawdown.toFixed(2)}% of ${account.propFirm.maxDrawdown}% limit`,
+                            },
+                        });
+                        results.violationsDetected++;
+
+                        // Send notification
+                        await notifyRuleViolation(account.userId, {
+                            accountName: account.name,
                             ruleType: 'MAX_DRAWDOWN',
                             severity: 'BREACH',
-                            limitValue: account.propFirm.maxDrawdown,
-                            actualValue: currentDrawdown,
-                            description: `Max drawdown breached: ${currentDrawdown.toFixed(2)}% of ${account.propFirm.maxDrawdown}% limit`,
-                        },
-                    });
-                    results.violationsDetected++;
-                    
-                    // Send notification
-                    await notifyRuleViolation(account.userId, {
-                        accountName: account.name,
-                        ruleType: 'MAX_DRAWDOWN',
-                        severity: 'BREACH',
-                        description: violation.description,
-                        accountId: account.id,
-                        violationId: violation.id,
-                    });
-                }
-
-                // Check for warning thresholds (80% of limit)
-                if (dailyLossPercentOfLimit >= 80 && !isDailyLimitBreached) {
-                    const violation = await (prisma as any).ruleViolation.create({
-                        data: {
+                            description: violation.description,
                             accountId: account.id,
+                            violationId: violation.id,
+                        });
+                    }
+
+                    // Check for warning thresholds (80% of limit)
+                    if (dailyLossPercentOfLimit >= 80 && !isDailyLimitBreached) {
+                        // Fix 5: use prisma.ruleViolation instead of (prisma as any).ruleViolation
+                        const violation = await prisma.ruleViolation.create({
+                            data: {
+                                accountId: account.id,
+                                ruleType: 'DAILY_LOSS_LIMIT',
+                                severity: 'WARNING',
+                                limitValue: dailyLossLimit,
+                                actualValue: dailyLossUsed,
+                                description: `Approaching daily loss limit: ${dailyLossUsed.toFixed(2)}% used of ${dailyLossLimit}% limit`,
+                            },
+                        });
+                        results.violationsDetected++;
+
+                        // Send notification
+                        await notifyRuleViolation(account.userId, {
+                            accountName: account.name,
                             ruleType: 'DAILY_LOSS_LIMIT',
                             severity: 'WARNING',
-                            limitValue: dailyLossLimit,
-                            actualValue: dailyLossUsed,
-                            description: `Approaching daily loss limit: ${dailyLossUsed.toFixed(2)}% used of ${dailyLossLimit}% limit`,
-                        },
-                    });
-                    results.violationsDetected++;
-                    
-                    // Send notification
-                    await notifyRuleViolation(account.userId, {
-                        accountName: account.name,
-                        ruleType: 'DAILY_LOSS_LIMIT',
-                        severity: 'WARNING',
-                        description: violation.description,
-                        accountId: account.id,
-                        violationId: violation.id,
-                    });
-                }
-
-                if (currentDrawdown >= account.propFirm.maxDrawdown * 0.8 && !isMaxDrawdownBreached) {
-                    const violation = await (prisma as any).ruleViolation.create({
-                        data: {
+                            description: violation.description,
                             accountId: account.id,
+                            violationId: violation.id,
+                        });
+                    }
+
+                    if (currentDrawdown >= account.propFirm.maxDrawdown * 0.8 && !isMaxDrawdownBreached) {
+                        // Fix 5: use prisma.ruleViolation instead of (prisma as any).ruleViolation
+                        const violation = await prisma.ruleViolation.create({
+                            data: {
+                                accountId: account.id,
+                                ruleType: 'MAX_DRAWDOWN',
+                                severity: 'WARNING',
+                                limitValue: account.propFirm.maxDrawdown,
+                                actualValue: currentDrawdown,
+                                description: `Approaching max drawdown: ${currentDrawdown.toFixed(2)}% of ${account.propFirm.maxDrawdown}% limit`,
+                            },
+                        });
+                        results.violationsDetected++;
+
+                        // Send notification
+                        await notifyRuleViolation(account.userId, {
+                            accountName: account.name,
                             ruleType: 'MAX_DRAWDOWN',
                             severity: 'WARNING',
-                            limitValue: account.propFirm.maxDrawdown,
-                            actualValue: currentDrawdown,
-                            description: `Approaching max drawdown: ${currentDrawdown.toFixed(2)}% of ${account.propFirm.maxDrawdown}% limit`,
-                        },
-                    });
-                    results.violationsDetected++;
-                    
-                    // Send notification
-                    await notifyRuleViolation(account.userId, {
-                        accountName: account.name,
-                        ruleType: 'MAX_DRAWDOWN',
-                        severity: 'WARNING',
-                        description: violation.description,
-                        accountId: account.id,
-                        violationId: violation.id,
-                    });
+                            description: violation.description,
+                            accountId: account.id,
+                            violationId: violation.id,
+                        });
+                    }
+
+                    // Fix 3: check and advance phase after snapshot is created
+                    await autoAdvancePhaseIfNeeded(account.id);
                 }
 
                 results.accountsProcessed++;

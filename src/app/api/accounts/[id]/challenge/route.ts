@@ -17,7 +17,7 @@ export const GET = withAuth(async (req, ctx, session) => {
     }
 
     // Get challenge phases
-    const phases = await (prisma as any).challengePhase.findMany({
+    const phases = await prisma.challengePhase.findMany({
         where: { accountId },
         orderBy: { phaseNumber: 'asc' },
     });
@@ -26,14 +26,14 @@ export const GET = withAuth(async (req, ctx, session) => {
     const currentPhase = phases?.find((p: any) => p.status === 'IN_PROGRESS');
 
     // Get violations for this account
-    const violations = await (prisma as any).ruleViolation.findMany({
+    const violations = await prisma.ruleViolation.findMany({
         where: { accountId },
         orderBy: { occurredAt: 'desc' },
         take: 20,
     });
 
     // Get latest snapshot
-    const latestSnapshot = await (prisma as any).dailyAccountSnapshot.findFirst({
+    const latestSnapshot = await prisma.dailyAccountSnapshot.findFirst({
         where: { accountId },
         orderBy: { snapshotDate: 'desc' },
     });

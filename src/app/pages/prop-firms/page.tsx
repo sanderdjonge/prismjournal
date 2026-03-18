@@ -148,9 +148,9 @@ function PropFirmsContent() {
                                 <div className="mb-4">
                                     <span className={cn(
                                         "px-2 py-1 rounded text-xs font-bold",
-                                        firm.challengeType === 'TWO_STEP' && "bg-blue-500/20 text-blue-400",
-                                        firm.challengeType === 'ONE_STEP' && "bg-green-500/20 text-green-400",
-                                        firm.challengeType === 'INSTANT_FUNDING' && "bg-purple-500/20 text-purple-400"
+                                        firm.challengeType === 'TWO_PHASE' && "bg-blue-500/20 text-blue-400",
+                                        firm.challengeType === 'ONE_PHASE' && "bg-green-500/20 text-green-400",
+                                        firm.challengeType === 'THREE_PHASE' && "bg-purple-500/20 text-purple-400"
                                     )}>
                                         {firm.challengeType.replace(/_/g, ' ')}
                                     </span>
