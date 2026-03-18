@@ -104,7 +104,7 @@ function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
     return dir === 'asc' ? <ChevronUp size={10} className="text-primary" /> : <ChevronDown size={10} className="text-primary" />;
 }
 
-function AccountCard({ account, onClick, onEdit }: { account: AccountSummary; onClick: () => void; onEdit: () => void }) {
+function AccountCard({ account, onClick, onEdit, onArchive }: { account: AccountSummary; onClick: () => void; onEdit: () => void; onArchive: () => void }) {
     const { formatAmount, formatPnl } = useCurrency();
     const balance = account.currentBalance ?? account.accountSize ?? 0;
     const pnlPositive = account.totalPnl >= 0;
@@ -172,7 +172,13 @@ function AccountCard({ account, onClick, onEdit }: { account: AccountSummary; on
                 </div>
             )}
 
-            <div className="mt-4 pt-3 border-t border-white/5 flex justify-end">
+            <div className="mt-4 pt-3 border-t border-white/5 flex justify-end gap-4">
+                <button
+                    onClick={(e) => { e.stopPropagation(); onArchive(); }}
+                    className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-red-400/70 hover:text-red-400 transition-all"
+                >
+                    <Archive size={12} /> Archive
+                </button>
                 <button
                     onClick={(e) => { e.stopPropagation(); onEdit(); }}
                     className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-all"
@@ -526,11 +532,12 @@ function AccountsContent() {
                         {accounts.length > 0 && (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                                 {sorted.map(account => (
-                                    <AccountCard 
-                                        key={account.id} 
-                                        account={account} 
+                                    <AccountCard
+                                        key={account.id}
+                                        account={account}
                                         onClick={() => goToAccount(account.id)}
                                         onEdit={() => handleStartEdit(account)}
+                                        onArchive={() => handleArchive(account.id)}
                                     />
                                 ))}
                             </div>
