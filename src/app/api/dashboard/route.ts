@@ -4,6 +4,7 @@ import { getAllUserAccounts } from '@/lib/getAccount';
 import { calculateProfitFactor } from '@/lib/analytics';
 import { formatDistanceToNow } from '@/lib/formatTime';
 import { withAuth } from '@/lib/api/withAuth';
+import { cacheGet, cacheSet } from '@/lib/api/cache';
 import type { Session } from 'next-auth';
 
 const emptyResponse = {
@@ -41,6 +42,10 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
 
     const accountFilter = searchParams.get('account');
     const filteredIds = accountFilter && accountIds.includes(accountFilter) ? [accountFilter] : accountIds;
+
+    const cacheKey = `dashboard:${userId}:${period}:${accountFilter ?? 'all'}`;
+    const cached = cacheGet(cacheKey);
+    if (cached) return NextResponse.json(cached);
 
     const [trades, allClosedTrades] = await Promise.all([
         prisma.trade.findMany({
@@ -204,7 +209,7 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
         losses: data.losses,
     }));
 
-    return NextResponse.json({
+    const responseData = {
         equity: equityData,
         trades: recentTrades,
         calendar: calendarData,
@@ -220,7 +225,10 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
         consecutiveWins,
         consecutiveLosses,
         avgDurationMinutes,
-    });
+    };
+
+    cacheSet(cacheKey, responseData, 60_000);
+    return NextResponse.json(responseData);
 });
 
 export const runtime = 'nodejs';

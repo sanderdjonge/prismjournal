@@ -5,6 +5,7 @@ import { formatDistanceToNow } from '@/lib/formatTime';
 import { validateBody, tradeCreateSchema } from '@/lib/validations';
 import { Prisma } from '@prisma/client';
 import { withAuth } from '@/lib/api/withAuth';
+import { cacheDelete } from '@/lib/api/cache';
 
 export const GET = withAuth(async (request, _ctx, session) => {
     const userId = session.user.id;
@@ -245,6 +246,9 @@ export const POST = withAuth(async (req, _ctx, session) => {
         },
         include: { strategy: true },
     });
+
+    cacheDelete(`dashboard:${userId}`);
+    cacheDelete(`analytics:${userId}`);
 
     return NextResponse.json({
         id: trade.id,

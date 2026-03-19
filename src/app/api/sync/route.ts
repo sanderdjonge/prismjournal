@@ -4,6 +4,7 @@ import { getUserByBridgeKey, getAccountByPlatformId } from '@/lib/getAccount';
 import { validateBody, syncPayloadSchema, type SyncTrade } from '@/lib/validations';
 import { upsertSyncTrade } from '@/lib/services/trade-sync.service';
 import { saveEquitySnapshot } from '@/lib/services/equity.service';
+import { cacheDelete } from '@/lib/api/cache';
 
 /**
  * POST /api/sync
@@ -83,6 +84,8 @@ export async function POST(request: Request) {
         } else if (payload.type === 'EQUITY_SNAPSHOT') {
             await saveEquitySnapshot(account.id, account.userId, payload.snapshot);
         }
+        cacheDelete(`dashboard:${user.id}`);
+        cacheDelete(`analytics:${user.id}`);
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error('Sync error:', error);
