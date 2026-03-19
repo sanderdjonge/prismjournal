@@ -575,6 +575,7 @@ model UserSettings {
   user            User   @relation(fields: [userId], references: [id])
   displayCurrency String @default("USD")
   timezone        String @default("Europe/Amsterdam")
+  dateFormat      String @default("DD-MM-YYYY") // DD-MM-YYYY, MM-DD-YYYY, or YYYY-MM-DD
 }
 
 // ============================================
