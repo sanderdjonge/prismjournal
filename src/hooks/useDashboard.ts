@@ -1,8 +1,8 @@
 // src/hooks/useDashboard.ts
-import { useQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 
 export function useDashboard(period: string, accountId: string | null) {
-    return useQuery({
+    return useSuspenseQuery({
         queryKey: ['dashboard', period, accountId],
         queryFn: () => {
             const params = new URLSearchParams({ period });
@@ -13,6 +13,5 @@ export function useDashboard(period: string, accountId: string | null) {
             });
         },
         staleTime: 30_000,
-        retry: 1,
     });
 }
