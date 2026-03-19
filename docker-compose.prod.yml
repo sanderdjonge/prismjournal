@@ -1,102 +1,115 @@
-# Production Environment Configuration
-# Usage: docker compose -p prism-prod -f docker-compose.prod.yml up -d
-# Note: Traefik removed for local macOS development - app exposed directly via port mapping
+# PrismJournal — Production
+# Usage: docker compose -f docker-compose.prod.yml up -d
+# External access via Cloudflare Tunnel → http://prod_app:3000 (no host port needed)
 
 name: prism-prod
 
 services:
+
   db:
     image: postgres:15-alpine
-    container_name: prism-prod-db
+    container_name: prod_db
     restart: unless-stopped
+    env_file: .env
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-prism_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-prism_password}
-      POSTGRES_DB: ${POSTGRES_DB:-prism_journal}
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
-      - prism_prod_db_data:/var/lib/postgresql/data
+      - prod_db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-prism_user} -d ${POSTGRES_DB:-prism_journal}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 30s
       timeout: 10s
       retries: 5
     networks:
-      - prism-prod-network
+      - prod-network
 
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: prism-prod-app
+    container_name: prod_app
     restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
+    env_file: .env
     environment:
       NODE_ENV: production
-      DATABASE_URL: "postgresql://${POSTGRES_USER:-prism_user}:${POSTGRES_PASSWORD:-prism_password}@db:5432/${POSTGRES_DB:-prism_journal}"
-      NEXTAUTH_SECRET: "${NEXTAUTH_SECRET:-prod-secret-change-me}"
-      NEXTAUTH_URL: "${NEXTAUTH_URL:-https://prism.we-share.nl}"
-      NEBUL_API_KEY: "${NEBUL_API_KEY}"
-      NEBUL_BASE_URL: "${NEBUL_BASE_URL:-https://api.inference.nebul.io/v1}"
-      NEBUL_MODEL: "${NEBUL_MODEL:-Qwen/Qwen3.5-397B-A17B}"
-      TELEGRAM_BOT_TOKEN: "${TELEGRAM_BOT_TOKEN}"
-      RESEND_API_KEY: "${RESEND_API_KEY}"
-      CRON_SECRET: "${CRON_SECRET:-prod-cron-secret}"
+      DATABASE_URL: ${DATABASE_URL}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      CRON_SECRET: ${CRON_SECRET}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET}
+      NEBUL_API_KEY: ${NEBUL_API_KEY}
+      NEBUL_BASE_URL: ${NEBUL_BASE_URL}
+      NEBUL_MODEL: ${NEBUL_MODEL}
+      RATE_LIMIT_LOGIN: ${RATE_LIMIT_LOGIN:-10}
+      RATE_LIMIT_API: ${RATE_LIMIT_API:-100}
+      RATE_LIMIT_SYNC: ${RATE_LIMIT_SYNC:-600}
       AUTH_TRUST_HOST: "true"
-      BACKUP_PATH: "/app/backups"
-      BACKUP_KEEP_HOURLY: "24"
-      BACKUP_KEEP_DAILY: "30"
-      BACKUP_KEEP_WEEKLY: "12"
-    ports:
-      - "3000:3000"
+      STORAGE_PATH: /app/storage
+      BACKUP_PATH: /app/backups
+      BACKUP_KEEP_HOURLY: ${BACKUP_KEEP_HOURLY:-24}
+      BACKUP_KEEP_DAILY: ${BACKUP_KEEP_DAILY:-30}
+      BACKUP_KEEP_WEEKLY: ${BACKUP_KEEP_WEEKLY:-12}
     volumes:
-      - ./backups:/app/backups
+      - prod_storage:/app/storage
+      - prod_backups:/app/backups
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     networks:
-      - prism-prod-network
+      - prod-network
 
-  # Automated database backup — dumps to ./backups/ (host filesystem, survives everything)
   backup:
     image: postgres:15-alpine
-    container_name: prism-prod-backup
+    container_name: prod_backup
     restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
+    env_file: .env
     environment:
-      PGHOST: db
+      PGHOST: prod_db
       PGPORT: 5432
-      PGUSER: ${POSTGRES_USER:-prism_user}
-      PGPASSWORD: ${POSTGRES_PASSWORD:-prism_password}
-      PGDATABASE: ${POSTGRES_DB:-prism_journal}
-      BACKUP_KEEP_HOURLY: "24"
-      BACKUP_KEEP_DAILY: "30"
-      BACKUP_KEEP_WEEKLY: "12"
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB}
+      BACKUP_KEEP_HOURLY: ${BACKUP_KEEP_HOURLY:-24}
+      BACKUP_KEEP_DAILY: ${BACKUP_KEEP_DAILY:-30}
+      BACKUP_KEEP_WEEKLY: ${BACKUP_KEEP_WEEKLY:-12}
     volumes:
-      - ./backups:/backups
+      - prod_backups:/backups
       - ./scripts/db-backup.sh:/scripts/db-backup.sh:ro
       - ./scripts/db-backup-entrypoint.sh:/scripts/db-backup-entrypoint.sh:ro
     entrypoint: ["/bin/sh", "/scripts/db-backup-entrypoint.sh"]
     networks:
-      - prism-prod-network
+      - prod-network
 
-  # Cloudflare tunnel for external access
-  # Note: Configure tunnel in Cloudflare dashboard to route to http://app:3000
-  prism-tunnel:
+  tunnel:
     image: cloudflare/cloudflared:latest
-    container_name: prism-prod-tunnel
+    container_name: prod_tunnel
     restart: unless-stopped
     command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    env_file: .env
     depends_on:
-      - app
+      app:
+        condition: service_healthy
     networks:
-      - prism-prod-network
+      - prod-network
 
 networks:
-  prism-prod-network:
+  prod-network:
     driver: bridge
 
 volumes:
-  prism_prod_db_data:
+  prod_db_data:
+  prod_storage:
+  prod_backups:
