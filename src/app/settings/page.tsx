@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
+import QRCode from 'qrcode';
 import { useRouter, useSearchParams } from 'next/navigation';
 import DashboardShell from '@/components/layout/DashboardShell';
 import {
@@ -872,7 +873,8 @@ function SettingsContent() {
                                                     const data = await res.json();
                                                     if (data.error) throw new Error(data.error);
                                                     setTwoFASecret(data.secret);
-                                                    setTwoFAQrCode(data.qrCode);
+                                                    const qrUrl = await QRCode.toDataURL(data.provisioning_uri);
+                                                    setTwoFAQrCode(qrUrl);
                                                     setShow2FASetup(true);
                                                 } catch (e: any) {
                                                     setTwoFAError(e.message || 'Failed to setup 2FA');

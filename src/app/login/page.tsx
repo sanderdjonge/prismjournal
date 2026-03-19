@@ -15,12 +15,16 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [show2FA, setShow2FA] = useState(false);
+  const [totpCode, setTotpCode] = useState('');
 
   const resetForm = () => {
     setName('');
     setEmail('');
     setPassword('');
     setError('');
+    setShow2FA(false);
+    setTotpCode('');
   };
 
   const switchTab = (t: Tab) => {
@@ -37,13 +41,24 @@ export default function LoginPage() {
       const res = await signIn('credentials', {
         email,
         password,
+        ...(totpCode ? { totpCode } : {}),
         redirect: false,
       });
 
-      if (res?.error) {
-        setError('Invalid email or password.');
-      } else {
+      if (!res?.error) {
         router.push('/');
+        return;
+      }
+
+      const code = (res as any).code;
+      if (code === '2FA_REQUIRED') {
+        setShow2FA(true);
+        setError('');
+      } else if (code === 'INVALID_2FA_CODE') {
+        setError('Invalid authenticator code. Please try again.');
+        setTotpCode('');
+      } else {
+        setError('Invalid email or password.');
       }
     } catch {
       setError('Something went wrong. Please try again.');
@@ -171,14 +186,38 @@ export default function LoginPage() {
                 />
               </div>
 
-              <div className="text-right">
-                <a
-                  href="/forgot-password"
-                  className="text-gray-400 text-xs hover:text-primary transition-colors"
-                >
-                  Forgot password?
-                </a>
-              </div>
+              {!show2FA && (
+                <div className="text-right">
+                  <a
+                    href="/forgot-password"
+                    className="text-gray-400 text-xs hover:text-primary transition-colors"
+                  >
+                    Forgot password?
+                  </a>
+                </div>
+              )}
+
+              {show2FA && (
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-gray-600 mb-2">
+                    Authenticator Code
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    required
+                    value={totpCode}
+                    onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    placeholder="000000"
+                    className={inputClass}
+                    autoFocus
+                  />
+                  <p className="text-[10px] text-gray-600 mt-2">
+                    Enter the 6-digit code from your authenticator app.
+                  </p>
+                </div>
+              )}
 
               {error && (
                 <p className="text-danger text-xs font-semibold">{error}</p>
@@ -192,7 +231,7 @@ export default function LoginPage() {
                   loading && 'opacity-70 cursor-not-allowed'
                 )}
               >
-                {loading ? 'Authenticating...' : 'Sign In'}
+                {loading ? 'Authenticating...' : show2FA ? 'Verify Code' : 'Sign In'}
               </button>
             </form>
           )}

@@ -1,9 +1,16 @@
-import NextAuth from 'next-auth';
+import NextAuth, { CredentialsSignin } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import prisma from './prisma';
 import bcrypt from 'bcryptjs';
 import { verifySync } from 'otplib';
 import { logAuditEvent } from './audit';
+
+class TwoFactorRequiredError extends CredentialsSignin {
+    code = '2FA_REQUIRED';
+}
+class InvalidTwoFactorCodeError extends CredentialsSignin {
+    code = 'INVALID_2FA_CODE';
+}
 
 // TOTP replay protection: track used codes for 90 seconds
 export const usedTotpCodes = new Map<string, number>();
@@ -73,8 +80,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     const totpCode = credentials.totpCode as string;
 
                     if (!totpCode) {
-                        // Return special object to indicate 2FA is required
-                        throw new Error('2FA_REQUIRED');
+                        throw new TwoFactorRequiredError();
                     }
 
                     // TOTP replay protection
@@ -82,14 +88,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     const codeKey = `${user.id}:${totpCode}`;
                     if (usedTotpCodes.has(codeKey)) {
                         logAuditEvent('2FA_FAILED', user.id, { reason: 'replay' }).catch(console.error);
-                        throw new Error('INVALID_2FA_CODE');
+                        throw new InvalidTwoFactorCodeError();
                     }
 
                     // Verify TOTP code using otplib v13 API
                     const result = verifySync({ secret: user.totpSecret, token: totpCode });
                     if (!result.valid) {
                         logAuditEvent('2FA_FAILED', user.id, { reason: 'invalid_code' }).catch(console.error);
-                        throw new Error('INVALID_2FA_CODE');
+                        throw new InvalidTwoFactorCodeError();
                     }
 
                     // Mark code as used for 90 seconds
