@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import logger from '@/lib/logger';
 import type { Session } from 'next-auth';
 
 export type AdminSession = Session & { user: { id: string; isSuperuser: boolean } };
@@ -35,7 +36,7 @@ export function withAdmin(handler: AdminHandler) {
     try {
       return await handler(req, ctx, adminSession);
     } catch (error) {
-      console.error('[withAdmin]', req.url, error);
+      logger.error({ url: req.url, err: error }, '[withAdmin] Unhandled error');
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
   };

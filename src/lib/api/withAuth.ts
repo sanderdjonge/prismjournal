@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
+import logger from '@/lib/logger';
 import type { Session } from 'next-auth';
 
 type AuthedHandler = (
@@ -17,7 +18,7 @@ export function withAuth(handler: AuthedHandler) {
     try {
       return await handler(req, ctx, session as Session & { user: { id: string } });
     } catch (error) {
-      console.error('[withAuth]', req.url, error);
+      logger.error({ url: req.url, err: error }, '[withAuth] Unhandled error');
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
   };
