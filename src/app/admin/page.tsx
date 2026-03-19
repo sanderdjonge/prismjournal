@@ -32,6 +32,9 @@ import {
     CheckCircle,
     XCircle,
     Send,
+    ScrollText,
+    Filter,
+    ChevronLeft,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
@@ -105,7 +108,25 @@ interface BackupData {
     };
 }
 
-type TabType = 'users' | 'infrastructure' | 'backups' | 'broadcast';
+type TabType = 'users' | 'infrastructure' | 'backups' | 'broadcast' | 'auditlog';
+
+interface AuditEntry {
+    id: string;
+    action: string;
+    details: unknown;
+    ipAddress: string | null;
+    userAgent: string | null;
+    userId: string | null;
+    userEmail: string | null;
+    userName: string | null;
+    createdAt: string;
+}
+
+interface AuditLogData {
+    entries: AuditEntry[];
+    pagination: { page: number; limit: number; total: number; totalPages: number };
+    actionTypes: string[];
+}
 
 // Format uptime
 function formatUptime(seconds: number): string {
@@ -170,6 +191,13 @@ export default function AdminPage() {
     const [broadcastType, setBroadcastType] = useState<'INFO' | 'WARNING' | 'SUCCESS'>('INFO');
     const [broadcastLoading, setBroadcastLoading] = useState(false);
     const [broadcastResult, setBroadcastResult] = useState<string | null>(null);
+
+    // Audit log state
+    const [auditData, setAuditData] = useState<AuditLogData | null>(null);
+    const [auditLoading, setAuditLoading] = useState(false);
+    const [auditPage, setAuditPage] = useState(1);
+    const [auditActionFilter, setAuditActionFilter] = useState('');
+    const [auditSearch, setAuditSearch] = useState('');
     
     // Toggle backup section collapse
     function toggleBackupSection(section: 'hourly' | 'daily' | 'weekly') {
@@ -190,6 +218,8 @@ export default function AdminPage() {
             loadInfrastructure();
         } else if (activeTab === 'backups' && !backupData) {
             loadBackups();
+        } else if (activeTab === 'auditlog') {
+            loadAuditLog(auditPage, auditActionFilter, auditSearch);
         }
     }, [activeTab]);
     
@@ -268,8 +298,11 @@ export default function AdminPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId }),
             });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || `Request failed (${res.status})`);
+            }
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Failed to send reset email');
             setResetSuccess(`Reset email sent to ${email}`);
             setTimeout(() => setResetSuccess(null), 5000);
         } catch (e: any) {
@@ -354,6 +387,25 @@ export default function AdminPage() {
         }
     }
     
+    // Audit log functions
+    async function loadAuditLog(page = 1, action = '', search = '') {
+        setAuditLoading(true);
+        try {
+            const params = new URLSearchParams({ page: String(page), limit: '50' });
+            if (action) params.set('action', action);
+            if (search) params.set('search', search);
+            const res = await fetch(`/api/admin/audit-log?${params}`);
+            if (!res.ok) throw new Error('Failed to load audit log');
+            const data = await res.json();
+            setAuditData(data);
+            setAuditPage(page);
+        } catch {
+            // silently fail — table will be empty
+        } finally {
+            setAuditLoading(false);
+        }
+    }
+
     // Filter users by search
     const filteredUsers = users.filter(user => {
         if (!searchQuery) return true;
@@ -457,6 +509,18 @@ export default function AdminPage() {
                     >
                         <Send size={16} />
                         Broadcast
+                    </button>
+                    <button
+                        onClick={() => { setActiveTab('auditlog'); loadAuditLog(1, auditActionFilter, auditSearch); }}
+                        className={cn(
+                            "flex items-center gap-2 px-4 py-2 rounded-t-lg text-sm font-bold transition-all",
+                            activeTab === 'auditlog'
+                                ? "bg-white/10 text-white border-b-2 border-primary"
+                                : "text-gray-500 hover:text-white hover:bg-white/5"
+                        )}
+                    >
+                        <ScrollText size={16} />
+                        Audit Log
                     </button>
                 </div>
                 
@@ -1127,6 +1191,141 @@ export default function AdminPage() {
                                 {broadcastLoading ? 'Sending...' : `Send to All Users (${users.filter(u => u.isActive).length})`}
                             </button>
                         </div>
+                    </div>
+                )}
+
+                {/* Audit Log Tab */}
+                {activeTab === 'auditlog' && (
+                    <div className="space-y-4">
+                        {/* Filters */}
+                        <div className="glass-card p-4 border-white/5 bg-white/5 flex flex-wrap gap-3 items-end">
+                            <div className="flex items-center gap-2">
+                                <Filter size={14} className="text-gray-500" />
+                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Filters</span>
+                            </div>
+                            <div className="flex-1 min-w-[160px]">
+                                <select
+                                    value={auditActionFilter}
+                                    onChange={e => { setAuditActionFilter(e.target.value); loadAuditLog(1, e.target.value, auditSearch); }}
+                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-primary/50"
+                                >
+                                    <option value="">All actions</option>
+                                    {(auditData?.actionTypes ?? []).map(a => (
+                                        <option key={a} value={a}>{a}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex-1 min-w-[160px]">
+                                <input
+                                    type="text"
+                                    placeholder="Search IP address..."
+                                    value={auditSearch}
+                                    onChange={e => setAuditSearch(e.target.value)}
+                                    onKeyDown={e => e.key === 'Enter' && loadAuditLog(1, auditActionFilter, auditSearch)}
+                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder:text-gray-600 outline-none focus:border-primary/50"
+                                />
+                            </div>
+                            <button
+                                onClick={() => loadAuditLog(1, auditActionFilter, auditSearch)}
+                                className="px-4 py-2 rounded-lg bg-primary/10 border border-primary/30 text-primary text-[10px] font-black uppercase tracking-widest hover:bg-primary/20 transition-all flex items-center gap-2"
+                            >
+                                {auditLoading ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+                                Refresh
+                            </button>
+                            {auditData && (
+                                <span className="text-[10px] text-gray-500 font-mono ml-auto">
+                                    {auditData.pagination.total.toLocaleString()} entries
+                                </span>
+                            )}
+                        </div>
+
+                        {/* Table */}
+                        <div className="glass-card border-white/5 bg-white/5 overflow-hidden">
+                            {auditLoading && !auditData ? (
+                                <div className="flex items-center justify-center py-16">
+                                    <Loader2 size={24} className="text-primary animate-spin" />
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-xs">
+                                        <thead>
+                                            <tr className="border-b border-white/10">
+                                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500 whitespace-nowrap">Time</th>
+                                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500 whitespace-nowrap">Action</th>
+                                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500 whitespace-nowrap">User</th>
+                                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500 whitespace-nowrap">IP</th>
+                                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">Details</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-white/5">
+                                            {(auditData?.entries ?? []).length === 0 ? (
+                                                <tr>
+                                                    <td colSpan={5} className="text-center py-12 text-gray-600 text-xs">No audit log entries found.</td>
+                                                </tr>
+                                            ) : (auditData?.entries ?? []).map(entry => {
+                                                const actionColor =
+                                                    entry.action.includes('FAIL') || entry.action.includes('ERROR') || entry.action.includes('VIOLATION') || entry.action.includes('DELETE')
+                                                        ? 'text-danger'
+                                                        : entry.action.includes('LOGIN') || entry.action.includes('SUCCESS')
+                                                            ? 'text-accent'
+                                                            : 'text-primary';
+                                                const detailsStr = typeof entry.details === 'string'
+                                                    ? entry.details
+                                                    : JSON.stringify(entry.details);
+                                                return (
+                                                    <tr key={entry.id} className="hover:bg-white/5 transition-colors">
+                                                        <td className="px-4 py-2.5 text-gray-500 font-mono whitespace-nowrap">
+                                                            {new Date(entry.createdAt).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'medium' })}
+                                                        </td>
+                                                        <td className="px-4 py-2.5 whitespace-nowrap">
+                                                            <span className={cn('font-black text-[10px] uppercase tracking-wide', actionColor)}>
+                                                                {entry.action}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 py-2.5 whitespace-nowrap">
+                                                            {entry.userEmail ? (
+                                                                <span className="text-gray-300">{entry.userEmail}</span>
+                                                            ) : (
+                                                                <span className="text-gray-600 italic">anonymous</span>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-4 py-2.5 text-gray-500 font-mono whitespace-nowrap">
+                                                            {entry.ipAddress ?? '—'}
+                                                        </td>
+                                                        <td className="px-4 py-2.5 text-gray-500 max-w-xs truncate font-mono">
+                                                            {detailsStr}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Pagination */}
+                        {auditData && auditData.pagination.totalPages > 1 && (
+                            <div className="flex items-center justify-between">
+                                <button
+                                    onClick={() => loadAuditLog(auditPage - 1, auditActionFilter, auditSearch)}
+                                    disabled={auditPage <= 1 || auditLoading}
+                                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-xs font-bold text-gray-400 hover:text-white hover:bg-white/10 transition-all disabled:opacity-30"
+                                >
+                                    <ChevronLeft size={14} /> Previous
+                                </button>
+                                <span className="text-[10px] text-gray-500 font-mono">
+                                    Page {auditPage} of {auditData.pagination.totalPages}
+                                </span>
+                                <button
+                                    onClick={() => loadAuditLog(auditPage + 1, auditActionFilter, auditSearch)}
+                                    disabled={auditPage >= auditData.pagination.totalPages || auditLoading}
+                                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-xs font-bold text-gray-400 hover:text-white hover:bg-white/10 transition-all disabled:opacity-30"
+                                >
+                                    Next <ChevronRight size={14} />
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
