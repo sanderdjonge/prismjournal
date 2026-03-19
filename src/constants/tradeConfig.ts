@@ -5,10 +5,10 @@ import { Smile, Meh, Frown, Zap, Wind } from 'lucide-react';
  * Single source of truth for all mood UI across journal components.
  */
 export const MOOD_OPTIONS = [
-    { id: 'CALM', icon: Wind, color: 'text-secondary', bg: 'bg-secondary/10' },
-    { id: 'CONFIDENT', icon: Zap, color: 'text-accent', bg: 'bg-accent/10' },
+    { id: 'CALM', icon: Wind, color: 'text-profit', bg: 'bg-profit/10' },
+    { id: 'CONFIDENT', icon: Zap, color: 'text-profit', bg: 'bg-profit/10' },
     { id: 'NEUTRAL', icon: Meh, color: 'text-gray-400', bg: 'bg-white/10' },
-    { id: 'ANXIOUS', icon: Frown, color: 'text-danger', bg: 'bg-danger/10' },
+    { id: 'ANXIOUS', icon: Frown, color: 'text-loss', bg: 'bg-loss/10' },
     { id: 'FOMO', icon: Zap, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
     { id: 'REVENGE', icon: Frown, color: 'text-orange-400', bg: 'bg-orange-400/10' },
 ] as const;
@@ -34,6 +34,6 @@ export const MOOD_SELECTOR_OPTIONS = MOOD_OPTIONS.filter(m =>
  * Plan compliance options.
  */
 export const COMPLIANCE_OPTIONS = [
-    { id: 'FOLLOWED' as const, label: 'Followed', color: 'text-accent', activeBg: 'bg-accent/10', activeBorder: 'border-accent/40' },
-    { id: 'DEVIATED' as const, label: 'Deviated', color: 'text-danger', activeBg: 'bg-danger/10', activeBorder: 'border-danger/40' },
+    { id: 'FOLLOWED' as const, label: 'Followed', color: 'text-profit', activeBg: 'bg-profit/10', activeBorder: 'border-profit/40' },
+    { id: 'DEVIATED' as const, label: 'Deviated', color: 'text-loss', activeBg: 'bg-loss/10', activeBorder: 'border-loss/40' },
 ] as const;
