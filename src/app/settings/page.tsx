@@ -56,6 +56,12 @@ const TIMEZONE_OPTIONS = [
     { label: '(GMT-05:00) Eastern Time (US & Canada)', value: 'America/New_York' },
 ];
 
+const DATE_FORMAT_OPTIONS = [
+    { label: 'DD-MM-YYYY (European)', value: 'DD-MM-YYYY' },
+    { label: 'MM-DD-YYYY (American)', value: 'MM-DD-YYYY' },
+    { label: 'YYYY-MM-DD (ISO)', value: 'YYYY-MM-DD' },
+];
+
 interface NotifState {
     telegramAlerts: boolean;
     weeklyDigest: boolean;
@@ -145,7 +151,7 @@ const PLATFORM_LABELS: Record<string, string> = {
 const PLATFORM_COLORS: Record<string, string> = {
     METATRADER5: 'bg-orange-500/20 text-orange-400',
     CTRADER: 'bg-blue-500/20 text-blue-400',
-    TRADINGVIEW: 'bg-green-500/20 text-green-400',
+    TRADINGVIEW: 'bg-profit/20 text-profit',
     MANUAL: 'bg-gray-500/20 text-gray-400',
 };
 
@@ -165,6 +171,7 @@ function SettingsContent() {
     // Preferences state
     const [currency, setCurrency] = useState('USD');
     const [timezone, setTimezone] = useState('Europe/Amsterdam');
+    const [dateFormat, setDateFormat] = useState('DD-MM-YYYY');
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
 
@@ -268,6 +275,7 @@ function SettingsContent() {
             .then((data) => {
                 if (data.displayCurrency) setCurrency(data.displayCurrency);
                 if (data.timezone) setTimezone(data.timezone);
+                if (data.dateFormat) setDateFormat(data.dateFormat);
                 if (data.twoFAEnabled !== undefined) setTwoFAEnabled(data.twoFAEnabled);
             })
             .catch(() => {});
@@ -408,7 +416,7 @@ function SettingsContent() {
                 await fetch('/api/settings', {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ displayCurrency: currency, timezone }),
+                    body: JSON.stringify({ displayCurrency: currency, timezone, dateFormat }),
                 });
             } else if (activeTab === 'notifications') {
                 await fetch('/api/settings/notifications', {
@@ -623,6 +631,18 @@ function SettingsContent() {
                                         className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm font-bold text-white outline-none focus:border-primary/50 transition-all appearance-none"
                                     >
                                         {TIMEZONE_OPTIONS.map((o) => (
+                                            <option key={o.value} value={o.value}>{o.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-600 px-1">Date Format</label>
+                                    <select
+                                        value={dateFormat}
+                                        onChange={(e) => setDateFormat(e.target.value)}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm font-bold text-white outline-none focus:border-primary/50 transition-all appearance-none"
+                                    >
+                                        {DATE_FORMAT_OPTIONS.map((o) => (
                                             <option key={o.value} value={o.value}>{o.label}</option>
                                         ))}
                                     </select>
@@ -1220,7 +1240,7 @@ function SettingsContent() {
                                                                         // error handled
                                                                     }
                                                                 }}
-                                                                className="p-2 rounded-lg border border-white/10 text-gray-400 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 transition-all"
+                                                                className="p-2 rounded-lg border border-white/10 text-gray-400 hover:bg-loss/10 hover:border-loss/30 hover:text-loss transition-all"
                                                                 title="Delete"
                                                             >
                                                                 <Trash2 size={14} />
