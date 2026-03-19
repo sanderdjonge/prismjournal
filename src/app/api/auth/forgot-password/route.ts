@@ -56,10 +56,20 @@ export async function POST(request: NextRequest) {
 
       // Send reset email
       const baseUrl = process.env.NEXTAUTH_URL;
-      if (!baseUrl) throw new Error('NEXTAUTH_URL is not set');
+      if (!baseUrl) {
+        console.error('Password reset failed: NEXTAUTH_URL is not set');
+        return NextResponse.json(
+          { error: 'Email service is not configured. Please contact an administrator.' },
+          { status: 503 }
+        );
+      }
       const resetUrl = `${baseUrl}/reset-password`;
 
-      await sendPasswordResetEmail(user.email!, resetToken, resetUrl);
+      const emailResult = await sendPasswordResetEmail(user.email!, resetToken, resetUrl);
+      if (!emailResult.success) {
+        console.error('Password reset email failed:', emailResult.error);
+        // Still return success to prevent enumeration, but log the failure
+      }
     }
 
     return NextResponse.json({

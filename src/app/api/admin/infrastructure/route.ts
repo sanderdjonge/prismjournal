@@ -38,17 +38,18 @@ async function getDatabaseSize(): Promise<number> {
 // Get table row counts
 async function getTableRowCounts(): Promise<Record<string, number>> {
   try {
-    const [users, trades, media, accounts, strategies] = await Promise.all([
+    const [users, trades, media, accounts, strategies, equitySnapshots] = await Promise.all([
       prisma.user.count(),
       prisma.trade.count(),
       prisma.media.count(),
       prisma.tradingAccount.count(),
       prisma.strategy.count(),
+      prisma.equitySnapshot.count(),
     ]);
-    
-    return { users, trades, media, accounts, strategies };
+
+    return { users, trades, media, accounts, strategies, equitySnapshots };
   } catch {
-    return { users: 0, trades: 0, media: 0, accounts: 0, strategies: 0 };
+    return { users: 0, trades: 0, media: 0, accounts: 0, strategies: 0, equitySnapshots: 0 };
   }
 }
 
@@ -103,20 +104,27 @@ async function getUserActivity(): Promise<{
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     
     const [activeSessions24h, loginsToday, failedLogins24h] = await Promise.all([
-      // Users who logged in within 24h
+      // Users who logged in within 24h (based on lastLoginAt timestamp)
       prisma.user.count({
-        where: { lastLoginAt: { gte: yesterday } },
-      }),
-      // Audit logs for successful logins today
-      prisma.auditLog.count({
         where: {
-          action: 'ADMIN_LOGIN',
-          createdAt: { gte: todayStart },
+          lastLoginAt: { gte: yesterday },
+          isActive: true,
         },
       }),
-      // Note: We don't have a specific failed login action, so we'll return 0
-      // This could be enhanced by adding a FAILED_LOGIN audit action
-      Promise.resolve(0),
+      // Count users whose lastLoginAt is today (more reliable than audit logs)
+      prisma.user.count({
+        where: {
+          lastLoginAt: { gte: todayStart },
+          isActive: true,
+        },
+      }),
+      // Count failed login attempts from audit logs
+      prisma.auditLog.count({
+        where: {
+          action: 'FAILED_LOGIN',
+          createdAt: { gte: yesterday },
+        },
+      }),
     ]);
     
     return { activeSessions24h, loginsToday, failedLogins24h };
@@ -127,20 +135,20 @@ async function getUserActivity(): Promise<{
 
 // Get error tracking
 async function getErrorTracking(): Promise<{
-  recentErrors: Array<{ action: string; details: unknown; createdAt: Date }>;
+  recentErrors: Array<{ action: string; details: string; createdAt: Date }>;
   failedSyncs24h: number;
   errorRate24h: number;
 }> {
   try {
     const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
     
-    // Get recent security violations and errors
+    // Get recent security violations, login failures, and errors
+    // Note: The app logs LOGIN_FAILED, 2FA_FAILED, and SECURITY_VIOLATION events
     const recentErrors = await prisma.auditLog.findMany({
       where: {
-        OR: [
-          { action: 'SECURITY_VIOLATION' },
-          { action: { contains: 'ERROR' } },
-        ],
+        action: {
+          in: ['SECURITY_VIOLATION', 'API_ERROR', 'SYNC_ERROR', 'LOGIN_FAILED', '2FA_FAILED'],
+        },
         createdAt: { gte: yesterday },
       },
       select: {
@@ -152,18 +160,30 @@ async function getErrorTracking(): Promise<{
       take: 10,
     });
     
-    // Count failed syncs (we'd need to track this - for now return 0)
-    const failedSyncs24h = 0;
+    // Format the details for display (convert Json to string)
+    const formattedErrors = recentErrors.map(e => ({
+      action: e.action,
+      details: typeof e.details === 'string' ? e.details : JSON.stringify(e.details),
+      createdAt: e.createdAt,
+    }));
     
-    // Calculate error rate (errors / total requests in 24h)
+    // Count failed syncs from audit logs (if SYNC_ERROR events exist)
+    const failedSyncs24h = await prisma.auditLog.count({
+      where: {
+        action: 'SYNC_ERROR',
+        createdAt: { gte: yesterday },
+      },
+    });
+    
+    // Calculate error rate (errors / total actions in 24h)
     const totalActions24h = await prisma.auditLog.count({
       where: { createdAt: { gte: yesterday } },
     });
     
-    const errorCount = recentErrors.length;
+    const errorCount = formattedErrors.length;
     const errorRate24h = totalActions24h > 0 ? errorCount / totalActions24h : 0;
     
-    return { recentErrors, failedSyncs24h, errorRate24h };
+    return { recentErrors: formattedErrors, failedSyncs24h, errorRate24h };
   } catch {
     return { recentErrors: [], failedSyncs24h: 0, errorRate24h: 0 };
   }

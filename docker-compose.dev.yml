@@ -37,8 +37,13 @@ services:
     environment:
       NODE_ENV: development
       DATABASE_URL: "postgresql://prism_dev:prism_dev_password@db:5432/prism_journal_dev"
+      NEXTAUTH_URL: "http://localhost:3002"
       AUTH_TRUST_HOST: "true"
       STORAGE_PATH: "/app/storage"
+      BACKUP_PATH: "/app/backups"
+      BACKUP_KEEP_HOURLY: "24"
+      BACKUP_KEEP_DAILY: "30"
+      BACKUP_KEEP_WEEKLY: "12"
     ports:
       - "3002:3000"    # Dev app on port 3002
     healthcheck:
@@ -49,7 +54,7 @@ services:
       start_period: 40s
     volumes:
       - prism_dev_storage:/app/storage
-      - ./backups:/app/backups:ro
+      - ./backups:/app/backups
     networks:
       - prism-dev-network
 
