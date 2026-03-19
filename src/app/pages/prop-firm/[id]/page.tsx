@@ -215,7 +215,7 @@ function PropFirmAccountContent() {
         switch (severity) {
             case 'WARNING': return 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30';
             case 'CRITICAL': return 'text-orange-400 bg-orange-500/10 border-orange-500/30';
-            case 'BREACH': return 'text-red-400 bg-red-500/10 border-red-500/30';
+            case 'BREACH': return 'text-loss bg-loss/10 border-loss/30';
             default: return 'text-gray-400 bg-gray-500/10 border-gray-500/30';
         }
     };
@@ -285,8 +285,8 @@ function PropFirmAccountContent() {
         return (
             <DashboardShell>
                 <div className="flex flex-col items-center justify-center min-h-[60vh]">
-                    <AlertCircle className="w-12 h-12 text-red-400 mb-4" />
-                    <p className="text-red-400">{error || 'Account not found'}</p>
+                    <AlertCircle className="w-12 h-12 text-loss mb-4" />
+                    <p className="text-loss">{error || 'Account not found'}</p>
                     <button
                         onClick={() => router.push('/settings')}
                         className="mt-4 px-4 py-2 bg-white/5 rounded-lg hover:bg-white/10 transition-all"
@@ -370,8 +370,8 @@ function PropFirmAccountContent() {
                                     <span className={cn(
                                         "px-3 py-1 rounded-lg text-xs font-bold",
                                         currentPhase.status === 'IN_PROGRESS' && "bg-blue-500/20 text-blue-400",
-                                        currentPhase.status === 'PASSED' && "bg-green-500/20 text-green-400",
-                                        currentPhase.status === 'FAILED' && "bg-red-500/20 text-red-400"
+                                        currentPhase.status === 'PASSED' && "bg-profit/20 text-profit",
+                                        currentPhase.status === 'FAILED' && "bg-loss/20 text-loss"
                                     )}>
                                         {currentPhase.phaseName}
                                     </span>
@@ -391,7 +391,7 @@ function PropFirmAccountContent() {
                                         className={cn(
                                             "h-full rounded-full transition-all duration-500",
                                             progressPercent >= (currentPhase?.profitTarget || 10)
-                                                ? "bg-green-500"
+                                                ? "bg-profit"
                                                 : "bg-gradient-to-r from-primary to-blue-400"
                                         )}
                                         style={{ 
@@ -413,7 +413,7 @@ function PropFirmAccountContent() {
                                         <span className="text-xs text-gray-400 uppercase tracking-wider">Daily Loss Used</span>
                                         <span className={cn(
                                             "text-sm font-bold",
-                                            dailyLossPercentOfLimit >= 80 ? "text-red-400" : "text-white"
+                                            dailyLossPercentOfLimit >= 80 ? "text-loss" : "text-white"
                                         )}>
                                             {formatPercent(dailyLossPercent)}
                                         </span>
@@ -422,7 +422,7 @@ function PropFirmAccountContent() {
                                         <div
                                             className={cn(
                                                 "h-full rounded-full transition-all",
-                                                dailyLossPercentOfLimit >= 100 ? "bg-red-500" :
+                                                dailyLossPercentOfLimit >= 100 ? "bg-loss" :
                                                 dailyLossPercentOfLimit >= 80 ? "bg-orange-500" : "bg-yellow-500"
                                             )}
                                             style={{ width: `${Math.min(100, dailyLossPercentOfLimit)}%` }}
@@ -437,7 +437,7 @@ function PropFirmAccountContent() {
                                         <span className="text-xs text-gray-400 uppercase tracking-wider">Current Drawdown</span>
                                         <span className={cn(
                                             "text-sm font-bold",
-                                            drawdownPercent >= maxDrawdown * 0.8 ? "text-red-400" : "text-white"
+                                            drawdownPercent >= maxDrawdown * 0.8 ? "text-loss" : "text-white"
                                         )}>
                                             {formatPercent(drawdownPercent)}
                                         </span>
@@ -446,8 +446,8 @@ function PropFirmAccountContent() {
                                         <div
                                             className={cn(
                                                 "h-full rounded-full transition-all",
-                                                drawdownPercent >= maxDrawdown ? "bg-red-500" :
-                                                drawdownPercent >= maxDrawdown * 0.8 ? "bg-orange-500" : "bg-green-500"
+                                                drawdownPercent >= maxDrawdown ? "bg-loss" :
+                                                drawdownPercent >= maxDrawdown * 0.8 ? "bg-orange-500" : "bg-profit"
                                             )}
                                             style={{ width: `${Math.min(100, (drawdownPercent / maxDrawdown) * 100)}%` }}
                                         />
@@ -472,7 +472,7 @@ function PropFirmAccountContent() {
                                                 / {currentPhase.minTradingDays} minimum
                                             </span>
                                             {currentPhase.tradingDaysCount >= currentPhase.minTradingDays && (
-                                                <CheckCircle size={16} className="text-green-400" />
+                                                <CheckCircle size={16} className="text-profit" />
                                             )}
                                         </div>
                                     </div>
@@ -499,8 +499,8 @@ function PropFirmAccountContent() {
                                             className={cn(
                                                 "p-4 rounded-xl border transition-all",
                                                 isActive && "border-primary/50 bg-primary/5",
-                                                isPassed && "border-green-500/30 bg-green-500/5",
-                                                isFailed && "border-red-500/30 bg-red-500/5",
+                                                isPassed && "border-profit/30 bg-profit/5",
+                                                isFailed && "border-loss/30 bg-loss/5",
                                                 !isActive && !isPassed && !isFailed && "border-white/5 bg-black/20"
                                             )}
                                         >
@@ -509,8 +509,8 @@ function PropFirmAccountContent() {
                                                     <div className={cn(
                                                         "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold",
                                                         isActive && "bg-primary text-white",
-                                                        isPassed && "bg-green-500 text-white",
-                                                        isFailed && "bg-red-500 text-white",
+                                                        isPassed && "bg-profit text-white",
+                                                        isFailed && "bg-loss text-white",
                                                         !isActive && !isPassed && !isFailed && "bg-gray-700 text-gray-400"
                                                     )}>
                                                         {phase.phaseNumber}
@@ -524,12 +524,12 @@ function PropFirmAccountContent() {
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     {isPassed && (
-                                                        <span className="px-2 py-1 rounded text-xs font-bold bg-green-500/20 text-green-400">
+                                                        <span className="px-2 py-1 rounded text-xs font-bold bg-profit/20 text-profit">
                                                             Passed
                                                         </span>
                                                     )}
                                                     {isFailed && (
-                                                        <span className="px-2 py-1 rounded text-xs font-bold bg-red-500/20 text-red-400">
+                                                        <span className="px-2 py-1 rounded text-xs font-bold bg-loss/20 text-loss">
                                                             Failed
                                                         </span>
                                                     )}
@@ -589,8 +589,8 @@ function PropFirmAccountContent() {
                                             <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Profit Factor</p>
                                             <p className={cn(
                                                 "text-lg font-bold",
-                                                analytics.profitFactor >= 1.5 ? "text-green-400" :
-                                                analytics.profitFactor >= 1 ? "text-yellow-400" : "text-red-400"
+                                                analytics.profitFactor >= 1.5 ? "text-profit" :
+                                                analytics.profitFactor >= 1 ? "text-yellow-400" : "text-loss"
                                             )}>
                                                 {analytics.profitFactor.toFixed(2)}
                                             </p>
@@ -599,7 +599,7 @@ function PropFirmAccountContent() {
                                             <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Expectancy</p>
                                             <p className={cn(
                                                 "text-lg font-bold",
-                                                analytics.expectancy >= 0 ? "text-green-400" : "text-red-400"
+                                                analytics.expectancy >= 0 ? "text-profit" : "text-loss"
                                             )}>
                                                 {formatCurrency(analytics.expectancy, account?.currency)}
                                             </p>
@@ -608,8 +608,8 @@ function PropFirmAccountContent() {
                                             <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Avg R:R</p>
                                             <p className={cn(
                                                 "text-lg font-bold",
-                                                analytics.avgRR >= 1 ? "text-green-400" :
-                                                analytics.avgRR >= 0.5 ? "text-yellow-400" : "text-red-400"
+                                                analytics.avgRR >= 1 ? "text-profit" :
+                                                analytics.avgRR >= 0.5 ? "text-yellow-400" : "text-loss"
                                             )}>
                                                 {analytics.avgRR.toFixed(2)}
                                             </p>
@@ -635,16 +635,16 @@ function PropFirmAccountContent() {
                                                         <span className="text-sm font-bold text-white">{symbol.symbol}</span>
                                                         <span className={cn(
                                                             "text-xs px-2 py-0.5 rounded",
-                                                            symbol.winRate >= 60 ? "bg-green-500/20 text-green-400" :
+                                                            symbol.winRate >= 60 ? "bg-profit/20 text-profit" :
                                                             symbol.winRate >= 40 ? "bg-yellow-500/20 text-yellow-400" :
-                                                            "bg-red-500/20 text-red-400"
+                                                            "bg-loss/20 text-loss"
                                                         )}>
                                                             {symbol.winRate}% WR
                                                         </span>
                                                     </div>
                                                     <span className={cn(
                                                         "text-sm font-bold",
-                                                        symbol.profit >= 0 ? "text-green-400" : "text-red-400"
+                                                        symbol.profit >= 0 ? "text-profit" : "text-loss"
                                                     )}>
                                                         {formatCurrency(symbol.profit, account?.currency)}
                                                     </span>
@@ -708,14 +708,14 @@ function PropFirmAccountContent() {
                                     <span className="text-sm text-gray-400">Total P&L</span>
                                     <span className={cn(
                                         "font-bold",
-                                        totalPnl >= 0 ? "text-green-400" : "text-red-400"
+                                        totalPnl >= 0 ? "text-profit" : "text-loss"
                                     )}>
                                         {formatCurrency(totalPnl, account.currency)}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm text-gray-400">Profit Split</span>
-                                    <span className="font-bold text-green-400">{account.profitSplit || 80}%</span>
+                                    <span className="font-bold text-profit">{account.profitSplit || 80}%</span>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm text-gray-400">Total Trades</span>
@@ -747,19 +747,19 @@ function PropFirmAccountContent() {
                                     <hr className="border-white/5" />
                                     <div className="flex items-center justify-between text-sm">
                                         <span className="text-gray-400">News Trading</span>
-                                        <span className={account.propFirm.allowNewsTrading ? "text-green-400" : "text-red-400"}>
+                                        <span className={account.propFirm.allowNewsTrading ? "text-profit" : "text-loss"}>
                                             {account.propFirm.allowNewsTrading ? "Allowed" : "Restricted"}
                                         </span>
                                     </div>
                                     <div className="flex items-center justify-between text-sm">
                                         <span className="text-gray-400">Weekend Holding</span>
-                                        <span className={account.propFirm.allowWeekendHolding ? "text-green-400" : "text-red-400"}>
+                                        <span className={account.propFirm.allowWeekendHolding ? "text-profit" : "text-loss"}>
                                             {account.propFirm.allowWeekendHolding ? "Allowed" : "Restricted"}
                                         </span>
                                     </div>
                                     <div className="flex items-center justify-between text-sm">
                                         <span className="text-gray-400">EA Trading</span>
-                                        <span className={account.propFirm.allowEA ? "text-green-400" : "text-red-400"}>
+                                        <span className={account.propFirm.allowEA ? "text-profit" : "text-loss"}>
                                             {account.propFirm.allowEA ? "Allowed" : "Restricted"}
                                         </span>
                                     </div>
@@ -873,7 +873,7 @@ function PropFirmAccountContent() {
                                                                 {level.profit}% profit
                                                             </span>
                                                         </div>
-                                                        <span className="text-sm font-bold text-green-400">
+                                                        <span className="text-sm font-bold text-profit">
                                                             +{level.balanceIncrease}%
                                                         </span>
                                                     </div>
@@ -897,7 +897,7 @@ function PropFirmAccountContent() {
                                     <span className="text-sm text-gray-400">Daily Loss</span>
                                     <div className="flex items-center gap-2">
                                         {account.latestSnapshot?.isDailyLimitBreached ? (
-                                            <span className="px-2 py-1 rounded text-xs font-bold bg-red-500/20 text-red-400">
+                                            <span className="px-2 py-1 rounded text-xs font-bold bg-loss/20 text-loss">
                                                 Breached
                                             </span>
                                         ) : (dailyLossPercentOfLimit >= 80) ? (
@@ -905,7 +905,7 @@ function PropFirmAccountContent() {
                                                 At Risk
                                             </span>
                                         ) : (
-                                            <span className="px-2 py-1 rounded text-xs font-bold bg-green-500/20 text-green-400">
+                                            <span className="px-2 py-1 rounded text-xs font-bold bg-profit/20 text-profit">
                                                 Healthy
                                             </span>
                                         )}
@@ -920,7 +920,7 @@ function PropFirmAccountContent() {
                                     <span className="text-sm text-gray-400">Max Drawdown</span>
                                     <div className="flex items-center gap-2">
                                         {account.latestSnapshot?.isMaxDrawdownBreached ? (
-                                            <span className="px-2 py-1 rounded text-xs font-bold bg-red-500/20 text-red-400">
+                                            <span className="px-2 py-1 rounded text-xs font-bold bg-loss/20 text-loss">
                                                 Breached
                                             </span>
                                         ) : (drawdownPercent >= maxDrawdown * 0.8) ? (
@@ -928,7 +928,7 @@ function PropFirmAccountContent() {
                                                 At Risk
                                             </span>
                                         ) : (
-                                            <span className="px-2 py-1 rounded text-xs font-bold bg-green-500/20 text-green-400">
+                                            <span className="px-2 py-1 rounded text-xs font-bold bg-profit/20 text-profit">
                                                 Healthy
                                             </span>
                                         )}
@@ -943,7 +943,7 @@ function PropFirmAccountContent() {
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm text-gray-400">Clean Days Streak</span>
                                         <div className="flex items-center gap-2">
-                                            <span className="text-lg font-bold text-green-400">
+                                            <span className="text-lg font-bold text-profit">
                                                 {account.violations.filter(v => !v.isResolved && v.severity === 'BREACH').length === 0
                                                     ? (currentPhase?.tradingDaysCount || 0)
                                                     : 0
@@ -980,7 +980,7 @@ function PropFirmAccountContent() {
                             </div>
                             {account.violations.length === 0 ? (
                                 <div className="text-center py-6">
-                                    <CheckCircle size={32} className="mx-auto text-green-400 mb-2" />
+                                    <CheckCircle size={32} className="mx-auto text-profit mb-2" />
                                     <p className="text-sm text-gray-400">No violations recorded</p>
                                 </div>
                             ) : (
@@ -1001,7 +1001,7 @@ function PropFirmAccountContent() {
                                                         {getRuleTypeLabel(violation.ruleType)}
                                                     </span>
                                                     {violation.isResolved && (
-                                                        <span className="flex items-center gap-1 text-xs text-green-400">
+                                                        <span className="flex items-center gap-1 text-xs text-profit">
                                                             <CheckCircle size={12} />
                                                             Acknowledged
                                                         </span>

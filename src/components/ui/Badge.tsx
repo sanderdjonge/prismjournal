@@ -4,11 +4,11 @@ import { cn } from '@/lib/cn';
 type BadgeVariant = 'win' | 'loss' | 'open' | 'long' | 'short' | 'neutral' | 'primary';
 
 const variants: Record<BadgeVariant, string> = {
-    win:     'bg-accent/10 text-accent border-accent/20',
-    loss:    'bg-danger/10 text-danger border-danger/20',
+    win:     'bg-profit/10 text-profit border-profit/20',
+    loss:    'bg-loss/10 text-loss border-loss/20',
     open:    'bg-primary/10 text-primary border-primary/20',
-    long:    'bg-accent/10 text-accent border-accent/20',
-    short:   'bg-danger/10 text-danger border-danger/20',
+    long:    'bg-profit/10 text-profit border-profit/20',
+    short:   'bg-loss/10 text-loss border-loss/20',
     neutral: 'bg-white/5 text-gray-400 border-white/10',
     primary: 'bg-primary/10 text-primary border-primary/20',
 };

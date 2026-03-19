@@ -58,7 +58,7 @@ export default function Gauge({
         primary: 'stroke-[#00f2ff] drop-shadow-[0_0_12px_rgba(0,242,255,0.5)]',
         accent: 'stroke-[#00ff88] drop-shadow-[0_0_12px_rgba(0,255,136,0.5)]',
         secondary: 'stroke-[#7000ff] drop-shadow-[0_0_12px_rgba(112,0,255,0.5)]',
-        danger: 'stroke-[#f43f5e] drop-shadow-[0_0_12px_rgba(244,63,94,0.5)]',
+        danger: 'stroke-[#f87171] drop-shadow-[0_0_12px_rgba(248,113,113,0.5)]',
     };
 
     return (

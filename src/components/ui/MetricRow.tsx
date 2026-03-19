@@ -19,8 +19,8 @@ export function MetricRow({
             <div className="text-right">
                 <div className={cn(
                     "text-sm font-black",
-                    variant === 'profit' && "text-accent",
-                    variant === 'loss' && "text-danger",
+                    variant === 'profit' && "text-profit",
+                    variant === 'loss' && "text-loss",
                     variant === 'neutral' && "text-white"
                 )}>
                     {value}

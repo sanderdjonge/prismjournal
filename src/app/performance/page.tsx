@@ -48,10 +48,10 @@ export default function PerformancePage() {
     }, [period, selectedAccountId]);
 
     const STATS = [
-        { id: 'stat_pnl', label: 'Net P&L', val: data ? formatPnl(data.netPnl) : '—', status: data ? (data.netPnl >= 0 ? 'text-accent' : 'text-danger') : 'text-gray-600', icon: TrendingUp },
-        { id: 'stat_dd', label: 'Max Drawdown', val: data ? `${data.maxDrawdown.toFixed(2)}%` : '—', status: 'text-danger', icon: ArrowDownLeft },
+        { id: 'stat_pnl', label: 'Net P&L', val: data ? formatPnl(data.netPnl) : '—', status: data ? (data.netPnl >= 0 ? 'text-profit' : 'text-loss') : 'text-gray-600', icon: TrendingUp },
+        { id: 'stat_dd', label: 'Max Drawdown', val: data ? `${data.maxDrawdown.toFixed(2)}%` : '—', status: 'text-loss', icon: ArrowDownLeft },
         { id: 'stat_sharpe', label: 'Sharpe Ratio', val: data ? (data.sharpe !== null ? data.sharpe.toFixed(2) : 'N/A') : '—', status: 'text-primary', icon: Activity },
-        { id: 'stat_pf', label: 'Profit Factor', val: data ? data.profitFactor.toFixed(2) : '—', status: 'text-accent', icon: Target },
+        { id: 'stat_pf', label: 'Profit Factor', val: data ? data.profitFactor.toFixed(2) : '—', status: 'text-profit', icon: Target },
     ];
 
     const monthlyReturns = data?.monthlyReturns ?? MONTH_LABELS.map((_, i) => ({ month: i, value: 0 }));
@@ -97,7 +97,7 @@ export default function PerformancePage() {
                 {/* Top Row: Equity Chart + Expectancy Gauge */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Equity Curve */}
-                    <div className="lg:col-span-2 glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6 overflow-hidden">
+                    <div className="lg:col-span-2 glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
                         <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500 mb-4">Master Equity Curve</h3>
                         <div className="h-[250px]">
                             <EquityChart data={data?.equity ?? []} />
@@ -116,11 +116,11 @@ export default function PerformancePage() {
                         <div className="mt-4 pt-4 border-t border-white/5 w-full space-y-2">
                             <div className="flex justify-between items-center">
                                 <span className="text-[8px] font-black uppercase text-gray-600 tracking-widest">Avg. Win</span>
-                                <span className="text-[10px] font-bold text-accent">{formatAmount(data?.avgWin ?? 0, { showSign: true })}</span>
+                                <span className="text-[10px] font-bold text-profit">{formatAmount(data?.avgWin ?? 0, { showSign: true })}</span>
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className="text-[8px] font-black uppercase text-gray-600 tracking-widest">Avg. Loss</span>
-                                <span className="text-[10px] font-bold text-danger">-{formatAmount(data?.avgLoss ?? 0)}</span>
+                                <span className="text-[10px] font-bold text-loss">-{formatAmount(data?.avgLoss ?? 0)}</span>
                             </div>
                         </div>
                     </div>
@@ -152,8 +152,8 @@ export default function PerformancePage() {
                             <div
                                 key={i}
                                 className={`p-2.5 rounded-lg text-[9px] font-black tracking-tighter flex items-center justify-center ${r.value >= 0
-                                    ? 'bg-accent/10 text-accent border border-accent/20'
-                                    : 'bg-danger/10 text-danger border border-danger/20'}`}
+                                    ? 'bg-profit/10 text-profit border border-profit/20'
+                                    : 'bg-loss/10 text-loss border border-loss/20'}`}
                             >
                                 {r.value >= 0 ? '+' : ''}{r.value.toFixed(1)}%
                             </div>

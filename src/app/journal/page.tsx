@@ -367,8 +367,8 @@ function JournalContent() {
                                 key={type}
                                 onClick={() => setFilterResult(type)}
                                 className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${filterResult === type
-                                    ? type === 'WIN' ? 'bg-accent/20 text-accent' :
-                                      type === 'LOSS' ? 'bg-danger/20 text-danger' :
+                                    ? type === 'WIN' ? 'bg-profit/20 text-profit' :
+                                      type === 'LOSS' ? 'bg-loss/20 text-loss' :
                                       type === 'OPEN' ? 'bg-secondary/20 text-secondary' :
                                       'bg-white/10 text-white shadow-[0_0_15px_rgba(255,255,255,0.1)]'
                                     : 'text-gray-600 hover:text-gray-400'

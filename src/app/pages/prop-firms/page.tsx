@@ -149,7 +149,7 @@ function PropFirmsContent() {
                                     <span className={cn(
                                         "px-2 py-1 rounded text-xs font-bold",
                                         firm.challengeType === 'TWO_PHASE' && "bg-blue-500/20 text-blue-400",
-                                        firm.challengeType === 'ONE_PHASE' && "bg-green-500/20 text-green-400",
+                                        firm.challengeType === 'ONE_PHASE' && "bg-profit/20 text-profit",
                                         firm.challengeType === 'THREE_PHASE' && "bg-purple-500/20 text-purple-400"
                                     )}>
                                         {firm.challengeType.replace(/_/g, ' ')}
@@ -183,8 +183,8 @@ function PropFirmsContent() {
                                         <span className={cn(
                                             "flex items-center gap-1 text-xs px-2 py-1 rounded",
                                             firm.allowNewsTrading 
-                                                ? "bg-green-500/10 text-green-400" 
-                                                : "bg-red-500/10 text-red-400"
+                                                ? "bg-profit/10 text-profit" 
+                                                : "bg-loss/10 text-loss"
                                         )}>
                                             {firm.allowNewsTrading ? <CheckCircle size={12} /> : <XCircle size={12} />}
                                             News
@@ -192,8 +192,8 @@ function PropFirmsContent() {
                                         <span className={cn(
                                             "flex items-center gap-1 text-xs px-2 py-1 rounded",
                                             firm.allowWeekendHolding 
-                                                ? "bg-green-500/10 text-green-400" 
-                                                : "bg-red-500/10 text-red-400"
+                                                ? "bg-profit/10 text-profit" 
+                                                : "bg-loss/10 text-loss"
                                         )}>
                                             {firm.allowWeekendHolding ? <CheckCircle size={12} /> : <XCircle size={12} />}
                                             Weekend
@@ -201,8 +201,8 @@ function PropFirmsContent() {
                                         <span className={cn(
                                             "flex items-center gap-1 text-xs px-2 py-1 rounded",
                                             firm.allowEA 
-                                                ? "bg-green-500/10 text-green-400" 
-                                                : "bg-red-500/10 text-red-400"
+                                                ? "bg-profit/10 text-profit" 
+                                                : "bg-loss/10 text-loss"
                                         )}>
                                             {firm.allowEA ? <CheckCircle size={12} /> : <XCircle size={12} />}
                                             EA

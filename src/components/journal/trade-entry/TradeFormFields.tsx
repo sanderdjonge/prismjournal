@@ -49,7 +49,7 @@ export function TradeFormFields({
                             disabled={disabled}
                             className={cn(
                                 "flex-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1",
-                                side === 'LONG' ? "bg-accent text-black shadow-lg" : "text-gray-500 hover:text-white",
+                                side === 'LONG' ? "bg-profit text-black shadow-lg" : "text-gray-500 hover:text-white",
                                 disabled && "opacity-50 cursor-not-allowed"
                             )}
                         >
@@ -61,7 +61,7 @@ export function TradeFormFields({
                             disabled={disabled}
                             className={cn(
                                 "flex-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1",
-                                side === 'SHORT' ? "bg-danger text-white shadow-lg" : "text-gray-500 hover:text-white",
+                                side === 'SHORT' ? "bg-loss text-white shadow-lg" : "text-gray-500 hover:text-white",
                                 disabled && "opacity-50 cursor-not-allowed"
                             )}
                         >

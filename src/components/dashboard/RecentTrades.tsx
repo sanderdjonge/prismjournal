@@ -31,7 +31,7 @@ export default function RecentTrades({ trades }: RecentTradesProps) {
                 {/* Symbol Icon Placeholder */}
                 <div className={cn(
                     "w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-500",
-                    trade.pnl >= 0 ? "bg-[#10b981]/10 text-[#10b981] shadow-[0_0_10px_rgba(16,185,129,0.1)]" : "bg-[#f43f5e]/10 text-[#f43f5e] shadow-[0_0_10px_rgba(244,63,94,0.1)]"
+                    trade.pnl >= 0 ? "bg-profit/10 text-profit shadow-[0_0_10px_rgba(74,222,128,0.1)]" : "bg-loss/10 text-loss shadow-[0_0_10px_rgba(248,113,113,0.1)]"
                 )}>
                     <span className="text-xs font-black tracking-tighter uppercase">
                         {trade.symbol.substring(0, 3)}
@@ -43,7 +43,7 @@ export default function RecentTrades({ trades }: RecentTradesProps) {
                         <p className="text-sm font-black tracking-tight text-white">{trade.symbol}</p>
                         <span className={cn(
                             "text-[8px] font-black px-1.5 py-0.5 rounded border uppercase tracking-widest",
-                            trade.direction === 'LONG' ? "text-[#10b981] border-[#10b981]/20 bg-[#10b981]/5" : "text-[#f43f5e] border-[#f43f5e]/20 bg-[#f43f5e]/5"
+                            trade.direction === 'LONG' ? "text-profit border-profit/20 bg-profit/5" : "text-loss border-loss/20 bg-loss/5"
                         )}>
                             {trade.direction === 'LONG' ? 'Long' : 'Short'}
                         </span>
@@ -57,7 +57,7 @@ export default function RecentTrades({ trades }: RecentTradesProps) {
             <div className="text-right">
                 <p className={cn(
                     "text-sm font-mono font-black tracking-tight",
-                    trade.pnl >= 0 ? "text-[#10b981]" : "text-[#f43f5e]"
+                    trade.pnl >= 0 ? "text-profit" : "text-loss"
                 )}>
                     {formatPnl(trade.pnl)}
                 </p>

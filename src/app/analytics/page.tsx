@@ -123,7 +123,7 @@ export default function AnalyticsPage() {
                                                 return (
                                                     <div className="bg-black/90 border border-white/10 rounded-lg px-3 py-2 text-[10px] font-black space-y-1">
                                                         <p className="text-white uppercase tracking-widest">{d.symbol}</p>
-                                                        <p className={d.profit >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                                                        <p className={d.profit >= 0 ? 'text-profit' : 'text-loss'}>
                                                             P&L: {d.profit >= 0 ? '+' : ''}{formatAmount(d.profit)}
                                                         </p>
                                                         <p className="text-gray-400">Win rate: {d.winRate}%</p>
@@ -133,7 +133,7 @@ export default function AnalyticsPage() {
                                         />
                                         <Bar dataKey="profit" radius={[2, 2, 0, 0]}>
                                             {symbolData.map((entry, i) => (
-                                                <Cell key={i} fill={entry.profit >= 0 ? '#10b981' : '#f43f5e'} fillOpacity={0.6} />
+                                                <Cell key={i} fill={entry.profit >= 0 ? '#4ade80' : '#f87171'} fillOpacity={0.6} />
                                             ))}
                                         </Bar>
                                     </BarChart>
@@ -164,7 +164,7 @@ export default function AnalyticsPage() {
                                                 return (
                                                     <div className="bg-black/90 border border-white/10 rounded-lg px-3 py-2 text-[10px] font-black space-y-1">
                                                         <p className="text-gray-400">Trade #{d.trade}</p>
-                                                        <p className={d.val >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                                                        <p className={d.val >= 0 ? 'text-profit' : 'text-loss'}>
                                                             Avg P&L: {d.val >= 0 ? '+' : ''}{formatAmount(d.val)}
                                                         </p>
                                                     </div>

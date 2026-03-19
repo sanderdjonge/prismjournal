@@ -63,7 +63,7 @@ export function TradeRow({ trade, columns, onView, onEdit, isSelected = false, o
                         <span className="font-bold text-sm text-white tracking-tight">{trade.symbol}</span>
                     )}
                     {col.id === 'side' && (
-                        <span className={`text-xs font-black uppercase ${trade.type === 'LONG' ? 'text-accent' : 'text-danger'}`}>
+                        <span className={`text-xs font-black uppercase ${trade.type === 'LONG' ? 'text-profit' : 'text-loss'}`}>
                             {trade.type === 'LONG' ? 'Long' : 'Short'}
                         </span>
                     )}
@@ -86,14 +86,14 @@ export function TradeRow({ trade, columns, onView, onEdit, isSelected = false, o
                         <span className="text-xs text-gray-500">{trade.takeProfit ? trade.takeProfit.toFixed(2) : '—'}</span>
                     )}
                     {col.id === 'result' && (
-                        <span className={`font-black text-xs ${trade.pnl >= 0 ? 'text-accent' : 'text-danger'}`}>
+                        <span className={`font-black text-xs ${trade.pnl >= 0 ? 'text-profit' : 'text-loss'}`}>
                             {trade.pnl >= 0 ? '+' : ''}{trade.pnl.toFixed(2)}
                         </span>
                     )}
                     {col.id === 'rr' && (
                         <span className={`text-xs font-bold ${
                             rr === null ? 'text-gray-600' :
-                            rr >= 0 ? 'text-accent' : 'text-danger'
+                            rr >= 0 ? 'text-profit' : 'text-loss'
                         }`}>
                             {rr !== null ? `${rr >= 0 ? '' : ''}${rr.toFixed(1)}R` : '—'}
                         </span>

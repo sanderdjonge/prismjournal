@@ -32,7 +32,7 @@ const CHALLENGE_LABELS: Record<string, string> = {
 };
 
 const CHALLENGE_COLORS: Record<string, string> = {
-    ONE_PHASE: 'text-green-400',
+    ONE_PHASE: 'text-profit',
     TWO_PHASE: 'text-blue-400',
     THREE_PHASE: 'text-purple-400',
 };
@@ -66,14 +66,14 @@ export default function PropFirmReferenceTable({ firms }: PropFirmReferenceTable
                             {[firm.allowNewsTrading, firm.allowWeekendHolding, firm.allowEA].map((allowed, i) => (
                                 <td key={i} className="px-3 py-3">
                                     {allowed
-                                        ? <CheckCircle size={14} className="text-green-400" />
-                                        : <XCircle size={14} className="text-red-400" />}
+                                        ? <CheckCircle size={14} className="text-profit" />
+                                        : <XCircle size={14} className="text-loss" />}
                                 </td>
                             ))}
                             <td className="px-3 py-3">
                                 {firm.hasScalingPlan
-                                    ? <CheckCircle size={14} className="text-green-400" />
-                                    : <XCircle size={14} className="text-red-400" />}
+                                    ? <CheckCircle size={14} className="text-profit" />
+                                    : <XCircle size={14} className="text-loss" />}
                             </td>
                         </tr>
                     ))}

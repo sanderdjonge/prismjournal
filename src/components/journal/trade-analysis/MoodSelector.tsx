@@ -10,9 +10,9 @@ interface MoodSelectorProps {
 }
 
 const MOOD_OPTIONS = [
-    { id: 'CALM', icon: Smile, color: 'text-accent', bg: 'bg-accent/10 border-accent/20' },
+    { id: 'CALM', icon: Smile, color: 'text-profit', bg: 'bg-profit/10 border-profit/20' },
     { id: 'NEUTRAL', icon: Meh, color: 'text-gray-500', bg: 'bg-white/5 border-white/10' },
-    { id: 'ANXIOUS', icon: Frown, color: 'text-danger', bg: 'bg-danger/10 border-danger/20' },
+    { id: 'ANXIOUS', icon: Frown, color: 'text-loss', bg: 'bg-loss/10 border-loss/20' },
 ];
 
 export function MoodSelector({ value, onChange }: MoodSelectorProps) {

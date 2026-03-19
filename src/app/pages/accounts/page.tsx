@@ -81,7 +81,7 @@ const PLATFORM_LABELS: Record<string, string> = {
 const PLATFORM_COLORS: Record<string, string> = {
     METATRADER5: 'bg-orange-500/20 text-orange-400',
     CTRADER: 'bg-blue-500/20 text-blue-400',
-    TRADINGVIEW: 'bg-green-500/20 text-green-400',
+    TRADINGVIEW: 'bg-profit/20 text-profit',
     MANUAL: 'bg-gray-500/20 text-gray-400',
 };
 
@@ -90,7 +90,7 @@ function phaseBadge(phase: string | null) {
     const colors: Record<string, string> = {
         Phase1: 'bg-blue-500/20 text-blue-400',
         Phase2: 'bg-purple-500/20 text-purple-400',
-        Funded: 'bg-green-500/20 text-green-400',
+        Funded: 'bg-profit/20 text-profit',
     };
     return (
         <span className={cn('px-2 py-0.5 rounded text-[10px] font-black uppercase', colors[phase] ?? 'bg-white/10 text-gray-400')}>
@@ -137,7 +137,7 @@ function AccountCard({ account, onClick, onEdit, onArchive }: { account: Account
                 </div>
                 <div>
                     <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">P&L</p>
-                    <p className={cn('text-sm font-bold', pnlPositive ? 'text-green-400' : 'text-red-400')}>
+                    <p className={cn('text-sm font-bold', pnlPositive ? 'text-profit' : 'text-loss')}>
                         {formatPnl(account.totalPnl)}
                     </p>
                 </div>
@@ -175,7 +175,7 @@ function AccountCard({ account, onClick, onEdit, onArchive }: { account: Account
             <div className="mt-4 pt-3 border-t border-white/5 flex justify-end gap-4">
                 <button
                     onClick={(e) => { e.stopPropagation(); onArchive(); }}
-                    className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-red-400/70 hover:text-red-400 transition-all"
+                    className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-loss/70 hover:text-loss transition-all"
                 >
                     <Archive size={12} /> Archive
                 </button>
@@ -582,7 +582,7 @@ function AccountsContent() {
                                                         {account.currentBalance != null ? formatAmount(account.currentBalance) : '—'}
                                                     </td>
                                                     <td className="px-4 py-3 text-gray-300">{account.tradeCount}</td>
-                                                    <td className={cn('px-4 py-3 font-bold', account.totalPnl >= 0 ? 'text-green-400' : 'text-red-400')}>
+                                                    <td className={cn('px-4 py-3 font-bold', account.totalPnl >= 0 ? 'text-profit' : 'text-loss')}>
                                                         {formatPnl(account.totalPnl)}
                                                     </td>
                                                     <td className="px-4 py-3">{phaseBadge(account.currentPhase)}</td>
@@ -1106,7 +1106,7 @@ function AccountsContent() {
                         <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/10">
                             <button
                                 onClick={() => handleArchive(editingAccount.id)}
-                                className="flex items-center gap-2 px-4 py-2 rounded-lg border border-red-500/30 text-red-400 text-xs font-bold uppercase hover:bg-red-500/10 transition-all"
+                                className="flex items-center gap-2 px-4 py-2 rounded-lg border border-loss/30 text-loss text-xs font-bold uppercase hover:bg-loss/10 transition-all"
                             >
                                 <Archive size={14} />
                                 Archive
