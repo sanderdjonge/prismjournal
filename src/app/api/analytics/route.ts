@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { getAllUserAccounts } from '@/lib/getAccount';
 import { calculateProfitFactor } from '@/lib/analytics';
 import { withAuth } from '@/lib/api/withAuth';
+import { cacheGet, cacheSet } from '@/lib/api/cache';
 import type { Session } from 'next-auth';
 
 export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, unknown>, session: Session & { user: { id: string } }) => {
@@ -29,6 +30,10 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
 
     const accountFilter = searchParams.get('account');
     const filteredIds = accountFilter && accountIds.includes(accountFilter) ? [accountFilter] : accountIds;
+
+    const cacheKey = `analytics:${userId}:${from ?? ''}:${to ?? ''}:${accountFilter ?? 'all'}`;
+    const cached = cacheGet(cacheKey);
+    if (cached) return NextResponse.json(cached);
 
     // Build date filter
     const dateFilter: { gte?: Date; lte?: Date } = {};
@@ -142,7 +147,7 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
         ? Math.round(Math.abs(losers.reduce((s, t) => s + (t.pnl ?? 0), 0) / losers.length) * 100) / 100
         : 0;
 
-    return NextResponse.json({
+    const responseData = {
         symbolData,
         expectancyData: sampledExpectancy,
         sessionData,
@@ -150,7 +155,10 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
         expectancy,
         avgRR,
         meanDrawdown,
-    });
+    };
+
+    cacheSet(cacheKey, responseData, 5 * 60_000);
+    return NextResponse.json(responseData);
 });
 
 export const runtime = 'nodejs';

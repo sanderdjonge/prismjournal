@@ -4,11 +4,11 @@ import { runDailySnapshot } from '@/lib/cron/snapshot';
 /**
  * Daily Snapshot Cron Job
  *
- * Called automatically every hour by the internal scheduler (src/instrumentation.ts).
- * Can also be triggered externally with the x-cron-secret header.
+ * Can be triggered externally via GET or POST with the x-cron-secret header.
+ * Periodic scheduling is delegated to an external HTTP cron service.
  */
 
-export async function GET(request: NextRequest) {
+async function handleCronRequest(request: NextRequest) {
     const cronSecret = request.headers.get('x-cron-secret');
     const expectedSecret = process.env.CRON_SECRET;
 
@@ -20,6 +20,14 @@ export async function GET(request: NextRequest) {
     await runDailySnapshot();
 
     return NextResponse.json({ success: true, timestamp: new Date().toISOString() });
+}
+
+export async function GET(request: NextRequest) {
+    return handleCronRequest(request);
+}
+
+export async function POST(request: NextRequest) {
+    return handleCronRequest(request);
 }
 
 export const runtime = 'nodejs';

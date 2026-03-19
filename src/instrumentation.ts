@@ -1,15 +1,11 @@
 /**
  * Next.js instrumentation — runs once on server startup.
- * Schedules the daily-snapshot cron to run every hour automatically.
+ * Periodic scheduling is handled externally (external cron hits /api/cron/daily-snapshot).
  */
 export async function register() {
     if (process.env.NEXT_RUNTIME !== 'nodejs') return;
-
     const { runDailySnapshot } = await import('@/lib/cron/snapshot');
-
-    // Run once on startup (catches any missed snapshots)
+    // Run once on startup after 30 seconds
     setTimeout(() => runDailySnapshot(), 30_000);
-
-    // Then every hour
-    setInterval(() => runDailySnapshot(), 60 * 60 * 1000);
+    // Periodic scheduling is handled externally (external cron hits /api/cron/daily-snapshot)
 }
