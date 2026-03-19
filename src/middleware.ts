@@ -6,6 +6,10 @@ const LOGIN_RATE_LIMIT = parseInt(process.env.RATE_LIMIT_LOGIN ?? '10');
 const API_RATE_LIMIT = parseInt(process.env.RATE_LIMIT_API ?? '100');
 const SYNC_RATE_LIMIT = parseInt(process.env.RATE_LIMIT_SYNC ?? '600');
 
+function warnAuditEvent(action: string, meta: Record<string, unknown>): void {
+  console.warn(JSON.stringify({ audit: true, action, ...meta, ts: Date.now() }));
+}
+
 export default auth(async (req) => {
   const { nextUrl } = req;
   const isLoggedIn = !!req.auth;
@@ -24,26 +28,38 @@ export default auth(async (req) => {
   // Rate limit registration endpoint (very strict: 5 per minute)
   if (isRegisterEndpoint) {
     const rateLimitResponse = await authLimiter.check(req, 5);
-    if (rateLimitResponse) return rateLimitResponse;
+    if (rateLimitResponse) {
+      warnAuditEvent('RATE_LIMIT_HIT', { endpoint: '/api/auth/register', ip: req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown' });
+      return rateLimitResponse;
+    }
   }
 
   // Rate limit login page — configurable via RATE_LIMIT_LOGIN env var (default: 10/min)
   if (isLoginPage) {
     const rateLimitResponse = await loginLimiter.check(req, LOGIN_RATE_LIMIT);
-    if (rateLimitResponse) return rateLimitResponse;
+    if (rateLimitResponse) {
+      warnAuditEvent('RATE_LIMIT_HIT', { endpoint: '/login', ip: req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown' });
+      return rateLimitResponse;
+    }
   }
 
   // Rate limit sync endpoint — configurable via RATE_LIMIT_SYNC env var (default: 600/min, MT5 sends bursts on startup)
   if (isSyncApi) {
     const rateLimitResponse = await syncLimiter.check(req, SYNC_RATE_LIMIT);
-    if (rateLimitResponse) return rateLimitResponse;
+    if (rateLimitResponse) {
+      warnAuditEvent('RATE_LIMIT_HIT', { endpoint: '/api/sync', ip: req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown' });
+      return rateLimitResponse;
+    }
   }
 
   // General API rate limiting — configurable via RATE_LIMIT_API env var (default: 100/min)
   // Skips webhooks, cron, and health endpoints
   if (nextUrl.pathname.startsWith('/api/') && !isTelegramWebhook && !isCronEndpoint && !isHealthEndpoint && !isRegisterEndpoint && !isSyncApi) {
     const rateLimitResponse = await apiLimiter.check(req, API_RATE_LIMIT);
-    if (rateLimitResponse) return rateLimitResponse;
+    if (rateLimitResponse) {
+      warnAuditEvent('RATE_LIMIT_HIT', { endpoint: nextUrl.pathname, ip: req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown' });
+      return rateLimitResponse;
+    }
   }
 
   // ====== AUTH ROUTING ======
@@ -56,6 +72,7 @@ export default auth(async (req) => {
 
   // Redirect unauthenticated users to login
   if (!isLoggedIn && !isLoginPage) {
+    warnAuditEvent('SESSION_INVALID', { path: nextUrl.pathname, ip: req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown' });
     return NextResponse.redirect(new URL('/login', nextUrl));
   }
 

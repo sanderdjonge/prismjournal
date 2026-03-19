@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { validateBody, registerSchema } from '@/lib/validations';
 import { generateBridgeKey } from '@/lib/getAccount';
+import { logAuditEvent } from '@/lib/audit';
 
 export async function POST(request: Request) {
     try {
@@ -15,6 +16,7 @@ export async function POST(request: Request) {
 
         const existing = await prisma.user.findUnique({ where: { email: body.email } });
         if (existing) {
+            logAuditEvent('REGISTRATION_FAILED', null, { email: body.email, reason: 'email_already_registered' }).catch(console.error);
             return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
         }
 
@@ -56,6 +58,7 @@ export async function POST(request: Request) {
         });
     } catch (error) {
         console.error('[register]', error);
+        logAuditEvent('REGISTRATION_FAILED', null, { reason: 'internal_error' }).catch(console.error);
         return NextResponse.json({ error: 'Registration failed. Please try again.' }, { status: 500 });
     }
 }
