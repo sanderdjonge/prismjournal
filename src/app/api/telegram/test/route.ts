@@ -1,14 +1,9 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { sendTelegramMessage } from '@/lib/telegram';
+import { withAuth } from '@/lib/api/withAuth';
 
-export async function POST(request: Request) {
-    const session = await auth();
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-    }
-
-    const { chatId } = await request.json().catch(() => ({ chatId: null }));
+export const POST = withAuth(async (req, _ctx, _session) => {
+    const { chatId } = await req.json().catch(() => ({ chatId: null }));
     if (!chatId) {
         return NextResponse.json({ error: 'No Chat ID provided' }, { status: 400 });
     }
@@ -19,6 +14,6 @@ export async function POST(request: Request) {
     );
 
     return NextResponse.json({ success: ok });
-}
+});
 
 export const runtime = 'nodejs';

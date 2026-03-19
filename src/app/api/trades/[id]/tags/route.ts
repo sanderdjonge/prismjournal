@@ -1,18 +1,10 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { auth } from '@/lib/auth';
+import { withAuth } from '@/lib/api/withAuth';
 
 // PUT /api/trades/[id]/tags — replace all tags on a trade
-export async function PUT(
-    request: Request,
-    { params }: { params: Promise<{ id: string }> }
-) {
-    const session = await auth();
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { id } = await params;
+export const PUT = withAuth(async (req, ctx, session) => {
+    const { id } = await (ctx as { params: Promise<{ id: string }> }).params;
     const userId = session.user.id;
 
     // Verify ownership
@@ -24,7 +16,7 @@ export async function PUT(
         return NextResponse.json({ error: 'Trade not found' }, { status: 404 });
     }
 
-    const body = await request.json().catch(() => null);
+    const body = await req.json().catch(() => null);
     const tagIds: string[] = Array.isArray(body?.tagIds) ? body.tagIds : [];
 
     // Validate that all tagIds belong to this user
@@ -49,6 +41,6 @@ export async function PUT(
     }
 
     return NextResponse.json({ success: true });
-}
+});
 
 export const runtime = 'nodejs';

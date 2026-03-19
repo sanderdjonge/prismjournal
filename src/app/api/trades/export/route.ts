@@ -1,17 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { auth } from '@/lib/auth';
 import { getAllUserAccounts } from '@/lib/getAccount';
+import { withAuth } from '@/lib/api/withAuth';
 
-export async function GET(request: Request) {
+export const GET = withAuth(async (request, _ctx, session) => {
     const { searchParams } = new URL(request.url);
-
-    const session = await auth();
-    const userId = session?.user?.id;
-
-    if (!userId) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const userId = session.user.id;
 
     const allAccounts = await getAllUserAccounts(userId);
     const accountIds = allAccounts.map((a) => a.id);
@@ -114,4 +108,6 @@ export async function GET(request: Request) {
             'Content-Disposition': `attachment; filename="trades_${new Date().toISOString().split('T')[0]}.csv"`,
         },
     });
-}
+});
+
+export const runtime = 'nodejs';
