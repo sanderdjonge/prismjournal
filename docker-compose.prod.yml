@@ -46,10 +46,14 @@ services:
       RESEND_API_KEY: "${RESEND_API_KEY}"
       CRON_SECRET: "${CRON_SECRET:-prod-cron-secret}"
       AUTH_TRUST_HOST: "true"
+      BACKUP_PATH: "/app/backups"
+      BACKUP_KEEP_HOURLY: "24"
+      BACKUP_KEEP_DAILY: "30"
+      BACKUP_KEEP_WEEKLY: "12"
     ports:
       - "3000:3000"
     volumes:
-      - ./backups:/app/backups:ro
+      - ./backups:/app/backups
     networks:
       - prism-prod-network
 
