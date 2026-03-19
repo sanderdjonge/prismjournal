@@ -439,6 +439,56 @@ export async function sendMddAlertEmail(
 }
 
 /**
+ * Send a broadcast/announcement email to a single user
+ */
+export async function sendBroadcastEmail(
+  email: string,
+  title: string,
+  message: string,
+  type: 'INFO' | 'WARNING' | 'SUCCESS'
+): Promise<EmailResult> {
+  const resend = getResendClient();
+  if (!resend) {
+    return { success: false, error: 'Resend API key not configured' };
+  }
+
+  const accentColor = type === 'SUCCESS' ? '#4ade80' : type === 'WARNING' ? '#fbbf24' : '#818cf8';
+  const typeLabel = type === 'SUCCESS' ? '✅ Announcement' : type === 'WARNING' ? '⚠️ Important Notice' : 'ℹ️ Announcement';
+  const messageHtml = message.replace(/\n/g, '<br>');
+
+  try {
+    const { data: result, error } = await resend.emails.send({
+      from: process.env.EMAIL_FROM || 'PrismJournal <noreply@we-share.nl>',
+      to: email,
+      subject: `PrismJournal: ${title}`,
+      html: `
+        <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px;background-color:#0f0f23;color:#e2e8f0;">
+          <div style="text-align:center;margin-bottom:24px;">
+            <span style="font-size:32px;">💎</span>
+            <h1 style="color:#6366f1;margin:8px 0 0;font-size:20px;">PrismJournal</h1>
+          </div>
+          <div style="background-color:#1a1a2e;border:1px solid ${accentColor}33;border-left:4px solid ${accentColor};border-radius:8px;padding:24px;margin-bottom:20px;">
+            <p style="margin:0 0 4px;font-size:11px;color:${accentColor};text-transform:uppercase;letter-spacing:1px;">${typeLabel}</p>
+            <h2 style="margin:8px 0 16px;font-size:20px;color:#e2e8f0;">${title}</h2>
+            <p style="margin:0;font-size:15px;color:#94a3b8;line-height:1.6;">${messageHtml}</p>
+          </div>
+          <hr style="border:none;border-top:1px solid #2d2d44;margin:24px 0;">
+          <p style="color:#475569;font-size:12px;text-align:center;margin:0;">PrismJournal — Trade smarter, not harder.</p>
+        </div>
+      `,
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, messageId: result?.id };
+  } catch (e) {
+    return { success: false, error: String(e) };
+  }
+}
+
+/**
  * Send a password reset email
  */
 export async function sendPasswordResetEmail(
