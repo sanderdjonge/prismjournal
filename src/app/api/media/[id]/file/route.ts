@@ -1,19 +1,10 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { readFile } from '@/lib/storage';
-import { auth } from '@/lib/auth';
+import { withAuth } from '@/lib/api/withAuth';
 
-export async function GET(
-    _request: Request,
-    { params }: { params: Promise<{ id: string }> }
-) {
-    // Check authentication
-    const session = await auth();
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { id } = await params;
+export const GET = withAuth(async (_req, ctx, session) => {
+    const { id } = (ctx as { params: { id: string } }).params;
 
     // Get media record
     const media = await prisma.media.findUnique({
@@ -52,6 +43,6 @@ export async function GET(
         console.error('Error reading file:', error);
         return NextResponse.json({ error: 'File not found' }, { status: 404 });
     }
-}
+});
 
 export const runtime = 'nodejs';

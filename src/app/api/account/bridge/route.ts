@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { auth } from '@/lib/auth';
+import { withAuth } from '@/lib/api/withAuth';
 import { generateBridgeKey } from '@/lib/getAccount';
 
 /**
@@ -8,13 +8,8 @@ import { generateBridgeKey } from '@/lib/getAccount';
  * Returns the bridge key info for the current user.
  * The bridge key is now per-user (not per-account) for multi-account support.
  */
-export async function GET(request: NextRequest) {
-    const session = await auth();
-    const userId = session?.user?.id;
-    
-    if (!userId) {
-        return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-    }
+export const GET = withAuth(async (request: NextRequest, _ctx, session) => {
+    const userId = session.user.id;
 
     const user = await prisma.user.findUnique({
         where: { id: userId },
@@ -42,20 +37,15 @@ export async function GET(request: NextRequest) {
         isHashed: !!user.bridgeKeyHash,
         syncUrl,
     });
-}
+});
 
 /**
  * POST /api/account/bridge
  * Regenerates the bridge key for the current user.
  * The new key is returned once and cannot be retrieved again.
  */
-export async function POST() {
-    const session = await auth();
-    const userId = session?.user?.id;
-    
-    if (!userId) {
-        return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-    }
+export const POST = withAuth(async (_req, _ctx, session) => {
+    const userId = session.user.id;
 
     const { key, keyId, keyHash } = generateBridgeKey();
 
@@ -69,6 +59,6 @@ export async function POST() {
 
     // Return the full key only once — it cannot be retrieved again
     return NextResponse.json({ bridgeKey: key, bridgeKeyId: keyId });
-}
+});
 
 export const runtime = 'nodejs';
