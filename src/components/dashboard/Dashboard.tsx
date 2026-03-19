@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import EquityChart from './EquityChart';
 import TradeCalendar from './TradeCalendar';
 import RecentTrades from './RecentTrades';
@@ -8,6 +8,8 @@ import Gauge from './Gauge';
 import { cn } from '@/lib/cn';
 import { useCurrency } from '@/lib/currency';
 import { useAccounts } from '@/hooks/useAccounts';
+import { useDashboard } from '@/hooks/useDashboard';
+import { MetricRow } from '@/components/ui';
 
 type RecentTrade = {
     id: string;
@@ -41,45 +43,41 @@ type DashboardData = {
 };
 
 export default function Dashboard() {
-    const [data, setData] = useState<DashboardData | null>(null);
     const [period, setPeriod] = useState<'7' | '30' | '90' | '365'>('30');
-    const [loading, setLoading] = useState(true);
     const { formatAmount, formatPnl, symbol } = useCurrency();
     const { selectedAccountId } = useAccounts();
-
-    useEffect(() => {
-        setLoading(true);
-        const params = new URLSearchParams({ period });
-        if (selectedAccountId) params.set('account', selectedAccountId);
-        fetch(`/api/dashboard?${params.toString()}`)
-            .then(r => r.json())
-            .then(setData)
-            .catch(() => { /* silently ignore */ })
-            .finally(() => setLoading(false));
-    }, [period, selectedAccountId]);
+    const { data, isLoading, isError } = useDashboard(period, selectedAccountId);
 
     const stats = {
-        equity: data?.equity ?? [],
-        trades: data?.trades ?? [],
-        calendar: data?.calendar ?? [],
-        winRate: data?.winRate ?? 0,
-        profitFactor: data?.profitFactor ?? 0,
-        totalTrades: data?.totalTrades ?? 0,
-        totalPnl: data?.totalPnl ?? 0,
-        expectancy: data?.expectancy ?? 0,
-        maxDrawdown: data?.maxDrawdown ?? 0,
-        avgRMultiple: data?.avgRMultiple ?? 0,
-        bestTrade: data?.bestTrade ?? 0,
-        worstTrade: data?.worstTrade ?? 0,
-        consecutiveWins: data?.consecutiveWins ?? 0,
-        consecutiveLosses: data?.consecutiveLosses ?? 0,
-        avgDurationMinutes: data?.avgDurationMinutes,
+        equity: (data as DashboardData | undefined)?.equity ?? [],
+        trades: (data as DashboardData | undefined)?.trades ?? [],
+        calendar: (data as DashboardData | undefined)?.calendar ?? [],
+        winRate: (data as DashboardData | undefined)?.winRate ?? 0,
+        profitFactor: (data as DashboardData | undefined)?.profitFactor ?? 0,
+        totalTrades: (data as DashboardData | undefined)?.totalTrades ?? 0,
+        totalPnl: (data as DashboardData | undefined)?.totalPnl ?? 0,
+        expectancy: (data as DashboardData | undefined)?.expectancy ?? 0,
+        maxDrawdown: (data as DashboardData | undefined)?.maxDrawdown ?? 0,
+        avgRMultiple: (data as DashboardData | undefined)?.avgRMultiple ?? 0,
+        bestTrade: (data as DashboardData | undefined)?.bestTrade ?? 0,
+        worstTrade: (data as DashboardData | undefined)?.worstTrade ?? 0,
+        consecutiveWins: (data as DashboardData | undefined)?.consecutiveWins ?? 0,
+        consecutiveLosses: (data as DashboardData | undefined)?.consecutiveLosses ?? 0,
+        avgDurationMinutes: (data as DashboardData | undefined)?.avgDurationMinutes,
     };
 
-    if (loading) {
+    if (isLoading) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
                 <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
+
+    if (isError) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <p className="text-sm text-gray-500">Failed to load dashboard data. Please try again.</p>
             </div>
         );
     }
@@ -183,93 +181,6 @@ export default function Dashboard() {
                 <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl overflow-hidden">
                     <RecentTrades trades={stats.trades} />
                 </div>
-            </div>
-        </div>
-    );
-}
-
-// Stat Card Component
-function StatCard({ 
-    label, 
-    value, 
-    subLabel, 
-    variant = 'neutral' 
-}: { 
-    label: string; 
-    value: string; 
-    subLabel?: string;
-    variant?: 'profit' | 'loss' | 'neutral';
-}) {
-    return (
-        <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-xl p-4">
-            <div className="text-[9px] font-black uppercase tracking-widest text-gray-500 mb-1">{label}</div>
-            <div className={cn(
-                "text-xl font-black tracking-tight",
-                variant === 'profit' && "text-accent",
-                variant === 'loss' && "text-danger",
-                variant === 'neutral' && "text-white"
-            )}>
-                {value}
-            </div>
-            {subLabel && (
-                <div className="text-[9px] text-gray-600 font-bold mt-1">{subLabel}</div>
-            )}
-        </div>
-    );
-}
-
-// Breakdown Item Component
-function BreakdownItem({
-    label,
-    value,
-    variant = 'neutral'
-}: {
-    label: string;
-    value: string;
-    variant?: 'profit' | 'loss' | 'neutral';
-}) {
-    return (
-        <div>
-            <div className="text-[9px] font-black uppercase tracking-widest text-gray-500 mb-1">{label}</div>
-            <div className={cn(
-                "text-lg font-bold",
-                variant === 'profit' && "text-accent",
-                variant === 'loss' && "text-danger",
-                variant === 'neutral' && "text-white"
-            )}>
-                {value}
-            </div>
-        </div>
-    );
-}
-
-// Metric Row Component (for two-column widget layout)
-function MetricRow({
-    label,
-    value,
-    subValue,
-    variant = 'neutral'
-}: {
-    label: string;
-    value: string;
-    subValue?: string;
-    variant?: 'profit' | 'loss' | 'neutral';
-}) {
-    return (
-        <div className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
-            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">{label}</div>
-            <div className="text-right">
-                <div className={cn(
-                    "text-sm font-black",
-                    variant === 'profit' && "text-accent",
-                    variant === 'loss' && "text-danger",
-                    variant === 'neutral' && "text-white"
-                )}>
-                    {value}
-                </div>
-                {subValue && (
-                    <div className="text-[10px] text-gray-600 font-medium">{subValue}</div>
-                )}
             </div>
         </div>
     );
