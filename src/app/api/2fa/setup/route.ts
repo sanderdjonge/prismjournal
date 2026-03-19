@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { auth, pendingTotpSecrets, cleanupPendingSecrets } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { generateSecret, generateURI } from 'otplib';
 import { authLimiter } from '@/lib/rate-limit';
@@ -36,10 +36,11 @@ export async function POST(request: NextRequest) {
             secret: secret
         });
 
-        // Store the secret temporarily (not enabled yet)
-        await prisma.user.update({
-            where: { id: session.user.id },
-            data: { totpSecret: secret }
+        // Store secret in memory — only written to DB after the user verifies the code
+        cleanupPendingSecrets();
+        pendingTotpSecrets.set(session.user.id, {
+            secret,
+            expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes
         });
 
         return NextResponse.json({

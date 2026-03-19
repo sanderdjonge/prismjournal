@@ -17,6 +17,18 @@ export function cleanupUsedCodes(): void {
     }
 }
 
+// TOTP setup: pending secrets stored in memory until verified (max 10 minutes)
+export const pendingTotpSecrets = new Map<string, { secret: string; expiresAt: number }>();
+
+export function cleanupPendingSecrets(): void {
+    const now = Date.now();
+    for (const [key, entry] of pendingTotpSecrets) {
+        if (now > entry.expiresAt) {
+            pendingTotpSecrets.delete(key);
+        }
+    }
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
     session: { strategy: 'jwt' },
     providers: [
