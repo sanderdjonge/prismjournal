@@ -13,6 +13,19 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  // DX-2: Prevent direct auth() imports in API routes — use withAuth/withAdmin HOCs instead.
+  {
+    files: ['src/app/api/**/*.ts'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        paths: [{
+          name: '@/lib/auth',
+          importNames: ['auth'],
+          message: 'API routes must use withAuth or withAdmin HOCs instead of calling auth() directly. See src/lib/api/withAuth.ts.',
+        }],
+      }],
+    },
+  },
 ]);
 
 export default eslintConfig;
