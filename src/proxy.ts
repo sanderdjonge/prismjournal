@@ -79,6 +79,10 @@ export default auth(async (req) => {
     if (hasSessionCookie) {
       warnAuditEvent('SESSION_INVALID', { path: nextUrl.pathname, ip: req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown' });
     }
+    // API routes return 401 JSON so clients get a parseable error instead of an HTML redirect
+    if (nextUrl.pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     return NextResponse.redirect(new URL('/login', nextUrl));
   }
 
