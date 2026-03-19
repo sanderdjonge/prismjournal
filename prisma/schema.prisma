@@ -92,7 +92,6 @@ model TradingAccount {
   profitTarget    Float?        // Profit target to pass challenge
   maxPositionSize Float?        // Max lots/contracts per position
   scalingPlan     String?       // Notes about scaling rules
-  currentPhase    String?       @default("Phase 1") // "Phase 1", "Phase 2", "Funded"
   lastDailyReset  DateTime?     // Last time daily loss was reset
   
   // Status

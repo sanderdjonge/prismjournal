@@ -769,15 +769,14 @@ function PropFirmAccountContent() {
 
                         {/* Scaling Plan - Only show for funded accounts with scaling plan */}
                         {account.propFirm?.hasScalingPlan && account.propFirm.scalingConfig && (() => {
-                            // Check if this is a funded account (all phases passed, account is marked Funded, or a funded phase is active)
+                            // Check if this is a funded account (all phases passed or a funded phase is active)
                             const allPhasesPassed = account.challengePhases.length > 0 &&
                                 account.challengePhases.every(p => p.status === 'PASSED');
-                            const isFundedAccount = account.currentPhase === 'Funded';
                             const hasFundedPhase = account.challengePhases.some(p =>
                                 p.phaseName.toLowerCase().includes('funded') && p.status === 'IN_PROGRESS'
                             );
 
-                            if (!allPhasesPassed && !isFundedAccount && !hasFundedPhase) return null;
+                            if (!allPhasesPassed && !hasFundedPhase) return null;
                             
                             let scalingConfig: {
                                 initialBalance?: number;

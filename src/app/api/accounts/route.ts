@@ -17,8 +17,11 @@ export const GET = withAuth(async (req, _ctx, session) => {
             ...(includeArchived ? {} : { isActive: true }),
         },
         orderBy: [{ isActive: 'desc' }, { createdAt: 'asc' }],
-        include: { 
+        include: {
             _count: { select: { trades: true } },
+            challengePhases: {
+                select: { phaseName: true, status: true },
+            },
             propFirm: {
                 select: {
                     id: true,
@@ -44,10 +47,13 @@ export const GET = withAuth(async (req, _ctx, session) => {
         _count: { id: true },
     });
 
+    const summaryMap = new Map(tradeSummaries.map(s => [s.accountId, s]));
     const accountsWithStats = accounts.map((account) => {
-        const summary = tradeSummaries.find(s => s.accountId === account.id);
+        const summary = summaryMap.get(account.id);
+        const currentPhase = account.challengePhases?.find(p => p.status === 'IN_PROGRESS')?.phaseName ?? null;
         return {
             ...account,
+            currentPhase,
             tradeCount: account._count.trades,
             closedTradeCount: summary?._count?.id ?? 0,
             totalPnl: summary?._sum?.pnl ?? 0,
