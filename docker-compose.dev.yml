@@ -37,7 +37,7 @@ services:
     environment:
       NODE_ENV: development
       DATABASE_URL: "postgresql://prism_dev:prism_dev_password@db:5432/prism_journal_dev"
-      NEXTAUTH_URL: "http://localhost:3002"
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3002}
       AUTH_TRUST_HOST: "true"
       STORAGE_PATH: "/app/storage"
       BACKUP_PATH: "/app/backups"
@@ -47,7 +47,7 @@ services:
     ports:
       - "3002:3000"    # Dev app on port 3002
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
