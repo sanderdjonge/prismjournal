@@ -71,14 +71,14 @@ export default function TradeCalendar({ data }: TradeCalendarProps) {
             text: "text-gray-500",
         };
         if (pnl > 0) return {
-            bg: "bg-[#10b981]/15 hover:bg-[#10b981]/25",
-            border: "border-[#10b981]/30",
-            text: "text-[#10b981]",
+            bg: "bg-profit/15 hover:bg-profit/25",
+            border: "border-profit/30",
+            text: "text-profit",
         };
         if (pnl < 0) return {
-            bg: "bg-[#f43f5e]/15 hover:bg-[#f43f5e]/25",
-            border: "border-[#f43f5e]/30",
-            text: "text-[#f43f5e]",
+            bg: "bg-loss/15 hover:bg-loss/25",
+            border: "border-loss/30",
+            text: "text-loss",
         };
         return {
             bg: "bg-secondary/15 hover:bg-secondary/25",
@@ -88,7 +88,7 @@ export default function TradeCalendar({ data }: TradeCalendarProps) {
     };
 
     const pnlColor = (pnl: number) =>
-        pnl > 0 ? 'text-[#10b981]' : pnl < 0 ? 'text-[#f43f5e]' : 'text-gray-400';
+        pnl > 0 ? 'text-profit' : pnl < 0 ? 'text-loss' : 'text-gray-400';
 
     return (
         <div className="p-5 h-full flex flex-col group/calendar overflow-hidden">
@@ -104,11 +104,11 @@ export default function TradeCalendar({ data }: TradeCalendarProps) {
                 </div>
                 <div className="flex gap-4">
                     <div className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-profit" />
                         <span className="text-[10px] font-black uppercase text-gray-600 tracking-widest">Profits</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#f43f5e]" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-loss" />
                         <span className="text-[10px] font-black uppercase text-gray-600 tracking-widest">Losses</span>
                     </div>
                 </div>
@@ -166,10 +166,10 @@ export default function TradeCalendar({ data }: TradeCalendarProps) {
                                                     </span>
                                                     <div className="flex gap-1 mt-0.5">
                                                         {day.wins > 0 && (
-                                                            <span className="text-[8px] font-black text-accent">{day.wins}W</span>
+                                                            <span className="text-[8px] font-black text-profit">{day.wins}W</span>
                                                         )}
                                                         {day.losses > 0 && (
-                                                            <span className="text-[8px] font-black text-danger">{day.losses}L</span>
+                                                            <span className="text-[8px] font-black text-loss">{day.losses}L</span>
                                                         )}
                                                         {day.wins === 0 && day.losses === 0 && (
                                                             <span className="text-[8px] font-black text-secondary">BE</span>
@@ -208,9 +208,9 @@ export default function TradeCalendar({ data }: TradeCalendarProps) {
                                     "rounded-lg flex flex-col items-center justify-center border min-h-0 px-1",
                                     weekTrades > 0
                                         ? weekPnl > 0
-                                            ? "bg-[#10b981]/10 border-[#10b981]/20"
+                                            ? "bg-profit/10 border-profit/20"
                                             : weekPnl < 0
-                                                ? "bg-[#f43f5e]/10 border-[#f43f5e]/20"
+                                                ? "bg-loss/10 border-loss/20"
                                                 : "bg-secondary/10 border-secondary/20"
                                         : "bg-white/[0.03] border-white/5"
                                 )}>
@@ -223,12 +223,12 @@ export default function TradeCalendar({ data }: TradeCalendarProps) {
                                                 {weekTrades}T
                                             </span>
                                             <div className="flex gap-0.5 mt-0.5">
-                                                {weekWins > 0 && <span className="text-[8px] font-black text-accent">{weekWins}W</span>}
+                                                {weekWins > 0 && <span className="text-[8px] font-black text-profit">{weekWins}W</span>}
                                                 {weekWins > 0 && weekLosses > 0 && <span className="text-[8px] text-gray-600">/</span>}
-                                                {weekLosses > 0 && <span className="text-[8px] font-black text-danger">{weekLosses}L</span>}
+                                                {weekLosses > 0 && <span className="text-[8px] font-black text-loss">{weekLosses}L</span>}
                                             </div>
                                             {weekWinRate !== null && (
-                                                <span className={cn("text-[8px] font-black mt-0.5", weekWinRate >= 50 ? "text-[#10b981]" : "text-[#f43f5e]")}>
+                                                <span className={cn("text-[8px] font-black mt-0.5", weekWinRate >= 50 ? "text-profit" : "text-loss")}>
                                                     {weekWinRate}%
                                                 </span>
                                             )}
@@ -252,9 +252,9 @@ export default function TradeCalendar({ data }: TradeCalendarProps) {
                         "rounded-lg flex flex-col items-center justify-center border py-2 px-1",
                         monthlyTrades > 0
                             ? monthlyPnl > 0
-                                ? "bg-[#10b981]/15 border-[#10b981]/30"
+                                ? "bg-profit/15 border-profit/30"
                                 : monthlyPnl < 0
-                                    ? "bg-[#f43f5e]/15 border-[#f43f5e]/30"
+                                    ? "bg-loss/15 border-loss/30"
                                     : "bg-secondary/15 border-secondary/30"
                             : "bg-white/[0.03] border-white/5"
                     )}>
@@ -268,11 +268,11 @@ export default function TradeCalendar({ data }: TradeCalendarProps) {
                                     {monthlyTrades}T
                                 </span>
                                 <div className="flex gap-0.5 mt-0.5">
-                                    {monthlyWins > 0 && <span className="text-[8px] font-black text-accent">{monthlyWins}W</span>}
+                                    {monthlyWins > 0 && <span className="text-[8px] font-black text-profit">{monthlyWins}W</span>}
                                     {monthlyWins > 0 && monthlyLosses > 0 && <span className="text-[8px] text-gray-600">/</span>}
-                                    {monthlyLosses > 0 && <span className="text-[8px] font-black text-danger">{monthlyLosses}L</span>}
+                                    {monthlyLosses > 0 && <span className="text-[8px] font-black text-loss">{monthlyLosses}L</span>}
                                 </div>
-                                <span className={cn("text-[8px] font-black mt-0.5", monthlyWinRate >= 50 ? "text-[#10b981]" : "text-[#f43f5e]")}>
+                                <span className={cn("text-[8px] font-black mt-0.5", monthlyWinRate >= 50 ? "text-profit" : "text-loss")}>
                                     {monthlyWinRate}%
                                 </span>
                             </>

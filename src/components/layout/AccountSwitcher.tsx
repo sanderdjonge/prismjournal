@@ -15,7 +15,7 @@ const PLATFORM_LABELS: Record<string, string> = {
 const PLATFORM_COLORS: Record<string, string> = {
     METATRADER5: 'text-orange-400',
     CTRADER: 'text-blue-400',
-    TRADINGVIEW: 'text-green-400',
+    TRADINGVIEW: 'text-profit',
     MANUAL: 'text-gray-400',
 };
 

@@ -19,11 +19,11 @@ export function RiskCalculator({ computedPnl }: RiskCalculatorProps) {
             </label>
             <div className={cn(
                 "w-full rounded-xl p-3 text-sm font-black border flex items-center gap-2",
-                computedPnl === null 
+                computedPnl === null
                     ? "bg-white/5 border-white/5 text-gray-600"
-                    : computedPnl >= 0 
-                        ? "bg-accent/5 border-accent/20 text-accent" 
-                        : "bg-danger/5 border-danger/20 text-danger"
+                    : computedPnl >= 0
+                        ? "bg-profit/5 border-profit/20 text-profit"
+                        : "bg-loss/5 border-loss/20 text-loss"
             )}>
                 {computedPnl === null 
                     ? '—' 

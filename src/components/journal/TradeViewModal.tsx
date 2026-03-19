@@ -108,7 +108,7 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                                     <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1">Direction</label>
                                     <div className={cn(
                                         "flex items-center justify-center gap-2 p-3 rounded-xl h-[46px]",
-                                        trade.type === 'LONG' ? "bg-accent/10 text-accent" : "bg-danger/10 text-danger"
+                                        trade.type === 'LONG' ? "bg-profit/10 text-profit" : "bg-loss/10 text-loss"
                                     )}>
                                         {trade.type === 'LONG' ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
                                         <span className="text-[10px] font-black uppercase tracking-widest">{trade.type === 'LONG' ? 'Long' : 'Short'}</span>
@@ -151,7 +151,7 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                                         {isClosed ? 'Trade Closed' : 'Trade Open'}
                                     </p>
                                     <p className="text-[10px] text-gray-500">
-                                        P&L: <span className={trade.pnl >= 0 ? 'text-accent' : 'text-danger'}>
+                                        P&L: <span className={trade.pnl >= 0 ? 'text-profit' : 'text-loss'}>
                                             {trade.pnl >= 0 ? '+' : ''}{trade.pnl.toFixed(2)}
                                         </span>
                                     </p>
@@ -194,16 +194,16 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                                         <div className="flex gap-3">
                                             <div className={cn(
                                                 "flex-1 p-3 rounded-xl border flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest",
-                                                trade.planCompliance === 'FOLLOWED' 
-                                                    ? "bg-accent/10 border-accent/40 text-accent" 
+                                                trade.planCompliance === 'FOLLOWED'
+                                                    ? "bg-profit/10 border-profit/40 text-profit"
                                                     : "bg-white/5 border-transparent text-gray-600"
                                             )}>
                                                 <CheckCircle2 size={14} /> Followed
                                             </div>
                                             <div className={cn(
                                                 "flex-1 p-3 rounded-xl border flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest",
-                                                trade.planCompliance === 'DEVIATED' 
-                                                    ? "bg-danger/10 border-danger/40 text-danger" 
+                                                trade.planCompliance === 'DEVIATED'
+                                                    ? "bg-loss/10 border-loss/40 text-loss"
                                                     : "bg-white/5 border-transparent text-gray-600"
                                             )}>
                                                 <XCircle size={14} /> Deviated

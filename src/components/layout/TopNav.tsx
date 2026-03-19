@@ -147,7 +147,7 @@ export default function TopNav() {
                                 <div className="border-t border-white/5" />
                                 <button
                                     onClick={() => signOut({ callbackUrl: '/login' })}
-                                    className="w-full px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-300 hover:bg-white/5 flex items-center gap-2 transition-all"
+                                    className="w-full px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-loss hover:text-loss/80 hover:bg-white/5 flex items-center gap-2 transition-all"
                                 >
                                     <LogOut size={14} /> Sign Out
                                 </button>

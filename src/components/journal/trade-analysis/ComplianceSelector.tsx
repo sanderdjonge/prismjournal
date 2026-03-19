@@ -25,7 +25,7 @@ export function ComplianceSelector({ value, onChange, strategy }: ComplianceSele
                     <label className="text-[8px] font-black uppercase tracking-widest text-gray-600">Compliance</label>
                     <div className={cn(
                         "flex items-center gap-1.5 text-xs font-black uppercase",
-                        value === 'FOLLOWED' ? "text-accent" : value === 'DEVIATED' ? "text-danger" : "text-gray-500"
+                        value === 'FOLLOWED' ? "text-profit" : value === 'DEVIATED' ? "text-loss" : "text-gray-500"
                     )}>
                         {value === 'FOLLOWED' && <><CheckCircle2 size={12} /> Followed</>}
                         {value === 'DEVIATED' && <><XCircle size={12} /> Deviated</>}
@@ -34,23 +34,23 @@ export function ComplianceSelector({ value, onChange, strategy }: ComplianceSele
                 </div>
             </div>
             <div className="flex gap-2">
-                <button 
+                <button
                     onClick={() => onChange('FOLLOWED')}
                     className={cn(
                         "flex-1 p-2.5 rounded-xl border flex items-center justify-center gap-1.5 transition-all text-[9px] font-black uppercase tracking-widest",
-                        value === 'FOLLOWED' 
-                            ? "bg-accent/10 border-accent/40 text-accent" 
+                        value === 'FOLLOWED'
+                            ? "bg-profit/10 border-profit/40 text-profit"
                             : "bg-white/5 border-transparent text-gray-500 hover:text-gray-300"
                     )}
                 >
                     <CheckCircle2 size={12} /> Followed
                 </button>
-                <button 
+                <button
                     onClick={() => onChange('DEVIATED')}
                     className={cn(
                         "flex-1 p-2.5 rounded-xl border flex items-center justify-center gap-1.5 transition-all text-[9px] font-black uppercase tracking-widest",
-                        value === 'DEVIATED' 
-                            ? "bg-danger/10 border-danger/40 text-danger" 
+                        value === 'DEVIATED'
+                            ? "bg-loss/10 border-loss/40 text-loss"
                             : "bg-white/5 border-transparent text-gray-500 hover:text-gray-300"
                     )}
                 >
