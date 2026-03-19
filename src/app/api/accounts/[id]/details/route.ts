@@ -72,9 +72,13 @@ export const GET = withAuth(async (req, ctx, session) => {
     // phasesConfig is already parsed by Prisma (Json type)
     const phasesConfig = account.propFirm?.phasesConfig ?? null;
 
+    // Derive currentPhase from challengePhases relation (replaces dropped DB column)
+    const currentPhase = account.challengePhases?.find(p => p.status === 'IN_PROGRESS')?.phaseName ?? null;
+
     const response = ok({
         account: {
             ...account,
+            currentPhase,
             tradeCount: account._count?.trades ?? 0,
             closedTradeCount: stats._count,
             totalPnl: stats._sum?.pnl ?? 0,

@@ -95,7 +95,6 @@ export const POST = withAuth(async (req, ctx, session) => {
                     await tx.tradingAccount.update({
                         where: { id: accountId },
                         data: {
-                            currentPhase: 'Funded',
                             currentPhaseId: null,
                         },
                     });
