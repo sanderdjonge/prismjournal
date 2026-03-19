@@ -142,7 +142,7 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                             <div className="flex items-center gap-3 p-3 bg-white/[0.02] rounded-xl border border-white/5">
                                 <div className={cn(
                                     "w-6 h-6 rounded-lg flex items-center justify-center",
-                                    isClosed ? "bg-accent text-black" : "bg-secondary/20 text-secondary"
+                                    isClosed ? "bg-profit text-black" : "bg-secondary/20 text-secondary"
                                 )}>
                                     <CheckCircle2 size={14} />
                                 </div>
@@ -162,17 +162,17 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
                                     <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1 flex items-center gap-1.5">
-                                        <TrendingUp size={10} className="text-accent" /> Take Profit
+                                        <TrendingUp size={10} className="text-profit" /> Take Profit
                                     </label>
-                                    <div className="w-full bg-accent/5 border border-accent/10 rounded-xl p-3 text-sm font-bold text-white">
+                                    <div className="w-full bg-profit/5 border border-profit/10 rounded-xl p-3 text-sm font-bold text-white">
                                         {trade.takeProfit?.toFixed(5) || '—'}
                                     </div>
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1 flex items-center gap-1.5">
-                                        <TrendingDown size={10} className="text-danger" /> Stop Loss
+                                        <TrendingDown size={10} className="text-loss" /> Stop Loss
                                     </label>
-                                    <div className="w-full bg-danger/5 border border-danger/10 rounded-xl p-3 text-sm font-bold text-white">
+                                    <div className="w-full bg-loss/5 border border-loss/10 rounded-xl p-3 text-sm font-bold text-white">
                                         {trade.stopLoss?.toFixed(5) || '—'}
                                     </div>
                                 </div>
