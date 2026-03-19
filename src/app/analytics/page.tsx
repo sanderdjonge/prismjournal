@@ -220,7 +220,7 @@ export default function AnalyticsPage() {
                         </div>
                         <div className="space-y-4">
                             <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-                                <div className="h-full bg-danger" style={{ width: data?.profitFactor ? `${Math.min(100, (1 / data.profitFactor) * 100)}%` : '0%' }} />
+                                <div className="h-full bg-loss" style={{ width: data?.profitFactor ? `${Math.min(100, (1 / data.profitFactor) * 100)}%` : '0%' }} />
                             </div>
                             <p className="text-[8px] font-bold text-gray-600 italic leading-tight">
                                 {(data?.profitFactor ?? 0) >= 2 ? '"Strong risk control maintained."' : data ? '"Focus on improving your edge."' : '—'}

@@ -137,7 +137,7 @@ export function TradeFormFields({
                     className={cn(
                         "w-6 h-6 rounded-lg flex items-center justify-center transition-all disabled:cursor-not-allowed",
                         isClosed
-                            ? "bg-accent text-black"
+                            ? "bg-profit text-black"
                             : "bg-white/10 text-gray-500 hover:bg-white/20"
                     )}
                 >
@@ -160,7 +160,7 @@ export function TradeFormFields({
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                     <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1 flex items-center gap-1.5">
-                        <TrendingUp size={10} className="text-accent" /> Take Profit
+                        <TrendingUp size={10} className="text-profit" /> Take Profit
                     </label>
                     <input
                         type="number"
@@ -168,7 +168,7 @@ export function TradeFormFields({
                         {...register('takeProfit')}
                         placeholder="Optional"
                         disabled={disabled}
-                        className="w-full bg-accent/5 border border-accent/10 rounded-xl p-3 text-sm font-bold text-white outline-none focus:border-accent/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full bg-profit/5 border border-profit/10 rounded-xl p-3 text-sm font-bold text-white outline-none focus:border-profit/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                     {errors.takeProfit && (
                         <p className="text-danger text-[10px] font-bold px-1">{errors.takeProfit.message}</p>
@@ -176,7 +176,7 @@ export function TradeFormFields({
                 </div>
                 <div className="space-y-1.5">
                     <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1 flex items-center gap-1.5">
-                        <TrendingDown size={10} className="text-danger" /> Stop Loss
+                        <TrendingDown size={10} className="text-loss" /> Stop Loss
                     </label>
                     <input
                         type="number"
@@ -184,7 +184,7 @@ export function TradeFormFields({
                         {...register('stopLoss')}
                         placeholder="Optional"
                         disabled={disabled}
-                        className="w-full bg-danger/5 border border-danger/10 rounded-xl p-3 text-sm font-bold text-white outline-none focus:border-danger/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full bg-loss/5 border border-loss/10 rounded-xl p-3 text-sm font-bold text-white outline-none focus:border-loss/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                     {errors.stopLoss && (
                         <p className="text-danger text-[10px] font-bold px-1">{errors.stopLoss.message}</p>
