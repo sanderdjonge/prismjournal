@@ -1,20 +1,12 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { auth } from '@/lib/auth';
 import { validateBody, tradeUpdateSchema } from '@/lib/validations';
 import { deleteFile } from '@/lib/storage';
 import { getAllUserAccounts } from '@/lib/getAccount';
+import { withAuth } from '@/lib/api/withAuth';
 
-export async function GET(
-    _request: Request,
-    { params }: { params: Promise<{ id: string }> }
-) {
-    const session = await auth();
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { id } = await params;
+export const GET = withAuth(async (_req, ctx, session) => {
+    const { id } = await (ctx as { params: Promise<{ id: string }> }).params;
 
     // Verify ownership before returning media
     const trade = await prisma.trade.findFirst({
@@ -37,20 +29,12 @@ export async function GET(
     }));
 
     return NextResponse.json({ media: mediaWithUrls });
-}
+});
 
-export async function PATCH(
-    request: Request,
-    { params }: { params: Promise<{ id: string }> }
-) {
-    const session = await auth();
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+export const PATCH = withAuth(async (req, ctx, session) => {
+    const { id } = await (ctx as { params: Promise<{ id: string }> }).params;
 
-    const { id } = await params;
-
-    const validation = await validateBody(request, tradeUpdateSchema);
+    const validation = await validateBody(req, tradeUpdateSchema);
     if (!validation.success) {
         return validation.response;
     }
@@ -126,18 +110,10 @@ export async function PATCH(
     });
 
     return NextResponse.json({ success: true, id: trade.id });
-}
+});
 
-export async function DELETE(
-    _request: Request,
-    { params }: { params: Promise<{ id: string }> }
-) {
-    const session = await auth();
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { id } = await params;
+export const DELETE = withAuth(async (_req, ctx, session) => {
+    const { id } = await (ctx as { params: Promise<{ id: string }> }).params;
 
     // Verify ownership before deleting
     const trade = await prisma.trade.findFirst({
@@ -161,6 +137,6 @@ export async function DELETE(
     await prisma.trade.delete({ where: { id } });
 
     return NextResponse.json({ success: true });
-}
+});
 
 export const runtime = 'nodejs';

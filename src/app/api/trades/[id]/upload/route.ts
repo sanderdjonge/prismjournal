@@ -2,19 +2,10 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { validateFileUpload, timeframeEnum } from '@/lib/validations';
 import { saveFile, generateFilename } from '@/lib/storage';
-import { auth } from '@/lib/auth';
+import { withAuth } from '@/lib/api/withAuth';
 
-export async function POST(
-    request: Request,
-    { params }: { params: Promise<{ id: string }> }
-) {
-    // Check authentication
-    const session = await auth();
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { id: tradeId } = await params;
+export const POST = withAuth(async (req, ctx, session) => {
+    const { id: tradeId } = await (ctx as { params: Promise<{ id: string }> }).params;
 
     // Verify user owns the trade
     const trade = await prisma.trade.findFirst({
@@ -28,7 +19,7 @@ export async function POST(
         return NextResponse.json({ error: 'Trade not found' }, { status: 404 });
     }
 
-    const formData = await request.formData();
+    const formData = await req.formData();
     const file = formData.get('file') as File | null;
     const timeframeInput = formData.get('timeframe') as string | null;
 
@@ -71,6 +62,6 @@ export async function POST(
         id: media.id,
         url: `/api/media/${media.id}/file`
     });
-}
+});
 
 export const runtime = 'nodejs';

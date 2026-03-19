@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAllUserAccounts } from '@/lib/getAccount';
-import { auth } from '@/lib/auth';
 import { formatDistanceToNow } from '@/lib/formatTime';
 import { validateBody, tradeCreateSchema } from '@/lib/validations';
 import { Prisma } from '@prisma/client';
+import { withAuth } from '@/lib/api/withAuth';
 
-export async function GET(request: NextRequest) {
-    const session = await auth();
-    if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+export const GET = withAuth(async (request, _ctx, session) => {
     const userId = session.user.id;
 
     const allAccounts = await getAllUserAccounts(userId);
@@ -16,7 +14,7 @@ export async function GET(request: NextRequest) {
 
     const accountIds = allAccounts.map((a) => a.id);
 
-    const searchParams = request.nextUrl.searchParams;
+    const searchParams = (request as NextRequest).nextUrl.searchParams;
 
     // Filter parameters
     const symbol = searchParams.get('symbol');
@@ -175,11 +173,9 @@ export async function GET(request: NextRequest) {
             totalPages: Math.ceil(total / limit),
         },
     });
-}
+});
 
-export async function POST(request: Request) {
-    const session = await auth();
-    if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+export const POST = withAuth(async (req, _ctx, session) => {
     const userId = session.user.id;
 
     // Resolve default account for this user
@@ -189,7 +185,7 @@ export async function POST(request: Request) {
     });
     if (!defaultAccount) return NextResponse.json({ error: 'No account configured' }, { status: 400 });
 
-    const validation = await validateBody(request, tradeCreateSchema);
+    const validation = await validateBody(req, tradeCreateSchema);
     if (!validation.success) {
         return validation.response;
     }
@@ -265,6 +261,6 @@ export async function POST(request: Request) {
         notes: trade.notes,
         strategy: trade.strategy?.name ?? null,
     });
-}
+});
 
 export const runtime = 'nodejs';

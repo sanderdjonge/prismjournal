@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { validateBody, settingsUpdateSchema } from '@/lib/validations';
+import { withAuth } from '@/lib/api/withAuth';
 
 export async function GET() {
     const session = await auth();
@@ -24,11 +25,8 @@ export async function GET() {
     });
 }
 
-export async function PATCH(request: Request) {
-    const session = await auth();
-    if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-    const validation = await validateBody(request, settingsUpdateSchema);
+export const PATCH = withAuth(async (req, _ctx, session) => {
+    const validation = await validateBody(req, settingsUpdateSchema);
     if (!validation.success) {
         return validation.response;
     }
@@ -46,6 +44,6 @@ export async function PATCH(request: Request) {
         },
     });
     return NextResponse.json(settings);
-}
+});
 
 export const runtime = 'nodejs';

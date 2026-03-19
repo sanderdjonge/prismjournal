@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { sendTestEmail } from '@/lib/email';
 import { validateBody, notificationSettingsSchema } from '@/lib/validations';
+import { withAuth } from '@/lib/api/withAuth';
 
 const DEFAULTS = {
     enableSync: true,
@@ -24,12 +25,10 @@ export async function GET() {
     return NextResponse.json(config ?? DEFAULTS);
 }
 
-export async function PATCH(request: Request) {
-    const session = await auth();
-    if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+export const PATCH = withAuth(async (req, _ctx, session) => {
     const userId = session.user.id;
 
-    const validation = await validateBody(request, notificationSettingsSchema);
+    const validation = await validateBody(req, notificationSettingsSchema);
     if (!validation.success) {
         return validation.response;
     }
@@ -43,19 +42,14 @@ export async function PATCH(request: Request) {
     });
 
     return NextResponse.json(config);
-}
+});
 
 /**
  * POST /api/settings/notifications
  * Send a test email to the authenticated user's registered email address
  */
-export async function POST() {
+export const POST = withAuth(async (_req, _ctx, session) => {
     try {
-        const session = await auth();
-        if (!session?.user?.id) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
         const email = session.user.email;
         if (!email) {
             return NextResponse.json({ success: false, error: 'No email address on account' }, { status: 400 });
@@ -67,6 +61,6 @@ export async function POST() {
         console.error('Failed to send test email:', error);
         return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
     }
-}
+});
 
 export const runtime = 'nodejs';
