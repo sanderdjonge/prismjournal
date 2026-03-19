@@ -71,8 +71,14 @@ export default auth(async (req) => {
   if (isForgotPasswordPage || isResetPasswordPage) return;
 
   // Redirect unauthenticated users to login
+  // Only log SESSION_INVALID when a session cookie is present but auth is null (stale/expired session),
+  // not for fresh unauthenticated visitors (crawlers, bots, first-time visitors).
   if (!isLoggedIn && !isLoginPage) {
-    warnAuditEvent('SESSION_INVALID', { path: nextUrl.pathname, ip: req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown' });
+    const hasSessionCookie =
+      req.cookies.get('next-auth.session-token') ?? req.cookies.get('__Secure-next-auth.session-token');
+    if (hasSessionCookie) {
+      warnAuditEvent('SESSION_INVALID', { path: nextUrl.pathname, ip: req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown' });
+    }
     return NextResponse.redirect(new URL('/login', nextUrl));
   }
 
