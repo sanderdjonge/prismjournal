@@ -26,9 +26,12 @@ import {
     Settings,
     Clock,
     ChevronRight,
+    ChevronDown,
+    ChevronUp,
     AlertCircle,
     CheckCircle,
     XCircle,
+    Send,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
@@ -42,6 +45,7 @@ interface User {
     isSuperuser: boolean;
     totpEnabled: boolean;
     createdAt: string;
+    lastLoginAt: string | null;
     _count: {
         accounts: number;
         strategies: number;
@@ -101,7 +105,7 @@ interface BackupData {
     };
 }
 
-type TabType = 'users' | 'infrastructure' | 'backups';
+type TabType = 'users' | 'infrastructure' | 'backups' | 'broadcast';
 
 // Format uptime
 function formatUptime(seconds: number): string {
@@ -141,7 +145,9 @@ export default function AdminPage() {
     const [updating, setUpdating] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-    
+    const [resetLoading, setResetLoading] = useState<string | null>(null);
+    const [resetSuccess, setResetSuccess] = useState<string | null>(null);
+
     // Infrastructure state
     const [infraData, setInfraData] = useState<InfrastructureData | null>(null);
     const [infraLoading, setInfraLoading] = useState(false);
@@ -152,6 +158,26 @@ export default function AdminPage() {
     const [backupLoading, setBackupLoading] = useState(false);
     const [backupError, setBackupError] = useState<string | null>(null);
     const [backupActionLoading, setBackupActionLoading] = useState(false);
+    const [collapsedSections, setCollapsedSections] = useState({
+        hourly: false,
+        daily: true,  // default collapsed
+        weekly: true, // default collapsed
+    });
+
+    // Broadcast state
+    const [broadcastTitle, setBroadcastTitle] = useState('');
+    const [broadcastMessage, setBroadcastMessage] = useState('');
+    const [broadcastType, setBroadcastType] = useState<'INFO' | 'WARNING' | 'SUCCESS'>('INFO');
+    const [broadcastLoading, setBroadcastLoading] = useState(false);
+    const [broadcastResult, setBroadcastResult] = useState<string | null>(null);
+    
+    // Toggle backup section collapse
+    function toggleBackupSection(section: 'hourly' | 'daily' | 'weekly') {
+        setCollapsedSections(prev => ({
+            ...prev,
+            [section]: !prev[section]
+        }));
+    }
     
     // Initial load
     useEffect(() => {
@@ -233,6 +259,51 @@ export default function AdminPage() {
         }
     }
     
+    async function sendResetEmail(userId: string, email: string | null) {
+        setResetLoading(userId);
+        setResetSuccess(null);
+        try {
+            const res = await fetch('/api/admin/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to send reset email');
+            setResetSuccess(`Reset email sent to ${email}`);
+            setTimeout(() => setResetSuccess(null), 5000);
+        } catch (e: any) {
+            alert(e.message || 'Failed to send reset email');
+        } finally {
+            setResetLoading(null);
+        }
+    }
+
+    async function sendBroadcast() {
+        if (!broadcastTitle.trim() || !broadcastMessage.trim()) {
+            alert('Title and message are required');
+            return;
+        }
+        setBroadcastLoading(true);
+        setBroadcastResult(null);
+        try {
+            const res = await fetch('/api/admin/notifications/broadcast', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: broadcastTitle, message: broadcastMessage, type: broadcastType }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to send broadcast');
+            setBroadcastResult(data.message);
+            setBroadcastTitle('');
+            setBroadcastMessage('');
+        } catch (e: any) {
+            alert(e.message || 'Failed to send broadcast');
+        } finally {
+            setBroadcastLoading(false);
+        }
+    }
+
     // Infrastructure functions
     const loadInfrastructure = useCallback(async () => {
         setInfraLoading(true);
@@ -375,6 +446,18 @@ export default function AdminPage() {
                         <Database size={16} />
                         Backups
                     </button>
+                    <button
+                        onClick={() => setActiveTab('broadcast')}
+                        className={cn(
+                            "flex items-center gap-2 px-4 py-2 rounded-t-lg text-sm font-bold transition-all",
+                            activeTab === 'broadcast'
+                                ? "bg-white/10 text-white border-b-2 border-primary"
+                                : "text-gray-500 hover:text-white hover:bg-white/5"
+                        )}
+                    >
+                        <Send size={16} />
+                        Broadcast
+                    </button>
                 </div>
                 
                 {/* Users Tab */}
@@ -386,17 +469,21 @@ export default function AdminPage() {
                                 <div className="flex items-center gap-3">
                                     <Users size={20} className="text-primary" />
                                     <div>
-                                        <p className="text-2xl font-black text-white">{users.length}</p>
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">Total Users</p>
+                                        <p className="text-lg font-black text-white">
+                                            <span className="text-accent">{users.filter(u => u.isActive).length}</span>
+                                            <span className="text-gray-500 mx-1">/</span>
+                                            <span>{users.length}</span>
+                                        </p>
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">Active / Total Users</p>
                                     </div>
                                 </div>
                             </div>
                             <div className="glass-card p-5 border-white/5 bg-white/5">
                                 <div className="flex items-center gap-3">
-                                    <UserCheck size={20} className="text-accent" />
+                                    <UserX size={20} className="text-danger" />
                                     <div>
-                                        <p className="text-2xl font-black text-white">{users.filter(u => u.isActive).length}</p>
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">Active</p>
+                                        <p className="text-2xl font-black text-white">{users.filter(u => !u.isActive).length}</p>
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">Inactive</p>
                                     </div>
                                 </div>
                             </div>
@@ -431,7 +518,14 @@ export default function AdminPage() {
                                 className="w-full pl-10 pr-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder:text-gray-500 focus:outline-none focus:border-primary/50"
                             />
                         </div>
-                        
+
+                        {resetSuccess && (
+                            <div className="p-3 rounded-xl bg-accent/10 border border-accent/20 text-accent text-xs font-bold flex items-center gap-2">
+                                <CheckCircle size={14} />
+                                {resetSuccess}
+                            </div>
+                        )}
+
                         {/* Users Table */}
                         <div className="glass-card border-white/5 bg-black/40 overflow-hidden">
                             <div className="p-5 border-b border-white/5 flex items-center justify-between">
@@ -448,6 +542,7 @@ export default function AdminPage() {
                                             <th className="text-left p-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Security</th>
                                             <th className="text-left p-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Accounts</th>
                                             <th className="text-left p-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Joined</th>
+                                            <th className="text-left p-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Last Login</th>
                                             <th className="text-right p-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Actions</th>
                                         </tr>
                                     </thead>
@@ -500,14 +595,32 @@ export default function AdminPage() {
                                                 </td>
                                                 <td className="p-4">
                                                     <span className="text-sm font-bold text-white">{user._count.accounts}</span>
+                                                    <span className="text-[9px] text-gray-500 block">accounts</span>
                                                 </td>
                                                 <td className="p-4">
                                                     <span className="text-xs text-gray-500 flex items-center gap-1">
                                                         <Calendar size={10} /> {new Date(user.createdAt).toLocaleDateString()}
                                                     </span>
                                                 </td>
+                                                <td className="p-4">
+                                                    <span className="text-xs text-gray-500 flex items-center gap-1">
+                                                        <Clock size={10} /> {user.lastLoginAt ? formatRelative(user.lastLoginAt) : 'Never'}
+                                                    </span>
+                                                </td>
                                                 <td className="p-4 text-right">
                                                     <div className="flex items-center justify-end gap-2">
+                                                        <button
+                                                            onClick={() => sendResetEmail(user.id, user.email)}
+                                                            disabled={resetLoading === user.id}
+                                                            className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-all disabled:opacity-50"
+                                                            title="Send password reset email"
+                                                        >
+                                                            {resetLoading === user.id ? (
+                                                                <Loader2 size={14} className="animate-spin" />
+                                                            ) : (
+                                                                <Mail size={14} />
+                                                            )}
+                                                        </button>
                                                         <button
                                                             onClick={() => updateUser(user.id, user.isSuperuser ? 'removeAdmin' : 'makeAdmin')}
                                                             disabled={updating === user.id}
@@ -834,90 +947,186 @@ export default function AdminPage() {
                                 <div className="space-y-6">
                                     {/* Hourly */}
                                     <div className="glass-card border-white/5 bg-black/40 overflow-hidden">
-                                        <div className="p-4 border-b border-white/5 flex items-center justify-between">
+                                        <div
+                                            className="p-4 border-b border-white/5 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-all"
+                                            onClick={() => toggleBackupSection('hourly')}
+                                        >
                                             <div className="flex items-center gap-2">
+                                                {collapsedSections.hourly ? <ChevronRight size={16} className="text-gray-500" /> : <ChevronDown size={16} className="text-gray-500" />}
                                                 <Clock size={16} className="text-primary" />
                                                 <h3 className="text-sm font-black text-white uppercase tracking-tight">Hourly Backups</h3>
+                                                <span className="text-xs text-gray-500">({backupData.backups.hourly.length})</span>
                                             </div>
                                             <span className="text-xs text-gray-500">Keep: {backupData.config.keepHourly}</span>
                                         </div>
-                                        <div className="divide-y divide-white/5">
-                                            {backupData.backups.hourly.length === 0 ? (
-                                                <p className="p-4 text-xs text-gray-500 text-center">No hourly backups</p>
-                                            ) : (
-                                                backupData.backups.hourly.map((backup) => (
-                                                    <div key={backup.name} className="p-4 flex items-center justify-between hover:bg-white/[0.02]">
-                                                        <div>
-                                                            <p className="text-sm font-bold text-white">{backup.name}</p>
-                                                            <p className="text-[10px] text-gray-500">{new Date(backup.createdAt).toLocaleString()}</p>
+                                        {!collapsedSections.hourly && (
+                                            <div className="divide-y divide-white/5">
+                                                {backupData.backups.hourly.length === 0 ? (
+                                                    <p className="p-4 text-xs text-gray-500 text-center">No hourly backups</p>
+                                                ) : (
+                                                    backupData.backups.hourly.map((backup) => (
+                                                        <div key={backup.name} className="p-4 flex items-center justify-between hover:bg-white/[0.02]">
+                                                            <div>
+                                                                <p className="text-sm font-bold text-white">{backup.name}</p>
+                                                                <p className="text-[10px] text-gray-500">{new Date(backup.createdAt).toLocaleString()}</p>
+                                                            </div>
+                                                            <div className="flex items-center gap-4">
+                                                                <span className="text-xs text-gray-400">{backup.sizeMb} MB</span>
+                                                            </div>
                                                         </div>
-                                                        <div className="flex items-center gap-4">
-                                                            <span className="text-xs text-gray-400">{backup.sizeMb} MB</span>
-                                                        </div>
-                                                    </div>
-                                                ))
-                                            )}
-                                        </div>
+                                                    ))
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                     
                                     {/* Daily */}
                                     <div className="glass-card border-white/5 bg-black/40 overflow-hidden">
-                                        <div className="p-4 border-b border-white/5 flex items-center justify-between">
+                                        <div
+                                            className="p-4 border-b border-white/5 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-all"
+                                            onClick={() => toggleBackupSection('daily')}
+                                        >
                                             <div className="flex items-center gap-2">
+                                                {collapsedSections.daily ? <ChevronRight size={16} className="text-gray-500" /> : <ChevronDown size={16} className="text-gray-500" />}
                                                 <Calendar size={16} className="text-accent" />
                                                 <h3 className="text-sm font-black text-white uppercase tracking-tight">Daily Backups</h3>
+                                                <span className="text-xs text-gray-500">({backupData.backups.daily.length})</span>
                                             </div>
                                             <span className="text-xs text-gray-500">Keep: {backupData.config.keepDaily}</span>
                                         </div>
-                                        <div className="divide-y divide-white/5">
-                                            {backupData.backups.daily.length === 0 ? (
-                                                <p className="p-4 text-xs text-gray-500 text-center">No daily backups</p>
-                                            ) : (
-                                                backupData.backups.daily.map((backup) => (
-                                                    <div key={backup.name} className="p-4 flex items-center justify-between hover:bg-white/[0.02]">
-                                                        <div>
-                                                            <p className="text-sm font-bold text-white">{backup.name}</p>
-                                                            <p className="text-[10px] text-gray-500">{new Date(backup.createdAt).toLocaleString()}</p>
+                                        {!collapsedSections.daily && (
+                                            <div className="divide-y divide-white/5">
+                                                {backupData.backups.daily.length === 0 ? (
+                                                    <p className="p-4 text-xs text-gray-500 text-center">No daily backups</p>
+                                                ) : (
+                                                    backupData.backups.daily.map((backup) => (
+                                                        <div key={backup.name} className="p-4 flex items-center justify-between hover:bg-white/[0.02]">
+                                                            <div>
+                                                                <p className="text-sm font-bold text-white">{backup.name}</p>
+                                                                <p className="text-[10px] text-gray-500">{new Date(backup.createdAt).toLocaleString()}</p>
+                                                            </div>
+                                                            <div className="flex items-center gap-4">
+                                                                <span className="text-xs text-gray-400">{backup.sizeMb} MB</span>
+                                                            </div>
                                                         </div>
-                                                        <div className="flex items-center gap-4">
-                                                            <span className="text-xs text-gray-400">{backup.sizeMb} MB</span>
-                                                        </div>
-                                                    </div>
-                                                ))
-                                            )}
-                                        </div>
+                                                    ))
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                     
                                     {/* Weekly */}
                                     <div className="glass-card border-white/5 bg-black/40 overflow-hidden">
-                                        <div className="p-4 border-b border-white/5 flex items-center justify-between">
+                                        <div
+                                            className="p-4 border-b border-white/5 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-all"
+                                            onClick={() => toggleBackupSection('weekly')}
+                                        >
                                             <div className="flex items-center gap-2">
+                                                {collapsedSections.weekly ? <ChevronRight size={16} className="text-gray-500" /> : <ChevronDown size={16} className="text-gray-500" />}
                                                 <Database size={16} className="text-yellow-500" />
                                                 <h3 className="text-sm font-black text-white uppercase tracking-tight">Weekly Backups</h3>
+                                                <span className="text-xs text-gray-500">({backupData.backups.weekly.length})</span>
                                             </div>
                                             <span className="text-xs text-gray-500">Keep: {backupData.config.keepWeekly}</span>
                                         </div>
-                                        <div className="divide-y divide-white/5">
-                                            {backupData.backups.weekly.length === 0 ? (
-                                                <p className="p-4 text-xs text-gray-500 text-center">No weekly backups</p>
-                                            ) : (
-                                                backupData.backups.weekly.map((backup) => (
-                                                    <div key={backup.name} className="p-4 flex items-center justify-between hover:bg-white/[0.02]">
-                                                        <div>
-                                                            <p className="text-sm font-bold text-white">{backup.name}</p>
-                                                            <p className="text-[10px] text-gray-500">{new Date(backup.createdAt).toLocaleString()}</p>
+                                        {!collapsedSections.weekly && (
+                                            <div className="divide-y divide-white/5">
+                                                {backupData.backups.weekly.length === 0 ? (
+                                                    <p className="p-4 text-xs text-gray-500 text-center">No weekly backups</p>
+                                                ) : (
+                                                    backupData.backups.weekly.map((backup) => (
+                                                        <div key={backup.name} className="p-4 flex items-center justify-between hover:bg-white/[0.02]">
+                                                            <div>
+                                                                <p className="text-sm font-bold text-white">{backup.name}</p>
+                                                                <p className="text-[10px] text-gray-500">{new Date(backup.createdAt).toLocaleString()}</p>
+                                                            </div>
+                                                            <div className="flex items-center gap-4">
+                                                                <span className="text-xs text-gray-400">{backup.sizeMb} MB</span>
+                                                            </div>
                                                         </div>
-                                                        <div className="flex items-center gap-4">
-                                                            <span className="text-xs text-gray-400">{backup.sizeMb} MB</span>
-                                                        </div>
-                                                    </div>
-                                                ))
-                                            )}
-                                        </div>
+                                                    ))
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </>
                         ) : null}
+                    </div>
+                )}
+
+                {/* Broadcast Tab */}
+                {activeTab === 'broadcast' && (
+                    <div className="space-y-6">
+                        <div>
+                            <h2 className="text-lg font-black text-white uppercase tracking-tight">Broadcast Notification</h2>
+                            <p className="text-xs text-gray-500 mt-1">Send an in-app notification to all active users.</p>
+                        </div>
+
+                        <div className="glass-card border-white/5 bg-black/40 p-6 space-y-5 max-w-xl">
+                            <div>
+                                <label className="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-2">Type</label>
+                                <div className="flex gap-2">
+                                    {(['INFO', 'WARNING', 'SUCCESS'] as const).map(t => (
+                                        <button
+                                            key={t}
+                                            onClick={() => setBroadcastType(t)}
+                                            className={cn(
+                                                "px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                                                broadcastType === t
+                                                    ? t === 'WARNING' ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                                                        : t === 'SUCCESS' ? "bg-accent/20 text-accent border border-accent/30"
+                                                        : "bg-primary/20 text-primary border border-primary/30"
+                                                    : "bg-white/5 text-gray-500 border border-white/10 hover:bg-white/10"
+                                            )}
+                                        >
+                                            {t}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-2">Title</label>
+                                <input
+                                    type="text"
+                                    value={broadcastTitle}
+                                    onChange={e => setBroadcastTitle(e.target.value)}
+                                    maxLength={100}
+                                    placeholder="e.g. Scheduled Maintenance"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-primary/50"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-2">Message</label>
+                                <textarea
+                                    value={broadcastMessage}
+                                    onChange={e => setBroadcastMessage(e.target.value)}
+                                    maxLength={500}
+                                    rows={4}
+                                    placeholder="e.g. PrismJournal will be offline on Sunday 02:00–04:00 UTC for maintenance."
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-primary/50 resize-none"
+                                />
+                                <p className="text-[9px] text-gray-600 mt-1 text-right">{broadcastMessage.length}/500</p>
+                            </div>
+
+                            {broadcastResult && (
+                                <div className="p-3 rounded-xl bg-accent/10 border border-accent/20 text-accent text-xs font-bold flex items-center gap-2">
+                                    <CheckCircle size={14} />
+                                    {broadcastResult}
+                                </div>
+                            )}
+
+                            <button
+                                onClick={sendBroadcast}
+                                disabled={broadcastLoading || !broadcastTitle.trim() || !broadcastMessage.trim()}
+                                className="w-full p-3 rounded-xl bg-primary/10 border border-primary/30 text-primary text-[10px] font-black uppercase tracking-widest hover:bg-primary/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {broadcastLoading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                                {broadcastLoading ? 'Sending...' : `Send to All Users (${users.filter(u => u.isActive).length})`}
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>
