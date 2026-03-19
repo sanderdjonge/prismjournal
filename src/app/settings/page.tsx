@@ -43,6 +43,8 @@ import {
 import { cn } from '@/lib/cn';
 import { APP_VERSION, versionToPhase } from '@/lib/version';
 import PropFirmReferenceTable from '@/components/prop-firm/PropFirmReferenceTable';
+import { useCurrency } from '@/lib/currency';
+import { useQueryClient } from '@tanstack/react-query';
 
 const CURRENCY_OPTIONS = [
     { label: 'USD - United States Dollar', value: 'USD' },
@@ -160,6 +162,8 @@ function SettingsContent() {
     const searchParams = useSearchParams();
     const tabParam = searchParams.get('tab');
     const [activeTab, setActiveTab] = useState(tabParam || 'preferences');
+    const { setCurrency: setCurrencyContext } = useCurrency();
+    const queryClient = useQueryClient();
 
     // Update active tab when URL param changes
     useEffect(() => {
@@ -418,6 +422,8 @@ function SettingsContent() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ displayCurrency: currency, timezone, dateFormat }),
                 });
+                setCurrencyContext(currency);
+                queryClient.invalidateQueries({ queryKey: ['settings'] });
             } else if (activeTab === 'notifications') {
                 await fetch('/api/settings/notifications', {
                     method: 'PATCH',
@@ -645,13 +651,6 @@ function SettingsContent() {
                                         {DATE_FORMAT_OPTIONS.map((o) => (
                                             <option key={o.value} value={o.value}>{o.label}</option>
                                         ))}
-                                    </select>
-                                </div>
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-600 px-1">Interface Language</label>
-                                    <select className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm font-bold text-white outline-none focus:border-primary/50 transition-all appearance-none">
-                                        <option>English (Global)</option>
-                                        <option>Dutch (Netherlands)</option>
                                     </select>
                                 </div>
                             </div>
