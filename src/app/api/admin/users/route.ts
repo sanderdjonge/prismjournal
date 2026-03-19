@@ -14,6 +14,11 @@ export enum AuditAction {
   ADMIN_LOGIN = 'ADMIN_LOGIN',
   ADMIN_ACCESS = 'ADMIN_ACCESS',
   SECURITY_VIOLATION = 'SECURITY_VIOLATION',
+  USER_LOGIN = 'USER_LOGIN',
+  USER_LOGOUT = 'USER_LOGOUT',
+  FAILED_LOGIN = 'FAILED_LOGIN',
+  API_ERROR = 'API_ERROR',
+  SYNC_ERROR = 'SYNC_ERROR',
 }
 
 // Create audit log entry
@@ -87,16 +92,24 @@ export const GET = withAdmin(async (request: NextRequest, _ctx: Record<string, u
   const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1);
   const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20') || 20));
   const search = searchParams.get('search') || '';
+  const includeInactive = searchParams.get('includeInactive') === 'true';
 
-  const where = search
-    ? {
-        OR: [
-          { email: { contains: search, mode: 'insensitive' as const } },
-          { name: { contains: search, mode: 'insensitive' as const } },
-          { username: { contains: search, mode: 'insensitive' as const } },
-        ],
-      }
-    : {};
+  // Build where clause - by default only show active users (soft-deleted users are hidden)
+  const where: { isActive?: boolean; OR?: Array<{ email?: { contains: string; mode: 'insensitive' }; name?: { contains: string; mode: 'insensitive' }; username?: { contains: string; mode: 'insensitive' } }> } = {};
+  
+  // Only filter by isActive if not explicitly including inactive users
+  if (!includeInactive) {
+    where.isActive = true;
+  }
+  
+  // Add search filter if provided
+  if (search) {
+    where.OR = [
+      { email: { contains: search, mode: 'insensitive' as const } },
+      { name: { contains: search, mode: 'insensitive' as const } },
+      { username: { contains: search, mode: 'insensitive' as const } },
+    ];
+  }
 
   const [users, total] = await Promise.all([
     prisma.user.findMany({
@@ -252,6 +265,77 @@ export const PATCH = withAdmin(async (request: NextRequest, _ctx: Record<string,
       { error: 'Failed to update user' },
       { status: 500 }
     );
+  }
+});
+
+// POST - Send password reset email on behalf of a user
+const sendResetSchema = z.object({
+  userId: z.string(),
+});
+
+export const POST = withAdmin(async (request: NextRequest, _ctx: Record<string, unknown>, session: AdminSession) => {
+  const rateLimit = checkRateLimit(`admin-reset-${session.user.id}`, 5, 60000);
+  if (!rateLimit.allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+  }
+
+  try {
+    const body = await request.json();
+    const { userId } = sendResetSchema.parse(body);
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, name: true, isActive: true },
+    });
+
+    if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    if (!user.email) return NextResponse.json({ error: 'User has no email address' }, { status: 400 });
+
+    const baseUrl = process.env.NEXTAUTH_URL;
+    if (!baseUrl) {
+      return NextResponse.json(
+        { error: 'NEXTAUTH_URL is not configured — cannot send reset email' },
+        { status: 503 }
+      );
+    }
+
+    const { randomBytes } = await import('crypto');
+    const bcrypt = await import('bcryptjs');
+    const { sendPasswordResetEmail } = await import('@/lib/email');
+
+    const resetToken = randomBytes(32).toString('hex');
+    const tokenId = resetToken.slice(0, 8);
+    const hashedToken = await bcrypt.hash(resetToken, 12);
+
+    await prisma.passwordResetToken.deleteMany({ where: { userId } });
+    await prisma.passwordResetToken.create({
+      data: {
+        userId,
+        tokenId,
+        token: hashedToken,
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+      },
+    });
+
+    const emailResult = await sendPasswordResetEmail(user.email, resetToken, `${baseUrl}/reset-password`);
+    if (!emailResult.success) {
+      return NextResponse.json(
+        { error: `Failed to send email: ${emailResult.error ?? 'Unknown error'}` },
+        { status: 502 }
+      );
+    }
+
+    await createAuditLog(AuditAction.SETTINGS_CHANGE, {
+      action: 'ADMIN_PASSWORD_RESET_EMAIL',
+      targetUserId: userId,
+      targetEmail: user.email,
+      initiatedBy: session.user.id,
+    }, request);
+
+    return NextResponse.json({ success: true, message: `Password reset email sent to ${user.email}` });
+  } catch (error) {
+    console.error('Admin send reset error:', error);
+    return NextResponse.json({ error: 'Failed to send reset email' }, { status: 500 });
   }
 });
 
