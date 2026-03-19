@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import logger from '@/lib/logger';
 import { getUserByBridgeKey, getAccountByPlatformId } from '@/lib/getAccount';
 import { validateBody, syncPayloadSchema, type SyncTrade } from '@/lib/validations';
 import { upsertSyncTrade } from '@/lib/services/trade-sync.service';
@@ -88,7 +89,7 @@ export async function POST(request: Request) {
         cacheDelete(`analytics:${user.id}`);
         return NextResponse.json({ success: true });
     } catch (error) {
-        console.error('Sync error:', error);
+        logger.error({ err: error }, 'Sync error');
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }

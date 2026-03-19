@@ -100,20 +100,6 @@ export async function getAccountByPlatformId(
 }
 
 /**
- * Legacy function for backwards compatibility.
- * Returns the first active account for a user found by bridge key.
- * 
- * @deprecated Use getUserByBridgeKey and getAccountByPlatformId instead
- */
-export async function getAccountByBridgeKey(bridgeKey: string) {
-    const user = await getUserByBridgeKey(bridgeKey);
-    if (!user) return null;
-    
-    // Return the first active account for backwards compatibility
-    return user.accounts[0] || null;
-}
-
-/**
  * Generate a new bridge key, returning the plaintext key (show once),
  * the keyId (first 12 chars for lookup), and the bcrypt hash.
  */

@@ -1,4 +1,5 @@
 import prisma from '@/lib/prisma';
+import logger from '@/lib/logger';
 import { notifyRuleViolation } from '@/lib/notifications';
 import { updateTradingDaysCount, autoAdvancePhaseIfNeeded } from '@/lib/prop-firm/challenge-service';
 import { RuleType, ViolationSeverity } from '@prisma/client';
@@ -135,7 +136,7 @@ export async function runDailySnapshot(): Promise<void> {
                     await autoAdvancePhaseIfNeeded(account.id);
                 }
             } catch (err) {
-                console.error(`[snapshot] Account ${account.id}:`, err);
+                logger.error({ err, accountId: account.id }, '[snapshot] Account processing error');
             }
         }
 
@@ -149,7 +150,7 @@ export async function runDailySnapshot(): Promise<void> {
 
         console.log(`[snapshot] Done — ${new Date().toISOString()}`);
     } catch (err) {
-        console.error('[snapshot] Fatal error:', err);
+        logger.error({ err }, '[snapshot] Fatal error');
     } finally {
         running = false;
         await releaseAdvisoryLock();
