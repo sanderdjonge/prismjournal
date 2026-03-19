@@ -5,32 +5,18 @@ import { sendWeeklyDigestEmail, type WeeklyDigestData } from '@/lib/email';
 
 /**
  * Cron endpoint to send weekly digest emails to all eligible users
- * 
- * Automatically triggered by Vercel Cron Jobs every Monday at 9:00 AM UTC
- * Configured in vercel.json
- * 
- * Security: Validates Vercel Cron authorization header
- * For local testing without Vercel, CRON_SECRET can be used as fallback
+ *
+ * Requires CRON_SECRET env var. Set it in .env for local testing.
+ * Trigger: POST with Authorization: Bearer <CRON_SECRET>
  */
 
 export async function POST() {
-  // Verify this is a legitimate cron request
   const headersList = await headers();
   const authHeader = headersList.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
-  
-  // Vercel Cron Jobs send an Authorization header with Bearer token
-  // In production, Vercel handles this automatically
-  // For local testing, allow CRON_SECRET fallback
-  const isVercelCron = authHeader?.startsWith('Bearer ') && !cronSecret;
-  const isValidCronSecret = cronSecret && authHeader === `Bearer ${cronSecret}`;
-  
-  if (!isVercelCron && !isValidCronSecret) {
-    // In development, allow the request without auth for testing
-    const isDev = process.env.NODE_ENV === 'development';
-    if (!isDev) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
@@ -94,18 +80,14 @@ export async function POST() {
 }
 
 /**
- * GET endpoint for health check / manual trigger (requires auth)
+ * GET endpoint for health check / manual trigger (requires CRON_SECRET)
  */
 export async function GET() {
   const headersList = await headers();
   const authHeader = headersList.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
-  
-  // In development, allow without auth
-  const isDev = process.env.NODE_ENV === 'development';
-  const isValidCronSecret = cronSecret && authHeader === `Bearer ${cronSecret}`;
-  
-  if (!isDev && !isValidCronSecret) {
+
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

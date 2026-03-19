@@ -5,7 +5,6 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY;
 // Initialize Resend client lazily
 function getResendClient(): Resend | null {
   if (!RESEND_API_KEY) {
-    console.error('RESEND_API_KEY not configured');
     return null;
   }
   return new Resend(RESEND_API_KEY);
@@ -355,13 +354,11 @@ export async function sendWeeklyDigestEmail(data: WeeklyDigestData): Promise<Ema
     });
 
     if (error) {
-      console.error('Failed to send weekly digest email:', error);
       return { success: false, error: error.message };
     }
 
     return { success: true, messageId: result?.id };
   } catch (e) {
-    console.error('Failed to send weekly digest email:', e);
     return { success: false, error: String(e) };
   }
 }
@@ -427,6 +424,115 @@ export async function sendMddAlertEmail(
             <p style="margin: 8px 0 0; color: #64748b;">Threshold: ${threshold.toFixed(1)}%</p>
           </div>
           <p style="color: #94a3b8;">Consider reviewing your open positions and risk management strategy.</p>
+        </div>
+      `,
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, messageId: result?.id };
+  } catch (e) {
+    return { success: false, error: String(e) };
+  }
+}
+
+/**
+ * Send a broadcast/announcement email to a single user
+ */
+export async function sendBroadcastEmail(
+  email: string,
+  title: string,
+  message: string,
+  type: 'INFO' | 'WARNING' | 'SUCCESS'
+): Promise<EmailResult> {
+  const resend = getResendClient();
+  if (!resend) {
+    return { success: false, error: 'Resend API key not configured' };
+  }
+
+  const accentColor = type === 'SUCCESS' ? '#4ade80' : type === 'WARNING' ? '#fbbf24' : '#818cf8';
+  const typeLabel = type === 'SUCCESS' ? '✅ Announcement' : type === 'WARNING' ? '⚠️ Important Notice' : 'ℹ️ Announcement';
+  const messageHtml = message.replace(/\n/g, '<br>');
+
+  try {
+    const { data: result, error } = await resend.emails.send({
+      from: process.env.EMAIL_FROM || 'PrismJournal <noreply@we-share.nl>',
+      to: email,
+      subject: `PrismJournal: ${title}`,
+      html: `
+        <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px;background-color:#0f0f23;color:#e2e8f0;">
+          <div style="text-align:center;margin-bottom:24px;">
+            <span style="font-size:32px;">💎</span>
+            <h1 style="color:#6366f1;margin:8px 0 0;font-size:20px;">PrismJournal</h1>
+          </div>
+          <div style="background-color:#1a1a2e;border:1px solid ${accentColor}33;border-left:4px solid ${accentColor};border-radius:8px;padding:24px;margin-bottom:20px;">
+            <p style="margin:0 0 4px;font-size:11px;color:${accentColor};text-transform:uppercase;letter-spacing:1px;">${typeLabel}</p>
+            <h2 style="margin:8px 0 16px;font-size:20px;color:#e2e8f0;">${title}</h2>
+            <p style="margin:0;font-size:15px;color:#94a3b8;line-height:1.6;">${messageHtml}</p>
+          </div>
+          <hr style="border:none;border-top:1px solid #2d2d44;margin:24px 0;">
+          <p style="color:#475569;font-size:12px;text-align:center;margin:0;">PrismJournal — Trade smarter, not harder.</p>
+        </div>
+      `,
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, messageId: result?.id };
+  } catch (e) {
+    return { success: false, error: String(e) };
+  }
+}
+
+/**
+ * Send a password reset email
+ */
+export async function sendPasswordResetEmail(
+  email: string,
+  resetToken: string,
+  resetUrl: string
+): Promise<EmailResult> {
+  const resend = getResendClient();
+  if (!resend) {
+    return { success: false, error: 'Resend API key not configured' };
+  }
+
+  // Token expires in 1 hour
+  const fullResetUrl = `${resetUrl}?token=${resetToken}`;
+
+  try {
+    const { data: result, error } = await resend.emails.send({
+      from: process.env.EMAIL_FROM || 'PrismJournal <noreply@we-share.nl>',
+      to: email,
+      subject: 'Reset Your PrismJournal Password',
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #0f0f23; color: #e2e8f0;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <span style="font-size: 36px;">💎</span>
+            <h1 style="color: #6366f1; margin: 10px 0;">PrismJournal</h1>
+          </div>
+          
+          <h2 style="color: #e2e8f0;">Reset Your Password</h2>
+          <p style="color: #94a3b8;">We received a request to reset your password. Click the button below to create a new password:</p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${fullResetUrl}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #6366f1, #818cf8); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600;">Reset Password</a>
+          </div>
+          
+          <p style="color: #64748b; font-size: 14px;">Or copy and paste this link into your browser:</p>
+          <p style="color: #818cf8; word-break: break-all; font-size: 13px;">${fullResetUrl}</p>
+          
+          <div style="margin-top: 30px; padding: 20px; background-color: #1a1a2e; border-radius: 8px;">
+            <p style="margin: 0; color: #f87171; font-size: 14px;">⏰ This link will expire in 1 hour</p>
+            <p style="margin: 10px 0 0; color: #64748b; font-size: 13px;">If you didn't request a password reset, you can safely ignore this email.</p>
+          </div>
+          
+          <hr style="border: none; border-top: 1px solid #2d2d44; margin: 30px 0;">
+          <p style="color: #475569; font-size: 12px; text-align: center;">PrismJournal — Trade smarter, not harder.</p>
         </div>
       `,
     });

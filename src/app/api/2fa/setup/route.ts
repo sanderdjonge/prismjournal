@@ -1,49 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { pendingTotpSecrets, cleanupPendingSecrets } from '@/lib/auth';
+import { withAuth } from '@/lib/api/withAuth';
 import prisma from '@/lib/prisma';
 import { generateSecret, generateURI } from 'otplib';
+import { authLimiter } from '@/lib/rate-limit';
 
-export async function POST(request: NextRequest) {
-    try {
-        const session = await auth();
-        if (!session?.user?.id) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+export const POST = withAuth(async (request: NextRequest, _ctx, session) => {
+    const rateLimitResult = await authLimiter.check(request, 5);
+    if (rateLimitResult) return rateLimitResult;
 
-        // Generate a new TOTP secret using otplib v13 API
-        const secret = generateSecret();
-        
-        // Get user for email
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: { email: true, name: true }
-        });
+    // Generate a new TOTP secret using otplib v13 API
+    const secret = generateSecret();
 
-        if (!user) {
-            return NextResponse.json({ error: 'User not found' }, { status: 404 });
-        }
+    // Get user for email
+    const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { email: true, name: true }
+    });
 
-        // Create provisioning URI using otplib v13 API
-        const serviceName = 'PrismJournal';
-        const accountName = user.email || user.name || 'user';
-        const provisioningUri = generateURI({
-            issuer: serviceName,
-            label: accountName,
-            secret: secret
-        });
-
-        // Store the secret temporarily (not enabled yet)
-        await prisma.user.update({
-            where: { id: session.user.id },
-            data: { totpSecret: secret }
-        });
-
-        return NextResponse.json({
-            secret,
-            provisioning_uri: provisioningUri
-        });
-    } catch (error) {
-        console.error('2FA setup error:', error);
-        return NextResponse.json({ error: 'Failed to setup 2FA' }, { status: 500 });
+    if (!user) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
-}
+
+    // Create provisioning URI using otplib v13 API
+    const serviceName = 'PrismJournal';
+    const accountName = user.email || user.name || 'user';
+    const provisioningUri = generateURI({
+        issuer: serviceName,
+        label: accountName,
+        secret: secret
+    });
+
+    // Store secret in memory — only written to DB after the user verifies the code
+    cleanupPendingSecrets();
+    pendingTotpSecrets.set(session.user.id, {
+        secret,
+        expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes
+    });
+
+    return NextResponse.json({
+        secret,
+        provisioning_uri: provisioningUri
+    });
+});

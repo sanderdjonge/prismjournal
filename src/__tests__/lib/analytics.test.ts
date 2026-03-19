@@ -4,7 +4,7 @@ import {
   calculateExpectancy,
   calculateTiltmeterScore,
   calculateEdgeStability,
-} from '../../../server/utils/analytics_compute';
+} from '@/lib/analytics';
 
 interface TradeData {
   pnl: number;

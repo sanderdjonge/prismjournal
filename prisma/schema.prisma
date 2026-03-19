@@ -31,17 +31,23 @@ model User {
   // Settings
   defaultCurrency String         @default("EUR")
   
+  // Bridge Key (moved from TradingAccount - one key per user for multi-account support)
+  bridgeKeyId     String?       @unique  // First 12 chars of the key (plain text, used for lookup)
+  bridgeKeyHash   String?               // bcrypt hash of the full key
+  
   // Timestamps
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
   
   // Relations
-  accounts      TradingAccount[]
-  strategies    Strategy[]
-  notifications Notification[]
-  alertConfig   AlertConfig?
-  settings      UserSettings?
-  customStats   CustomStat[]
+  accounts           TradingAccount[]
+  strategies         Strategy[]
+  notifications      Notification[]
+  alertConfig        AlertConfig?
+  settings           UserSettings?
+  customStats        CustomStat[]
+  tags               Tag[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 // ============================================
@@ -57,7 +63,10 @@ model TradingAccount {
   name            String
   broker          String?
   accountNumber   String?       @unique
-  bridgeKey       String?       @unique
+  
+  // Platform identification (for multi-account routing)
+  platform        TradePlatform @default(METATRADER5)
+  platformAccountId String?     // MT5 login ID, cTrader account ID, etc.
   
   // Account Type (from TradeLens)
   accountType     AccountType   @default(OWN_MONEY)
@@ -83,7 +92,6 @@ model TradingAccount {
   profitTarget    Float?        // Profit target to pass challenge
   maxPositionSize Float?        // Max lots/contracts per position
   scalingPlan     String?       // Notes about scaling rules
-  currentPhase    String?       @default("Phase 1") // "Phase 1", "Phase 2", "Funded"
   lastDailyReset  DateTime?     // Last time daily loss was reset
   
   // Status
@@ -95,17 +103,246 @@ model TradingAccount {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   
+  // Prop Firm Reference
+  propFirmId      String?
+  propFirm        PropFirm?       @relation(fields: [propFirmId], references: [id])
+  
+  // Challenge Tracking
+  currentPhaseId  String?
+  
+  // Enhanced Prop Firm Fields
+  accountSize     Float?        // Challenge account size (e.g., 100000)
+  profitSplit     Float?        // Percentage trader gets (e.g., 80.0 = 80%)
+  
+  // Restrictions (override from prop firm defaults)
+  allowNewsTrading    Boolean?
+  allowWeekendHolding Boolean?
+  allowEA            Boolean?
+  
   // Relations
   trades          Trade[]
   equitySnapshots EquitySnapshot[]
+  challengePhases ChallengePhase[]
+  violations      RuleViolation[]
+  dailySnapshots  DailyAccountSnapshot[]
   
   @@index([userId])
-  @@index([bridgeKey])
+  @@unique([userId, platform, platformAccountId])
 }
 
 enum AccountType {
   PROPFIRM
   OWN_MONEY
+}
+
+// ============================================
+// Prop Firm Profiles (Predefined configurations)
+// ============================================
+
+model PropFirm {
+  id              String   @id @default(cuid())
+  name            String   @unique  // e.g., "FTMO", "The Funded Trader"
+  slug            String   @unique  // URL-friendly identifier
+  
+  // Description
+  description     String?
+  website         String?
+  logoUrl         String?
+  
+  // Challenge Configuration
+  challengeType   ChallengeType  @default(TWO_PHASE)
+  
+  // Default Rules
+  dailyLossLimit  Float    @default(5.0)  // Percentage (e.g., 5.0 = 5%)
+  maxDrawdown     Float    @default(10.0) // Percentage
+  drawdownType    DrawdownType @default(STATIC)
+  
+  // Restrictions
+  allowNewsTrading    Boolean @default(true)
+  allowWeekendHolding Boolean @default(true)
+  allowEA            Boolean @default(true)
+  
+  // Phases Configuration (stored as JSON)
+  phasesConfig    Json     // JSON with phase configurations
+
+  // Scaling Plan
+  hasScalingPlan  Boolean  @default(false)
+  scalingConfig   Json?    // JSON with scaling rules
+  
+  // Status
+  isActive        Boolean  @default(true)
+  popularity      Int      @default(0)  // For sorting
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  accounts        TradingAccount[]
+  
+  @@index([name])
+  @@index([slug])
+}
+
+enum ChallengeType {
+  ONE_PHASE
+  TWO_PHASE
+  THREE_PHASE
+}
+
+enum DrawdownType {
+  STATIC        // Fixed from starting balance
+  TRAILING      // Follows account high
+}
+
+// ============================================
+// Prop Firm Challenge Phase
+// ============================================
+
+model ChallengePhase {
+  id              String   @id @default(cuid())
+  accountId       String
+  account         TradingAccount @relation(fields: [accountId], references: [id])
+  
+  // Phase Info
+  phaseNumber     Int      // 1, 2, or 3
+  phaseName       String   // "Phase 1", "Verification", "Funded"
+  
+  // Targets
+  profitTarget    Float?   // Percentage target (e.g., 10.0 = 10%)
+  profitTargetAmount Float? // Actual dollar amount
+  
+  // Limits
+  dailyLossLimit  Float    // Percentage
+  maxDrawdown     Float    // Percentage
+  
+  // Requirements
+  minTradingDays  Int?
+  timeLimitDays   Int?
+  
+  // Progress
+  status          PhaseStatus @default(IN_PROGRESS)
+  startedAt       DateTime @default(now())
+  completedAt     DateTime?
+  failedAt        DateTime?
+  failureReason   String?
+  
+  // Metrics (updated daily)
+  currentProgress Float?   // Percentage toward profit target
+  currentDrawdown Float?   // Current drawdown percentage
+  dailyPnl        Float?   // Today's P&L
+  tradingDaysCount Int     @default(0)
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  violations      RuleViolation[]
+  
+  @@index([accountId])
+  @@index([status])
+}
+
+enum PhaseStatus {
+  IN_PROGRESS
+  PASSED
+  FAILED
+  SKIPPED
+}
+
+// ============================================
+// Rule Violations
+// ============================================
+
+model RuleViolation {
+  id              String   @id @default(cuid())
+  accountId       String
+  account         TradingAccount @relation(fields: [accountId], references: [id])
+  phaseId         String?
+  phase           ChallengePhase? @relation(fields: [phaseId], references: [id])
+  
+  // Violation Details
+  ruleType        RuleType
+  severity        ViolationSeverity
+  
+  // Values
+  limitValue      Float    // The rule limit
+  actualValue     Float    // What actually happened
+  
+  // Context
+  description     String
+  tradeId         String?  // Related trade if applicable
+  
+  // Resolution
+  isResolved      Boolean  @default(false)
+  resolvedAt      DateTime?
+  resolutionNotes String?
+  
+  // Timestamps
+  occurredAt      DateTime @default(now())
+  createdAt       DateTime @default(now())
+  
+  @@index([accountId])
+  @@index([ruleType])
+  @@index([occurredAt])
+}
+
+enum RuleType {
+  DAILY_LOSS_LIMIT
+  MAX_DRAWDOWN
+  NEWS_TRADING
+  WEEKEND_HOLDING
+  POSITION_SIZE
+  TIME_LIMIT
+  MIN_TRADING_DAYS
+}
+
+enum ViolationSeverity {
+  WARNING      // Approaching limit
+  CRITICAL     // At limit
+  BREACH       // Exceeded limit (account failed)
+}
+
+// ============================================
+// Daily Account Snapshot
+// ============================================
+
+model DailyAccountSnapshot {
+  id              String   @id @default(cuid())
+  accountId       String
+  account         TradingAccount @relation(fields: [accountId], references: [id])
+  
+  // Date
+  snapshotDate    DateTime @db.Date
+  
+  // Balance Tracking
+  startingBalance Float
+  endingBalance   Float
+  endingEquity    Float
+  
+  // P&L
+  dailyPnl        Float
+  dailyPnlPercent Float
+  
+  // Drawdown
+  currentDrawdown Float
+  maxDrawdown     Float
+  highWaterMark   Float
+  
+  // Limits Check
+  dailyLossUsed   Float    // Percentage of daily loss used
+  isDailyLimitBreached Boolean @default(false)
+  isMaxDrawdownBreached Boolean @default(false)
+  
+  // Progress
+  profitProgress  Float?   // Percentage toward target
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  
+  @@unique([accountId, snapshotDate])
+  @@index([accountId, snapshotDate])
 }
 
 // ============================================
@@ -137,7 +374,7 @@ model Trade {
   strategy         Strategy?     @relation(fields: [strategyId], references: [id])
   
   // Core trade data
-  ticket           String?       @unique
+  ticket           String?       @unique  // External platform ticket/ID (MT5 ticket, cTrader position ID, etc.)
   symbol           String
   direction        TradeDirection
   status           TradeStatus   @default(OPEN)
@@ -172,8 +409,7 @@ model Trade {
   
   // Psychology & Discipline (from TradeLens)
   planCompliance   PlanCompliance?
-  mood             String?
-  emotionalState   String?
+  mood             Mood?
   entryRating      Int?          // 1-5
   exitRating       Int?          // 1-5
   managementRating Int?          // 1-5
@@ -203,6 +439,8 @@ model Trade {
   
   @@index([accountId])
   @@index([accountId, entryTime])
+  @@index([accountId, exitTime, pnl])
+  @@index([accountId, status, exitTime])
   @@index([symbol])
   @@index([status])
 }
@@ -227,6 +465,7 @@ enum TradeSource {
 enum TradePlatform {
   TRADINGVIEW
   METATRADER5
+  CTRADER
   MANUAL
 }
 
@@ -236,6 +475,15 @@ enum PlanCompliance {
   PARTIAL
 }
 
+enum Mood {
+  CALM
+  CONFIDENT
+  NEUTRAL
+  ANXIOUS
+  FOMO
+  REVENGE
+}
+
 // ============================================
 // Media & Screenshots
 // ============================================
@@ -243,8 +491,11 @@ enum PlanCompliance {
 model Media {
   id        String   @id @default(cuid())
   tradeId   String
-  trade     Trade    @relation(fields: [tradeId], references: [id])
-  url       String
+  trade     Trade    @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  filename  String   // Stored filename (e.g., "abc123.png")
+  filepath  String   // Relative path from storage root (e.g., "screenshots/abc123.png")
+  mimetype  String   // MIME type (e.g., "image/png")
+  size      Int      // File size in bytes
   type      String   // "AUTO" or "MANUAL"
   timeframe String?  // e.g. "M15"
   event     String   // "OPEN" or "CLOSE"
@@ -253,13 +504,30 @@ model Media {
   @@index([tradeId])
 }
 
+model Tag {
+  id        String     @id @default(cuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  color     String?    @default("#00f2ff")  // hex color for UI badge
+  createdAt DateTime   @default(now())
+
+  trades    TradeTag[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
 model TradeTag {
-  id        String @id @default(cuid())
-  tradeId   String
-  trade     Trade  @relation(fields: [tradeId], references: [id])
-  tag       String
-  
+  id      String @id @default(cuid())
+  tradeId String
+  trade   Trade  @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  tagId   String
+  tag     Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([tradeId, tagId])
   @@index([tradeId])
+  @@index([tagId])
 }
 
 // ============================================
@@ -307,6 +575,7 @@ model UserSettings {
   user            User   @relation(fields: [userId], references: [id])
   displayCurrency String @default("USD")
   timezone        String @default("Europe/Amsterdam")
+  dateFormat      String @default("DD-MM-YYYY") // DD-MM-YYYY, MM-DD-YYYY, or YYYY-MM-DD
 }
 
 // ============================================
@@ -350,7 +619,7 @@ model CustomStat {
   user         User     @relation(fields: [userId], references: [id])
   name         String
   description  String?
-  filterConfig String   // JSON string with filter configuration
+  filterConfig Json     // Filter configuration
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   
@@ -380,7 +649,7 @@ model SystemMetric {
 model AuditLog {
   id        String   @id @default(cuid())
   action    String   // Enum value from AuditAction
-  details   String   // JSON string with action details
+  details   Json     // JSON with action details
   ipAddress String?
   userAgent String?
   userId    String?  // User who performed the action (null if not authenticated)
@@ -389,4 +658,24 @@ model AuditLog {
   @@index([action])
   @@index([userId])
   @@index([createdAt])
+}
+
+// ============================================
+// Password Reset Tokens
+// ============================================
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenId   String   @unique  // First 8 chars of raw token for efficient lookup
+  token     String   @unique  // Hashed token for security
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+  @@index([token])
+  @@index([tokenId])
+  @@index([expiresAt])
 }

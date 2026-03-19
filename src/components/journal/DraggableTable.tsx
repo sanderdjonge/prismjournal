@@ -14,11 +14,13 @@ import {
     STORAGE_KEY_PER_PAGE,
     STORAGE_KEY_SORT,
 } from './trade-table';
+import { calcRROrZero } from '@/lib/tradeCalculations';
 
 // Helper function to get sort value
 function getSortValue(trade: Trade, col: string): string | number {
     switch (col) {
         case 'time': return trade.entryTime ?? '';
+        case 'exitTime': return trade.exitTime ?? '';
         case 'symbol': return trade.symbol;
         case 'ticket': return trade.ticket;
         case 'side': return trade.type;
@@ -27,27 +29,23 @@ function getSortValue(trade: Trade, col: string): string | number {
         case 'tp': return trade.takeProfit ?? 0;
         case 'sl': return trade.stopLoss ?? 0;
         case 'status': return trade.exitTime ? 1 : 0;
-        case 'rr': {
-            if (!trade.stopLoss || !trade.entry || trade.entry === 0) return 0;
-            const risk = Math.abs(trade.entry - trade.stopLoss);
-            if (risk === 0) return 0;
-            if (!trade.exitTime) {
-                return trade.takeProfit ? Math.abs(trade.takeProfit - trade.entry) / risk : 0;
-            }
-            return trade.pnl >= 0
-                ? Math.abs(trade.exit - trade.entry) / risk
-                : -(Math.abs(trade.exit - trade.entry) / risk);
-        }
+        case 'rr': return calcRROrZero(trade);
+        case 'account': return trade.accountName ?? '';
+        case 'tags': return trade.tags?.[0]?.name ?? '';
         default: return 0;
     }
 }
 
 interface DraggableTableProps {
     data: Trade[];
-    onAnalyze: (trade: Trade) => void;
+    onView: (trade: Trade) => void;
+    onEdit: (trade: Trade) => void;
+    selectedIds?: Set<string>;
+    onToggleSelect?: (tradeId: string) => void;
+    onSelectAll?: () => void;
 }
 
-export default function DraggableTable({ data, onAnalyze }: DraggableTableProps) {
+export default function DraggableTable({ data, onView, onEdit, selectedIds, onToggleSelect, onSelectAll }: DraggableTableProps) {
     // Lazy state initialization from localStorage to avoid useEffect setState issues
     const [columns, setColumns] = useState<Column[]>(() => {
         if (typeof window === 'undefined') return DEFAULT_COLUMNS;
@@ -153,6 +151,10 @@ export default function DraggableTable({ data, onAnalyze }: DraggableTableProps)
     const safePage = Math.min(page, totalPages - 1);
     const paged = sorted.slice(safePage * perPage, (safePage + 1) * perPage);
 
+    // Selection state for header
+    const allSelected = paged.length > 0 && paged.every(t => selectedIds?.has(t.id));
+    const someSelected = paged.some(t => selectedIds?.has(t.id));
+
     if (!mounted) return null;
 
     return (
@@ -172,6 +174,9 @@ export default function DraggableTable({ data, onAnalyze }: DraggableTableProps)
                         sortCol={sortCol}
                         sortDir={sortDir}
                         onSort={handleSort}
+                        allSelected={allSelected}
+                        someSelected={someSelected}
+                        onSelectAll={onSelectAll}
                     />
                     <tbody className="divide-y divide-white/5">
                         {paged.map((trade) => (
@@ -179,7 +184,10 @@ export default function DraggableTable({ data, onAnalyze }: DraggableTableProps)
                                 key={trade.id}
                                 trade={trade}
                                 columns={columns}
-                                onAnalyze={onAnalyze}
+                                onView={onView}
+                                onEdit={onEdit}
+                                isSelected={selectedIds?.has(trade.id)}
+                                onToggleSelect={onToggleSelect}
                             />
                         ))}
                     </tbody>

@@ -6,23 +6,37 @@ import {
     User,
     ChevronDown,
     Calculator,
+    HelpCircle,
     LogOut,
     Menu,
     X,
-    Shield
+    Shield,
+    Globe,
+    Bell,
+    Tag,
+    Settings
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { cn } from '@/lib/cn';
 import NotificationCenter from './NotificationCenter';
+import AccountSwitcher from './AccountSwitcher';
 
 const MENU_ITEMS = [
     { label: 'Dashboard', href: '/' },
     { label: 'Performance', href: '/performance' },
     { label: 'Journal', href: '/journal' },
     { label: 'Analytics', href: '/analytics' },
+    { label: 'Trading Accounts', href: '/pages/accounts' },
     { label: 'Calculator', href: '/calculator', icon: Calculator },
-    { label: 'Account', href: '/settings' },
+];
+
+const USER_MENU_ITEMS = [
+    { label: 'Preferences', href: '/settings?tab=preferences', icon: Globe },
+    { label: 'Notifications', href: '/settings?tab=notifications', icon: Bell },
+    { label: 'Tags', href: '/settings?tab=tags', icon: Tag },
+    { label: 'Security', href: '/settings?tab=security', icon: Shield },
+    { label: 'Help', href: '/pages/help', icon: HelpCircle },
 ];
 
 export default function TopNav() {
@@ -83,6 +97,9 @@ export default function TopNav() {
 
                 {/* Right Side Tools */}
                 <div className="flex items-center gap-4 md:gap-6">
+                    {/* Account Switcher */}
+                    <AccountSwitcher />
+
                     {/* Notification Center */}
                     <NotificationCenter />
 
@@ -106,7 +123,7 @@ export default function TopNav() {
                         <ChevronDown size={14} className="text-gray-600 hidden md:block" />
 
                         {isProfileOpen && (
-                            <div className="absolute top-full right-0 mt-2 w-48 glass-card bg-black/80 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden z-50">
+                            <div className="absolute top-full right-0 mt-2 w-56 glass-card bg-black/80 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden z-50">
                                 {isAdmin && (
                                     <Link
                                         href="/admin"
@@ -116,9 +133,21 @@ export default function TopNav() {
                                         <Shield size={14} /> Admin Portal
                                     </Link>
                                 )}
+                                <div className="border-t border-white/5" />
+                                {USER_MENU_ITEMS.map((item) => (
+                                    <Link
+                                        key={item.href}
+                                        href={item.href}
+                                        onClick={() => setIsProfileOpen(false)}
+                                        className="w-full px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white hover:bg-white/5 flex items-center gap-2 transition-all"
+                                    >
+                                        <item.icon size={14} /> {item.label}
+                                    </Link>
+                                ))}
+                                <div className="border-t border-white/5" />
                                 <button
                                     onClick={() => signOut({ callbackUrl: '/login' })}
-                                    className="w-full px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white hover:bg-white/5 flex items-center gap-2 transition-all"
+                                    className="w-full px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-loss hover:text-loss/80 hover:bg-white/5 flex items-center gap-2 transition-all"
                                 >
                                     <LogOut size={14} /> Sign Out
                                 </button>

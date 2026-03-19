@@ -27,6 +27,11 @@ const commonTimezones = [
 const currencies = ['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF', 'NZD'] as const;
 
 /**
+ * Date format options
+ */
+const dateFormats = ['DD-MM-YYYY', 'MM-DD-YYYY', 'YYYY-MM-DD'] as const;
+
+/**
  * Schema for user settings update (PATCH /api/settings)
  */
 export const settingsUpdateSchema = z.object({
@@ -43,6 +48,7 @@ export const settingsUpdateSchema = z.object({
     },
     { message: 'Invalid timezone format' }
   ).optional(),
+  dateFormat: z.enum(dateFormats).optional(),
 });
 
 export type SettingsUpdateInput = z.infer<typeof settingsUpdateSchema>;

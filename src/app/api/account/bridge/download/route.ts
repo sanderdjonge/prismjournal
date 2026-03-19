@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
+import { withAuth } from '@/lib/api/withAuth';
 
-export async function GET() {
+export const GET = withAuth(async () => {
     const filePath = join(process.cwd(), 'server', 'workers', 'PrismSync.mq5');
 
     try {
@@ -16,6 +17,6 @@ export async function GET() {
     } catch {
         return NextResponse.json({ error: 'File not found' }, { status: 404 });
     }
-}
+});
 
 export const runtime = 'nodejs';

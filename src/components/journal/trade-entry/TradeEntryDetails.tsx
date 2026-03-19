@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Zap, Brain, FileText, CheckCircle2, XCircle, Smile, Meh, Frown, Plus, X, Loader2 } from 'lucide-react';
+import { Zap, Brain, FileText, CheckCircle2, XCircle, Plus, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { MOOD_SELECTOR_OPTIONS } from '@/constants/tradeConfig';
 
 interface Strategy {
     id: string;
@@ -20,6 +21,7 @@ interface TradeEntryDetailsProps {
     onMoodChange: (value: string) => void;
     notes: string;
     onNotesChange: (value: string) => void;
+    disabled?: boolean;
 }
 
 const DEFAULT_STRATEGIES = [
@@ -30,11 +32,6 @@ const DEFAULT_STRATEGIES = [
     'Other / Experimental'
 ];
 
-const MOOD_OPTIONS = [
-    { id: 'CALM', icon: Smile, color: 'text-accent', bg: 'bg-accent/10' },
-    { id: 'NEUTRAL', icon: Meh, color: 'text-gray-400', bg: 'bg-white/10' },
-    { id: 'ANXIOUS', icon: Frown, color: 'text-danger', bg: 'bg-danger/10' },
-];
 
 export function TradeEntryDetails({
     strategy,
@@ -45,6 +42,7 @@ export function TradeEntryDetails({
     onMoodChange,
     notes,
     onNotesChange,
+    disabled = false,
 }: TradeEntryDetailsProps) {
     const [customStrategies, setCustomStrategies] = useState<Strategy[]>([]);
     const [loading, setLoading] = useState(true);
@@ -64,8 +62,8 @@ export function TradeEntryDetails({
                     const data = await res.json();
                     setCustomStrategies(data.strategies || []);
                 }
-            } catch (e) {
-                console.error('Failed to load strategies:', e);
+            } catch {
+                // silently ignore
             } finally {
                 setLoading(false);
             }
@@ -219,8 +217,8 @@ export function TradeEntryDetails({
                             onClick={() => onComplianceChange(false)}
                             className={cn(
                                 "flex-1 p-3 rounded-xl border flex items-center justify-center gap-2 transition-all text-[10px] font-black uppercase tracking-widest",
-                                compliance === false 
-                                    ? "bg-danger/10 border-danger/40 text-danger" 
+                                compliance === false
+                                    ? "bg-loss/10 border-loss/40 text-loss"
                                     : "bg-white/5 border-transparent text-gray-500 hover:text-gray-300"
                             )}
                         >
@@ -235,7 +233,7 @@ export function TradeEntryDetails({
                         <Brain size={10} /> Psychological State
                     </label>
                     <div className="flex gap-2">
-                        {MOOD_OPTIONS.map((m) => (
+                        {MOOD_SELECTOR_OPTIONS.map((m) => (
                             <button 
                                 type="button"
                                 key={m.id} 

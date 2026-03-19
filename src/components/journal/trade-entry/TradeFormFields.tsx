@@ -2,45 +2,28 @@
 
 import React from 'react';
 import { TrendingUp, TrendingDown, CheckCircle } from 'lucide-react';
+import { UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from 'react-hook-form';
 import { cn } from '@/lib/cn';
+import type { TradeFormValues } from '@/lib/validations/tradeForm';
 
 interface TradeFormFieldsProps {
-    symbol: string;
-    onSymbolChange: (value: string) => void;
-    side: 'BUY' | 'SELL';
-    onSideChange: (value: 'BUY' | 'SELL') => void;
-    volume: string;
-    onVolumeChange: (value: string) => void;
-    entryPrice: string;
-    onEntryPriceChange: (value: string) => void;
-    exitPrice: string;
-    onExitPriceChange: (value: string) => void;
-    takeProfit: string;
-    onTakeProfitChange: (value: string) => void;
-    stopLoss: string;
-    onStopLossChange: (value: string) => void;
-    isClosed: boolean;
-    onIsClosedChange: (value: boolean) => void;
+    register: UseFormRegister<TradeFormValues>;
+    errors: FieldErrors<TradeFormValues>;
+    setValue: UseFormSetValue<TradeFormValues>;
+    watch: UseFormWatch<TradeFormValues>;
+    disabled?: boolean;
 }
 
 export function TradeFormFields({
-    symbol,
-    onSymbolChange,
-    side,
-    onSideChange,
-    volume,
-    onVolumeChange,
-    entryPrice,
-    onEntryPriceChange,
-    exitPrice,
-    onExitPriceChange,
-    takeProfit,
-    onTakeProfitChange,
-    stopLoss,
-    onStopLossChange,
-    isClosed,
-    onIsClosedChange,
+    register,
+    errors,
+    setValue,
+    watch,
+    disabled = false,
 }: TradeFormFieldsProps) {
+    const side = watch('type');
+    const isClosed = watch('isClosed');
+
     return (
         <>
             {/* Row 1: Instrument + Side + Volume */}
@@ -48,44 +31,59 @@ export function TradeFormFields({
                 <div className="space-y-1.5">
                     <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1">Instrument</label>
                     <input
-                        value={symbol} 
-                        onChange={e => onSymbolChange(e.target.value)}
+                        {...register('symbol')}
                         placeholder="e.g. NAS100"
-                        className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm font-bold text-white outline-none focus:border-primary/50 transition-all font-mono uppercase"
+                        disabled={disabled}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm font-bold text-white outline-none focus:border-primary/50 transition-all font-mono uppercase disabled:opacity-50 disabled:cursor-not-allowed"
                     />
+                    {errors.symbol && (
+                        <p className="text-danger text-[10px] font-bold px-1">{errors.symbol.message}</p>
+                    )}
                 </div>
                 <div className="space-y-1.5">
                     <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1">Direction</label>
                     <div className="flex p-1 bg-white/5 rounded-xl border border-white/10 h-[46px]">
-                        <button 
-                            onClick={() => onSideChange('BUY')}
+                        <button
+                            type="button"
+                            onClick={() => !disabled && setValue('type', 'LONG', { shouldValidate: true })}
+                            disabled={disabled}
                             className={cn(
                                 "flex-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1",
-                                side === 'BUY' ? "bg-accent text-black shadow-lg" : "text-gray-500 hover:text-white"
+                                side === 'LONG' ? "bg-profit text-black shadow-lg" : "text-gray-500 hover:text-white",
+                                disabled && "opacity-50 cursor-not-allowed"
                             )}
                         >
-                            <TrendingUp size={12} /> Buy
+                            <TrendingUp size={12} /> Long
                         </button>
-                        <button 
-                            onClick={() => onSideChange('SELL')}
+                        <button
+                            type="button"
+                            onClick={() => !disabled && setValue('type', 'SHORT', { shouldValidate: true })}
+                            disabled={disabled}
                             className={cn(
                                 "flex-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1",
-                                side === 'SELL' ? "bg-danger text-white shadow-lg" : "text-gray-500 hover:text-white"
+                                side === 'SHORT' ? "bg-loss text-white shadow-lg" : "text-gray-500 hover:text-white",
+                                disabled && "opacity-50 cursor-not-allowed"
                             )}
                         >
-                            <TrendingDown size={12} /> Sell
+                            <TrendingDown size={12} /> Short
                         </button>
                     </div>
+                    {errors.type && (
+                        <p className="text-danger text-[10px] font-bold px-1">{errors.type.message}</p>
+                    )}
                 </div>
                 <div className="space-y-1.5">
                     <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1">Volume (Lots)</label>
-                    <input 
-                        type="number" 
-                        step="0.01" 
-                        value={volume} 
-                        onChange={e => onVolumeChange(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm font-bold text-white outline-none focus:border-primary/50 transition-all" 
+                    <input
+                        type="number"
+                        step="0.01"
+                        {...register('volume')}
+                        disabled={disabled}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm font-bold text-white outline-none focus:border-primary/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     />
+                    {errors.volume && (
+                        <p className="text-danger text-[10px] font-bold px-1">{errors.volume.message}</p>
+                    )}
                 </div>
             </div>
 
@@ -93,27 +91,40 @@ export function TradeFormFields({
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                     <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1">Entry Price</label>
-                    <input 
-                        type="number" 
-                        value={entryPrice} 
-                        onChange={e => onEntryPriceChange(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm font-bold text-white outline-none focus:border-primary/50 transition-all" 
+                    <input
+                        type="number"
+                        step="0.00001"
+                        {...register('entryPrice')}
+                        disabled={disabled}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm font-bold text-white outline-none focus:border-primary/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     />
+                    {errors.entryPrice && (
+                        <p className="text-danger text-[10px] font-bold px-1">{errors.entryPrice.message}</p>
+                    )}
                 </div>
                 <div className="space-y-1.5">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1">
+                    <label className={cn(
+                        "text-[9px] font-black uppercase tracking-widest px-1",
+                        isClosed ? "text-gray-500" : "text-gray-700"
+                    )}>
                         Exit Price {isClosed && <span className="text-danger">*</span>}
                     </label>
-                    <input 
-                        type="number" 
-                        value={exitPrice} 
-                        onChange={e => onExitPriceChange(e.target.value)}
-                        placeholder={isClosed ? "Required for closed trades" : "Leave empty for open trades"}
+                    <input
+                        type="number"
+                        step="0.00001"
+                        {...register('exitPrice')}
+                        placeholder={isClosed ? "Required for closed trades" : "—"}
+                        disabled={disabled || !isClosed}
                         className={cn(
-                            "w-full bg-white/5 border rounded-xl p-3 text-sm font-bold text-white outline-none transition-all",
-                            isClosed ? "border-danger/50 focus:border-danger" : "border-white/10 focus:border-primary/50"
-                        )} 
+                            "w-full border rounded-xl p-3 text-sm font-bold outline-none transition-all disabled:opacity-30 disabled:cursor-not-allowed",
+                            isClosed
+                                ? "bg-white/5 border-danger/50 text-white focus:border-danger"
+                                : "bg-white/[0.02] border-white/5 text-gray-600"
+                        )}
                     />
+                    {errors.exitPrice && (
+                        <p className="text-danger text-[10px] font-bold px-1">{errors.exitPrice.message}</p>
+                    )}
                 </div>
             </div>
 
@@ -121,11 +132,12 @@ export function TradeFormFields({
             <div className="flex items-center gap-3 p-3 bg-white/[0.02] rounded-xl border border-white/5">
                 <button
                     type="button"
-                    onClick={() => onIsClosedChange(!isClosed)}
+                    onClick={() => !disabled && setValue('isClosed', !isClosed, { shouldValidate: true })}
+                    disabled={disabled}
                     className={cn(
-                        "w-6 h-6 rounded-lg flex items-center justify-center transition-all",
-                        isClosed 
-                            ? "bg-accent text-black" 
+                        "w-6 h-6 rounded-lg flex items-center justify-center transition-all disabled:cursor-not-allowed",
+                        isClosed
+                            ? "bg-accent text-black"
                             : "bg-white/10 text-gray-500 hover:bg-white/20"
                     )}
                 >
@@ -136,8 +148,8 @@ export function TradeFormFields({
                         {isClosed ? 'Trade Closed' : 'Trade Open'}
                     </p>
                     <p className="text-[10px] text-gray-500">
-                        {isClosed 
-                            ? 'This trade has been closed with an exit price' 
+                        {isClosed
+                            ? 'This trade has been closed with an exit price'
                             : 'Click to mark as closed and enter exit price'
                         }
                     </p>
@@ -150,25 +162,33 @@ export function TradeFormFields({
                     <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1 flex items-center gap-1.5">
                         <TrendingUp size={10} className="text-accent" /> Take Profit
                     </label>
-                    <input 
-                        type="number" 
-                        value={takeProfit} 
-                        onChange={e => onTakeProfitChange(e.target.value)}
+                    <input
+                        type="number"
+                        step="0.00001"
+                        {...register('takeProfit')}
                         placeholder="Optional"
-                        className="w-full bg-accent/5 border border-accent/10 rounded-xl p-3 text-sm font-bold text-white outline-none focus:border-accent/40 transition-all" 
+                        disabled={disabled}
+                        className="w-full bg-accent/5 border border-accent/10 rounded-xl p-3 text-sm font-bold text-white outline-none focus:border-accent/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     />
+                    {errors.takeProfit && (
+                        <p className="text-danger text-[10px] font-bold px-1">{errors.takeProfit.message}</p>
+                    )}
                 </div>
                 <div className="space-y-1.5">
                     <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1 flex items-center gap-1.5">
                         <TrendingDown size={10} className="text-danger" /> Stop Loss
                     </label>
-                    <input 
-                        type="number" 
-                        value={stopLoss} 
-                        onChange={e => onStopLossChange(e.target.value)}
+                    <input
+                        type="number"
+                        step="0.00001"
+                        {...register('stopLoss')}
                         placeholder="Optional"
-                        className="w-full bg-danger/5 border border-danger/10 rounded-xl p-3 text-sm font-bold text-white outline-none focus:border-danger/40 transition-all" 
+                        disabled={disabled}
+                        className="w-full bg-danger/5 border border-danger/10 rounded-xl p-3 text-sm font-bold text-white outline-none focus:border-danger/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     />
+                    {errors.stopLoss && (
+                        <p className="text-danger text-[10px] font-bold px-1">{errors.stopLoss.message}</p>
+                    )}
                 </div>
             </div>
         </>

@@ -1,12 +1,22 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getDefaultAccount } from '@/lib/getAccount';
-import { calculateProfitFactor } from '../../../../server/utils/analytics_compute';
+import { getAllUserAccounts } from '@/lib/getAccount';
+import { calculateProfitFactor } from '@/lib/analytics';
+import { withAuth } from '@/lib/api/withAuth';
+import { cacheGet, cacheSet } from '@/lib/api/cache';
+import type { Session } from 'next-auth';
 
-export async function GET() {
-    const account = await getDefaultAccount();
+export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, unknown>, session: Session & { user: { id: string } }) => {
+    const { searchParams } = new URL(request.url);
+    const from = searchParams.get('from');
+    const to = searchParams.get('to');
 
-    if (!account) {
+    const userId = session.user.id;
+
+    const allAccounts = await getAllUserAccounts(userId);
+    const accountIds = allAccounts.map((a) => a.id);
+
+    if (accountIds.length === 0) {
         return NextResponse.json({
             symbolData: [],
             expectancyData: [],
@@ -18,8 +28,25 @@ export async function GET() {
         });
     }
 
+    const accountFilter = searchParams.get('account');
+    const filteredIds = accountFilter && accountIds.includes(accountFilter) ? [accountFilter] : accountIds;
+
+    const cacheKey = `analytics:${userId}:${from ?? ''}:${to ?? ''}:${accountFilter ?? 'all'}`;
+    const cached = cacheGet(cacheKey);
+    if (cached) return NextResponse.json(cached);
+
+    // Build date filter
+    const dateFilter: { gte?: Date; lte?: Date } = {};
+    if (from) dateFilter.gte = new Date(from);
+    if (to) dateFilter.lte = new Date(to);
+
     const trades = await prisma.trade.findMany({
-        where: { accountId: account.id, pnl: { not: null }, exitTime: { not: null } },
+        where: {
+            accountId: { in: filteredIds },
+            pnl: { not: null },
+            exitTime: { not: null },
+            ...(Object.keys(dateFilter).length > 0 && { entryTime: dateFilter }),
+        },
         orderBy: { entryTime: 'asc' },
     });
 
@@ -64,13 +91,35 @@ export async function GET() {
     const step = Math.max(1, Math.floor(expectancyData.length / 20));
     const sampledExpectancy = expectancyData.filter((_, i) => i % step === 0 || i === expectancyData.length - 1);
 
-    // --- Session distribution (by entry hour) ---
-    const sessionCounts = Array(24).fill(0);
-    for (const t of trades) {
-        const hour = t.entryTime.getHours();
-        sessionCounts[hour] += 1;
+    // --- Session distribution (by entry hour) - ALL trades, not just closed with PnL ---
+    const allTradesForHours = await prisma.trade.findMany({
+        where: {
+            accountId: { in: filteredIds },
+            ...(Object.keys(dateFilter).length > 0 && { entryTime: dateFilter }),
+        },
+        select: { entryTime: true, pnl: true, exitTime: true },
+    });
+
+    const hourBuckets = Array.from({ length: 24 }, (_, h) => ({
+        hour: h,
+        count: 0,
+        wins: 0,
+        losses: 0,
+        totalPnl: 0,
+    }));
+
+    for (const trade of allTradesForHours) {
+        const h = trade.entryTime.getUTCHours();
+        hourBuckets[h].count++;
+        if (trade.pnl != null) {
+            hourBuckets[h].totalPnl += trade.pnl;
+            if (trade.pnl > 0) hourBuckets[h].wins++;
+            else if (trade.pnl < 0) hourBuckets[h].losses++;
+        }
     }
-    const sessionData = sessionCounts.map((count, hour) => ({ hour, count }));
+
+    // Return all 24 hours (chart expects full array)
+    const sessionData = hourBuckets;
 
     // --- Key metrics ---
     const pnlValues = trades.map(t => ({ pnl: t.pnl ?? 0 }));
@@ -98,7 +147,7 @@ export async function GET() {
         ? Math.round(Math.abs(losers.reduce((s, t) => s + (t.pnl ?? 0), 0) / losers.length) * 100) / 100
         : 0;
 
-    return NextResponse.json({
+    const responseData = {
         symbolData,
         expectancyData: sampledExpectancy,
         sessionData,
@@ -106,7 +155,10 @@ export async function GET() {
         expectancy,
         avgRR,
         meanDrawdown,
-    });
-}
+    };
+
+    cacheSet(cacheKey, responseData, 5 * 60_000);
+    return NextResponse.json(responseData);
+});
 
 export const runtime = 'nodejs';
