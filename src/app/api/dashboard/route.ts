@@ -176,34 +176,32 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
         isActive: !t.exitTime,
     }));
 
-    // --- Calendar data (trades by EXIT date for current month) ---
-    const calendarTrades = await prisma.trade.findMany({
-        where: {
-            accountId: { in: filteredIds },
-            exitTime: { not: null },
-            pnl: { not: null },
-        },
-        orderBy: { exitTime: 'desc' },
-        select: { exitTime: true, pnl: true },
-    });
+    // --- Calendar data (trades by EXIT date, aggregated in PostgreSQL) ---
+    const calendarRaw = await prisma.$queryRaw<{ date: string; pnl: number; count: number; wins: number; losses: number }[]>`
+      SELECT
+        TO_CHAR("exitTime" AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS date,
+        SUM(pnl)::float AS pnl,
+        COUNT(*)::int AS count,
+        COUNT(*) FILTER (WHERE pnl > 0)::int AS wins,
+        COUNT(*) FILTER (WHERE pnl < 0)::int AS losses
+      FROM "Trade"
+      WHERE "accountId" = ANY(${filteredIds}::text[])
+        AND "exitTime" IS NOT NULL
+        AND pnl IS NOT NULL
+      GROUP BY TO_CHAR("exitTime" AT TIME ZONE 'UTC', 'YYYY-MM-DD')
+      ORDER BY date DESC
+    `;
 
-    // Aggregate P&L, trades, wins, losses per day by EXIT date
-    const calendarMap = new Map<string, { pnl: number; trades: number; wins: number; losses: number }>();
-    for (const t of calendarTrades) {
-        const date = t.exitTime!.toISOString().split('T')[0];
-        const existing = calendarMap.get(date) ?? { pnl: 0, trades: 0, wins: 0, losses: 0 };
-        existing.pnl += t.pnl ?? 0;
-        existing.trades += 1;
-        if ((t.pnl ?? 0) > 0) existing.wins += 1;
-        else if ((t.pnl ?? 0) < 0) existing.losses += 1;
-        calendarMap.set(date, existing);
+    const calendarMap: Record<string, { pnl: number; count: number; wins: number; losses: number }> = {};
+    for (const row of calendarRaw) {
+        calendarMap[row.date] = { pnl: row.pnl, count: row.count, wins: row.wins, losses: row.losses };
     }
-    const calendarData = Array.from(calendarMap.entries()).map(([date, data]) => ({
+    const calendarData = Object.entries(calendarMap).map(([date, data]) => ({
         date,
         pnl: data.pnl,
-        trades: data.trades,
+        trades: data.count,
         wins: data.wins,
-        losses: data.losses
+        losses: data.losses,
     }));
 
     return NextResponse.json({

@@ -139,6 +139,14 @@ export async function runDailySnapshot(): Promise<void> {
             }
         }
 
+        // EquitySnapshot retention: delete rows older than 90 days
+        const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+        await prisma.equitySnapshot.deleteMany({
+            where: {
+                timestamp: { lt: cutoff },
+            },
+        });
+
         console.log(`[snapshot] Done — ${new Date().toISOString()}`);
     } catch (err) {
         console.error('[snapshot] Fatal error:', err);
