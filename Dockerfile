@@ -28,7 +28,8 @@ RUN npm run build
 
 # Production image, copy all the files and run next
 FROM base AS runner
-RUN apk add --no-cache openssl
+# Install openssl for Prisma and postgresql-client for pg_dump (backup functionality)
+RUN apk add --no-cache openssl postgresql-client
 WORKDIR /app
 
 ENV NODE_ENV=production
