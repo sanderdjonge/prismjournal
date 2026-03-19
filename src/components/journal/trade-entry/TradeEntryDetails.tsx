@@ -205,8 +205,8 @@ export function TradeEntryDetails({
                             onClick={() => onComplianceChange(true)}
                             className={cn(
                                 "flex-1 p-3 rounded-xl border flex items-center justify-center gap-2 transition-all text-[10px] font-black uppercase tracking-widest",
-                                compliance === true 
-                                    ? "bg-accent/10 border-accent/40 text-accent" 
+                                compliance === true
+                                    ? "bg-profit/10 border-profit/40 text-profit"
                                     : "bg-white/5 border-transparent text-gray-500 hover:text-gray-300"
                             )}
                         >
