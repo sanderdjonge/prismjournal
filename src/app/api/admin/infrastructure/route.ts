@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { auth } from '@/lib/auth';
 import { spawn } from 'child_process';
+import { withAdmin } from '@/lib/api/withAdmin';
 
 /**
  * Run an external command without a shell (no string interpolation / injection risk).
@@ -22,19 +22,6 @@ function runCommand(cmd: string, args: string[]): Promise<string> {
   });
 }
 
-
-// Check if user is admin
-async function isAdmin(): Promise<boolean> {
-  const session = await auth();
-  if (!session?.user?.id) return false;
-  
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { isSuperuser: true },
-  });
-  
-  return user?.isSuperuser === true;
-}
 
 // Get database size
 async function getDatabaseSize(): Promise<number> {
@@ -183,11 +170,7 @@ async function getErrorTracking(): Promise<{
 }
 
 // GET /api/admin/infrastructure
-export async function GET(request: NextRequest) {
-  if (!(await isAdmin())) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-  }
-  
+export const GET = withAdmin(async (request: NextRequest) => {
   try {
     const startTime = Date.now();
     
@@ -238,4 +221,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
