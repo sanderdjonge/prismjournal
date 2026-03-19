@@ -1,33 +1,42 @@
+import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import type { Session } from 'next-auth';
+
+export type AdminSession = Session & { user: { id: string; isSuperuser: boolean } };
 
 type AdminHandler = (
-    req: Request,
-    session: { user: { id: string } }
-) => Promise<NextResponse> | NextResponse;
+  req: NextRequest,
+  ctx: Record<string, unknown>,
+  session: AdminSession
+) => Promise<Response>;
 
 export function withAdmin(handler: AdminHandler) {
-    return async (req: Request): Promise<NextResponse> => {
-        const session = await auth();
-        if (!session?.user?.id) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+  return async (req: NextRequest, ctx: Record<string, unknown>): Promise<Response> => {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: { isSuperuser: true },
-        });
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { isSuperuser: true },
+    });
 
-        if (!user?.isSuperuser) {
-            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-        }
+    if (user?.isSuperuser !== true) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
-        try {
-            return await handler(req, { user: { id: session.user.id } });
-        } catch (error) {
-            console.error('[withAdmin]', req.url, error);
-            return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-        }
-    };
+    const adminSession = {
+      ...session,
+      user: { ...session.user, isSuperuser: true },
+    } as AdminSession;
+
+    try {
+      return await handler(req, ctx, adminSession);
+    } catch (error) {
+      console.error('[withAdmin]', req.url, error);
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    }
+  };
 }

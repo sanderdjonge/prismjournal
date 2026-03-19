@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { z } from 'zod';
+import { withAdmin } from '@/lib/api/withAdmin';
+import type { AdminSession } from '@/lib/api/withAdmin';
 
 // Audit log action types
 export enum AuditAction {
@@ -41,24 +43,6 @@ async function createAuditLog(
   }
 }
 
-// Check if user is admin
-async function isAdmin(): Promise<{ isAdmin: boolean; userId?: string }> {
-  const session = await auth();
-  if (!session?.user?.id) return { isAdmin: false };
-  
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { isSuperuser: true, totpEnabled: true },
-  });
-  
-  // Require 2FA for admin access
-  if (user?.isSuperuser !== true) return { isAdmin: false };
-  // Note: In production, you may want to require 2FA verification before admin actions
-  // For now, we just check if 2FA is enabled
-  
-  return { isAdmin: true, userId: session.user.id };
-}
-
 // Rate limiting - simple in-memory store (use Redis in production)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 
@@ -85,18 +69,9 @@ function checkRateLimit(
 }
 
 // GET - List all users with pagination
-export async function GET(request: NextRequest) {
-  const adminCheck = await isAdmin();
-  if (!adminCheck.isAdmin) {
-    await createAuditLog(AuditAction.SECURITY_VIOLATION, {
-      action: 'UNAUTHORIZED_ADMIN_ACCESS_ATTEMPT',
-      endpoint: '/api/admin/users',
-    }, request);
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-  }
-
+export const GET = withAdmin(async (request: NextRequest, _ctx: Record<string, unknown>, session: AdminSession) => {
   // Rate limiting
-  const rateLimit = checkRateLimit(`admin-users-${adminCheck.userId}`, 30, 60000);
+  const rateLimit = checkRateLimit(`admin-users-${session.user.id}`, 30, 60000);
   if (!rateLimit.allowed) {
     return NextResponse.json(
       { error: 'Too many requests', resetTime: rateLimit.resetTime },
@@ -158,7 +133,7 @@ export async function GET(request: NextRequest) {
       totalPages: Math.ceil(total / limit),
     },
   });
-}
+});
 
 // PATCH - Update user role or status
 const updateUserSchema = z.object({
@@ -166,17 +141,9 @@ const updateUserSchema = z.object({
   action: z.enum(['makeAdmin', 'removeAdmin', 'activate', 'deactivate']),
 });
 
-export async function PATCH(request: NextRequest) {
-  const adminCheck = await isAdmin();
-  if (!adminCheck.isAdmin) {
-    await createAuditLog(AuditAction.SECURITY_VIOLATION, {
-      action: 'UNAUTHORIZED_ADMIN_UPDATE_ATTEMPT',
-    }, request);
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-  }
-
+export const PATCH = withAdmin(async (request: NextRequest, _ctx: Record<string, unknown>, session: AdminSession) => {
   // Stricter rate limiting for modifications
-  const rateLimit = checkRateLimit(`admin-modify-${adminCheck.userId}`, 10, 60000);
+  const rateLimit = checkRateLimit(`admin-modify-${session.user.id}`, 10, 60000);
   if (!rateLimit.allowed) {
     return NextResponse.json(
       { error: 'Too many requests', resetTime: rateLimit.resetTime },
@@ -189,7 +156,7 @@ export async function PATCH(request: NextRequest) {
     const { userId, action } = updateUserSchema.parse(body);
 
     // Prevent self-modification of admin status
-    if (userId === adminCheck.userId && (action === 'removeAdmin' || action === 'deactivate')) {
+    if (userId === session.user.id && (action === 'removeAdmin' || action === 'deactivate')) {
       await createAuditLog(AuditAction.SECURITY_VIOLATION, {
         action: 'SELF_DEMODIFICATION_ATTEMPT',
         targetAction: action,
@@ -286,20 +253,12 @@ export async function PATCH(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 // DELETE - Soft delete user (set isActive to false)
-export async function DELETE(request: NextRequest) {
-  const adminCheck = await isAdmin();
-  if (!adminCheck.isAdmin) {
-    await createAuditLog(AuditAction.SECURITY_VIOLATION, {
-      action: 'UNAUTHORIZED_ADMIN_DELETE_ATTEMPT',
-    }, request);
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-  }
-
+export const DELETE = withAdmin(async (request: NextRequest, _ctx: Record<string, unknown>, session: AdminSession) => {
   // Very strict rate limiting for deletions
-  const rateLimit = checkRateLimit(`admin-delete-${adminCheck.userId}`, 5, 60000);
+  const rateLimit = checkRateLimit(`admin-delete-${session.user.id}`, 5, 60000);
   if (!rateLimit.allowed) {
     return NextResponse.json(
       { error: 'Too many requests', resetTime: rateLimit.resetTime },
@@ -316,7 +275,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Prevent self-deletion
-    if (userId === adminCheck.userId) {
+    if (userId === session.user.id) {
       await createAuditLog(AuditAction.SECURITY_VIOLATION, {
         action: 'SELF_DELETION_ATTEMPT',
       }, request);
@@ -356,4 +315,4 @@ export async function DELETE(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

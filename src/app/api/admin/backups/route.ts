@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
-import { auth } from '@/lib/auth';
 import { spawn } from 'child_process';
+import { withAdmin } from '@/lib/api/withAdmin';
 import { existsSync, readdirSync, statSync, unlinkSync } from 'fs';
 import { join } from 'path';
 
@@ -38,19 +37,6 @@ function execCommand(
       }
     });
   });
-}
-
-// Check if user is admin
-async function isAdmin(): Promise<boolean> {
-  const session = await auth();
-  if (!session?.user?.id) return false;
-  
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { isSuperuser: true },
-  });
-  
-  return user?.isSuperuser === true;
 }
 
 /**
@@ -112,63 +98,47 @@ async function getBackupConfig(): Promise<{
 }
 
 // GET /api/admin/backups - List all backups
-export async function GET(request: NextRequest) {
-  if (!(await isAdmin())) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-  }
-  
-  try {
-    const [hourlyBackups, dailyBackups, weeklyBackups, config] = await Promise.all([
-      Promise.resolve(getBackupFiles('hourly')),
-      Promise.resolve(getBackupFiles('daily')),
-      Promise.resolve(getBackupFiles('weekly')),
-      getBackupConfig(),
-    ]);
-    
-    // Calculate totals
-    const allBackups = [...hourlyBackups, ...dailyBackups, ...weeklyBackups];
-    const totalSize = allBackups.reduce((sum, b) => sum + b.size, 0);
-    
-    // Get last backup time
-    const lastBackup = hourlyBackups[0]?.createdAt || dailyBackups[0]?.createdAt || null;
-    
-    return NextResponse.json({
-      status: {
-        lastBackup,
-        totalBackups: allBackups.length,
-        totalSizeMb: Math.round(totalSize / (1024 * 1024) * 10) / 10,
-      },
-      config,
-      backups: {
-        hourly: hourlyBackups.map(b => ({
-          ...b,
-          sizeMb: Math.round(b.size / (1024 * 1024) * 10) / 10,
-        })),
-        daily: dailyBackups.map(b => ({
-          ...b,
-          sizeMb: Math.round(b.size / (1024 * 1024) * 10) / 10,
-        })),
-        weekly: weeklyBackups.map(b => ({
-          ...b,
-          sizeMb: Math.round(b.size / (1024 * 1024) * 10) / 10,
-        })),
-      },
-    });
-  } catch (error) {
-    console.error('Backups API error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch backup data' },
-      { status: 500 }
-    );
-  }
-}
+export const GET = withAdmin(async (request: NextRequest) => {
+  const [hourlyBackups, dailyBackups, weeklyBackups, config] = await Promise.all([
+    Promise.resolve(getBackupFiles('hourly')),
+    Promise.resolve(getBackupFiles('daily')),
+    Promise.resolve(getBackupFiles('weekly')),
+    getBackupConfig(),
+  ]);
+
+  // Calculate totals
+  const allBackups = [...hourlyBackups, ...dailyBackups, ...weeklyBackups];
+  const totalSize = allBackups.reduce((sum, b) => sum + b.size, 0);
+
+  // Get last backup time
+  const lastBackup = hourlyBackups[0]?.createdAt || dailyBackups[0]?.createdAt || null;
+
+  return NextResponse.json({
+    status: {
+      lastBackup,
+      totalBackups: allBackups.length,
+      totalSizeMb: Math.round(totalSize / (1024 * 1024) * 10) / 10,
+    },
+    config,
+    backups: {
+      hourly: hourlyBackups.map(b => ({
+        ...b,
+        sizeMb: Math.round(b.size / (1024 * 1024) * 10) / 10,
+      })),
+      daily: dailyBackups.map(b => ({
+        ...b,
+        sizeMb: Math.round(b.size / (1024 * 1024) * 10) / 10,
+      })),
+      weekly: weeklyBackups.map(b => ({
+        ...b,
+        sizeMb: Math.round(b.size / (1024 * 1024) * 10) / 10,
+      })),
+    },
+  });
+});
 
 // POST /api/admin/backups - Create manual backup
-export async function POST(request: NextRequest) {
-  if (!(await isAdmin())) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-  }
-  
+export const POST = withAdmin(async (request: NextRequest) => {
   try {
     const body = await request.json().catch(() => ({}));
     const { action, file } = body;
@@ -251,14 +221,10 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 // DELETE /api/admin/backups?file=...&type=... - Delete a backup
-export async function DELETE(request: NextRequest) {
-  if (!(await isAdmin())) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-  }
-  
+export const DELETE = withAdmin(async (request: NextRequest) => {
   try {
     const { searchParams } = new URL(request.url);
     const file = searchParams.get('file');
@@ -297,29 +263,25 @@ export async function DELETE(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 // PATCH /api/admin/backups - Update backup configuration
-export async function PATCH(request: NextRequest) {
-  if (!(await isAdmin())) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-  }
-  
+export const PATCH = withAdmin(async (request: NextRequest) => {
   try {
     const body = await request.json();
     const { keepHourly, keepDaily, keepWeekly } = body;
-    
+
     // In a production system, you'd store these in the database
     // For now, we'll just return success and note that env vars need to be updated
-    
+
     const config = {
       keepHourly: keepHourly || parseInt(process.env.BACKUP_KEEP_HOURLY || '24'),
       keepDaily: keepDaily || parseInt(process.env.BACKUP_KEEP_DAILY || '30'),
       keepWeekly: keepWeekly || parseInt(process.env.BACKUP_KEEP_WEEKLY || '12'),
     };
-    
+
     // TODO: Store in database or update config file
-    
+
     return NextResponse.json({
       success: true,
       message: 'Configuration updated. Note: Changes require container restart to take effect.',
@@ -332,4 +294,4 @@ export async function PATCH(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
