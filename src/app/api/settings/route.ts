@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { auth } from '@/lib/auth';
-import { getDefaultAccount } from '@/lib/getAccount';
 import { validateBody, settingsUpdateSchema } from '@/lib/validations';
 
 export async function GET() {
@@ -29,21 +28,19 @@ export async function PATCH(request: Request) {
     const session = await auth();
     if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const account = await getDefaultAccount();
-    if (!account) return NextResponse.json({ error: 'No account' }, { status: 500 });
-
     const validation = await validateBody(request, settingsUpdateSchema);
     if (!validation.success) {
         return validation.response;
     }
 
     const body = validation.data;
+    const userId = session.user.id;
 
     const settings = await prisma.userSettings.upsert({
-        where: { userId: account.userId },
+        where: { userId },
         update: { ...body },
         create: {
-            userId: account.userId,
+            userId,
             displayCurrency: body.displayCurrency ?? 'USD',
             timezone: body.timezone ?? 'Europe/Amsterdam',
         },

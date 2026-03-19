@@ -55,9 +55,8 @@ export async function POST(request: NextRequest) {
       });
 
       // Send reset email
-      const baseUrl = (process.env.NEXTAUTH_URL || process.env.VERCEL_URL)
-        ? (process.env.NEXTAUTH_URL || `https://${process.env.VERCEL_URL}`)
-        : 'http://localhost:3002';
+      const baseUrl = process.env.NEXTAUTH_URL;
+      if (!baseUrl) throw new Error('NEXTAUTH_URL is not set');
       const resetUrl = `${baseUrl}/reset-password`;
 
       await sendPasswordResetEmail(user.email!, resetToken, resetUrl);
