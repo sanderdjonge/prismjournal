@@ -10,7 +10,7 @@ export async function logAuditEvent(
     data: {
       action,
       userId,
-      details,
+      details: details as object,
       ipAddress: request?.ip,
       userAgent: request?.userAgent,
     },
