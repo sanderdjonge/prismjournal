@@ -15,6 +15,24 @@ type RateLimitResult = {
 };
 
 /**
+ * Extract the client IP from a request.
+ *
+ * Security note: X-Forwarded-For can be spoofed by clients when there is no
+ * trusted reverse proxy in front of the application. When a trusted proxy is
+ * present it appends the real client IP as the LAST entry in the chain, so we
+ * use that value. If the header is absent we fall back to X-Real-IP.
+ */
+function extractClientIp(req: Request): string {
+  const forwarded = req.headers.get('x-forwarded-for');
+  if (forwarded) {
+    // Use the last IP in the chain — set by the trusted reverse proxy
+    const ips = forwarded.split(',').map(ip => ip.trim());
+    return ips[ips.length - 1] || 'unknown';
+  }
+  return req.headers.get('x-real-ip') || 'unknown';
+}
+
+/**
  * Creates a rate limiter with in-memory token cache
  * @param config - Configuration object with interval and max unique tokens
  * @returns Object with check method that returns 429 response if limit exceeded
@@ -24,11 +42,7 @@ export function rateLimit(config: RateLimitConfig): RateLimitResult {
 
   return {
     check: async (request: Request, limit: number) => {
-      // Get IP from various headers (for different proxy setups)
-      const ip =
-        request.headers.get('x-forwarded-for')?.split(',')[0].trim() ??
-        request.headers.get('x-real-ip') ??
-        'unknown';
+      const ip = extractClientIp(request);
 
       const now = Date.now();
       const token = tokenCache.get(ip);
@@ -37,13 +51,18 @@ export function rateLimit(config: RateLimitConfig): RateLimitResult {
       if (!token || now - token.lastReset > config.interval) {
         tokenCache.set(ip, { count: 1, lastReset: now });
 
-        // Clean up old entries to prevent memory leaks
+        // Clean up old entries to prevent memory leaks.
+        // NOTE: The sort-based eviction below is O(n log n) on every new/expired
+        // entry. This is acceptable given that uniqueTokenPerInterval is bounded
+        // (≤1000), but if the cap were much larger a linked-list LRU or a
+        // periodic sweep would be preferable.
         if (tokenCache.size > config.uniqueTokenPerInterval) {
-          // Remove oldest entries (first in Map)
           const entriesToDelete = tokenCache.size - config.uniqueTokenPerInterval + 1;
-          const keys = Array.from(tokenCache.keys());
-          for (let i = 0; i < Math.min(entriesToDelete, keys.length); i++) {
-            tokenCache.delete(keys[i]);
+          const sortedEntries = Array.from(tokenCache.entries()).sort(
+            ([, a], [, b]) => a.lastReset - b.lastReset
+          );
+          for (let i = 0; i < Math.min(entriesToDelete, sortedEntries.length); i++) {
+            tokenCache.delete(sortedEntries[i][0]);
           }
         }
         return null;
@@ -102,11 +121,11 @@ export const apiLimiter = rateLimit({
 
 /**
  * Rate limiter for sync endpoint
- * 100 requests per minute (same as general API but tracked separately)
+ * 600 requests per minute — MT5 EA sends bursts of history on startup
  */
 export const syncLimiter = rateLimit({
   interval: 60 * 1000, // 1 minute
-  uniqueTokenPerInterval: 100, // Lower unique token count for sync
+  uniqueTokenPerInterval: 500,
 });
 
 /**

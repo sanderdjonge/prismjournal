@@ -6,8 +6,9 @@ import Gauge from '@/components/dashboard/Gauge';
 import {
     ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ComposedChart, Line,
 } from 'recharts';
-import { Target, Zap } from 'lucide-react';
+import { Target, Zap, X } from 'lucide-react';
 import { useCurrency } from '@/lib/currency';
+import { useAccounts } from '@/hooks/useAccounts';
 
 type SymbolRow = { symbol: string; profit: number; winRate: number };
 type ExpectancyRow = { trade: number; val: number };
@@ -25,14 +26,23 @@ type AnalyticsData = {
 
 export default function AnalyticsPage() {
     const [data, setData] = useState<AnalyticsData | null>(null);
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
     const { formatAmount } = useCurrency();
+    const { selectedAccountId } = useAccounts();
 
     useEffect(() => {
-        fetch('/api/analytics')
+        const params = new URLSearchParams();
+        if (dateFrom) params.set('from', dateFrom);
+        if (dateTo) params.set('to', dateTo);
+        if (selectedAccountId) params.set('account', selectedAccountId);
+        const url = `/api/analytics${params.toString() ? `?${params.toString()}` : ''}`;
+
+        fetch(url)
             .then(r => r.json())
             .then(setData)
-            .catch(console.error);
-    }, []);
+            .catch(() => { /* silently ignore */ });
+    }, [dateFrom, dateTo, selectedAccountId]);
 
     const symbolData = data?.symbolData ?? [];
     const expectancyData = data?.expectancyData ?? [];
@@ -49,6 +59,33 @@ export default function AnalyticsPage() {
                             Advanced Statistical Performance Audit // Live Compute
                         </p>
                     </div>
+                </div>
+
+                {/* Date Range Selector */}
+                <div className="flex items-center gap-4 glass-card p-4 border-white/5 bg-white/5 rounded-xl">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Date Range</span>
+                    <input
+                        type="date"
+                        value={dateFrom}
+                        onChange={e => setDateFrom(e.target.value)}
+                        className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm font-bold text-white outline-none focus:border-primary/50"
+                    />
+                    <span className="text-gray-600 font-bold">→</span>
+                    <input
+                        type="date"
+                        value={dateTo}
+                        onChange={e => setDateTo(e.target.value)}
+                        className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm font-bold text-white outline-none focus:border-primary/50"
+                    />
+                    {(dateFrom || dateTo) && (
+                        <button
+                            onClick={() => { setDateFrom(''); setDateTo(''); }}
+                            className="flex items-center gap-1 text-xs text-gray-500 hover:text-white font-bold uppercase tracking-widest transition-colors"
+                        >
+                            <X size={12} />
+                            Clear
+                        </button>
+                    )}
                 </div>
 
                 {/* Gauges Row */}
@@ -78,10 +115,25 @@ export default function AnalyticsPage() {
                                     <BarChart data={symbolData}>
                                         <XAxis dataKey="symbol" axisLine={false} tickLine={false} tick={{ fill: '#4b5563', fontSize: 8, fontWeight: 900 }} />
                                         <YAxis hide />
-                                        <Tooltip contentStyle={{ backgroundColor: '#0a0a0a', border: 'none', borderRadius: '8px' }} />
+                                        <Tooltip
+                                            cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                                            content={({ active, payload }) => {
+                                                if (!active || !payload?.length) return null;
+                                                const d = payload[0].payload;
+                                                return (
+                                                    <div className="bg-black/90 border border-white/10 rounded-lg px-3 py-2 text-[10px] font-black space-y-1">
+                                                        <p className="text-white uppercase tracking-widest">{d.symbol}</p>
+                                                        <p className={d.profit >= 0 ? 'text-profit' : 'text-loss'}>
+                                                            P&L: {d.profit >= 0 ? '+' : ''}{formatAmount(d.profit)}
+                                                        </p>
+                                                        <p className="text-gray-400">Win rate: {d.winRate}%</p>
+                                                    </div>
+                                                );
+                                            }}
+                                        />
                                         <Bar dataKey="profit" radius={[2, 2, 0, 0]}>
                                             {symbolData.map((entry, i) => (
-                                                <Cell key={i} fill={entry.profit >= 0 ? '#10b981' : '#f43f5e'} fillOpacity={0.6} />
+                                                <Cell key={i} fill={entry.profit >= 0 ? '#4ade80' : '#f87171'} fillOpacity={0.6} />
                                             ))}
                                         </Bar>
                                     </BarChart>
@@ -104,6 +156,21 @@ export default function AnalyticsPage() {
                                     <ComposedChart data={expectancyData}>
                                         <XAxis dataKey="trade" axisLine={false} tickLine={false} tick={{ fill: '#4b5563', fontSize: 8, fontWeight: 900 }} />
                                         <YAxis hide />
+                                        <Tooltip
+                                            cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1 }}
+                                            content={({ active, payload }) => {
+                                                if (!active || !payload?.length) return null;
+                                                const d = payload[0].payload;
+                                                return (
+                                                    <div className="bg-black/90 border border-white/10 rounded-lg px-3 py-2 text-[10px] font-black space-y-1">
+                                                        <p className="text-gray-400">Trade #{d.trade}</p>
+                                                        <p className={d.val >= 0 ? 'text-profit' : 'text-loss'}>
+                                                            Avg P&L: {d.val >= 0 ? '+' : ''}{formatAmount(d.val)}
+                                                        </p>
+                                                    </div>
+                                                );
+                                            }}
+                                        />
                                         <Line type="monotone" dataKey="val" stroke="#7000ff" strokeWidth={2} dot={false} />
                                     </ComposedChart>
                                 </ResponsiveContainer>
@@ -124,10 +191,17 @@ export default function AnalyticsPage() {
                             {sessionData.map((s) => (
                                 <div
                                     key={s.hour}
-                                    className="flex-1 bg-primary/30 rounded-t transition-all group/bar relative"
-                                    style={{ height: s.count > 0 ? `${Math.max((s.count / maxSession) * 100, 4)}%` : '0%' }}
-                                    title={`${s.hour.toString().padStart(2, '0')}:00 — ${s.count} trade${s.count !== 1 ? 's' : ''}`}
-                                />
+                                    className="flex-1 rounded-t transition-all group/bar relative cursor-default"
+                                    style={{ height: s.count > 0 ? `${Math.max((s.count / maxSession) * 100, 4)}%` : '4px' }}
+                                >
+                                    <div className={`w-full h-full rounded-t ${s.count > 0 ? 'bg-primary/40 group-hover/bar:bg-primary/70' : 'bg-white/5'} transition-colors`} />
+                                    {s.count > 0 && (
+                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 rounded bg-black/90 border border-white/10 text-[9px] font-black text-white whitespace-nowrap opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none z-10">
+                                            {s.hour.toString().padStart(2, '0')}:00
+                                            <span className="block text-primary text-center">{s.count} trade{s.count !== 1 ? 's' : ''}</span>
+                                        </div>
+                                    )}
+                                </div>
                             ))}
                         </div>
                         <div className="flex justify-between text-[7px] font-black text-gray-700 uppercase tracking-widest">

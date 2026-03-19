@@ -1,38 +1,64 @@
-import { NextResponse } from 'next/server';
-import { randomBytes } from 'crypto';
+import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getDefaultAccount } from '@/lib/getAccount';
+import { withAuth } from '@/lib/api/withAuth';
+import { generateBridgeKey } from '@/lib/getAccount';
 
-export async function GET() {
-    const account = await getDefaultAccount();
-    if (!account) {
-        return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+/**
+ * GET /api/account/bridge
+ * Returns the bridge key info for the current user.
+ * The bridge key is now per-user (not per-account) for multi-account support.
+ */
+export const GET = withAuth(async (request: NextRequest, _ctx, session) => {
+    const userId = session.user.id;
+
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+            bridgeKeyId: true,
+            bridgeKeyHash: true,
+        },
+    });
+
+    if (!user) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const syncUrl = `${process.env.NEXTAUTH_URL ?? 'http://localhost:3000'}/api/sync`;
+    // Derive sync URL from the request host so it works with any tunnel/domain
+    const forwardedHost = request.headers.get('x-forwarded-host');
+    const forwardedProto = request.headers.get('x-forwarded-proto') ?? 'https';
+    const host = forwardedHost ?? request.headers.get('host') ?? 'localhost:3000';
+    const proto = forwardedHost ? forwardedProto : (host.startsWith('localhost') ? 'http' : 'https');
+    const syncUrl = `${proto}://${host}/api/sync`;
 
     return NextResponse.json({
-        bridgeKey: account.bridgeKey,
+        // For hashed keys, we can't show the full key (user must regenerate if lost)
+        bridgeKey: null,
+        bridgeKeyId: user.bridgeKeyId,
+        isHashed: !!user.bridgeKeyHash,
         syncUrl,
-        accountName: account.name,
-        broker: account.broker,
     });
-}
+});
 
-export async function POST() {
-    const account = await getDefaultAccount();
-    if (!account) {
-        return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-    }
+/**
+ * POST /api/account/bridge
+ * Regenerates the bridge key for the current user.
+ * The new key is returned once and cannot be retrieved again.
+ */
+export const POST = withAuth(async (_req, _ctx, session) => {
+    const userId = session.user.id;
 
-    const newKey = `prism_${randomBytes(24).toString('hex')}`;
+    const { key, keyId, keyHash } = generateBridgeKey();
 
-    await prisma.tradingAccount.update({
-        where: { id: account.id },
-        data: { bridgeKey: newKey },
+    await prisma.user.update({
+        where: { id: userId },
+        data: {
+            bridgeKeyId: keyId,
+            bridgeKeyHash: keyHash,
+        },
     });
 
-    return NextResponse.json({ bridgeKey: newKey });
-}
+    // Return the full key only once — it cannot be retrieved again
+    return NextResponse.json({ bridgeKey: key, bridgeKeyId: keyId });
+});
 
 export const runtime = 'nodejs';

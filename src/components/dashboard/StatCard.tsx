@@ -11,7 +11,7 @@ const variants = {
     primary: 'text-primary border-primary/20 bg-primary/5 hover:border-primary/50',
     secondary: 'text-secondary border-secondary/20 bg-secondary/5 hover:border-secondary/50',
     accent: 'text-accent border-accent/20 bg-accent/5 hover:border-accent/50',
-    danger: 'text-red-400 border-red-400/20 bg-red-400/5 hover:border-red-400/50',
+    danger: 'text-loss border-loss/20 bg-loss/5 hover:border-loss/50',
 };
 
 export default function StatCard({ label, value, trend, variant = 'primary' }: StatCardProps) {

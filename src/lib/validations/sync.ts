@@ -1,4 +1,10 @@
 import { z } from 'zod';
+import { moodEnum } from './trade';
+
+/**
+ * Trade platform enum for multi-account sync
+ */
+export const syncPlatformEnum = z.enum(['METATRADER5', 'CTRADER', 'TRADINGVIEW', 'MANUAL']);
 
 /**
  * Trade type enum for MT5 sync
@@ -30,16 +36,20 @@ export const syncTradeSchema = z.object({
   stopLoss: z.number().nullable().optional(),
   takeProfit: z.number().nullable().optional(),
   strategy: z.string().max(100, 'Strategy name too long').optional(),
-  mood: z.string().max(50, 'Mood too long').optional(),
+  mood: moodEnum.optional().catch(undefined),
   planCompliance: planComplianceEnum.optional(),
 });
 
 /**
  * Schema for TRADE_UPDATE payload from MT5 bridge
+ * Includes optional platform info for multi-account routing
  */
 export const tradeUpdatePayloadSchema = z.object({
   type: z.literal('TRADE_UPDATE'),
   trade: syncTradeSchema,
+  // Multi-account routing fields (optional for backwards compatibility)
+  platform: syncPlatformEnum.optional().default('METATRADER5'),
+  platformAccountId: z.string().optional(), // MT5 login ID, cTrader account ID, etc.
 });
 
 /**
@@ -55,10 +65,14 @@ export const syncEquitySnapshotSchema = z.object({
 
 /**
  * Schema for EQUITY_SNAPSHOT payload from MT5 bridge
+ * Includes optional platform info for multi-account routing
  */
 export const equitySnapshotPayloadSchema = z.object({
   type: z.literal('EQUITY_SNAPSHOT'),
   snapshot: syncEquitySnapshotSchema,
+  // Multi-account routing fields (optional for backwards compatibility)
+  platform: syncPlatformEnum.optional().default('METATRADER5'),
+  platformAccountId: z.string().optional(), // MT5 login ID, cTrader account ID, etc.
 });
 
 /**

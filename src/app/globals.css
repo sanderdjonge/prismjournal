@@ -7,6 +7,9 @@
   --secondary: #7000ff;
   --accent: #00ff88;
   --danger: #ff3366;
+  /* Standardized profit/loss colors */
+  --profit: #4ade80; /* Tailwind green-400 - softer green for positive values */
+  --loss: #f87171;   /* Tailwind red-400 - softer red for negative values */
   --glass-bg: rgba(255, 255, 255, 0.03);
   --glass-border: rgba(255, 255, 255, 0.08);
 }
@@ -18,6 +21,8 @@
   --color-secondary: var(--secondary);
   --color-accent: var(--accent);
   --color-danger: var(--danger);
+  --color-profit: var(--profit);
+  --color-loss: var(--loss);
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -64,6 +69,16 @@ body {
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Recharts Y-Axis Labels */
+.recharts-yAxis text,
+.recharts-yAxis .recharts-cartesian-axis-tick-value {
+    fill: #9ca3af !important;
+    font-size: 10px !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: block !important;
+}
 
 /* Animations */
 @keyframes fade-in {

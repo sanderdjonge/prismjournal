@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import QRCode from 'qrcode';
+import { useRouter, useSearchParams } from 'next/navigation';
 import DashboardShell from '@/components/layout/DashboardShell';
 import {
     Link as LinkIcon,
@@ -19,8 +21,28 @@ import {
     Smartphone,
     QrCode,
     Key,
+    Wallet,
+    Edit2,
+    Archive,
+    X,
+    Plus,
+    Building2,
+    ArrowLeft,
+    Target,
+    DollarSign,
+    BarChart3,
+    AlertTriangle,
+    CheckCircle,
+    Calendar,
+    ChevronRight,
+    Tag,
+    Trash2,
+    ChevronUp,
+    ChevronDown,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { APP_VERSION, versionToPhase } from '@/lib/version';
+import PropFirmReferenceTable from '@/components/prop-firm/PropFirmReferenceTable';
 
 const CURRENCY_OPTIONS = [
     { label: 'USD - United States Dollar', value: 'USD' },
@@ -32,6 +54,12 @@ const TIMEZONE_OPTIONS = [
     { label: '(GMT+01:00) Amsterdam, Berlin, Rome', value: 'Europe/Amsterdam' },
     { label: '(GMT+00:00) London, Lisbon, Dublin', value: 'Europe/London' },
     { label: '(GMT-05:00) Eastern Time (US & Canada)', value: 'America/New_York' },
+];
+
+const DATE_FORMAT_OPTIONS = [
+    { label: 'DD-MM-YYYY (European)', value: 'DD-MM-YYYY' },
+    { label: 'MM-DD-YYYY (American)', value: 'MM-DD-YYYY' },
+    { label: 'YYYY-MM-DD (ISO)', value: 'YYYY-MM-DD' },
 ];
 
 interface NotifState {
@@ -47,12 +75,103 @@ interface NotifState {
     enableMddEmailAlerts: boolean;
 }
 
-export default function SettingsPage() {
-    const [activeTab, setActiveTab] = useState('connectors');
+interface TradingAccount {
+    id: string;
+    name: string;
+    broker: string | null;
+    accountNumber: string | null;
+    platform: string;
+    platformAccountId: string | null;
+    currency: string;
+    leverage: number;
+    accountType: string;
+    isActive: boolean;
+    currentBalance: number | null;
+    currentEquity: number | null;
+    tradeCount: number;
+    closedTradeCount: number;
+    totalPnl: number;
+    createdAt: string;
+    // Prop firm fields
+    propFirmId: string | null;
+    propFirm: {
+        id: string;
+        name: string;
+        slug: string;
+        challengeType: string;
+        dailyLossLimit: number;
+        maxDrawdown: number;
+        drawdownType: string;
+        phasesConfig: string;
+    } | null;
+    accountSize: number | null;
+    profitSplit: number | null;
+    allowNewsTrading: boolean | null;
+    allowWeekendHolding: boolean | null;
+    allowEA: boolean | null;
+    // Prop firm rule overrides
+    maxDailyLoss: number | null;
+    maxTotalDrawdown: number | null;
+    profitTarget: number | null;
+}
+
+interface PropFirm {
+    id: string;
+    name: string;
+    slug: string;
+    description: string | null;
+    website: string | null;
+    challengeType: string;
+    dailyLossLimit: number;
+    maxDrawdown: number;
+    drawdownType: string;
+    allowNewsTrading: boolean;
+    allowWeekendHolding: boolean;
+    allowEA: boolean;
+    phasesConfig: string;
+    hasScalingPlan: boolean;
+    scalingConfig: string | null;
+    popularity: number;
+}
+
+interface BridgeKeyInfo {
+    bridgeKey: string | null;
+    bridgeKeyId: string | null;
+    isHashed: boolean;
+    syncUrl: string;
+}
+
+const PLATFORM_LABELS: Record<string, string> = {
+    METATRADER5: 'MT5',
+    CTRADER: 'cTrader',
+    TRADINGVIEW: 'TradingView',
+    MANUAL: 'Manual',
+};
+
+const PLATFORM_COLORS: Record<string, string> = {
+    METATRADER5: 'bg-orange-500/20 text-orange-400',
+    CTRADER: 'bg-blue-500/20 text-blue-400',
+    TRADINGVIEW: 'bg-profit/20 text-profit',
+    MANUAL: 'bg-gray-500/20 text-gray-400',
+};
+
+function SettingsContent() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const tabParam = searchParams.get('tab');
+    const [activeTab, setActiveTab] = useState(tabParam || 'preferences');
+
+    // Update active tab when URL param changes
+    useEffect(() => {
+        if (tabParam && ['preferences', 'notifications', 'security', 'tags'].includes(tabParam)) {
+            setActiveTab(tabParam);
+        }
+    }, [tabParam]);
 
     // Preferences state
     const [currency, setCurrency] = useState('USD');
     const [timezone, setTimezone] = useState('Europe/Amsterdam');
+    const [dateFormat, setDateFormat] = useState('DD-MM-YYYY');
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
 
@@ -93,12 +212,70 @@ export default function SettingsPage() {
     const [disable2FAPassword, setDisable2FAPassword] = useState('');
     const [showDisable2FA, setShowDisable2FA] = useState(false);
 
+    // Accounts state
+    const [accounts, setAccounts] = useState<TradingAccount[]>([]);
+    const [bridgeInfo, setBridgeInfo] = useState<BridgeKeyInfo | null>(null);
+    const [accountsLoading, setAccountsLoading] = useState(true);
+    const [newBridgeKey, setNewBridgeKey] = useState<string | null>(null);
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editName, setEditName] = useState('');
+    const [editBroker, setEditBroker] = useState('');
+    const [accountsSaving, setAccountsSaving] = useState(false);
+    // Prop firm rule override edit state
+    const [editMaxDailyLoss, setEditMaxDailyLoss] = useState<string>('');
+    const [editMaxDrawdown, setEditMaxDrawdown] = useState<string>('');
+    const [editProfitTarget, setEditProfitTarget] = useState<string>('');
+    
+    // Prop firms state
+    const [propFirms, setPropFirms] = useState<PropFirm[]>([]);
+    const [propFirmsLoading, setPropFirmsLoading] = useState(true);
+    const [propFirmsExpanded, setPropFirmsExpanded] = useState(false);
+    
+    // Add account modal state
+    const [showAddAccount, setShowAddAccount] = useState(false);
+    const [newAccount, setNewAccount] = useState<{
+        name: string;
+        broker: string;
+        platform: 'METATRADER5' | 'CTRADER' | 'TRADINGVIEW' | 'MANUAL';
+        platformAccountId: string;
+        accountType: 'PROPFIRM' | 'OWN_MONEY';
+        propFirmId: string;
+        accountSize: string;
+        currency: string;
+    }>({
+        name: '',
+        broker: '',
+        platform: 'METATRADER5',
+        platformAccountId: '',
+        accountType: 'OWN_MONEY',
+        propFirmId: '',
+        accountSize: '',
+        currency: 'USD',
+    });
+    const [addingAccount, setAddingAccount] = useState(false);
+
+    // Tags state
+    const [tags, setTags] = useState<{ id: string; name: string; color: string; tradeCount: number }[]>([]);
+    const [tagsLoading, setTagsLoading] = useState(true);
+    const [editingTagId, setEditingTagId] = useState<string | null>(null);
+    const [editingTagName, setEditingTagName] = useState('');
+    const [editingTagColor, setEditingTagColor] = useState('#00f2ff');
+    const [newTagName, setNewTagName] = useState('');
+    const [newTagColor, setNewTagColor] = useState('#00f2ff');
+    const [addingTag, setAddingTag] = useState(false);
+
+    // Inline account detail state
+    const [viewingAccountId, setViewingAccountId] = useState<string | null>(null);
+    const [viewingAccountDetails, setViewingAccountDetails] = useState<any | null>(null);
+    const [viewingAccountLoading, setViewingAccountLoading] = useState(false);
+
     useEffect(() => {
         fetch('/api/settings')
             .then((r) => r.json())
             .then((data) => {
                 if (data.displayCurrency) setCurrency(data.displayCurrency);
                 if (data.timezone) setTimezone(data.timezone);
+                if (data.dateFormat) setDateFormat(data.dateFormat);
                 if (data.twoFAEnabled !== undefined) setTwoFAEnabled(data.twoFAEnabled);
             })
             .catch(() => {});
@@ -123,12 +300,96 @@ export default function SettingsPage() {
 
         fetch('/api/account/bridge')
             .then((r) => r.json())
-            .then((data) => {
+            .then((data: BridgeKeyInfo) => {
+                setBridgeInfo(data);
                 if (data.bridgeKey) setBridgeKey(data.bridgeKey);
                 if (data.syncUrl) setSyncUrl(data.syncUrl);
             })
             .catch(() => {});
+
+        loadAccountsData();
+        loadPropFirms();
+        loadTags();
     }, []);
+    
+    const loadAccountDetails = async (accountId: string) => {
+        setViewingAccountLoading(true);
+        setViewingAccountDetails(null);
+        try {
+            const res = await fetch(`/api/accounts/${accountId}/details?_t=${Date.now()}`, {
+                cache: 'no-store',
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setViewingAccountDetails(data.account);
+            }
+        } catch {
+            // ignore
+        } finally {
+            setViewingAccountLoading(false);
+        }
+    };
+
+    const handleViewAccount = (accountId: string) => {
+        setViewingAccountId(accountId);
+        loadAccountDetails(accountId);
+    };
+
+    const handleBackToAccounts = () => {
+        setViewingAccountId(null);
+        setViewingAccountDetails(null);
+    };
+
+    const loadPropFirms = async () => {
+        try {
+            const res = await fetch('/api/prop-firms');
+            if (res.ok) {
+                const data = await res.json();
+                setPropFirms(data.propFirms);
+            }
+        } catch (error) {
+            // error handled by loading state
+        } finally {
+            setPropFirmsLoading(false);
+        }
+    };
+
+    const loadTags = async () => {
+        try {
+            const res = await fetch('/api/tags');
+            if (res.ok) {
+                const data = await res.json();
+                setTags(data.tags);
+            }
+        } catch (error) {
+            // error handled by loading state
+        } finally {
+            setTagsLoading(false);
+        }
+    };
+
+    const loadAccountsData = async () => {
+        try {
+            const [accountsRes, bridgeRes] = await Promise.all([
+                fetch('/api/accounts'),
+                fetch('/api/account/bridge'),
+            ]);
+            
+            if (accountsRes.ok) {
+                const data = await accountsRes.json();
+                setAccounts(data.accounts);
+            }
+            
+            if (bridgeRes.ok) {
+                const data = await bridgeRes.json();
+                setBridgeInfo(data);
+            }
+        } catch (error) {
+            // error handled by loading state
+        } finally {
+            setAccountsLoading(false);
+        }
+    };
 
     async function handleCopy(text: string, label: string) {
         await navigator.clipboard.writeText(text);
@@ -155,7 +416,7 @@ export default function SettingsPage() {
                 await fetch('/api/settings', {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ displayCurrency: currency, timezone }),
+                    body: JSON.stringify({ displayCurrency: currency, timezone, dateFormat }),
                 });
             } else if (activeTab === 'notifications') {
                 await fetch('/api/settings/notifications', {
@@ -181,11 +442,129 @@ export default function SettingsPage() {
         }
     }
 
+    const handleRegenerateKey = async () => {
+        if (!confirm('Are you sure? This will invalidate your current bridge key. You\'ll need to update your EA/cBot configuration.')) {
+            return;
+        }
+        
+        setRegenerating(true);
+        try {
+            const res = await fetch('/api/account/bridge', { method: 'POST' });
+            if (res.ok) {
+                const data = await res.json();
+                setNewBridgeKey(data.bridgeKey);
+                setBridgeInfo(prev => prev ? {
+                    ...prev,
+                    bridgeKeyId: data.bridgeKeyId,
+                    isHashed: true,
+                } : null);
+            }
+        } catch (error) {
+            // error handled by loading state
+        } finally {
+            setRegenerating(false);
+        }
+    };
+
+    const handleStartEdit = (account: TradingAccount) => {
+        setEditingId(account.id);
+        setEditName(account.name);
+        setEditBroker(account.broker || '');
+        // Set prop firm rule overrides
+        setEditMaxDailyLoss(account.maxDailyLoss?.toString() || '');
+        setEditMaxDrawdown(account.maxTotalDrawdown?.toString() || '');
+        setEditProfitTarget(account.profitTarget?.toString() || '');
+    };
+
+    const handleCancelEdit = () => {
+        setEditingId(null);
+        setEditName('');
+        setEditBroker('');
+        setEditMaxDailyLoss('');
+        setEditMaxDrawdown('');
+        setEditProfitTarget('');
+    };
+
+    const handleSaveEdit = async () => {
+        if (!editingId) return;
+        
+        setAccountsSaving(true);
+        try {
+            const res = await fetch(`/api/accounts/${editingId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: editName,
+                    broker: editBroker || null,
+                    // Prop firm rule overrides
+                    maxDailyLoss: editMaxDailyLoss ? parseFloat(editMaxDailyLoss) : null,
+                    maxTotalDrawdown: editMaxDrawdown ? parseFloat(editMaxDrawdown) : null,
+                    profitTarget: editProfitTarget ? parseFloat(editProfitTarget) : null,
+                }),
+            });
+            
+            if (res.ok) {
+                setAccounts(prev => prev.map(a =>
+                    a.id === editingId
+                        ? {
+                            ...a,
+                            name: editName,
+                            broker: editBroker || null,
+                            maxDailyLoss: editMaxDailyLoss ? parseFloat(editMaxDailyLoss) : null,
+                            maxTotalDrawdown: editMaxDrawdown ? parseFloat(editMaxDrawdown) : null,
+                            profitTarget: editProfitTarget ? parseFloat(editProfitTarget) : null,
+                        }
+                        : a
+                ));
+                setEditingId(null);
+            }
+        } catch (error) {
+            // error handled by saving state
+        } finally {
+            setAccountsSaving(false);
+        }
+    };
+
+    const handleArchive = async (accountId: string) => {
+        if (!confirm('Are you sure you want to archive this account? It will no longer appear in your active accounts.')) {
+            return;
+        }
+        
+        try {
+            console.log('[handleArchive] Archiving account:', accountId);
+            const res = await fetch(`/api/accounts/${accountId}`, { method: 'DELETE' });
+            console.log('[handleArchive] Response status:', res.status);
+            
+            if (res.ok) {
+                const data = await res.json();
+                console.log('[handleArchive] Success:', data);
+                // Reload accounts to reflect the change
+                await loadAccountsData();
+            } else {
+                const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+                console.error('[handleArchive] Failed:', errorData);
+                alert(`Failed to archive account: ${errorData.error || 'Please try again.'}`);
+            }
+        } catch (error) {
+            console.error('[handleArchive] Error:', error);
+            alert('An error occurred while archiving the account.');
+        }
+    };
+
+    const formatCurrency = (value: number | null | undefined, currency: string | null | undefined) => {
+        const safeValue = value ?? 0;
+        const safeCurrency = currency ?? 'USD';
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: safeCurrency,
+        }).format(safeValue);
+    };
+
     const tabs = [
-        { id: 'connectors', label: 'Connector Hub', icon: LinkIcon },
         { id: 'preferences', label: 'Preferences', icon: Globe },
         { id: 'notifications', label: 'Notifications', icon: Bell },
         { id: 'security', label: 'Security', icon: Shield },
+        { id: 'tags', label: 'Tags', icon: Tag },
     ];
 
     type ToggleKey = 'telegramAlerts' | 'weeklyDigest' | 'volatilityWarnings' | 'inAppToast';
@@ -223,139 +602,6 @@ export default function SettingsPage() {
 
                 {/* Content Area */}
                 <main className="flex-1 glass-card bg-black/40 backdrop-blur-md p-10 border-white/5 min-h-[600px] flex flex-col">
-                    {activeTab === 'connectors' && (
-                        <div className="space-y-10 animate-fade-in">
-                            <div>
-                                <h3 className="text-2xl font-black text-white tracking-tighter uppercase italic mb-2">MetaTrader 5 Bridge</h3>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Connect your MT5 terminal to sync trades and equity in real-time</p>
-                            </div>
-
-                            {/* Step 1: Download EA */}
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-7 h-7 rounded-lg bg-primary/20 text-primary flex items-center justify-center text-xs font-black">1</div>
-                                    <h4 className="text-sm font-black text-white uppercase tracking-wide">Download the Expert Advisor</h4>
-                                </div>
-                                <div className="glass-card p-5 border-white/5 bg-white/5">
-                                    <p className="text-xs text-gray-400 leading-relaxed mb-4">
-                                        Download <span className="text-white font-bold">PrismSync.mq5</span> and place it in your MT5 data folder:
-                                    </p>
-                                    <div className="glass-card p-3 border-white/5 bg-black/40 font-mono text-[11px] text-gray-400 mb-4">
-                                        MT5 &gt; File &gt; Open Data Folder &gt; MQL5 &gt; Experts
-                                    </div>
-                                    <a
-                                        href="/api/account/bridge/download"
-                                        download="PrismSync.mq5"
-                                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-black font-black uppercase tracking-[0.15em] text-[10px] shadow-[0_0_15px_rgba(0,242,255,0.2)] hover:brightness-110 active:scale-95 transition-all"
-                                    >
-                                        <Download size={14} /> Download PrismSync.mq5
-                                    </a>
-                                </div>
-                            </div>
-
-                            {/* Step 2: Allow WebRequests */}
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-7 h-7 rounded-lg bg-primary/20 text-primary flex items-center justify-center text-xs font-black">2</div>
-                                    <h4 className="text-sm font-black text-white uppercase tracking-wide">Allow WebRequests in MT5</h4>
-                                </div>
-                                <div className="glass-card p-5 border-white/5 bg-white/5">
-                                    <p className="text-xs text-gray-400 leading-relaxed mb-3">
-                                        In MetaTrader 5, go to <span className="text-white font-bold">Tools &gt; Options &gt; Expert Advisors</span> and:
-                                    </p>
-                                    <ul className="space-y-2 text-xs text-gray-400">
-                                        <li className="flex items-start gap-2">
-                                            <span className="text-primary mt-0.5">&#x2022;</span>
-                                            Check <span className="text-white font-bold">&quot;Allow WebRequest for listed URL&quot;</span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                            <span className="text-primary mt-0.5">&#x2022;</span>
-                                            Add your Sync URL (shown below) to the allowed list
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-
-                            {/* Step 3: Configure EA */}
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-7 h-7 rounded-lg bg-primary/20 text-primary flex items-center justify-center text-xs font-black">3</div>
-                                    <h4 className="text-sm font-black text-white uppercase tracking-wide">Configure the EA</h4>
-                                </div>
-                                <div className="glass-card p-5 border-white/5 bg-white/5 space-y-5">
-                                    <p className="text-xs text-gray-400 leading-relaxed">
-                                        Drag <span className="text-white font-bold">PrismSync</span> onto any chart. In the EA input parameters, enter the Sync URL and Bridge Key below.
-                                    </p>
-
-                                    {/* Sync URL */}
-                                    <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">Sync URL</label>
-                                        <div className="flex items-center gap-2">
-                                            <div className="flex-1 glass-card px-4 py-3 border-white/5 bg-black/40 font-mono text-sm text-white truncate">
-                                                {syncUrl || 'Loading...'}
-                                            </div>
-                                            <button
-                                                onClick={() => handleCopy(syncUrl, 'url')}
-                                                className="px-3 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all"
-                                                title="Copy"
-                                            >
-                                                {copied === 'url' ? <Check size={16} className="text-primary" /> : <Copy size={16} className="text-gray-500" />}
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    {/* Bridge Key */}
-                                    <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">Bridge Key</label>
-                                        <div className="flex items-center gap-2">
-                                            <div className="flex-1 glass-card px-4 py-3 border-white/5 bg-black/40 font-mono text-sm text-white truncate">
-                                                {showKey ? (bridgeKey || 'Loading...') : bridgeKey ? '••••••••••••••••••••••••••••••••' : 'Loading...'}
-                                            </div>
-                                            <button
-                                                onClick={() => setShowKey(!showKey)}
-                                                className="px-3 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all"
-                                                title={showKey ? 'Hide' : 'Reveal'}
-                                            >
-                                                {showKey ? <EyeOff size={16} className="text-gray-500" /> : <Eye size={16} className="text-gray-500" />}
-                                            </button>
-                                            <button
-                                                onClick={() => handleCopy(bridgeKey, 'key')}
-                                                className="px-3 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all"
-                                                title="Copy"
-                                            >
-                                                {copied === 'key' ? <Check size={16} className="text-primary" /> : <Copy size={16} className="text-gray-500" />}
-                                            </button>
-                                        </div>
-                                        <div className="flex items-center justify-between mt-2">
-                                            <p className="text-[9px] text-gray-600">Keep this key secret. It authenticates your MT5 terminal.</p>
-                                            <button
-                                                onClick={handleRegenerate}
-                                                disabled={regenerating}
-                                                className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-gray-500 hover:text-white transition-all disabled:opacity-50"
-                                            >
-                                                <RefreshCw size={12} className={regenerating ? 'animate-spin' : ''} /> Regenerate
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Step 4: Verify */}
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-7 h-7 rounded-lg bg-primary/20 text-primary flex items-center justify-center text-xs font-black">4</div>
-                                    <h4 className="text-sm font-black text-white uppercase tracking-wide">Verify Connection</h4>
-                                </div>
-                                <div className="glass-card p-5 border-white/5 bg-white/5">
-                                    <p className="text-xs text-gray-400 leading-relaxed">
-                                        Once the EA is running, check the MT5 <span className="text-white font-bold">Experts</span> tab for
-                                        <span className="text-primary font-mono"> &quot;PrismSync EA started&quot;</span>. Equity snapshots will sync every 60 seconds
-                                        and trades will appear in your journal automatically.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
 
                     {activeTab === 'preferences' && (
                         <div className="space-y-10 animate-fade-in">
@@ -385,6 +631,18 @@ export default function SettingsPage() {
                                         className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm font-bold text-white outline-none focus:border-primary/50 transition-all appearance-none"
                                     >
                                         {TIMEZONE_OPTIONS.map((o) => (
+                                            <option key={o.value} value={o.value}>{o.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-600 px-1">Date Format</label>
+                                    <select
+                                        value={dateFormat}
+                                        onChange={(e) => setDateFormat(e.target.value)}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm font-bold text-white outline-none focus:border-primary/50 transition-all appearance-none"
+                                    >
+                                        {DATE_FORMAT_OPTIONS.map((o) => (
                                             <option key={o.value} value={o.value}>{o.label}</option>
                                         ))}
                                     </select>
@@ -500,18 +758,27 @@ export default function SettingsPage() {
                                                 <h5 className="text-sm font-bold text-white">Weekly Performance Digest</h5>
                                                 <p className="text-[10px] text-gray-500">Receive a weekly summary of your trading performance</p>
                                             </div>
-                                            <button
-                                                onClick={() => setNotifs((prev) => ({ ...prev, enableWeeklyDigestEmail: !prev.enableWeeklyDigestEmail }))}
-                                                className={cn(
-                                                    "w-12 h-6 rounded-full transition-all relative shrink-0",
-                                                    notifs.enableWeeklyDigestEmail ? "bg-primary/40" : "bg-white/10"
-                                                )}
-                                            >
-                                                <div className={cn(
-                                                    "absolute top-1 w-4 h-4 rounded-full transition-all shadow-lg",
-                                                    notifs.enableWeeklyDigestEmail ? "right-1 bg-primary" : "left-1 bg-gray-700"
-                                                )} />
-                                            </button>
+                                            <div className="flex items-center gap-3">
+                                                <a
+                                                    href="/api/cron/digest/preview"
+                                                    target="_blank"
+                                                    className="text-[10px] font-black uppercase tracking-widest text-primary hover:text-primary/80 transition-colors"
+                                                >
+                                                    Preview →
+                                                </a>
+                                                <button
+                                                    onClick={() => setNotifs((prev) => ({ ...prev, enableWeeklyDigestEmail: !prev.enableWeeklyDigestEmail }))}
+                                                    className={cn(
+                                                        "w-12 h-6 rounded-full transition-all relative shrink-0",
+                                                        notifs.enableWeeklyDigestEmail ? "bg-primary/40" : "bg-white/10"
+                                                    )}
+                                                >
+                                                    <div className={cn(
+                                                        "absolute top-1 w-4 h-4 rounded-full transition-all shadow-lg",
+                                                        notifs.enableWeeklyDigestEmail ? "right-1 bg-primary" : "left-1 bg-gray-700"
+                                                    )} />
+                                                </button>
+                                            </div>
                                         </div>
                                         <div className="flex items-center justify-between py-2">
                                             <div>
@@ -626,7 +893,8 @@ export default function SettingsPage() {
                                                     const data = await res.json();
                                                     if (data.error) throw new Error(data.error);
                                                     setTwoFASecret(data.secret);
-                                                    setTwoFAQrCode(data.qrCode);
+                                                    const qrUrl = await QRCode.toDataURL(data.provisioning_uri);
+                                                    setTwoFAQrCode(qrUrl);
                                                     setShow2FASetup(true);
                                                 } catch (e: any) {
                                                     setTwoFAError(e.message || 'Failed to setup 2FA');
@@ -812,6 +1080,182 @@ export default function SettingsPage() {
                         </div>
                     )}
 
+                    {activeTab === 'tags' && (
+                        <div className="space-y-8 animate-fade-in">
+                            <div>
+                                <h3 className="text-2xl font-black text-white tracking-tighter uppercase italic mb-2">Tag Management</h3>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Organize your trades with custom tags</p>
+                            </div>
+
+                            {/* Add new tag */}
+                            <div className="glass-card p-6 border-white/5 bg-white/5">
+                                <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 mb-4">Create New Tag</h4>
+                                <div className="flex items-center gap-4">
+                                    <input
+                                        type="text"
+                                        value={newTagName}
+                                        onChange={(e) => setNewTagName(e.target.value)}
+                                        placeholder="Tag name"
+                                        className="flex-1 px-4 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                    />
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="color"
+                                            value={newTagColor}
+                                            onChange={(e) => setNewTagColor(e.target.value)}
+                                            className="w-10 h-10 rounded-lg border border-white/10 cursor-pointer"
+                                        />
+                                        <span className="text-[10px] font-mono text-gray-500">{newTagColor}</span>
+                                    </div>
+                                    <button
+                                        onClick={async () => {
+                                            if (!newTagName.trim()) return;
+                                            setAddingTag(true);
+                                            try {
+                                                const res = await fetch('/api/tags', {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({ name: newTagName.trim(), color: newTagColor }),
+                                                });
+                                                if (res.ok) {
+                                                    const data = await res.json();
+                                                    setTags(prev => [...prev, { ...data, tradeCount: 0 }]);
+                                                    setNewTagName('');
+                                                    setNewTagColor('#00f2ff');
+                                                }
+                                            } catch (error) {
+                                                // error handled by loading state
+                                            } finally {
+                                                setAddingTag(false);
+                                            }
+                                        }}
+                                        disabled={addingTag || !newTagName.trim()}
+                                        className="px-4 py-2 rounded-lg bg-primary text-black text-xs font-bold uppercase hover:brightness-110 transition-all disabled:opacity-50 flex items-center gap-2"
+                                    >
+                                        {addingTag ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                                        Add Tag
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Tags list */}
+                            <div className="glass-card p-6 border-white/5 bg-white/5">
+                                <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 mb-4">Your Tags</h4>
+                                
+                                {tagsLoading ? (
+                                    <div className="flex items-center justify-center py-8">
+                                        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                                    </div>
+                                ) : tags.length === 0 ? (
+                                    <div className="text-center py-8 text-gray-500">
+                                        <Tag size={32} className="mx-auto mb-2 opacity-50" />
+                                        <p className="text-sm">No tags yet. Create your first tag above.</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {tags.map((tag) => (
+                                            <div
+                                                key={tag.id}
+                                                className="flex items-center justify-between p-3 rounded-lg border border-white/5 hover:border-white/10 transition-all"
+                                            >
+                                                {editingTagId === tag.id ? (
+                                                    <>
+                                                        <div className="flex items-center gap-3 flex-1">
+                                                            <input
+                                                                type="text"
+                                                                value={editingTagName}
+                                                                onChange={(e) => setEditingTagName(e.target.value)}
+                                                                className="flex-1 px-3 py-1 bg-black/40 border border-white/10 rounded text-white text-sm outline-none focus:border-primary/50"
+                                                            />
+                                                            <input
+                                                                type="color"
+                                                                value={editingTagColor}
+                                                                onChange={(e) => setEditingTagColor(e.target.value)}
+                                                                className="w-8 h-8 rounded border border-white/10 cursor-pointer"
+                                                            />
+                                                        </div>
+                                                        <div className="flex items-center gap-2 ml-4">
+                                                            <button
+                                                                onClick={async () => {
+                                                                    try {
+                                                                        const res = await fetch(`/api/tags/${tag.id}`, {
+                                                                            method: 'PATCH',
+                                                                            headers: { 'Content-Type': 'application/json' },
+                                                                            body: JSON.stringify({ name: editingTagName.trim(), color: editingTagColor }),
+                                                                        });
+                                                                        if (res.ok) {
+                                                                            const data = await res.json();
+                                                                            setTags(prev => prev.map(t => t.id === tag.id ? data : t));
+                                                                            setEditingTagId(null);
+                                                                        }
+                                                                    } catch (error) {
+                                                                        // error handled
+                                                                    }
+                                                                }}
+                                                                className="p-2 rounded-lg bg-accent/20 text-accent hover:bg-accent/30 transition-all"
+                                                            >
+                                                                <Check size={14} />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setEditingTagId(null)}
+                                                                className="p-2 rounded-lg border border-white/10 text-gray-400 hover:bg-white/5 transition-all"
+                                                            >
+                                                                <X size={14} />
+                                                            </button>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <div className="flex items-center gap-3">
+                                                            <div
+                                                                className="w-4 h-4 rounded-full"
+                                                                style={{ backgroundColor: tag.color }}
+                                                            />
+                                                            <span className="text-white font-medium">{tag.name}</span>
+                                                            <span className="text-[10px] text-gray-500 font-mono">
+                                                                {tag.tradeCount} trade{tag.tradeCount !== 1 ? 's' : ''}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                onClick={() => {
+                                                                    setEditingTagId(tag.id);
+                                                                    setEditingTagName(tag.name);
+                                                                    setEditingTagColor(tag.color);
+                                                                }}
+                                                                className="p-2 rounded-lg border border-white/10 text-gray-400 hover:bg-white/5 hover:text-white transition-all"
+                                                                title="Edit"
+                                                            >
+                                                                <Edit2 size={14} />
+                                                            </button>
+                                                            <button
+                                                                onClick={async () => {
+                                                                    if (!confirm(`Delete tag "${tag.name}"? This will remove it from all trades.`)) return;
+                                                                    try {
+                                                                        const res = await fetch(`/api/tags/${tag.id}`, { method: 'DELETE' });
+                                                                        if (res.ok) {
+                                                                            setTags(prev => prev.filter(t => t.id !== tag.id));
+                                                                        }
+                                                                    } catch (error) {
+                                                                        // error handled
+                                                                    }
+                                                                }}
+                                                                className="p-2 rounded-lg border border-white/10 text-gray-400 hover:bg-loss/10 hover:border-loss/30 hover:text-loss transition-all"
+                                                                title="Delete"
+                                                            >
+                                                                <Trash2 size={14} />
+                                                            </button>
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     {showSaveButton && (
                         <div className="mt-auto pt-10 flex items-center gap-4 border-t border-white/5">
                             <button
@@ -828,6 +1272,27 @@ export default function SettingsPage() {
                     )}
                 </main>
             </div>
+
+            {/* Version footer */}
+            <div className="mt-16 pt-6 border-t border-white/5 text-center">
+                <p className="text-[11px] text-gray-600 font-mono tracking-widest uppercase">
+                    PrismJournal v{APP_VERSION} — {versionToPhase(APP_VERSION)}
+                </p>
+            </div>
         </DashboardShell>
+    );
+}
+
+export default function SettingsPage() {
+    return (
+        <Suspense fallback={
+            <DashboardShell>
+                <div className="flex items-center justify-center min-h-[60vh]">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+            </DashboardShell>
+        }>
+            <SettingsContent />
+        </Suspense>
     );
 }

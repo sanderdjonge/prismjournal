@@ -3,3 +3,4 @@ export { RiskCalculator } from './RiskCalculator';
 export { TradeEntryDetails } from './TradeEntryDetails';
 export { TradeFormActions } from './TradeFormActions';
 export { ScreenshotUpload } from './ScreenshotUpload';
+export { ExistingScreenshots } from './ExistingScreenshots';

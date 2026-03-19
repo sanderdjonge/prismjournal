@@ -1,59 +1,142 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { validateBody, tradeUpdateSchema } from '@/lib/validations';
+import { deleteFile } from '@/lib/storage';
+import { getAllUserAccounts } from '@/lib/getAccount';
+import { withAuth } from '@/lib/api/withAuth';
 
-export async function GET(
-    _request: Request,
-    { params }: { params: Promise<{ id: string }> }
-) {
-    const { id } = await params;
+export const GET = withAuth(async (_req, ctx, session) => {
+    const { id } = await (ctx as { params: Promise<{ id: string }> }).params;
+
+    // Verify ownership before returning media
+    const trade = await prisma.trade.findFirst({
+        where: { id, account: { userId: session.user.id } },
+        select: { id: true },
+    });
+    if (!trade) {
+        return NextResponse.json({ error: 'Trade not found' }, { status: 404 });
+    }
 
     const media = await prisma.media.findMany({
         where: { tradeId: id },
-        select: { url: true, timeframe: true },
+        select: { id: true, filename: true, timeframe: true },
     });
 
-    return NextResponse.json({ media });
-}
+    const mediaWithUrls = media.map(m => ({
+        id: m.id,
+        url: `/api/media/${m.id}/file`,
+        timeframe: m.timeframe,
+    }));
 
-export async function PATCH(
-    request: Request,
-    { params }: { params: Promise<{ id: string }> }
-) {
-    const { id } = await params;
+    return NextResponse.json({ media: mediaWithUrls });
+});
 
-    const validation = await validateBody(request, tradeUpdateSchema);
+export const PATCH = withAuth(async (req, ctx, session) => {
+    const { id } = await (ctx as { params: Promise<{ id: string }> }).params;
+
+    const validation = await validateBody(req, tradeUpdateSchema);
     if (!validation.success) {
         return validation.response;
     }
 
     const body = validation.data;
 
+    // Verify ownership
+    const existingTrade = await prisma.trade.findFirst({
+        where: { id, account: { userId: session.user.id } },
+        include: { account: true },
+    });
+    if (!existingTrade) {
+        return NextResponse.json({ error: 'Trade not found' }, { status: 404 });
+    }
+
+    // Handle strategy - find or create
+    let strategyId: string | null | undefined = undefined;
+    if (body.strategy !== undefined) {
+        if (body.strategy) {
+            const strat = await prisma.strategy.upsert({
+                where: { id: `strat_${body.strategy.replace(/\W+/g, '_').toLowerCase()}` },
+                update: {},
+                create: {
+                    id: `strat_${body.strategy.replace(/\W+/g, '_').toLowerCase()}`,
+                    name: body.strategy,
+                    userId: existingTrade.account.userId,
+                },
+            });
+            strategyId = strat.id;
+        } else {
+            strategyId = null;
+        }
+    }
+
+    const updateData: Record<string, unknown> = {};
+
+    if (body.symbol !== undefined) updateData.symbol = body.symbol;
+    if (body.type !== undefined) updateData.direction = body.type;
+    if (body.volume !== undefined) updateData.volume = body.volume;
+    if (body.entryPrice !== undefined) updateData.entryPrice = body.entryPrice;
+    if (body.exitPrice !== undefined) updateData.exitPrice = body.exitPrice;
+    if (body.pnl !== undefined) updateData.pnl = body.pnl;
+    if (body.status !== undefined) {
+        updateData.status = body.status;
+        if (body.status === 'CLOSED' && !existingTrade.exitTime) {
+            updateData.exitTime = new Date();
+        } else if (body.status === 'OPEN') {
+            updateData.exitTime = null;
+            updateData.exitPrice = null;
+            updateData.pnl = null;
+        }
+    }
+    if (strategyId !== undefined) updateData.strategyId = strategyId;
+    if (body.mood !== undefined) updateData.mood = body.mood;
+    if (body.planCompliance !== undefined) updateData.planCompliance = body.planCompliance;
+    if (body.notes !== undefined) updateData.notes = body.notes;
+    if (body.takeProfit !== undefined) updateData.takeProfit = body.takeProfit;
+    if (body.stopLoss !== undefined) updateData.stopLoss = body.stopLoss;
+    if (body.entryRating !== undefined) updateData.entryRating = body.entryRating;
+    if (body.exitRating !== undefined) updateData.exitRating = body.exitRating;
+    if (body.managementRating !== undefined) updateData.managementRating = body.managementRating;
+
+    // Account reassignment
+    if (body.accountId && body.accountId !== existingTrade.accountId) {
+        const userAccounts = await getAllUserAccounts(existingTrade.account.userId);
+        const targetAccount = userAccounts.find(a => a.id === body.accountId);
+        if (targetAccount) updateData.accountId = targetAccount.id;
+    }
+
     const trade = await prisma.trade.update({
         where: { id },
-        data: {
-            mood: body.mood,
-            planCompliance: body.planCompliance,
-            notes: body.notes,
-            entryRating: body.entryRating,
-            exitRating: body.exitRating,
-            managementRating: body.managementRating,
-        },
+        data: updateData,
     });
 
     return NextResponse.json({ success: true, id: trade.id });
-}
+});
 
-export async function DELETE(
-    _request: Request,
-    { params }: { params: Promise<{ id: string }> }
-) {
-    const { id } = await params;
+export const DELETE = withAuth(async (_req, ctx, session) => {
+    const { id } = await (ctx as { params: Promise<{ id: string }> }).params;
+
+    // Verify ownership before deleting
+    const trade = await prisma.trade.findFirst({
+        where: { id, account: { userId: session.user.id } },
+        select: { id: true },
+    });
+    if (!trade) {
+        return NextResponse.json({ error: 'Trade not found' }, { status: 404 });
+    }
+
+    const mediaFiles = await prisma.media.findMany({
+        where: { tradeId: id },
+        select: { filename: true },
+    });
+
+    for (const media of mediaFiles) {
+        await deleteFile(media.filename);
+    }
 
     await prisma.media.deleteMany({ where: { tradeId: id } });
     await prisma.trade.delete({ where: { id } });
 
     return NextResponse.json({ success: true });
-}
+});
 
 export const runtime = 'nodejs';

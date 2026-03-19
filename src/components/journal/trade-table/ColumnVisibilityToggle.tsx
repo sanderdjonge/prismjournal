@@ -12,7 +12,7 @@ export function ColumnVisibilityToggle({ columns, onToggleColumn }: ColumnVisibi
     return (
         <div className="flex items-center gap-4 px-4 overflow-x-auto py-3 border-b border-white/5 no-scrollbar">
             <span className="text-[10px] font-black uppercase tracking-widest text-gray-600 shrink-0">Columns:</span>
-            {columns.map(col => col.id !== 'actions' && (
+            {columns.map(col => col.id !== 'actions' && col.id !== 'select' && (
                 <button
                     key={col.id}
                     onClick={() => onToggleColumn(col.id)}

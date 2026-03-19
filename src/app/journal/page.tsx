@@ -3,17 +3,24 @@
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useDebouncedCallback } from 'use-debounce';
+import { toast } from 'sonner';
 import DashboardShell from '@/components/layout/DashboardShell';
 import DraggableTable from '@/components/journal/DraggableTable';
-import TradeAnalysisDrawer from '@/components/journal/TradeAnalysisDrawer';
+import TradeViewModal from '@/components/journal/TradeViewModal';
+import TradeEditModal from '@/components/journal/TradeEditModal';
 import TradeEntryModal from '@/components/journal/TradeEntryModal';
-import { Search, Plus, Zap, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { SkeletonRow, ConfirmModal } from '@/components/ui';
+import { useTrades, useDeleteTrade, TradeFilters } from '@/hooks/useTrades';
+import { useTags } from '@/hooks/useTags';
+import { useBulkOperations } from '@/hooks/useBulkOperations';
+import { useAccounts } from '@/hooks/useAccounts';
+import { Search, Plus, Zap, Calendar, ChevronLeft, ChevronRight, Download, Tag as TagIcon, Trash2, X, Wallet } from 'lucide-react';
 
 export type JournalTrade = {
     id: string;
     ticket: string;
     symbol: string;
-    type: 'BUY' | 'SELL';
+    type: 'LONG' | 'SHORT';
     volume: number;
     entry: number;
     exit: number;
@@ -29,36 +36,73 @@ export type JournalTrade = {
     strategy?: string | null;
     entryTime?: string | null;
     exitTime?: string | null;
-};
-
-type Pagination = {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
+    tags?: { id: string; name: string; color?: string | null }[];
+    accountName?: string | null;
+    accountId?: string | null;
 };
 
 function JournalContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
 
-    // Initialize state from URL params
-    const [trades, setTrades] = useState<JournalTrade[]>([]);
-    const [loading, setLoading] = useState(true);
+    // Filter state (kept as-is to feed into query key)
     const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
     const [filterSide, setFilterSide] = useState<string>(searchParams.get('side') || 'ALL');
     const [filterResult, setFilterResult] = useState<string>(searchParams.get('result') || 'ALL');
+    const [filterTag, setFilterTag] = useState<string>(searchParams.get('tag') || 'ALL');
     const [dateFrom, setDateFrom] = useState(searchParams.get('from') || '');
     const [dateTo, setDateTo] = useState(searchParams.get('to') || '');
+    const [page, setPage] = useState(parseInt(searchParams.get('page') || '1'));
+
+    // Modal state
     const [selectedTrade, setSelectedTrade] = useState<JournalTrade | null>(null);
-    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [pagination, setPagination] = useState<Pagination>({
-        page: parseInt(searchParams.get('page') || '1'),
-        limit: 50,
-        total: 0,
-        totalPages: 0,
-    });
+
+    // Bulk selection state
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [isAllSelected, setIsAllSelected] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
+
+    // Bulk operations hook
+    const { bulkDelete, bulkTag, bulkAccount, isDeleting } = useBulkOperations();
+    const [accountDropdownOpen, setAccountDropdownOpen] = useState(false);
+
+    // Account switcher (syncs with topnav)
+    const { accounts, selectedAccountId, selectAccount } = useAccounts();
+
+    // Build filters object for React Query
+    const filters: TradeFilters = {
+        q: searchQuery || undefined,
+        side: filterSide !== 'ALL' ? filterSide : undefined,
+        result: filterResult !== 'ALL' ? filterResult : undefined,
+        tag: filterTag !== 'ALL' ? filterTag : undefined,
+        from: dateFrom || undefined,
+        to: dateTo || undefined,
+        account: selectedAccountId || undefined,
+        page,
+    };
+
+    // React Query hook for fetching trades
+    const { data, isFetching, isError, refetch } = useTrades(filters);
+    const deleteTrade = useDeleteTrade();
+
+    // Fetch tags for filter dropdown
+    const { data: tagsData } = useTags();
+    const tags = tagsData?.tags ?? [];
+
+    // Derived state from React Query
+    const trades = (data?.trades as JournalTrade[] | undefined) ?? [];
+    const pagination = data?.pagination ?? { page: 1, limit: 50, total: 0, totalPages: 1 };
+
+    // Show error toast on fetch failure
+    useEffect(() => {
+        if (isError) {
+            toast.error('Failed to load trades');
+        }
+    }, [isError]);
 
     // Update URL params when filters change
     const updateUrlParams = useCallback((params: Record<string, string | null>) => {
@@ -79,83 +123,185 @@ function JournalContent() {
         router.replace(newUrl, { scroll: false });
     }, [searchParams, router]);
 
-    // Fetch trades with server-side filtering
-    const fetchTrades = useCallback(async (page: number = 1) => {
-        setLoading(true);
-        try {
-            const params = new URLSearchParams();
-
-            if (searchQuery) params.set('q', searchQuery);
-            if (filterSide !== 'ALL') params.set('side', filterSide);
-            if (filterResult !== 'ALL') params.set('result', filterResult);
-            if (dateFrom) params.set('from', dateFrom);
-            if (dateTo) params.set('to', dateTo);
-            params.set('page', page.toString());
-
-            const res = await fetch(`/api/trades?${params.toString()}`);
-            const data = await res.json();
-
-            setTrades(data.trades);
-            setPagination(data.pagination);
-        } catch (err) {
-            console.error('Failed to fetch trades', err);
-        } finally {
-            setLoading(false);
-        }
-    }, [searchQuery, filterSide, filterResult, dateFrom, dateTo]);
-
     // Debounced search to prevent excessive API calls
     const debouncedSearch = useDebouncedCallback((value: string) => {
         setSearchQuery(value);
+        setPage(1); // Reset to page 1 on search
         updateUrlParams({ q: value || null });
     }, 300);
-
-    // Effect to fetch trades when filters change
-    useEffect(() => {
-        fetchTrades(1); // Reset to page 1 when filters change
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [searchQuery, filterSide, filterResult, dateFrom, dateTo]);
 
     // Update URL when filters change
     useEffect(() => {
         updateUrlParams({
             side: filterSide,
             result: filterResult,
+            tag: filterTag !== 'ALL' ? filterTag : null,
             from: dateFrom || null,
             to: dateTo || null,
         });
-    }, [filterSide, filterResult, dateFrom, dateTo, updateUrlParams]);
+    }, [filterSide, filterResult, filterTag, dateFrom, dateTo, updateUrlParams]);
+
+    // Reset to page 1 and clear selection when filters change
+    useEffect(() => {
+        setPage(1);
+        setSelectedIds(new Set());
+        setIsAllSelected(false);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchQuery, filterSide, filterResult, filterTag, dateFrom, dateTo, selectedAccountId]);
 
     const handlePageChange = (newPage: number) => {
-        fetchTrades(newPage);
+        setPage(newPage);
+        setIsAllSelected(false);
         updateUrlParams({ page: newPage.toString() });
     };
 
-    const handleAnalyze = (trade: JournalTrade) => {
+    const handleView = (trade: JournalTrade) => {
         setSelectedTrade(trade);
-        setIsDrawerOpen(true);
+        setIsViewModalOpen(true);
     };
 
-    const handleDrawerClose = () => {
-        setIsDrawerOpen(false);
+    const handleEdit = (trade: JournalTrade) => {
+        setSelectedTrade(trade);
+        setIsEditModalOpen(true);
+    };
+
+    const handleViewModalClose = () => {
+        setIsViewModalOpen(false);
         setSelectedTrade(null);
     };
 
-    const handleTradeSaved = (updated: JournalTrade) => {
-        setTrades(prev => prev.map(t => t.id === updated.id ? { ...t, ...updated } : t));
-    };
-
-    const handleTradeDeleted = (id: string) => {
-        setTrades(prev => prev.filter(t => t.id !== id));
-        setIsDrawerOpen(false);
+    const handleEditModalClose = () => {
+        setIsEditModalOpen(false);
         setSelectedTrade(null);
     };
 
-    const handleTradeAdded = (trade: JournalTrade) => {
-        setTrades(prev => [trade, ...prev]);
+    const handleSwitchToEdit = () => {
+        setIsViewModalOpen(false);
+        setIsEditModalOpen(true);
+    };
+
+    const handleTradeSaved = () => {
+        refetch();
+        setIsEditModalOpen(false);
+        setSelectedTrade(null);
+        setSelectedIds(new Set());
+    };
+
+    const handleTradeDeleted = async (id: string) => {
+        try {
+            await deleteTrade.mutateAsync(id);
+            toast.success('Trade deleted');
+            setIsEditModalOpen(false);
+            setIsViewModalOpen(false);
+            setSelectedTrade(null);
+        } catch (err) {
+            toast.error('Failed to delete trade');
+        }
+    };
+
+    const handleTradeAdded = () => {
+        // React Query will automatically refetch via invalidation
+        refetch();
         setIsModalOpen(false);
-        // Refresh to get accurate pagination
-        fetchTrades(1);
+    };
+
+    const handleExportCsv = async () => {
+        try {
+            const params = new URLSearchParams();
+            if (searchQuery) params.set('q', searchQuery);
+            if (filterSide !== 'ALL') params.set('side', filterSide);
+            if (filterResult !== 'ALL') params.set('result', filterResult);
+            if (dateFrom) params.set('from', dateFrom);
+            if (dateTo) params.set('to', dateTo);
+
+            const res = await fetch(`/api/trades/export?${params.toString()}`);
+            if (!res.ok) throw new Error('Export failed');
+            
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `trades_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (err) {
+            toast.error('Export failed');
+        }
+    };
+
+    // Bulk selection handlers
+    const handleToggleSelect = (tradeId: string) => {
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            if (next.has(tradeId)) {
+                next.delete(tradeId);
+            } else {
+                next.add(tradeId);
+            }
+            return next;
+        });
+    };
+
+    const handleSelectAll = async () => {
+        if (isAllSelected) {
+            setSelectedIds(new Set());
+            setIsAllSelected(false);
+            return;
+        }
+        try {
+            const params = new URLSearchParams();
+            if (searchQuery) params.set('q', searchQuery);
+            if (filterSide !== 'ALL') params.set('side', filterSide);
+            if (filterResult !== 'ALL') params.set('result', filterResult);
+            if (filterTag !== 'ALL') params.set('tag', filterTag);
+            if (dateFrom) params.set('from', dateFrom);
+            if (dateTo) params.set('to', dateTo);
+            if (selectedAccountId) params.set('account', selectedAccountId);
+            params.set('idsOnly', 'true');
+            const res = await fetch(`/api/trades?${params.toString()}`);
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            setSelectedIds(new Set(data.ids));
+            setIsAllSelected(true);
+        } catch {
+            toast.error('Failed to select all trades');
+        }
+    };
+
+    const handleClearSelection = () => {
+        setSelectedIds(new Set());
+        setIsAllSelected(false);
+    };
+
+    const handleBulkDelete = async () => {
+        try {
+            await bulkDelete(Array.from(selectedIds));
+            setSelectedIds(new Set());
+            setIsDeleteModalOpen(false);
+        } catch {
+            // Error handled in hook
+        }
+    };
+
+    const handleBulkAccount = async (accountId: string) => {
+        try {
+            await bulkAccount({ tradeIds: Array.from(selectedIds), accountId });
+            setAccountDropdownOpen(false);
+            setSelectedIds(new Set());
+        } catch {
+            // Error handled in hook
+        }
+    };
+
+    const handleBulkTag = async (tagId: string) => {
+        try {
+            await bulkTag({ tradeIds: Array.from(selectedIds), tagId });
+            setTagDropdownOpen(false);
+        } catch {
+            // Error handled in hook
+        }
     };
 
     return (
@@ -170,12 +316,21 @@ function JournalContent() {
                         </p>
                     </div>
 
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="h-10 px-6 rounded-xl bg-primary text-black font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:brightness-110 shadow-[0_0_20px_rgba(0,242,255,0.3)] transition-all active:scale-95 shrink-0"
-                    >
-                        <Plus size={14} /> New Record
-                    </button>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={handleExportCsv}
+                            className="h-10 px-6 rounded-xl bg-white/5 border border-white/10 text-white font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:bg-white/10 transition-all active:scale-95 shrink-0"
+                        >
+                            <Download size={14} /> Export CSV
+                        </button>
+
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="h-10 px-6 rounded-xl bg-primary text-black font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:brightness-110 shadow-[0_0_20px_rgba(0,242,255,0.3)] transition-all active:scale-95 shrink-0"
+                        >
+                            <Plus size={14} /> New Record
+                        </button>
+                    </div>
                 </div>
 
                 {/* Filters Bar */}
@@ -212,8 +367,8 @@ function JournalContent() {
                                 key={type}
                                 onClick={() => setFilterResult(type)}
                                 className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${filterResult === type
-                                    ? type === 'WIN' ? 'bg-accent/20 text-accent' :
-                                      type === 'LOSS' ? 'bg-danger/20 text-danger' :
+                                    ? type === 'WIN' ? 'bg-profit/20 text-profit' :
+                                      type === 'LOSS' ? 'bg-loss/20 text-loss' :
                                       type === 'OPEN' ? 'bg-secondary/20 text-secondary' :
                                       'bg-white/10 text-white shadow-[0_0_15px_rgba(255,255,255,0.1)]'
                                     : 'text-gray-600 hover:text-gray-400'
@@ -223,6 +378,44 @@ function JournalContent() {
                             </button>
                         ))}
                     </div>
+
+                    {/* Account Filter */}
+                    {accounts.length > 1 && (
+                        <div className="glass-card flex items-center gap-1 border-white/5 bg-white/5 p-1">
+                            <Wallet size={12} className="text-gray-500 ml-1" />
+                            <select
+                                value={selectedAccountId || ''}
+                                onChange={(e) => selectAccount(e.target.value || null)}
+                                className="bg-transparent border-none outline-none text-[10px] text-white font-bold uppercase tracking-widest cursor-pointer"
+                            >
+                                <option value="" className="bg-gray-900">ALL ACCOUNTS</option>
+                                {accounts.map((acc) => (
+                                    <option key={acc.id} value={acc.id} className="bg-gray-900">
+                                        {acc.name.toUpperCase()}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    {/* Tag Filter */}
+                    {tags.length > 0 && (
+                        <div className="glass-card flex items-center gap-1 border-white/5 bg-white/5 p-1">
+                            <TagIcon size={12} className="text-gray-500 ml-1" />
+                            <select
+                                value={filterTag}
+                                onChange={(e) => setFilterTag(e.target.value)}
+                                className="bg-transparent border-none outline-none text-[10px] text-white font-bold uppercase tracking-widest cursor-pointer"
+                            >
+                                <option value="ALL" className="bg-gray-900">ALL TAGS</option>
+                                {tags.map((tag) => (
+                                    <option key={tag.id} value={tag.id} className="bg-gray-900">
+                                        {tag.name.toUpperCase()}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
 
                     <div className="glass-card flex items-center gap-2 border-white/5 bg-white/5 px-3 py-1.5">
                         <Calendar size={12} className="text-gray-500" />
@@ -252,11 +445,115 @@ function JournalContent() {
                     </div>
                 </div>
 
+                {/* Bulk Action Toolbar */}
+                {selectedIds.size > 0 && (
+                    <div className="glass-card border-primary/20 bg-primary/5 px-4 py-3 flex items-center justify-between overflow-visible relative z-[50]">
+                        <div className="flex items-center gap-3">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-primary">
+                                {selectedIds.size} trade{selectedIds.size !== 1 ? 's' : ''} selected
+                            </span>
+                            <button
+                                onClick={handleClearSelection}
+                                className="text-gray-500 hover:text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-1"
+                            >
+                                <X size={12} /> Clear
+                            </button>
+                            {selectedIds.size > 0 && !isAllSelected && pagination.total > selectedIds.size && (
+                                <button
+                                    onClick={handleSelectAll}
+                                    className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline"
+                                >
+                                    Select all {pagination.total} trades
+                                </button>
+                            )}
+                            {isAllSelected && (
+                                <button
+                                    onClick={() => { setSelectedIds(new Set()); setIsAllSelected(false); }}
+                                    className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white"
+                                >
+                                    Clear selection
+                                </button>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                            {/* Move to Account Dropdown */}
+                            {accounts.length > 1 && (
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setAccountDropdownOpen(!accountDropdownOpen)}
+                                        className="h-8 px-4 rounded-lg bg-white/5 border border-white/10 text-white font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:bg-white/10 transition-all"
+                                    >
+                                        <Wallet size={12} /> Move to Account
+                                    </button>
+                                    {accountDropdownOpen && (
+                                        <div className="absolute top-full right-0 mt-1 glass-card border-white/10 bg-gray-900/95 rounded-lg overflow-hidden z-[500] min-w-[180px]">
+                                            {accounts.map((acc) => (
+                                                <button
+                                                    key={acc.id}
+                                                    onClick={() => handleBulkAccount(acc.id)}
+                                                    className="w-full px-3 py-2 text-left text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 text-gray-300 hover:text-white flex items-center gap-2"
+                                                >
+                                                    {acc.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Tag Dropdown */}
+                            <div className="relative">
+                                <button
+                                    onClick={() => setTagDropdownOpen(!tagDropdownOpen)}
+                                    className="h-8 px-4 rounded-lg bg-white/5 border border-white/10 text-white font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:bg-white/10 transition-all"
+                                >
+                                    <TagIcon size={12} /> Add Tag
+                                </button>
+                                {tagDropdownOpen && (
+                                    <div className="absolute top-full right-0 mt-1 glass-card border-white/10 bg-gray-900/95 rounded-lg overflow-hidden z-[500] min-w-[150px]">
+                                        {tags.length === 0 ? (
+                                            <div className="px-3 py-2 text-[10px] text-gray-500">No tags available</div>
+                                        ) : (
+                                            tags.map((tag) => (
+                                                <button
+                                                    key={tag.id}
+                                                    onClick={() => {
+                                                        handleBulkTag(tag.id);
+                                                        setTagDropdownOpen(false);
+                                                    }}
+                                                    className="w-full px-3 py-2 text-left text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 flex items-center gap-2"
+                                                    style={{ color: tag.color || '#00f2ff' }}
+                                                >
+                                                    <span
+                                                        className="w-2 h-2 rounded-full"
+                                                        style={{ backgroundColor: tag.color || '#00f2ff' }}
+                                                    />
+                                                    {tag.name}
+                                                </button>
+                                            ))
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Delete Button */}
+                            <button
+                                onClick={() => setIsDeleteModalOpen(true)}
+                                className="h-8 px-4 rounded-lg bg-danger/10 border border-danger/20 text-danger font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:bg-danger/20 transition-all"
+                            >
+                                <Trash2 size={12} /> Delete
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {/* Main Table Container */}
                 <div className="glass-card border-white/5 bg-black/40 backdrop-blur-md overflow-hidden">
-                    {loading ? (
-                        <div className="flex items-center justify-center h-48 text-gray-600 text-[10px] font-black uppercase tracking-widest">
-                            Loading Vault...
+                    {isFetching && !data ? (
+                        <div className="divide-y divide-white/5">
+                            {Array.from({ length: 8 }).map((_, i) => (
+                                <SkeletonRow key={i} />
+                            ))}
                         </div>
                     ) : trades.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-48 gap-3 text-gray-600">
@@ -269,7 +566,14 @@ function JournalContent() {
                             </button>
                         </div>
                     ) : (
-                        <DraggableTable data={trades} onAnalyze={handleAnalyze} />
+                        <DraggableTable
+                            data={trades}
+                            onView={handleView}
+                            onEdit={handleEdit}
+                            selectedIds={selectedIds}
+                            onToggleSelect={handleToggleSelect}
+                            onSelectAll={handleSelectAll}
+                        />
                     )}
                 </div>
 
@@ -331,12 +635,30 @@ function JournalContent() {
                 onSaved={handleTradeAdded}
             />
 
-            <TradeAnalysisDrawer
+            <TradeViewModal
                 trade={selectedTrade}
-                isOpen={isDrawerOpen}
-                onClose={handleDrawerClose}
+                isOpen={isViewModalOpen}
+                onClose={handleViewModalClose}
+                onEdit={handleSwitchToEdit}
+            />
+
+            <TradeEditModal
+                trade={selectedTrade}
+                isOpen={isEditModalOpen}
+                onClose={handleEditModalClose}
                 onSaved={handleTradeSaved}
-                onDeleted={handleTradeDeleted}
+            />
+
+            {/* Bulk Delete Confirmation Modal */}
+            <ConfirmModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={handleBulkDelete}
+                title="Delete Trades"
+                message={`Are you sure you want to delete ${selectedIds.size} trade${selectedIds.size !== 1 ? 's' : ''}? This action cannot be undone.`}
+                confirmLabel="Delete"
+                variant="danger"
+                isLoading={isDeleting}
             />
         </DashboardShell>
     );

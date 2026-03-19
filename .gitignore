@@ -25,10 +25,8 @@ yarn-error.log*
 
 # Local env files - IMPORTANT: Never commit .env files with secrets!
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
 
 # Vercel
 .vercel
@@ -54,6 +52,12 @@ logs/
 # Backups - Keep backup directory but ignore contents
 backups/*.sql
 backups/*.env.*
+*.dump
+backup_*
 
 # Docker volumes (local)
 docker-volumes/
+
+# File storage (screenshots, etc.)
+storage/
+.worktrees/

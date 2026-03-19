@@ -1,14 +1,14 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { auth } from '@/lib/auth';
+import { withAuth } from '@/lib/api/withAuth';
+import type { Session } from 'next-auth';
 
 // GET /api/strategies - List all strategies for the current user
-export async function GET() {
-    const session = await auth();
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-    }
-
+export const GET = withAuth(async (
+    _req: NextRequest,
+    _ctx: Record<string, unknown>,
+    session: Session & { user: { id: string } }
+) => {
     const strategies = await prisma.strategy.findMany({
         where: { userId: session.user.id },
         orderBy: { name: 'asc' },
@@ -20,23 +20,21 @@ export async function GET() {
     });
 
     return NextResponse.json({ strategies });
-}
+});
 
 // POST /api/strategies - Create a new strategy
-export async function POST(request: Request) {
-    const session = await auth();
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-    }
-
-    const body = await request.json();
+export const POST = withAuth(async (
+    req: NextRequest,
+    _ctx: Record<string, unknown>,
+    session: Session & { user: { id: string } }
+) => {
+    const body = await req.json();
     const { name, description } = body;
 
     if (!name || typeof name !== 'string' || !name.trim()) {
         return NextResponse.json({ error: 'Strategy name is required' }, { status: 400 });
     }
 
-    // Check if strategy already exists for this user
     const existing = await prisma.strategy.findFirst({
         where: {
             userId: session.user.id,
@@ -57,23 +55,21 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ strategy });
-}
+});
 
 // DELETE /api/strategies - Delete a strategy
-export async function DELETE(request: Request) {
-    const session = await auth();
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-    }
-
-    const { searchParams } = new URL(request.url);
+export const DELETE = withAuth(async (
+    req: NextRequest,
+    _ctx: Record<string, unknown>,
+    session: Session & { user: { id: string } }
+) => {
+    const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 
     if (!id) {
         return NextResponse.json({ error: 'Strategy ID is required' }, { status: 400 });
     }
 
-    // Verify ownership
     const strategy = await prisma.strategy.findFirst({
         where: { id, userId: session.user.id }
     });
@@ -82,7 +78,6 @@ export async function DELETE(request: Request) {
         return NextResponse.json({ error: 'Strategy not found' }, { status: 404 });
     }
 
-    // Unlink trades from this strategy before deleting
     await prisma.trade.updateMany({
         where: { strategyId: id },
         data: { strategyId: null }
@@ -91,6 +86,6 @@ export async function DELETE(request: Request) {
     await prisma.strategy.delete({ where: { id } });
 
     return NextResponse.json({ success: true });
-}
+});
 
 export const runtime = 'nodejs';

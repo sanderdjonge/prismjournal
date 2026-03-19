@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { z } from 'zod';
+import { withAdmin } from '@/lib/api/withAdmin';
+import type { AdminSession } from '@/lib/api/withAdmin';
 
 // Audit log action types
 export enum AuditAction {
@@ -12,6 +14,11 @@ export enum AuditAction {
   ADMIN_LOGIN = 'ADMIN_LOGIN',
   ADMIN_ACCESS = 'ADMIN_ACCESS',
   SECURITY_VIOLATION = 'SECURITY_VIOLATION',
+  USER_LOGIN = 'USER_LOGIN',
+  USER_LOGOUT = 'USER_LOGOUT',
+  FAILED_LOGIN = 'FAILED_LOGIN',
+  API_ERROR = 'API_ERROR',
+  SYNC_ERROR = 'SYNC_ERROR',
 }
 
 // Create audit log entry
@@ -41,24 +48,6 @@ async function createAuditLog(
   }
 }
 
-// Check if user is admin
-async function isAdmin(): Promise<{ isAdmin: boolean; userId?: string }> {
-  const session = await auth();
-  if (!session?.user?.id) return { isAdmin: false };
-  
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { isSuperuser: true, totpEnabled: true },
-  });
-  
-  // Require 2FA for admin access
-  if (user?.isSuperuser !== true) return { isAdmin: false };
-  // Note: In production, you may want to require 2FA verification before admin actions
-  // For now, we just check if 2FA is enabled
-  
-  return { isAdmin: true, userId: session.user.id };
-}
-
 // Rate limiting - simple in-memory store (use Redis in production)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 
@@ -85,18 +74,9 @@ function checkRateLimit(
 }
 
 // GET - List all users with pagination
-export async function GET(request: NextRequest) {
-  const adminCheck = await isAdmin();
-  if (!adminCheck.isAdmin) {
-    await createAuditLog(AuditAction.SECURITY_VIOLATION, {
-      action: 'UNAUTHORIZED_ADMIN_ACCESS_ATTEMPT',
-      endpoint: '/api/admin/users',
-    }, request);
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-  }
-
+export const GET = withAdmin(async (request: NextRequest, _ctx: Record<string, unknown>, session: AdminSession) => {
   // Rate limiting
-  const rateLimit = checkRateLimit(`admin-users-${adminCheck.userId}`, 30, 60000);
+  const rateLimit = checkRateLimit(`admin-users-${session.user.id}`, 30, 60000);
   if (!rateLimit.allowed) {
     return NextResponse.json(
       { error: 'Too many requests', resetTime: rateLimit.resetTime },
@@ -109,19 +89,27 @@ export async function GET(request: NextRequest) {
   }, request);
 
   const { searchParams } = new URL(request.url);
-  const page = parseInt(searchParams.get('page') || '1');
-  const limit = parseInt(searchParams.get('limit') || '20');
+  const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20') || 20));
   const search = searchParams.get('search') || '';
+  const includeInactive = searchParams.get('includeInactive') === 'true';
 
-  const where = search
-    ? {
-        OR: [
-          { email: { contains: search, mode: 'insensitive' as const } },
-          { name: { contains: search, mode: 'insensitive' as const } },
-          { username: { contains: search, mode: 'insensitive' as const } },
-        ],
-      }
-    : {};
+  // Build where clause - by default only show active users (soft-deleted users are hidden)
+  const where: { isActive?: boolean; OR?: Array<{ email?: { contains: string; mode: 'insensitive' }; name?: { contains: string; mode: 'insensitive' }; username?: { contains: string; mode: 'insensitive' } }> } = {};
+  
+  // Only filter by isActive if not explicitly including inactive users
+  if (!includeInactive) {
+    where.isActive = true;
+  }
+  
+  // Add search filter if provided
+  if (search) {
+    where.OR = [
+      { email: { contains: search, mode: 'insensitive' as const } },
+      { name: { contains: search, mode: 'insensitive' as const } },
+      { username: { contains: search, mode: 'insensitive' as const } },
+    ];
+  }
 
   const [users, total] = await Promise.all([
     prisma.user.findMany({
@@ -158,7 +146,7 @@ export async function GET(request: NextRequest) {
       totalPages: Math.ceil(total / limit),
     },
   });
-}
+});
 
 // PATCH - Update user role or status
 const updateUserSchema = z.object({
@@ -166,17 +154,9 @@ const updateUserSchema = z.object({
   action: z.enum(['makeAdmin', 'removeAdmin', 'activate', 'deactivate']),
 });
 
-export async function PATCH(request: NextRequest) {
-  const adminCheck = await isAdmin();
-  if (!adminCheck.isAdmin) {
-    await createAuditLog(AuditAction.SECURITY_VIOLATION, {
-      action: 'UNAUTHORIZED_ADMIN_UPDATE_ATTEMPT',
-    }, request);
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-  }
-
+export const PATCH = withAdmin(async (request: NextRequest, _ctx: Record<string, unknown>, session: AdminSession) => {
   // Stricter rate limiting for modifications
-  const rateLimit = checkRateLimit(`admin-modify-${adminCheck.userId}`, 10, 60000);
+  const rateLimit = checkRateLimit(`admin-modify-${session.user.id}`, 10, 60000);
   if (!rateLimit.allowed) {
     return NextResponse.json(
       { error: 'Too many requests', resetTime: rateLimit.resetTime },
@@ -189,7 +169,7 @@ export async function PATCH(request: NextRequest) {
     const { userId, action } = updateUserSchema.parse(body);
 
     // Prevent self-modification of admin status
-    if (userId === adminCheck.userId && (action === 'removeAdmin' || action === 'deactivate')) {
+    if (userId === session.user.id && (action === 'removeAdmin' || action === 'deactivate')) {
       await createAuditLog(AuditAction.SECURITY_VIOLATION, {
         action: 'SELF_DEMODIFICATION_ATTEMPT',
         targetAction: action,
@@ -286,20 +266,83 @@ export async function PATCH(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
-// DELETE - Soft delete user (set isActive to false)
-export async function DELETE(request: NextRequest) {
-  const adminCheck = await isAdmin();
-  if (!adminCheck.isAdmin) {
-    await createAuditLog(AuditAction.SECURITY_VIOLATION, {
-      action: 'UNAUTHORIZED_ADMIN_DELETE_ATTEMPT',
-    }, request);
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+// POST - Send password reset email on behalf of a user
+const sendResetSchema = z.object({
+  userId: z.string(),
+});
+
+export const POST = withAdmin(async (request: NextRequest, _ctx: Record<string, unknown>, session: AdminSession) => {
+  const rateLimit = checkRateLimit(`admin-reset-${session.user.id}`, 5, 60000);
+  if (!rateLimit.allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
   }
 
+  try {
+    const body = await request.json();
+    const { userId } = sendResetSchema.parse(body);
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, name: true, isActive: true },
+    });
+
+    if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    if (!user.email) return NextResponse.json({ error: 'User has no email address' }, { status: 400 });
+
+    const baseUrl = process.env.NEXTAUTH_URL;
+    if (!baseUrl) {
+      return NextResponse.json(
+        { error: 'NEXTAUTH_URL is not configured — cannot send reset email' },
+        { status: 503 }
+      );
+    }
+
+    const { randomBytes } = await import('crypto');
+    const bcrypt = await import('bcryptjs');
+    const { sendPasswordResetEmail } = await import('@/lib/email');
+
+    const resetToken = randomBytes(32).toString('hex');
+    const tokenId = resetToken.slice(0, 8);
+    const hashedToken = await bcrypt.hash(resetToken, 12);
+
+    await prisma.passwordResetToken.deleteMany({ where: { userId } });
+    await prisma.passwordResetToken.create({
+      data: {
+        userId,
+        tokenId,
+        token: hashedToken,
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+      },
+    });
+
+    const emailResult = await sendPasswordResetEmail(user.email, resetToken, `${baseUrl}/reset-password`);
+    if (!emailResult.success) {
+      return NextResponse.json(
+        { error: `Failed to send email: ${emailResult.error ?? 'Unknown error'}` },
+        { status: 502 }
+      );
+    }
+
+    await createAuditLog(AuditAction.SETTINGS_CHANGE, {
+      action: 'ADMIN_PASSWORD_RESET_EMAIL',
+      targetUserId: userId,
+      targetEmail: user.email,
+      initiatedBy: session.user.id,
+    }, request);
+
+    return NextResponse.json({ success: true, message: `Password reset email sent to ${user.email}` });
+  } catch (error) {
+    console.error('Admin send reset error:', error);
+    return NextResponse.json({ error: 'Failed to send reset email' }, { status: 500 });
+  }
+});
+
+// DELETE - Soft delete user (set isActive to false)
+export const DELETE = withAdmin(async (request: NextRequest, _ctx: Record<string, unknown>, session: AdminSession) => {
   // Very strict rate limiting for deletions
-  const rateLimit = checkRateLimit(`admin-delete-${adminCheck.userId}`, 5, 60000);
+  const rateLimit = checkRateLimit(`admin-delete-${session.user.id}`, 5, 60000);
   if (!rateLimit.allowed) {
     return NextResponse.json(
       { error: 'Too many requests', resetTime: rateLimit.resetTime },
@@ -316,7 +359,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Prevent self-deletion
-    if (userId === adminCheck.userId) {
+    if (userId === session.user.id) {
       await createAuditLog(AuditAction.SECURITY_VIOLATION, {
         action: 'SELF_DELETION_ATTEMPT',
       }, request);
@@ -356,4 +399,4 @@ export async function DELETE(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

@@ -28,7 +28,8 @@ RUN npm run build
 
 # Production image, copy all the files and run next
 FROM base AS runner
-RUN apk add --no-cache openssl
+# Install openssl for Prisma and postgresql-client for pg_dump (backup functionality)
+RUN apk add --no-cache openssl postgresql-client
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -48,6 +49,9 @@ COPY --from=builder /app/prisma ./prisma
 # Automatically leverage output traces to reduce image size
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Create storage directory for screenshots
+RUN mkdir -p /app/storage/screenshots && chown -R nextjs:nodejs /app/storage
 
 # Startup script that runs migrations then starts the app
 COPY --chown=nextjs:nodejs docker-entrypoint.sh ./

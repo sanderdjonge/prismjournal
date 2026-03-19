@@ -31,8 +31,8 @@ export default function NotificationCenter({ className }: NotificationCenterProp
       const data = await res.json();
       setNotifications(data.notifications || []);
       setUnreadCount(data.unreadCount || 0);
-    } catch (error) {
-      console.error('Failed to fetch notifications:', error);
+    } catch {
+      // silently ignore fetch errors
     }
   };
 
@@ -65,8 +65,8 @@ export default function NotificationCenter({ className }: NotificationCenterProp
       });
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       setUnreadCount(0);
-    } catch (error) {
-      console.error('Failed to mark all as read:', error);
+    } catch {
+      // silently ignore
     } finally {
       setLoading(false);
     }
@@ -84,8 +84,8 @@ export default function NotificationCenter({ className }: NotificationCenterProp
         prev.map(n => (n.id === id ? { ...n, isRead: true } : n))
       );
       setUnreadCount(prev => Math.max(0, prev - 1));
-    } catch (error) {
-      console.error('Failed to mark as read:', error);
+    } catch {
+      // silently ignore
     }
   };
 
@@ -102,8 +102,8 @@ export default function NotificationCenter({ className }: NotificationCenterProp
       if (notification && !notification.isRead) {
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
-    } catch (error) {
-      console.error('Failed to delete notification:', error);
+    } catch {
+      // silently ignore
     }
   };
 
@@ -118,8 +118,8 @@ export default function NotificationCenter({ className }: NotificationCenterProp
       });
       setNotifications([]);
       setUnreadCount(0);
-    } catch (error) {
-      console.error('Failed to clear all:', error);
+    } catch {
+      // silently ignore
     } finally {
       setLoading(false);
     }
@@ -167,7 +167,7 @@ export default function NotificationCenter({ className }: NotificationCenterProp
       >
         <Bell size={20} className="text-gray-400 hover:text-white" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 w-5 h-5 bg-loss text-white text-[10px] font-bold rounded-full flex items-center justify-center">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -231,7 +231,7 @@ export default function NotificationCenter({ className }: NotificationCenterProp
                             <span className="w-2 h-2 bg-primary rounded-full shrink-0" />
                           )}
                         </div>
-                        <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
+                        <p className="text-xs text-gray-500 mt-0.5 whitespace-pre-wrap break-words">
                           {notification.message}
                         </p>
                         <p className="text-[10px] text-gray-600 mt-1">

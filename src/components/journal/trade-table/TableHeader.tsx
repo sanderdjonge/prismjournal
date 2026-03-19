@@ -3,6 +3,7 @@
 import React from 'react';
 import { Reorder } from 'framer-motion';
 import { GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
+import { cn } from '@/lib/cn';
 import type { Column, SortDir } from './types';
 
 interface TableHeaderProps {
@@ -11,14 +12,20 @@ interface TableHeaderProps {
     sortCol: string;
     sortDir: SortDir;
     onSort: (colId: string) => void;
+    allSelected?: boolean;
+    someSelected?: boolean;
+    onSelectAll?: () => void;
 }
 
-export function TableHeader({ 
-    columns, 
-    onReorderColumns, 
-    sortCol, 
-    sortDir, 
-    onSort 
+export function TableHeader({
+    columns,
+    onReorderColumns,
+    sortCol,
+    sortDir,
+    onSort,
+    allSelected = false,
+    someSelected = false,
+    onSelectAll
 }: TableHeaderProps) {
     return (
         <thead className="bg-white/5">
@@ -34,16 +41,35 @@ export function TableHeader({
                         key={col.id}
                         value={col}
                         as="th"
-                        className={`px-4 py-3 select-none ${col.sortable ? 'cursor-pointer hover:bg-white/5' : 'cursor-grab active:cursor-grabbing'} transition-colors`}
+                        className={cn(
+                            "px-4 py-3 select-none transition-colors",
+                            col.sortable ? 'cursor-pointer hover:bg-white/5' : 'cursor-grab active:cursor-grabbing',
+                            !col.mobileVisible && "hidden md:table-cell"
+                        )}
                         onClick={() => col.sortable && onSort(col.id)}
                     >
                         <div className="flex items-center gap-1.5">
-                            {!col.sortable && <GripVertical size={10} className="text-gray-700" />}
-                            {col.label}
-                            {col.sortable && sortCol === col.id && (
-                                sortDir === 'desc'
-                                    ? <ChevronDown size={12} className="text-primary" />
-                                    : <ChevronUp size={12} className="text-primary" />
+                            {col.id === 'select' && onSelectAll ? (
+                                <input
+                                    type="checkbox"
+                                    checked={allSelected}
+                                    ref={(el) => {
+                                        if (el) el.indeterminate = someSelected && !allSelected;
+                                    }}
+                                    onChange={onSelectAll}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="w-4 h-4 rounded border-white/20 bg-white/5 text-primary focus:ring-primary/50 cursor-pointer"
+                                />
+                            ) : (
+                                <>
+                                    {!col.sortable && <GripVertical size={10} className="text-gray-700" />}
+                                    {col.label}
+                                    {col.sortable && sortCol === col.id && (
+                                        sortDir === 'desc'
+                                            ? <ChevronDown size={12} className="text-primary" />
+                                            : <ChevronUp size={12} className="text-primary" />
+                                    )}
+                                </>
                             )}
                         </div>
                     </Reorder.Item>

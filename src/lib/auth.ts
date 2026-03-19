@@ -1,8 +1,40 @@
-import NextAuth from 'next-auth';
+import NextAuth, { CredentialsSignin } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import prisma from './prisma';
 import bcrypt from 'bcryptjs';
 import { verifySync } from 'otplib';
+import { logAuditEvent } from './audit';
+
+class TwoFactorRequiredError extends CredentialsSignin {
+    code = '2FA_REQUIRED';
+}
+class InvalidTwoFactorCodeError extends CredentialsSignin {
+    code = 'INVALID_2FA_CODE';
+}
+
+// TOTP replay protection: track used codes for 90 seconds
+export const usedTotpCodes = new Map<string, number>();
+
+export function cleanupUsedCodes(): void {
+    const now = Date.now();
+    for (const [key, expiry] of usedTotpCodes) {
+        if (now > expiry) {
+            usedTotpCodes.delete(key);
+        }
+    }
+}
+
+// TOTP setup: pending secrets stored in memory until verified (max 10 minutes)
+export const pendingTotpSecrets = new Map<string, { secret: string; expiresAt: number }>();
+
+export function cleanupPendingSecrets(): void {
+    const now = Date.now();
+    for (const [key, entry] of pendingTotpSecrets) {
+        if (now > entry.expiresAt) {
+            pendingTotpSecrets.delete(key);
+        }
+    }
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
     session: { strategy: 'jwt' },
@@ -21,7 +53,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     where: { email: credentials.email as string },
                 });
 
-                if (!user?.password) return null;
+                if (!user?.password) {
+                    logAuditEvent('LOGIN_FAILED', null, { email: credentials.email as string, reason: 'user_not_found' }).catch(console.error);
+                    return null;
+                }
 
                 // Verify password
                 const isValid = await bcrypt.compare(
@@ -29,29 +64,53 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     user.password
                 );
 
-                if (!isValid) return null;
+                if (!isValid) {
+                    logAuditEvent('LOGIN_FAILED', user.id, { email: user.email, reason: 'wrong_password' }).catch(console.error);
+                    return null;
+                }
+
+                // Reject deactivated accounts
+                if (!user.isActive) {
+                    logAuditEvent('LOGIN_FAILED', user.id, { email: user.email, reason: 'deactivated' }).catch(console.error);
+                    return null;
+                }
 
                 // Check if 2FA is enabled
                 if (user.totpEnabled && user.totpSecret) {
                     const totpCode = credentials.totpCode as string;
-                    
+
                     if (!totpCode) {
-                        // Return special object to indicate 2FA is required
-                        throw new Error('2FA_REQUIRED');
+                        throw new TwoFactorRequiredError();
+                    }
+
+                    // TOTP replay protection
+                    cleanupUsedCodes();
+                    const codeKey = `${user.id}:${totpCode}`;
+                    if (usedTotpCodes.has(codeKey)) {
+                        logAuditEvent('2FA_FAILED', user.id, { reason: 'replay' }).catch(console.error);
+                        throw new InvalidTwoFactorCodeError();
                     }
 
                     // Verify TOTP code using otplib v13 API
                     const result = verifySync({ secret: user.totpSecret, token: totpCode });
                     if (!result.valid) {
-                        throw new Error('INVALID_2FA_CODE');
+                        logAuditEvent('2FA_FAILED', user.id, { reason: 'invalid_code' }).catch(console.error);
+                        throw new InvalidTwoFactorCodeError();
                     }
+
+                    // Mark code as used for 90 seconds
+                    usedTotpCodes.set(codeKey, Date.now() + 90_000);
                 }
 
-                return { 
-                    id: user.id, 
-                    email: user.email, 
+                // Audit: successful login + update lastLoginAt
+                logAuditEvent('LOGIN_SUCCESS', user.id, { email: user.email }).catch(console.error);
+                prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } }).catch(console.error);
+
+                return {
+                    id: user.id,
+                    email: user.email,
                     name: user.name,
-                    totpEnabled: user.totpEnabled 
+                    totpEnabled: user.totpEnabled
                 };
             },
         }),
