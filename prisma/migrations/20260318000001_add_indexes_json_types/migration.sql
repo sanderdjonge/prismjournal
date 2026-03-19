@@ -7,6 +7,7 @@ DO $$ BEGIN
     SELECT 1 FROM information_schema.columns
     WHERE table_name = 'PropFirm' AND column_name = 'phasesConfig' AND data_type = 'text'
   ) THEN
+    ALTER TABLE "PropFirm" ALTER COLUMN "phasesConfig" DROP DEFAULT;
     ALTER TABLE "PropFirm" ALTER COLUMN "phasesConfig" TYPE JSONB USING
       CASE WHEN "phasesConfig" IS NULL OR trim("phasesConfig") = '' THEN NULL
            ELSE "phasesConfig"::jsonb END;
@@ -19,6 +20,7 @@ DO $$ BEGIN
     SELECT 1 FROM information_schema.columns
     WHERE table_name = 'PropFirm' AND column_name = 'scalingConfig' AND data_type = 'text'
   ) THEN
+    ALTER TABLE "PropFirm" ALTER COLUMN "scalingConfig" DROP DEFAULT;
     ALTER TABLE "PropFirm" ALTER COLUMN "scalingConfig" TYPE JSONB USING
       CASE WHEN "scalingConfig" IS NULL OR trim("scalingConfig") = '' THEN NULL
            ELSE "scalingConfig"::jsonb END;
@@ -31,6 +33,7 @@ DO $$ BEGIN
     SELECT 1 FROM information_schema.columns
     WHERE table_name = 'AuditLog' AND column_name = 'details' AND data_type = 'text'
   ) THEN
+    ALTER TABLE "AuditLog" ALTER COLUMN "details" DROP DEFAULT;
     ALTER TABLE "AuditLog" ALTER COLUMN "details" TYPE JSONB USING
       CASE WHEN "details" IS NULL OR trim("details") = '' THEN NULL
            ELSE "details"::jsonb END;
