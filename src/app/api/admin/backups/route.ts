@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { spawn } from 'child_process';
 import { withAdmin } from '@/lib/api/withAdmin';
-import { existsSync, readdirSync, statSync, unlinkSync } from 'fs';
+import { existsSync, readdirSync, statSync, unlinkSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
 /**
@@ -53,12 +53,43 @@ function isValidPathForShell(path: string): boolean {
   return path.startsWith('/') || path.startsWith('./');
 }
 
+/**
+ * Validate a database identifier (hostname, username, database name).
+ * Allows alphanumeric, underscore, hyphen, and dot characters.
+ * Used for Docker hostnames like 'db' which don't look like file paths.
+ */
+function isValidDbIdentifier(identifier: string): boolean {
+  // Database identifiers should be alphanumeric with limited special chars
+  // PostgreSQL allows: letters, digits, underscores, hyphens (in quoted identifiers)
+  // Hostnames can also contain dots
+  return /^[a-zA-Z0-9_.-]+$/.test(identifier);
+}
+
 // Backup directory - validate on initialization
 const BACKUP_DIR_RAW = process.env.BACKUP_PATH || '/backups';
 const BACKUP_DIR = isValidPathForShell(BACKUP_DIR_RAW) ? BACKUP_DIR_RAW : '/backups';
 if (!isValidPathForShell(BACKUP_DIR_RAW)) {
   console.warn('[backups] Invalid BACKUP_PATH detected, using default /backups');
 }
+
+// Ensure backup subdirectories exist
+function ensureBackupDirectories(): void {
+  const subdirs = ['hourly', 'daily', 'weekly'];
+  for (const subdir of subdirs) {
+    const dirPath = join(BACKUP_DIR, subdir);
+    if (!existsSync(dirPath)) {
+      try {
+        mkdirSync(dirPath, { recursive: true });
+        console.log(`[backups] Created backup directory: ${dirPath}`);
+      } catch (error) {
+        console.error(`[backups] Failed to create backup directory ${dirPath}:`, error);
+      }
+    }
+  }
+}
+
+// Initialize backup directories on module load
+ensureBackupDirectories();
 
 // Get backup files from a directory
 function getBackupFiles(subdir: string): Array<{ name: string; size: number; createdAt: Date }> {
@@ -156,7 +187,9 @@ export const POST = withAdmin(async (request: NextRequest) => {
       const dbName = dbUrl.pathname.slice(1); // Remove leading slash
       
       // Validate database connection parameters to prevent command injection
-      if (!isValidPathForShell(dbHost) || !isValidPathForShell(dbUser) || !isValidPathForShell(dbName)) {
+      // Use isValidDbIdentifier for database identifiers (hostnames, usernames, database names)
+      // which may not look like file paths (e.g., Docker hostname 'db')
+      if (!isValidDbIdentifier(dbHost) || !isValidDbIdentifier(dbUser) || !isValidDbIdentifier(dbName)) {
         return NextResponse.json(
           { error: 'Invalid database configuration detected' },
           { status: 500 }
