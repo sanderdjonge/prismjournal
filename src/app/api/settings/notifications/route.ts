@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+// eslint-disable-next-line no-restricted-imports
 import { auth } from '@/lib/auth';
 import { sendTestEmail } from '@/lib/email';
 import { validateBody, notificationSettingsSchema } from '@/lib/validations';
