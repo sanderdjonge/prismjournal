@@ -51,11 +51,11 @@ export async function captureAutoScreenshots(
 
     const normalisedSymbol = normaliseSymbol(trade.symbol);
 
-    await Promise.all(timeframes.map(async (tf) => {
+    for (const tf of timeframes) {
         const interval = mapTimeframe(tf);
         if (!interval) {
             logger.warn({ tf }, '[auto-screenshot] Unknown timeframe, skipping');
-            return;
+            continue;
         }
 
         try {
@@ -85,7 +85,9 @@ export async function captureAutoScreenshots(
                     },
                 });
             } catch (dbErr) {
-                try { await deleteFile(filename); } catch { /* ignore */ }
+                try { await deleteFile(filename); } catch (cleanupErr) {
+                    logger.warn({ cleanupErr, filename }, '[auto-screenshot] Failed to clean up orphaned file');
+                }
                 throw dbErr;
             }
 
@@ -93,5 +95,5 @@ export async function captureAutoScreenshots(
         } catch (err) {
             logger.error({ err, tradeId, tf, event }, '[auto-screenshot] Failed to capture screenshot');
         }
-    }));
+    }
 }
