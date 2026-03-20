@@ -21,13 +21,14 @@ import { useSession, signOut } from 'next-auth/react';
 import { cn } from '@/lib/cn';
 import NotificationCenter from './NotificationCenter';
 import AccountSwitcher from './AccountSwitcher';
+import { APP_VERSION, BUILD_DATE, BUILD_NOTES } from '@/lib/version';
 
 const MENU_ITEMS = [
     { label: 'Dashboard', href: '/' },
     { label: 'Performance', href: '/performance' },
-    { label: 'Journal', href: '/journal' },
     { label: 'Analytics', href: '/analytics' },
     { label: 'Trading Accounts', href: '/pages/accounts' },
+    { label: 'Journal', href: '/journal' },
     { label: 'Calculator', href: '/calculator', icon: Calculator },
 ];
 
@@ -151,6 +152,10 @@ export default function TopNav() {
                                 >
                                     <LogOut size={14} /> Sign Out
                                 </button>
+                                <div className="border-t border-white/5 px-4 py-3">
+                                    <p className="text-[9px] font-mono text-gray-700">v{APP_VERSION} &middot; {BUILD_DATE}</p>
+                                    <p className="text-[9px] text-gray-800 mt-0.5 leading-tight">{BUILD_NOTES}</p>
+                                </div>
                             </div>
                         )}
                     </div>

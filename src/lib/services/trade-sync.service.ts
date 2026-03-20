@@ -39,6 +39,17 @@ async function resolveStrategy(name: string, userId: string): Promise<string> {
     return strat.id;
 }
 
+function formatDateTime(date: Date | string | null | undefined): string {
+    if (!date) return '—';
+    const d = typeof date === 'string' ? new Date(date) : date;
+    return d.toLocaleString('en-GB', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+        timeZone: 'UTC',
+        hour12: false,
+    }) + ' UTC';
+}
+
 /**
  * Send a Telegram trade alert for new or closed trades.
  */
@@ -57,9 +68,9 @@ async function sendTradeAlert(
     if (isClosed) {
         const pnl = trade.pnl ?? 0;
         const sign = pnl >= 0 ? '+' : '';
-        msg = `📊 <b>Trade Closed</b>\n${trade.type} ${trade.symbol} ${trade.volume} lots\nP&L: <b>${sign}$${pnl.toFixed(2)}</b>`;
+        msg = `📊 <b>Trade Closed</b>\n${trade.type} ${trade.symbol} ${trade.volume} lots\nP&L: <b>${sign}$${pnl.toFixed(2)}</b>\n🕐 Opened: ${formatDateTime(trade.entryTime)}\n🕑 Closed: ${formatDateTime(trade.exitTime)}`;
     } else {
-        msg = `🔔 <b>Trade Opened</b>\n${trade.type} ${trade.symbol} ${trade.volume} lots @ ${trade.entryPrice}`;
+        msg = `🔔 <b>Trade Opened</b>\n${trade.type} ${trade.symbol} ${trade.volume} lots @ ${trade.entryPrice}\n🕐 ${formatDateTime(trade.entryTime)}`;
         if (trade.stopLoss) msg += `\nSL: ${trade.stopLoss}`;
         if (trade.takeProfit) msg += ` | TP: ${trade.takeProfit}`;
     }
@@ -74,6 +85,7 @@ export async function upsertSyncTrade(
     accountId: string,
     userId: string,
     trade: SyncTrade,
+    isHistorySync = false,
 ): Promise<void> {
     const strategyId = trade.strategy
         ? await resolveStrategy(trade.strategy, userId)
@@ -136,15 +148,17 @@ export async function upsertSyncTrade(
         applyPlatformTag(userId, upsertedTrade.id, 'MT5').catch(() => {});
     }
 
-    // Fire notifications asynchronously — errors must not fail the sync
-    sendTradeAlert(userId, trade, isNew, isClosed).catch(() => {});
+    // Skip notifications during history replay to avoid flooding Telegram
+    if (!isHistorySync) {
+        sendTradeAlert(userId, trade, isNew, isClosed).catch(() => {});
 
-    if (isNew || isClosed) {
-        notifyTrade(userId, {
-            symbol: trade.symbol,
-            type: trade.type,
-            volume: trade.volume,
-            pnl: trade.pnl,
-        }, isNew ? 'OPEN' : 'CLOSE').catch(() => {});
+        if (isNew || isClosed) {
+            notifyTrade(userId, {
+                symbol: trade.symbol,
+                type: trade.type,
+                volume: trade.volume,
+                pnl: trade.pnl,
+            }, isNew ? 'OPEN' : 'CLOSE').catch(() => {});
+        }
     }
 }

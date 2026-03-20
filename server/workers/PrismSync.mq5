@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 #property copyright "2025, PrismJournal"
 #property link      "https://github.com/prismjournal"
-#property version   "3.00"
+#property version   "3.10"
 #property description "Syncs trades and equity snapshots to PrismJournal."
 #property description "Syncs full trade history on startup, then live trades in real-time."
 #property description "Get your Bridge Key and Sync URL from Settings > Connector Hub."
@@ -55,11 +55,14 @@ void OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void OnTimer()
   {
-   double balance = AccountInfoDouble(ACCOUNT_BALANCE);
-   double equity  = AccountInfoDouble(ACCOUNT_EQUITY);
+   double balance  = AccountInfoDouble(ACCOUNT_BALANCE);
+   double equity   = AccountInfoDouble(ACCOUNT_EQUITY);
+   string acctId   = (string)AccountInfoInteger(ACCOUNT_LOGIN);
 
    string json = "{"
                  "\"type\":\"EQUITY_SNAPSHOT\","
+                 "\"platformAccountId\":\"" + acctId + "\","
+                 "\"platform\":\"METATRADER5\","
                  "\"snapshot\":{"
                  "\"balance\":" + DoubleToString(balance, 2) + ","
                  "\"equity\":"  + DoubleToString(equity , 2) + ","
@@ -78,6 +81,7 @@ void OnTimer()
 //+------------------------------------------------------------------+
 void SyncOpenPositions()
   {
+   string acctId = (string)AccountInfoInteger(ACCOUNT_LOGIN);
    int total = PositionsTotal();
    for(int i = 0; i < total; i++)
      {
@@ -101,6 +105,8 @@ void SyncOpenPositions()
 
       string posJson = "{"
                        "\"type\":\"TRADE_UPDATE\","
+                       "\"platformAccountId\":\"" + acctId + "\","
+                       "\"platform\":\"METATRADER5\","
                        "\"trade\":{"
                        "\"ticket\":\"POS-" + (string)ticket + "\","
                        "\"symbol\":\"" + symbol + "\","
@@ -144,6 +150,8 @@ void SyncHistory()
    int total = HistoryDealsTotal();
    PrintFormat("SyncHistory: Found %d deals in history, scanning...", total);
 
+   string acctId = (string)AccountInfoInteger(ACCOUNT_LOGIN);
+
    // Collect position IDs and their entry/exit deals
    // We process sequentially: entry deals create, exit deals update via upsert
    int synced = 0;
@@ -179,6 +187,9 @@ void SyncHistory()
          // Entry deal — send with entry info, SL, TP
          string json = "{"
                        "\"type\":\"TRADE_UPDATE\","
+                       "\"platformAccountId\":\"" + acctId + "\","
+                       "\"platform\":\"METATRADER5\","
+                       "\"isHistorySync\":true,"
                        "\"trade\":{"
                        "\"ticket\":\"POS-" + (string)pos_id + "\","
                        "\"symbol\":\"" + symbol + "\","
@@ -199,6 +210,9 @@ void SyncHistory()
          // Exit deal — update with exit info, P&L, commission, swap
          string json = "{"
                        "\"type\":\"TRADE_UPDATE\","
+                       "\"platformAccountId\":\"" + acctId + "\","
+                       "\"platform\":\"METATRADER5\","
+                       "\"isHistorySync\":true,"
                        "\"trade\":{"
                        "\"ticket\":\"POS-" + (string)pos_id + "\","
                        "\"symbol\":\"" + symbol + "\","
@@ -254,12 +268,15 @@ void OnTradeTransaction(const MqlTradeTransaction& trans,
    datetime time    = (datetime)HistoryDealGetInteger(deal_ticket, DEAL_TIME);
 
    string type_str = (deal_type == DEAL_TYPE_BUY) ? "BUY" : "SELL";
+   string acctId   = (string)AccountInfoInteger(ACCOUNT_LOGIN);
 
    string json;
    if(entry_type == DEAL_ENTRY_IN)
      {
       json = "{"
              "\"type\":\"TRADE_UPDATE\","
+             "\"platformAccountId\":\"" + acctId + "\","
+             "\"platform\":\"METATRADER5\","
              "\"trade\":{"
              "\"ticket\":\"POS-" + (string)pos_id + "\","
              "\"symbol\":\"" + symbol + "\","
@@ -277,6 +294,8 @@ void OnTradeTransaction(const MqlTradeTransaction& trans,
      {
       json = "{"
              "\"type\":\"TRADE_UPDATE\","
+             "\"platformAccountId\":\"" + acctId + "\","
+             "\"platform\":\"METATRADER5\","
              "\"trade\":{"
              "\"ticket\":\"POS-" + (string)pos_id + "\","
              "\"symbol\":\"" + symbol + "\","

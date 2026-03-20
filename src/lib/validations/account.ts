@@ -38,6 +38,7 @@ export const updateAccountSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100, 'Name too long').optional(),
   broker: z.string().max(100).optional().nullable(),
   accountNumber: z.string().max(50).optional().nullable(),
+  platformAccountId: z.string().max(50).optional().nullable(),
   currency: z.string().length(3, 'Currency must be 3 characters').optional(),
   isActive: z.boolean().optional(),
   notes: z.string().max(1000).optional().nullable(),
