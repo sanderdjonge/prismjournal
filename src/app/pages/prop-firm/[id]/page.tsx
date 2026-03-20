@@ -601,7 +601,7 @@ function PropFirmAccountContent() {
                                                 "text-lg font-bold",
                                                 analytics.expectancy >= 0 ? "text-profit" : "text-loss"
                                             )}>
-                                                {formatCurrency(analytics.expectancy, account?.currency)}
+                                                {analytics.expectancy >= 0 ? '+' : ''}{formatCurrency(analytics.expectancy, account?.currency)}
                                             </p>
                                         </div>
                                         <div className="text-center p-3 rounded-lg bg-black/20 border border-white/5">
@@ -646,7 +646,7 @@ function PropFirmAccountContent() {
                                                         "text-sm font-bold",
                                                         symbol.profit >= 0 ? "text-profit" : "text-loss"
                                                     )}>
-                                                        {formatCurrency(symbol.profit, account?.currency)}
+                                                        {symbol.profit >= 0 ? '+' : ''}{formatCurrency(symbol.profit, account?.currency)}
                                                     </span>
                                                 </div>
                                             ))}

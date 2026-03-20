@@ -87,8 +87,8 @@ export default function Dashboard() {
                         <MetricRow label="Total P&L" value={formatPnl(stats.totalPnl)} variant={stats.totalPnl >= 0 ? 'profit' : 'loss'} />
                         <MetricRow label="Win Rate" value={`${stats.winRate.toFixed(1)}%`} subValue={`${Math.round(stats.winRate / 100 * stats.totalTrades)}W / ${stats.totalTrades - Math.round(stats.winRate / 100 * stats.totalTrades)}L`} variant={stats.winRate >= 50 ? 'profit' : 'loss'} />
                         <MetricRow label="Profit Factor" value={stats.profitFactor > 0 ? stats.profitFactor.toFixed(2) : '—'} />
-                        <MetricRow label="Avg R-Multiple" value={`${stats.avgRMultiple.toFixed(2)}R`} variant={stats.avgRMultiple >= 0 ? 'profit' : 'loss'} />
-                        <MetricRow label="Expectancy" value={`${stats.expectancy >= 0 ? '+' : ''}${symbol}${Math.abs(stats.expectancy).toFixed(2)}`} variant={stats.expectancy >= 0 ? 'profit' : 'loss'} />
+                        <MetricRow label="Avg R-Multiple" value={`${stats.avgRMultiple >= 0 ? '+' : ''}${stats.avgRMultiple.toFixed(2)}R`} variant={stats.avgRMultiple >= 0 ? 'profit' : 'loss'} />
+                        <MetricRow label="Expectancy" value={`${stats.expectancy >= 0 ? '+' : '-'}${symbol}${Math.abs(stats.expectancy).toFixed(2)}`} variant={stats.expectancy >= 0 ? 'profit' : 'loss'} />
                         <MetricRow label="Max Drawdown" value={`-${formatAmount(stats.maxDrawdown)}`} variant="loss" />
                     </div>
                 </div>
