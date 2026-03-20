@@ -836,6 +836,21 @@ function AccountsContent() {
                                 </div>
                             </div>
 
+                            {newAccount.accountType === 'OWN_MONEY' && (
+                                <div className="space-y-2">
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                        Account Size
+                                    </label>
+                                    <input
+                                        type="number"
+                                        value={newAccount.accountSize}
+                                        onChange={(e) => setNewAccount(prev => ({ ...prev, accountSize: e.target.value }))}
+                                        placeholder="e.g. 10000"
+                                        className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                    />
+                                </div>
+                            )}
+
                             {newAccount.accountType === 'PROPFIRM' && (
                                 <>
                                     <div className="space-y-2">
