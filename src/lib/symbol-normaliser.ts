@@ -22,7 +22,7 @@ const CRYPTO_BASES = [
 ];
 
 function stripSuffix(symbol: string): string {
-    return symbol.replace(/\.(pro|raw|micro|step|ecn|stp|standard|plus|mini|m|c|s)$/i, '');
+    return symbol.replace(/\.(pro|raw|micro|step|ecn|stp|standard|plus|mini|cash|spot|m|c|s)$/i, '');
 }
 
 export function normaliseSymbol(raw: string): string {
