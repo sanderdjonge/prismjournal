@@ -25,9 +25,9 @@ import AccountSwitcher from './AccountSwitcher';
 const MENU_ITEMS = [
     { label: 'Dashboard', href: '/' },
     { label: 'Performance', href: '/performance' },
-    { label: 'Journal', href: '/journal' },
     { label: 'Analytics', href: '/analytics' },
     { label: 'Trading Accounts', href: '/pages/accounts' },
+    { label: 'Journal', href: '/journal' },
     { label: 'Calculator', href: '/calculator', icon: Calculator },
 ];
 
