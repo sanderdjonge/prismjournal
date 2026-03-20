@@ -41,7 +41,11 @@ export const PATCH = withAuth(async (req, ctx, session) => {
 
     const account = await prisma.tradingAccount.update({
         where: { id },
-        data: validation.data,
+        // Cast needed: Zod's nullable fields (e.g. propFirmId) produce string | null | undefined,
+        // which TypeScript can't resolve against Prisma's Without<> union discriminant at compile time.
+        // Runtime behaviour is correct — Prisma handles null FK fields fine.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        data: validation.data as any,
     });
 
     return ok({ account });
