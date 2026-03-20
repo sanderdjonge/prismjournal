@@ -2,6 +2,7 @@ import prisma from '@/lib/prisma';
 import { notifyTrade } from '@/lib/notifications';
 import { sendTelegramMessage } from '@/lib/telegram';
 import type { SyncTrade } from '@/lib/validations';
+import { captureAutoScreenshots } from './auto-screenshot.service';
 
 /**
  * Ensure a tag named `tagName` exists for the user and apply it to the trade.
@@ -160,5 +161,23 @@ export async function upsertSyncTrade(
                 pnl: trade.pnl,
             }, isNew ? 'OPEN' : 'CLOSE').catch(() => {});
         }
+    }
+
+    // Fire auto screenshots asynchronously — must not block sync or affect notifications
+    if (!isHistorySync && (isNew || isClosed)) {
+        captureAutoScreenshots(
+            upsertedTrade.id,
+            accountId,
+            isNew ? 'OPEN' : 'CLOSE',
+            {
+                symbol: trade.symbol,
+                entryPrice: trade.entryPrice ?? 0,
+                stopLoss: trade.stopLoss,
+                takeProfit: trade.takeProfit,
+            },
+        ).catch((err) => {
+            // Swallow — screenshots must never affect sync reliability
+            void err;
+        });
     }
 }
