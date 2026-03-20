@@ -20,11 +20,15 @@ export async function POST() {
   }
 
   try {
-    // Find all users with weekly digest enabled
+    const currentHour = new Date().getUTCHours();
+    const isMonday = new Date().getUTCDay() === 1;
+
+    // Find all users with digest enabled whose send hour matches current UTC hour
     const alertConfigs = await prisma.alertConfig.findMany({
       where: {
         email: { not: null },
         enableWeeklyDigest: true,
+        digestSendHour: currentHour,
       },
       include: {
         user: {
@@ -40,7 +44,12 @@ export async function POST() {
 
     const results: { email: string; success: boolean; error?: string }[] = [];
 
-    for (const config of alertConfigs) {
+    // Filter: WEEKLY only sends on Monday, DAILY sends every day
+    const eligible = alertConfigs.filter(c =>
+      (c.digestFrequency ?? 'WEEKLY') === 'DAILY' || isMonday
+    );
+
+    for (const config of eligible) {
       const email = config.email!;
       const account = config.user.accounts[0];
 
@@ -102,7 +111,7 @@ export async function GET() {
   return NextResponse.json({
     message: 'Weekly digest cron endpoint',
     eligibleUsers: count,
-    schedule: 'Every Monday at 9:00 AM UTC (configure in your cron service)',
+    schedule: 'Call this endpoint every hour. Sends to users whose digestSendHour matches current UTC hour (weekly: Mondays only, daily: every day).',
   });
 }
 
