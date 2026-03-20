@@ -124,23 +124,6 @@ export async function renderCandlestickChart(options: ChartRenderOptions): Promi
 
     const chartOptionJson = buildChartOptionJson(bars, entryPrice, stopLoss, takeProfit);
 
-    const html = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <style>* { margin: 0; padding: 0; } body { background: #0d0d14; }</style>
-  <script>${ECHARTS_JS}</script>
-</head>
-<body>
-  <div id="c" style="width:1200px;height:600px;"></div>
-  <script>
-    const chart = echarts.init(document.getElementById('c'), null, { renderer: 'canvas' });
-    chart.setOption(${chartOptionJson});
-    window.__CHART_DONE__ = true;
-  </script>
-</body>
-</html>`;
-
     const executablePath =
         process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ?? '/usr/bin/chromium-browser';
 
@@ -154,10 +137,30 @@ export async function renderCandlestickChart(options: ChartRenderOptions): Promi
     try {
         const page = await browser.newPage();
         await page.setViewportSize({ width: 1200, height: 600 });
-        await page.setContent(html, { waitUntil: 'domcontentloaded' });
-        await page.waitForFunction(() => (window as { __CHART_DONE__?: boolean }).__CHART_DONE__ === true, {
-            timeout: 15_000,
-        });
+
+        // Set base HTML structure without any scripts (avoids setContent choking on 1.1MB inline JS)
+        await page.setContent(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>* { margin: 0; padding: 0; } body { background: #0d0d14; }</style>
+</head>
+<body>
+  <div id="c" style="width:1200px;height:600px;"></div>
+</body>
+</html>`, { waitUntil: 'domcontentloaded' });
+
+        // Inject ECharts separately — more reliable than inlining in setContent
+        await page.addScriptTag({ content: ECHARTS_JS });
+
+        // Initialize and render synchronously via evaluate — no waitForFunction needed
+        await page.evaluate((optionJson) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const echartsAny = (window as any).echarts;
+            const chart = echartsAny.init(document.getElementById('c'), null, { renderer: 'canvas' });
+            chart.setOption(JSON.parse(optionJson));
+        }, chartOptionJson);
+
         const buffer = await page.screenshot({ type: 'png' });
         logger.info({ symbol, interval }, 'Chart render complete');
         return Buffer.from(buffer);
