@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useCurrency } from '@/lib/currency';
+import { autoScreenshotConfigSchema } from '@/lib/validations/screenshot-config';
 
 interface AccountSummary {
     id: string;
@@ -87,7 +88,7 @@ const DEFAULT_SCREENSHOT_CONFIG: ScreenshotConfig = {
     barsOfContext: 60,
 };
 
-const TIMEFRAME_OPTIONS = ['M1', 'M5', 'M15', 'M30', 'H1', 'H4', 'D1'] as const;
+const TIMEFRAME_OPTIONS = ['M1', 'M5', 'M15', 'M30', 'H1', 'H4', 'D1', 'W1'] as const;
 
 const PLATFORM_LABELS: Record<string, string> = {
     METATRADER5: 'MT5',
@@ -393,9 +394,11 @@ function AccountsContent() {
             maxDailyLoss: account.maxDailyLoss?.toString() || '',
             maxTotalDrawdown: account.maxTotalDrawdown?.toString() || '',
             profitTarget: account.profitTarget?.toString() || '',
-            screenshotConfig: account.autoScreenshotConfig
-                ? (account.autoScreenshotConfig as ScreenshotConfig)
-                : DEFAULT_SCREENSHOT_CONFIG,
+            screenshotConfig: (() => {
+                if (!account.autoScreenshotConfig) return DEFAULT_SCREENSHOT_CONFIG;
+                const result = autoScreenshotConfigSchema.safeParse(account.autoScreenshotConfig);
+                return result.success ? (result.data as ScreenshotConfig) : DEFAULT_SCREENSHOT_CONFIG;
+            })(),
         });
     };
 

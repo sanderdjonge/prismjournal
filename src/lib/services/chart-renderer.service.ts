@@ -1,5 +1,13 @@
 import { chromium } from 'playwright-core';
 import logger from '@/lib/logger';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
+// Read once at module load — avoids CDN dependency in the headless page
+const ECHARTS_JS = readFileSync(
+    join(process.cwd(), 'node_modules/echarts/dist/echarts.min.js'),
+    'utf-8'
+);
 
 export interface ChartRenderOptions {
     /** Twelve Data formatted symbol, e.g. "EUR/USD" */
@@ -121,7 +129,7 @@ export async function renderCandlestickChart(options: ChartRenderOptions): Promi
 <head>
   <meta charset="utf-8" />
   <style>* { margin: 0; padding: 0; } body { background: #0d0d14; }</style>
-  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <script>${ECHARTS_JS}</script>
 </head>
 <body>
   <div id="c" style="width:1200px;height:600px;"></div>
@@ -146,7 +154,7 @@ export async function renderCandlestickChart(options: ChartRenderOptions): Promi
     try {
         const page = await browser.newPage();
         await page.setViewportSize({ width: 1200, height: 600 });
-        await page.setContent(html, { waitUntil: 'networkidle' });
+        await page.setContent(html, { waitUntil: 'domcontentloaded' });
         await page.waitForFunction(() => (window as { __CHART_DONE__?: boolean }).__CHART_DONE__ === true, {
             timeout: 15_000,
         });
