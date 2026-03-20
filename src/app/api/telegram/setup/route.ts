@@ -10,12 +10,16 @@ export async function GET() {
     const webhookUrl = `${process.env.NEXTAUTH_URL}/api/telegram/webhook`;
     
     try {
+        const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
         const response = await fetch(
             `https://api.telegram.org/bot${BOT_TOKEN}/setWebhook`,
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: webhookUrl }),
+                body: JSON.stringify({
+                    url: webhookUrl,
+                    ...(webhookSecret ? { secret_token: webhookSecret } : {}),
+                }),
             }
         );
         

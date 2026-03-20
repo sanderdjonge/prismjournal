@@ -16,6 +16,8 @@ const DEFAULTS = {
     email: null as string | null,
     enableWeeklyDigest: false,
     enableMddAlerts: false,
+    digestFrequency: 'WEEKLY' as string,
+    digestSendHour: 9,
 };
 
 export async function GET() {

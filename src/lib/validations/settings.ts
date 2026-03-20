@@ -65,6 +65,8 @@ export const notificationSettingsSchema = z.object({
   email: z.string().email('Invalid email format').max(255, 'Email too long').nullable().optional(),
   enableWeeklyDigest: z.boolean().optional(),
   enableMddAlerts: z.boolean().optional(),
+  digestFrequency: z.enum(['DAILY', 'WEEKLY']).optional(),
+  digestSendHour: z.number().int().min(0).max(23).optional(),
 });
 
 export type NotificationSettingsInput = z.infer<typeof notificationSettingsSchema>;

@@ -6,8 +6,8 @@ import prisma from '@/lib/prisma';
  * Preview endpoint for weekly digest email
  * Authenticated users can preview their digest without waiting for cron
  */
-export const GET = withAuth(async (_req, session) => {
-    const userId = (session as { user: { id: string } }).user.id;
+export const GET = withAuth(async (_req, _ctx, session) => {
+    const userId = session.user.id;
     
     const user = await prisma.user.findUnique({
         where: { id: userId },

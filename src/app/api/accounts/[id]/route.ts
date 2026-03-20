@@ -1,5 +1,5 @@
 import { withAuth } from '@/lib/api/withAuth';
-import { ok, notFound, internalError } from '@/lib/api/responses';
+import { ok, notFound, internalError, badRequest } from '@/lib/api/responses';
 import prisma from '@/lib/prisma';
 import { validateBody, updateAccountSchema } from '@/lib/validations';
 
@@ -47,32 +47,45 @@ export const PATCH = withAuth(async (req, ctx, session) => {
     return ok({ account });
 });
 
-export const DELETE = withAuth(async (_req, ctx, session) => {
+export const DELETE = withAuth(async (req, ctx, session) => {
     const { id } = await (ctx.params as Promise<{ id: string }>);
     const userId = session.user.id;
+    const permanent = new URL(req.url).searchParams.get('permanent') === 'true';
 
     try {
-        // First, check if the account exists at all
         const accountExists = await prisma.tradingAccount.findUnique({
             where: { id },
-            select: { id: true, userId: true, name: true, isActive: true },
+            select: { id: true, userId: true, name: true, isActive: true, _count: { select: { trades: true } } },
         });
 
-        if (!accountExists) {
+        if (!accountExists || accountExists.userId !== userId) {
             return notFound('Account');
         }
 
-        // Check if the account belongs to the user
-        if (accountExists.userId !== userId) {
-            return notFound('Account'); // Return 404 to not reveal existence
+        if (permanent) {
+            // Must be archived first before permanent deletion
+            if (accountExists.isActive) {
+                return badRequest('Account must be archived before it can be permanently deleted');
+            }
+
+            // Hard delete: remove all related data then the account
+            await prisma.$transaction([
+                prisma.equitySnapshot.deleteMany({ where: { accountId: id } }),
+                prisma.dailyAccountSnapshot.deleteMany({ where: { accountId: id } }),
+                prisma.ruleViolation.deleteMany({ where: { accountId: id } }),
+                prisma.challengePhase.deleteMany({ where: { accountId: id } }),
+                prisma.trade.deleteMany({ where: { accountId: id } }),
+                prisma.tradingAccount.delete({ where: { id } }),
+            ]);
+
+            return ok({ deleted: true });
         }
 
-        // Check if already archived
+        // Soft delete (archive)
         if (!accountExists.isActive) {
             return ok({ account: accountExists, message: 'Account was already archived' });
         }
 
-        // Perform soft delete
         const account = await prisma.tradingAccount.update({
             where: { id },
             data: { isActive: false },

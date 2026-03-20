@@ -50,6 +50,7 @@ export const tradeUpdatePayloadSchema = z.object({
   // Multi-account routing fields (optional for backwards compatibility)
   platform: syncPlatformEnum.optional().default('METATRADER5'),
   platformAccountId: z.string().optional(), // MT5 login ID, cTrader account ID, etc.
+  isHistorySync: z.boolean().optional().default(false), // true during startup history replay — suppresses notifications
 });
 
 /**

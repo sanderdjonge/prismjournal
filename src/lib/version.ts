@@ -3,9 +3,21 @@
 // it is NOT a client bundle (no 'use client' needed here).
 const pkg = require('../../package.json') as { version: string };
 
-export const APP_VERSION = pkg.version; // e.g. "2.15.0"
+export const APP_VERSION = pkg.version; // e.g. "2.17.0"
 
-/** Maps version to a human-readable phase label, e.g. "2.15.0" → "Phase 15" */
+/**
+ * Build date — update this whenever you bump the version.
+ * Format: YYYY-MM-DD
+ */
+export const BUILD_DATE = '2026-03-20';
+
+/**
+ * Short summary of what changed in this build.
+ * Update together with APP_VERSION and BUILD_DATE.
+ */
+export const BUILD_NOTES = 'MT5 multi-account routing, Telegram flood fix, bridge key fix, digest preferences';
+
+/** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {
     const parts = version.split('.');
     const phase = parseInt(parts[1] ?? '0', 10);

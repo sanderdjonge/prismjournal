@@ -144,7 +144,7 @@ describe('Trade Validations', () => {
     it('validates a valid trade creation input', () => {
       const result = tradeCreateSchema.safeParse({
         symbol: 'EURUSD',
-        type: 'BUY',
+        type: 'LONG',
         volume: 0.1,
         entryPrice: 1.0850,
       });
@@ -154,20 +154,20 @@ describe('Trade Validations', () => {
     it('transforms lowercase type to uppercase', () => {
       const result = tradeCreateSchema.safeParse({
         symbol: 'EURUSD',
-        type: 'buy',
+        type: 'long',
         volume: 0.1,
         entryPrice: 1.0850,
       });
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.type).toBe('BUY');
+        expect(result.data.type).toBe('LONG');
       }
     });
 
     it('validates trade with all optional fields', () => {
       const result = tradeCreateSchema.safeParse({
         symbol: 'EURUSD',
-        type: 'SELL',
+        type: 'SHORT',
         volume: 0.5,
         entryPrice: 1.0850,
         exitPrice: 1.0800,
@@ -185,7 +185,7 @@ describe('Trade Validations', () => {
     it('rejects empty symbol', () => {
       const result = tradeCreateSchema.safeParse({
         symbol: '',
-        type: 'BUY',
+        type: 'LONG',
         volume: 0.1,
         entryPrice: 1.0850,
       });

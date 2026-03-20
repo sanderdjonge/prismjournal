@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/cn';
+import { APP_VERSION, BUILD_DATE } from '@/lib/version';
 
 type Tab = 'signin' | 'register';
 
@@ -301,9 +302,14 @@ export default function LoginPage() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-gray-700 text-[10px] font-bold uppercase tracking-widest mt-8">
-          PrismJournal &copy; {new Date().getFullYear()}
-        </p>
+        <div className="text-center mt-8 space-y-1">
+          <p className="text-gray-700 text-[10px] font-bold uppercase tracking-widest">
+            PrismJournal &copy; {new Date().getFullYear()}
+          </p>
+          <p className="text-gray-800 text-[9px] font-mono">
+            v{APP_VERSION} &middot; {BUILD_DATE}
+          </p>
+        </div>
       </div>
     </div>
   );

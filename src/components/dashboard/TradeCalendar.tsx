@@ -141,7 +141,7 @@ export default function TradeCalendar({ data }: TradeCalendarProps) {
                         const weekWinRate = weekTrades > 0 ? Math.round((weekWins / weekTrades) * 100) : null;
 
                         return (
-                            <div key={wi} className="grid grid-cols-[repeat(7,minmax(0,1fr))_12px_minmax(0,1.3fr)] gap-1 flex-1 min-h-[52px]">
+                            <div key={wi} className="grid grid-cols-[repeat(7,minmax(0,1fr))_12px_minmax(0,1.3fr)] gap-1 flex-1 min-h-[64px]">
                                 {/* 7 day cells */}
                                 {week.map((day, di) => {
                                     if (!day) return <div key={`empty-${wi}-${di}`} />;
@@ -162,7 +162,7 @@ export default function TradeCalendar({ data }: TradeCalendarProps) {
                                             {day.trades > 0 && (
                                                 <>
                                                     <span className={cn("text-[11px] font-black leading-tight mt-0.5", style.text)}>
-                                                        {day.pnl > 0 ? '+' : ''}{symbol}{Math.abs(day.pnl).toFixed(0)}
+                                                        {day.pnl > 0 ? '+' : day.pnl < 0 ? '-' : ''}{symbol}{Math.abs(day.pnl).toFixed(0)}
                                                     </span>
                                                     <div className="flex gap-1 mt-0.5">
                                                         {day.wins > 0 && (
@@ -183,7 +183,7 @@ export default function TradeCalendar({ data }: TradeCalendarProps) {
                                                 <div className="bg-black/95 border border-white/20 rounded-lg px-3 py-2 shadow-xl whitespace-nowrap">
                                                     <p className="text-[10px] font-bold text-white">{startOfMonth.date(day.date).format('MMM D, YYYY')}</p>
                                                     <p className={cn("text-xs font-black mt-1", style.text)}>
-                                                        {day.trades === 0 ? 'No trades' : `${day.trades} trade${day.trades > 1 ? 's' : ''} • ${day.pnl > 0 ? '+' : ''}${symbol}${Math.abs(day.pnl).toFixed(2)}`}
+                                                        {day.trades === 0 ? 'No trades' : `${day.trades} trade${day.trades > 1 ? 's' : ''} • ${day.pnl > 0 ? '+' : day.pnl < 0 ? '-' : ''}${symbol}${Math.abs(day.pnl).toFixed(2)}`}
                                                     </p>
                                                     {day.trades > 0 && (
                                                         <p className="text-[9px] text-gray-400 mt-0.5">
@@ -217,7 +217,7 @@ export default function TradeCalendar({ data }: TradeCalendarProps) {
                                     {weekTrades > 0 ? (
                                         <>
                                             <span className={cn("text-[12px] font-black leading-tight", pnlColor(weekPnl))}>
-                                                {weekPnl > 0 ? '+' : ''}{symbol}{Math.abs(weekPnl).toFixed(0)}
+                                                {weekPnl > 0 ? '+' : weekPnl < 0 ? '-' : ''}{symbol}{Math.abs(weekPnl).toFixed(0)}
                                             </span>
                                             <span className="text-[9px] font-black text-gray-400 mt-0.5">
                                                 {weekTrades}T
@@ -262,7 +262,7 @@ export default function TradeCalendar({ data }: TradeCalendarProps) {
                         {monthlyTrades > 0 ? (
                             <>
                                 <span className={cn("text-[12px] font-black leading-tight", pnlColor(monthlyPnl))}>
-                                    {monthlyPnl > 0 ? '+' : ''}{symbol}{Math.abs(monthlyPnl).toFixed(0)}
+                                    {monthlyPnl > 0 ? '+' : monthlyPnl < 0 ? '-' : ''}{symbol}{Math.abs(monthlyPnl).toFixed(0)}
                                 </span>
                                 <span className="text-[9px] font-black text-gray-400 mt-0.5">
                                     {monthlyTrades}T
