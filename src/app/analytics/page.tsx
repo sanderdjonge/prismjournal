@@ -2,6 +2,9 @@ import { Suspense } from 'react';
 import DashboardShell from '@/components/layout/DashboardShell';
 import { AnalyticsContent } from './AnalyticsContent';
 
+// useSuspenseQuery suspends during SSR — force dynamic to skip static generation at build time
+export const dynamic = 'force-dynamic';
+
 export default function AnalyticsPage() {
     return (
         <DashboardShell>
