@@ -118,7 +118,10 @@ model TradingAccount {
   allowNewsTrading    Boolean?
   allowWeekendHolding Boolean?
   allowEA            Boolean?
-  
+
+  // Auto Chart Screenshots
+  autoScreenshotConfig Json?    // { enabled: bool, openTimeframes: string[], closeTimeframes: string[], barsOfContext: int }
+
   // Relations
   trades          Trade[]
   equitySnapshots EquitySnapshot[]
