@@ -6,6 +6,7 @@ RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 RUN npm ci
 
 # Rebuild the source code only when needed
@@ -14,6 +15,7 @@ RUN apk add --no-cache openssl
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 # Reinstall to get correct platform binaries
 RUN npm ci
 
@@ -29,11 +31,16 @@ RUN npm run build
 # Production image, copy all the files and run next
 FROM base AS runner
 # Install openssl for Prisma and postgresql-client for pg_dump (backup functionality)
-RUN apk add --no-cache openssl postgresql-client
+RUN apk add --no-cache openssl postgresql-client \
+    chromium nss freetype harfbuzz ca-certificates ttf-freefont
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+
+# Tell Playwright to use the Alpine system Chromium instead of downloading its own
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
