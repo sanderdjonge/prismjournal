@@ -93,7 +93,7 @@ export async function captureAutoScreenshots(
 
             logger.info({ tradeId, tf, event, symbol: normalisedSymbol }, '[auto-screenshot] Captured');
         } catch (err) {
-            logger.error({ err, tradeId, tf, event }, '[auto-screenshot] Failed to capture screenshot');
+            logger.error({ err, tradeId, tf, event, symbol: normalisedSymbol, rawSymbol: trade.symbol }, '[auto-screenshot] Failed to capture screenshot');
         }
     }
 }
