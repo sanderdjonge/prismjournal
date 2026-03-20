@@ -33,6 +33,7 @@ interface AccountSummary {
     platform: string;
     currency: string;
     propFirmId: string | null;
+    platformAccountId: string | null;
     profitSplit: number | null;
     allowNewsTrading: boolean | null;
     allowWeekendHolding: boolean | null;
@@ -117,6 +118,11 @@ function AccountCard({ account, onClick, onEdit, onArchive }: { account: Account
                     <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">
                         {account.propFirm?.name ?? 'Manual'}
                     </p>
+                    {account.platformAccountId && (
+                        <p className="text-[10px] font-mono text-gray-600 mt-0.5">
+                            #{account.platformAccountId}
+                        </p>
+                    )}
                 </div>
                 <div className="flex items-center gap-2">
                     {phaseBadge(account.currentPhase)}
@@ -249,6 +255,7 @@ function AccountsContent() {
     const [editForm, setEditForm] = useState({
         name: '',
         broker: '',
+        platformAccountId: '',
         propFirmId: '',
         accountSize: '',
         currency: 'USD',
@@ -334,7 +341,9 @@ function AccountsContent() {
             const res = await fetch('/api/account/bridge', { method: 'POST' });
             const data = await res.json();
             if (data.bridgeKey) {
-                loadBridgeInfo();
+                // Show the new key directly — it's only available once, don't re-fetch
+                setBridgeInfo(prev => prev ? { ...prev, bridgeKey: data.bridgeKey, bridgeKeyId: data.bridgeKeyId, isHashed: false } : prev);
+                setShowKey(true);
             }
         } finally {
             setRegenerating(false);
@@ -346,6 +355,7 @@ function AccountsContent() {
         setEditForm({
             name: account.name,
             broker: account.broker || '',
+            platformAccountId: account.platformAccountId || '',
             propFirmId: account.propFirmId || '',
             accountSize: account.accountSize?.toString() || '',
             currency: account.currency || 'USD',
@@ -367,6 +377,7 @@ function AccountsContent() {
                 body: JSON.stringify({
                     name: editForm.name,
                     broker: editForm.broker || null,
+                    platformAccountId: editForm.platformAccountId || null,
                     propFirmId: editForm.propFirmId || null,
                     accountSize: editForm.accountSize ? parseFloat(editForm.accountSize) : null,
                     currency: editForm.currency,
@@ -777,11 +788,7 @@ function AccountsContent() {
                                     <div className="flex items-center gap-2">
                                         <div className="flex-1 glass-card px-4 py-3 border-white/5 bg-black/40 font-mono text-sm text-white truncate">
                                             {bridgeInfo?.isHashed ? (
-                                                showKey ? (
-                                                    <span className="text-yellow-400">Key hidden (hashed) - regenerate to view</span>
-                                                ) : (
-                                                    '••••••••••••••••••••••••••••••••'
-                                                )
+                                                <span className="text-yellow-400 text-xs">Key not recoverable — click Regenerate to get a new one</span>
                                             ) : bridgeInfo?.bridgeKey ? (
                                                 showKey ? bridgeInfo.bridgeKey : '••••••••••••••••••••••••••••••••'
                                             ) : (
@@ -892,6 +899,19 @@ function AccountsContent() {
                                         className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
                                     />
                                 </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                    Account / Login Number
+                                </label>
+                                <input
+                                    type="text"
+                                    value={newAccount.platformAccountId}
+                                    onChange={(e) => setNewAccount(prev => ({ ...prev, platformAccountId: e.target.value }))}
+                                    placeholder="e.g. 123456 (MT5 login)"
+                                    className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                />
                             </div>
 
                             <div className="space-y-2">
@@ -1093,6 +1113,19 @@ function AccountsContent() {
                                 </div>
                             </div>
 
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                    Account / Login Number
+                                </label>
+                                <input
+                                    type="text"
+                                    value={editForm.platformAccountId}
+                                    onChange={(e) => setEditForm(prev => ({ ...prev, platformAccountId: e.target.value }))}
+                                    placeholder="e.g. 123456 (MT5 login)"
+                                    className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                />
+                            </div>
+
                             {/* Prop Firm Selection - Always show */}
                             <div className="pt-4 border-t border-white/10">
                                 <h4 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-4">Prop Firm (Optional)</h4>
@@ -1103,6 +1136,7 @@ function AccountsContent() {
                                     </label>
                                     <select
                                         value={editForm.propFirmId}
+                                        disabled={propFirmsLoading}
                                         onChange={(e) => {
                                             const selectedFirm = propFirms.find(f => f.id === e.target.value);
                                             setEditForm(prev => ({
@@ -1117,12 +1151,18 @@ function AccountsContent() {
                                                 })() : prev.profitTarget,
                                             }));
                                         }}
-                                        className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all"
+                                        className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all disabled:opacity-50"
                                     >
-                                        <option value="">None (Own Money Account)</option>
-                                        {propFirms.map(firm => (
-                                            <option key={firm.id} value={firm.id}>{firm.name}</option>
-                                        ))}
+                                        {propFirmsLoading ? (
+                                            <option value={editForm.propFirmId}>Loading...</option>
+                                        ) : (
+                                            <>
+                                                <option value="">None (Own Money Account)</option>
+                                                {propFirms.map(firm => (
+                                                    <option key={firm.id} value={firm.id}>{firm.name}</option>
+                                                ))}
+                                            </>
+                                        )}
                                     </select>
                                 </div>
                             </div>

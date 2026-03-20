@@ -81,7 +81,7 @@ export async function POST(request: Request) {
         }
 
         if (payload.type === 'TRADE_UPDATE') {
-            await upsertSyncTrade(account.id, account.userId, payload.trade as SyncTrade);
+            await upsertSyncTrade(account.id, account.userId, payload.trade as SyncTrade, payload.isHistorySync ?? false);
         } else if (payload.type === 'EQUITY_SNAPSHOT') {
             await saveEquitySnapshot(account.id, account.userId, payload.snapshot);
         }
