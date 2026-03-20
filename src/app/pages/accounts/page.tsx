@@ -55,9 +55,9 @@ interface PropFirm {
     allowNewsTrading: boolean;
     allowWeekendHolding: boolean;
     allowEA: boolean;
-    phasesConfig: string;
+    phasesConfig: Array<{ profitTarget?: number; [key: string]: unknown }> | string;
     hasScalingPlan: boolean;
-    scalingConfig: string | null;
+    scalingConfig: unknown;
     popularity: number;
 }
 
@@ -1006,8 +1006,10 @@ function AccountsContent() {
                                                 // Auto-fill defaults from prop firm
                                                 maxDailyLoss: selectedFirm ? (selectedFirm.dailyLossLimit?.toString() || prev.maxDailyLoss) : '',
                                                 maxTotalDrawdown: selectedFirm ? (selectedFirm.maxDrawdown?.toString() || prev.maxTotalDrawdown) : '',
-                                                profitTarget: selectedFirm && selectedFirm.phasesConfig ?
-                                                    (JSON.parse(selectedFirm.phasesConfig)[0]?.profitTarget?.toString() || '') : prev.profitTarget,
+                                                profitTarget: selectedFirm && selectedFirm.phasesConfig ? (() => {
+                                                    const phases = Array.isArray(selectedFirm.phasesConfig) ? selectedFirm.phasesConfig : [];
+                                                    return phases[0]?.profitTarget?.toString() || prev.profitTarget;
+                                                })() : prev.profitTarget,
                                             }));
                                         }}
                                         className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all"

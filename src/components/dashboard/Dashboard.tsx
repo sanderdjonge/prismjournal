@@ -143,7 +143,7 @@ export default function Dashboard() {
             {/* Calendar + Recent Trades */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 {/* Trade Calendar — 3/4 width */}
-                <div className="lg:col-span-3 glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl overflow-hidden min-h-[420px]">
+                <div className="lg:col-span-3 glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl overflow-hidden min-h-[480px]">
                     <TradeCalendar data={stats.calendar} />
                 </div>
 

@@ -141,7 +141,7 @@ export default function TradeCalendar({ data }: TradeCalendarProps) {
                         const weekWinRate = weekTrades > 0 ? Math.round((weekWins / weekTrades) * 100) : null;
 
                         return (
-                            <div key={wi} className="grid grid-cols-[repeat(7,minmax(0,1fr))_12px_minmax(0,1.3fr)] gap-1 flex-1 min-h-[52px]">
+                            <div key={wi} className="grid grid-cols-[repeat(7,minmax(0,1fr))_12px_minmax(0,1.3fr)] gap-1 flex-1 min-h-[64px]">
                                 {/* 7 day cells */}
                                 {week.map((day, di) => {
                                     if (!day) return <div key={`empty-${wi}-${di}`} />;

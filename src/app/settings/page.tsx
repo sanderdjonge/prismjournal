@@ -104,7 +104,7 @@ interface TradingAccount {
         dailyLossLimit: number;
         maxDrawdown: number;
         drawdownType: string;
-        phasesConfig: string;
+        phasesConfig: unknown;
     } | null;
     accountSize: number | null;
     profitSplit: number | null;
@@ -130,9 +130,9 @@ interface PropFirm {
     allowNewsTrading: boolean;
     allowWeekendHolding: boolean;
     allowEA: boolean;
-    phasesConfig: string;
+    phasesConfig: unknown;
     hasScalingPlan: boolean;
-    scalingConfig: string | null;
+    scalingConfig: unknown;
     popularity: number;
 }
 
