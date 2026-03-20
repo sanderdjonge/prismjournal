@@ -1,13 +1,28 @@
 // src/hooks/usePerformance.ts
-import { useQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 
 interface PerformanceParams {
     period: string;
     accountId?: string | null;
 }
 
+type EquityPoint = { time: string; value: number };
+type MonthlyReturn = { month: number; value: number };
+export type PerfData = {
+    equity: EquityPoint[];
+    netPnl: number;
+    maxDrawdown: number;
+    sharpe: number | null;
+    profitFactor: number;
+    avgWin: number;
+    avgLoss: number;
+    expectancy: number;
+    monthlyReturns: MonthlyReturn[];
+    accountCount?: number;
+};
+
 export function usePerformance({ period, accountId }: PerformanceParams) {
-    return useQuery({
+    return useSuspenseQuery<PerfData>({
         queryKey: ['performance', period, accountId ?? ''],
         queryFn: () => {
             const params = new URLSearchParams({ period });

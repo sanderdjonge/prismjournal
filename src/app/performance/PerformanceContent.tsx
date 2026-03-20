@@ -9,22 +9,6 @@ import { cn } from '@/lib/cn';
 import { useAccounts } from '@/hooks/useAccounts';
 import { usePerformance } from '@/hooks/usePerformance';
 
-type EquityPoint = { time: string; value: number };
-type MonthlyReturn = { month: number; value: number };
-
-type PerfData = {
-    equity: EquityPoint[];
-    netPnl: number;
-    maxDrawdown: number;
-    sharpe: number | null;
-    profitFactor: number;
-    avgWin: number;
-    avgLoss: number;
-    expectancy: number;
-    monthlyReturns: MonthlyReturn[];
-    accountCount?: number;
-};
-
 const MONTH_LABELS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
 
 export function PerformanceContent() {
@@ -32,21 +16,21 @@ export function PerformanceContent() {
     const { formatPnl, formatAmount } = useCurrency();
     const { selectedAccountId } = useAccounts();
 
-    const { data, isPending } = usePerformance({ period, accountId: selectedAccountId });
-
-    const perfData = data as PerfData | undefined;
+    const { data } = usePerformance({ period, accountId: selectedAccountId });
 
     const STATS = [
-        { id: 'stat_pnl', label: 'Net P&L', val: perfData ? formatPnl(perfData.netPnl) : '—', status: perfData ? (perfData.netPnl >= 0 ? 'text-profit' : 'text-loss') : 'text-gray-600', icon: TrendingUp },
-        { id: 'stat_dd', label: 'Max Drawdown', val: perfData ? `${perfData.maxDrawdown.toFixed(2)}%` : '—', status: 'text-loss', icon: ArrowDownLeft },
-        { id: 'stat_sharpe', label: 'Sharpe Ratio', val: perfData ? (perfData.sharpe !== null ? perfData.sharpe.toFixed(2) : 'N/A') : '—', status: 'text-primary', icon: Activity },
-        { id: 'stat_pf', label: 'Profit Factor', val: perfData ? perfData.profitFactor.toFixed(2) : '—', status: 'text-profit', icon: Target },
+        { id: 'stat_pnl', label: 'Net P&L', val: formatPnl(data.netPnl), status: data.netPnl >= 0 ? 'text-profit' : 'text-loss', icon: TrendingUp },
+        { id: 'stat_dd', label: 'Max Drawdown', val: `${data.maxDrawdown.toFixed(2)}%`, status: 'text-loss', icon: ArrowDownLeft },
+        { id: 'stat_sharpe', label: 'Sharpe Ratio', val: data.sharpe !== null ? data.sharpe.toFixed(2) : 'N/A', status: 'text-primary', icon: Activity },
+        { id: 'stat_pf', label: 'Profit Factor', val: data.profitFactor.toFixed(2), status: 'text-profit', icon: Target },
     ];
 
-    const monthlyReturns: MonthlyReturn[] = perfData?.monthlyReturns ?? MONTH_LABELS.map((_, i) => ({ month: i, value: 0 }));
+    const monthlyReturns = data.monthlyReturns.length > 0
+        ? data.monthlyReturns
+        : MONTH_LABELS.map((_, i) => ({ month: i, value: 0 }));
 
     return (
-        <div className={`space-y-6 pb-10 transition-opacity duration-200 ${isPending ? 'opacity-50' : 'opacity-100'}`}>
+        <div className="space-y-6 pb-10">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-1">
                 <div>
                     <h1 className="text-4xl font-black text-white tracking-tighter uppercase italic">Performance Ledger</h1>
@@ -78,15 +62,15 @@ export function PerformanceContent() {
                 <div className="lg:col-span-2 glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
                     <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500 mb-4">Master Equity Curve</h3>
                     <div className="h-[250px]">
-                        <EquityChart data={perfData?.equity ?? []} />
+                        <EquityChart data={data.equity} />
                     </div>
                 </div>
 
                 {/* Expectancy Gauge */}
                 <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6 flex flex-col items-center justify-center">
                     <Gauge
-                        value={Math.abs(perfData?.expectancy ?? 0)}
-                        max={Math.max(Math.abs(perfData?.expectancy ?? 0) * 2, 1000)}
+                        value={Math.abs(data.expectancy)}
+                        max={Math.max(Math.abs(data.expectancy) * 2, 1000)}
                         label="Trade Expectancy"
                         subLabel="Value Per Trade"
                         variant="secondary"
@@ -94,11 +78,11 @@ export function PerformanceContent() {
                     <div className="mt-4 pt-4 border-t border-white/5 w-full space-y-2">
                         <div className="flex justify-between items-center">
                             <span className="text-[8px] font-black uppercase text-gray-600 tracking-widest">Avg. Win</span>
-                            <span className="text-[10px] font-bold text-profit">{formatAmount(perfData?.avgWin ?? 0, { showSign: true })}</span>
+                            <span className="text-[10px] font-bold text-profit">{formatAmount(data.avgWin, { showSign: true })}</span>
                         </div>
                         <div className="flex justify-between items-center">
                             <span className="text-[8px] font-black uppercase text-gray-600 tracking-widest">Avg. Loss</span>
-                            <span className="text-[10px] font-bold text-loss">-{formatAmount(perfData?.avgLoss ?? 0)}</span>
+                            <span className="text-[10px] font-bold text-loss">-{formatAmount(data.avgLoss)}</span>
                         </div>
                     </div>
                 </div>
@@ -123,8 +107,8 @@ export function PerformanceContent() {
                     <BarChart3 size={14} /> Monthly Return Matrix
                 </h3>
                 <div className="grid grid-cols-12 gap-1.5 text-center">
-                    {MONTH_LABELS.map(m => (
-                        <div key={m} className="text-[8px] font-black text-gray-700 uppercase mb-1">{m}</div>
+                    {MONTH_LABELS.map((m, i) => (
+                        <div key={i} className="text-[8px] font-black text-gray-700 uppercase mb-1">{m}</div>
                     ))}
                     {monthlyReturns.map((r, i) => (
                         <div

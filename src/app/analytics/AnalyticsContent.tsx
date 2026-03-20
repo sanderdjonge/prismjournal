@@ -10,29 +10,25 @@ import { useCurrency } from '@/lib/currency';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useAnalytics } from '@/hooks/useAnalytics';
 
-type SymbolRow = { symbol: string; profit: number; winRate: number };
-type ExpectancyRow = { trade: number; val: number };
-type SessionRow = { hour: number; count: number };
-
 export function AnalyticsContent() {
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
     const { formatAmount } = useCurrency();
     const { selectedAccountId } = useAccounts();
 
-    const { data, isPending } = useAnalytics({
+    const { data } = useAnalytics({
         from: dateFrom || undefined,
         to: dateTo || undefined,
         account: selectedAccountId,
     });
 
-    const symbolData: SymbolRow[] = data?.symbolData ?? [];
-    const expectancyData: ExpectancyRow[] = data?.expectancyData ?? [];
-    const sessionData: SessionRow[] = data?.sessionData ?? [];
+    const symbolData = data.symbolData;
+    const expectancyData = data.expectancyData;
+    const sessionData = data.sessionData;
     const maxSession = Math.max(...sessionData.map(s => s.count), 1);
 
     return (
-        <div className={`space-y-6 pb-10 transition-opacity duration-200 ${isPending ? 'opacity-50' : 'opacity-100'}`}>
+        <div className="space-y-6 pb-10">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-1">
                 <div>
                     <h1 className="text-4xl font-black text-white tracking-tighter uppercase italic">Vector Analytics</h1>
@@ -72,13 +68,13 @@ export function AnalyticsContent() {
             {/* Gauges Row */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6 flex items-center justify-center">
-                    <Gauge value={data?.profitFactor ?? 0} max={5} label="Profit Factor" subLabel={data ? 'Live Compute' : 'Loading...'} variant="primary" />
+                    <Gauge value={data.profitFactor} max={5} label="Profit Factor" subLabel="Live Compute" variant="primary" />
                 </div>
                 <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6 flex items-center justify-center">
-                    <Gauge value={data?.expectancy ?? 0} max={3000} label="Expectancy" subLabel="Avg P&L per Trade" variant="accent" />
+                    <Gauge value={data.expectancy} max={3000} label="Expectancy" subLabel="Avg P&L per Trade" variant="accent" />
                 </div>
                 <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6 flex items-center justify-center">
-                    <Gauge value={data?.avgRR ?? 0} max={5} label="Risk / Reward" subLabel="Mean Realized" variant="secondary" />
+                    <Gauge value={data.avgRR} max={5} label="Risk / Reward" subLabel="Mean Realized" variant="secondary" />
                 </div>
             </div>
 
@@ -195,16 +191,16 @@ export function AnalyticsContent() {
                     <div>
                         <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500 mb-4">Mean Loss / Trade</h3>
                         <p className="text-2xl font-black text-white tracking-tighter">
-                            {formatAmount(data?.meanDrawdown ?? 0)}
+                            {formatAmount(data.meanDrawdown)}
                         </p>
                         <p className="text-[8px] font-black uppercase tracking-widest text-gray-600 mt-1">Avg Losing Trade</p>
                     </div>
                     <div className="space-y-4">
                         <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-                            <div className="h-full bg-loss" style={{ width: data?.profitFactor ? `${Math.min(100, (1 / data.profitFactor) * 100)}%` : '0%' }} />
+                            <div className="h-full bg-loss" style={{ width: data.profitFactor ? `${Math.min(100, (1 / data.profitFactor) * 100)}%` : '0%' }} />
                         </div>
                         <p className="text-[8px] font-bold text-gray-600 italic leading-tight">
-                            {(data?.profitFactor ?? 0) >= 2 ? '"Strong risk control maintained."' : data ? '"Focus on improving your edge."' : '—'}
+                            {data.profitFactor >= 2 ? '"Strong risk control maintained."' : '"Focus on improving your edge."'}
                         </p>
                     </div>
                 </div>
