@@ -75,6 +75,8 @@ interface NotifState {
     email: string;
     enableWeeklyDigestEmail: boolean;
     enableMddEmailAlerts: boolean;
+    digestFrequency: 'DAILY' | 'WEEKLY';
+    digestSendHour: number;
 }
 
 interface TradingAccount {
@@ -198,6 +200,8 @@ function SettingsContent() {
         email: '',
         enableWeeklyDigestEmail: false,
         enableMddEmailAlerts: false,
+        digestFrequency: 'WEEKLY' as const,
+        digestSendHour: 9,
     });
     const [testingSend, setTestingSend] = useState(false);
     const [testResult, setTestResult] = useState<string | null>(null);
@@ -298,6 +302,8 @@ function SettingsContent() {
                     email: data.email ?? '',
                     enableWeeklyDigestEmail: data.enableWeeklyDigest ?? false,
                     enableMddEmailAlerts: data.enableMddAlerts ?? false,
+                    digestFrequency: (data.digestFrequency ?? 'WEEKLY') as 'DAILY' | 'WEEKLY',
+                    digestSendHour: data.digestSendHour ?? 9,
                 }));
             })
             .catch(() => {});
@@ -438,6 +444,8 @@ function SettingsContent() {
                         email: notifs.email.trim() || null,
                         enableWeeklyDigest: notifs.enableWeeklyDigestEmail,
                         enableMddAlerts: notifs.enableMddEmailAlerts,
+                        digestFrequency: notifs.digestFrequency,
+                        digestSendHour: notifs.digestSendHour,
                     }),
                 });
             }
@@ -754,8 +762,8 @@ function SettingsContent() {
                                     <div className="space-y-3 pt-4">
                                         <div className="flex items-center justify-between py-2">
                                             <div>
-                                                <h5 className="text-sm font-bold text-white">Weekly Performance Digest</h5>
-                                                <p className="text-[10px] text-gray-500">Receive a weekly summary of your trading performance</p>
+                                                <h5 className="text-sm font-bold text-white">Performance Digest Email</h5>
+                                                <p className="text-[10px] text-gray-500">Receive a summary of your trading performance by email</p>
                                             </div>
                                             <div className="flex items-center gap-3">
                                                 <a
@@ -779,6 +787,46 @@ function SettingsContent() {
                                                 </button>
                                             </div>
                                         </div>
+                                        {notifs.enableWeeklyDigestEmail && (
+                                            <div className="ml-0 pl-4 border-l border-white/5 space-y-3 pb-2">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="space-y-1">
+                                                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">Frequency</label>
+                                                        <div className="flex gap-2">
+                                                            {(['DAILY', 'WEEKLY'] as const).map((f) => (
+                                                                <button
+                                                                    key={f}
+                                                                    type="button"
+                                                                    onClick={() => setNotifs(prev => ({ ...prev, digestFrequency: f }))}
+                                                                    className={cn(
+                                                                        "px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-wide transition-all",
+                                                                        notifs.digestFrequency === f
+                                                                            ? "bg-primary/10 border-primary/30 text-primary"
+                                                                            : "bg-black/20 border-white/10 text-gray-500 hover:text-white"
+                                                                    )}
+                                                                >
+                                                                    {f === 'DAILY' ? 'Daily' : 'Weekly (Mon)'}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">Send at (UTC)</label>
+                                                        <select
+                                                            value={notifs.digestSendHour}
+                                                            onChange={(e) => setNotifs(prev => ({ ...prev, digestSendHour: parseInt(e.target.value) }))}
+                                                            className="px-3 py-1.5 bg-black/40 border border-white/10 rounded-lg text-white text-xs outline-none focus:border-primary/50 transition-all"
+                                                        >
+                                                            {Array.from({ length: 24 }, (_, h) => (
+                                                                <option key={h} value={h}>
+                                                                    {String(h).padStart(2, '0')}:00 UTC
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                         <div className="flex items-center justify-between py-2">
                                             <div>
                                                 <h5 className="text-sm font-bold text-white">Drawdown Email Alerts</h5>

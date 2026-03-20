@@ -607,6 +607,8 @@ model AlertConfig {
   email             String?
   enableWeeklyDigest Boolean @default(false)
   enableMddAlerts   Boolean @default(false)
+  digestFrequency   String  @default("WEEKLY")   // WEEKLY or DAILY
+  digestSendHour    Int     @default(9)           // UTC hour 0-23
 }
 
 // ============================================

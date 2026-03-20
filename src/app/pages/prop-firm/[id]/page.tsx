@@ -138,6 +138,8 @@ function PropFirmAccountContent() {
     const [showAllViolations, setShowAllViolations] = useState(false);
     const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
     const [analyticsLoading, setAnalyticsLoading] = useState(false);
+    const [snapshots, setSnapshots] = useState<Array<{ snapshotDate: string; dailyPnl: number; currentDrawdown: number }>>([]);
+    const [snapshotsLoading, setSnapshotsLoading] = useState(false);
 
     useEffect(() => {
         async function fetchAccountDetails() {
@@ -196,6 +198,16 @@ function PropFirmAccountContent() {
         }
         
         fetchAnalytics();
+    }, [accountId, account]);
+
+    useEffect(() => {
+        if (!account) return;
+        setSnapshotsLoading(true);
+        fetch(`/api/accounts/${accountId}/snapshots`)
+            .then(r => r.json())
+            .then(data => setSnapshots(data.snapshots ?? []))
+            .catch(() => {})
+            .finally(() => setSnapshotsLoading(false));
     }, [accountId, account]);
 
     const formatCurrency = (value: number | null | undefined, currency: string = 'USD') => {
@@ -555,11 +567,51 @@ function PropFirmAccountContent() {
                                 <BarChart3 size={20} className="text-primary" />
                                 Daily Performance
                             </h2>
-                            <div className="text-center py-8 text-gray-400">
-                                <BarChart3 size={32} className="mx-auto mb-2 opacity-50" />
-                                <p className="text-sm">No daily data yet</p>
-                                <p className="text-xs text-gray-500 mt-1">Snapshots are generated automatically each day</p>
-                            </div>
+                            {snapshotsLoading ? (
+                                <div className="flex justify-center py-8">
+                                    <Loader2 size={20} className="animate-spin text-primary" />
+                                </div>
+                            ) : snapshots.length === 0 ? (
+                                <div className="text-center py-8 text-gray-400">
+                                    <BarChart3 size={32} className="mx-auto mb-2 opacity-50" />
+                                    <p className="text-sm">No daily data yet</p>
+                                    <p className="text-xs text-gray-500 mt-1">Snapshots are generated automatically each day via the cron job</p>
+                                </div>
+                            ) : (() => {
+                                const recent = snapshots.slice(-30);
+                                const maxAbs = Math.max(...recent.map(s => Math.abs(s.dailyPnl)), 1);
+                                return (
+                                    <div>
+                                        <div className="flex items-end gap-[2px] h-28">
+                                            {recent.map((s, i) => {
+                                                const pct = (Math.abs(s.dailyPnl) / maxAbs) * 100;
+                                                const isPos = s.dailyPnl >= 0;
+                                                return (
+                                                    <div key={i} className="flex-1 flex flex-col items-center justify-end h-full group relative">
+                                                        <div
+                                                            className={cn("w-full rounded-sm transition-opacity group-hover:opacity-80", isPos ? "bg-profit/60" : "bg-loss/60")}
+                                                            style={{ height: `${Math.max(pct, 2)}%` }}
+                                                        />
+                                                        <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 pointer-events-none z-10 whitespace-nowrap">
+                                                            <div className="bg-black/90 border border-white/20 rounded px-2 py-1 text-[9px]">
+                                                                <p className="text-gray-400">{new Date(s.snapshotDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
+                                                                <p className={cn("font-bold", isPos ? "text-profit" : "text-loss")}>
+                                                                    {isPos ? '+' : ''}{formatCurrency(s.dailyPnl, account?.currency)}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                        <div className="flex justify-between text-[9px] text-gray-600 mt-1">
+                                            <span>{new Date(recent[0].snapshotDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                                            <span>{recent.length} days</span>
+                                            <span>{new Date(recent[recent.length - 1].snapshotDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
                         </div>
 
                         {/* Challenge Analytics */}
