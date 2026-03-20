@@ -1,5 +1,5 @@
 // src/hooks/useAnalytics.ts
-import { useQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 
 interface AnalyticsParams {
     from?: string;
@@ -7,8 +7,21 @@ interface AnalyticsParams {
     account?: string | null;
 }
 
+type SymbolRow = { symbol: string; profit: number; winRate: number };
+type ExpectancyRow = { trade: number; val: number };
+type SessionRow = { hour: number; count: number };
+export type AnalyticsData = {
+    symbolData: SymbolRow[];
+    expectancyData: ExpectancyRow[];
+    sessionData: SessionRow[];
+    profitFactor: number;
+    expectancy: number;
+    avgRR: number;
+    meanDrawdown: number;
+};
+
 export function useAnalytics({ from, to, account }: AnalyticsParams = {}) {
-    return useQuery({
+    return useSuspenseQuery<AnalyticsData>({
         queryKey: ['analytics', from ?? '', to ?? '', account ?? ''],
         queryFn: () => {
             const params = new URLSearchParams();
