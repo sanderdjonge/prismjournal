@@ -93,7 +93,7 @@ interface AccountDetails {
         allowWeekendHolding: boolean;
         allowEA: boolean;
         hasScalingPlan: boolean;
-        scalingConfig: string | null;
+        scalingConfig: unknown;
     } | null;
     currentPhase: string | null;
     challengePhases: ChallengePhase[];
@@ -768,7 +768,7 @@ function PropFirmAccountContent() {
                         )}
 
                         {/* Scaling Plan - Only show for funded accounts with scaling plan */}
-                        {account.propFirm?.hasScalingPlan && account.propFirm.scalingConfig && (() => {
+                        {account.propFirm?.hasScalingPlan && !!account.propFirm.scalingConfig && (() => {
                             // Check if this is a funded account (all phases passed or a funded phase is active)
                             const allPhasesPassed = account.challengePhases.length > 0 &&
                                 account.challengePhases.every(p => p.status === 'PASSED');
@@ -786,10 +786,11 @@ function PropFirmAccountContent() {
                                 levels?: Array<{ profit: number; balanceIncrease: number }>;
                             } | null = null;
                             
-                            try {
-                                scalingConfig = JSON.parse(account.propFirm.scalingConfig);
-                            } catch {
-                                return null;
+                            const raw = account.propFirm.scalingConfig;
+                            if (raw && typeof raw === 'object') {
+                                scalingConfig = raw as NonNullable<typeof scalingConfig>;
+                            } else if (typeof raw === 'string') {
+                                try { scalingConfig = JSON.parse(raw); } catch { scalingConfig = null; }
                             }
                             
                             if (!scalingConfig) return null;
