@@ -2,13 +2,12 @@ import prisma from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { normaliseSymbol, mapTimeframe } from '@/lib/symbol-normaliser';
 import { renderCandlestickChart } from './chart-renderer.service';
-import { saveFile, generateFilename } from '@/lib/storage';
+import { saveFile, deleteFile, generateFilename } from '@/lib/storage';
 import { autoScreenshotConfigSchema } from '@/lib/validations/screenshot-config';
 
 interface TradeSnapshot {
     symbol: string;
     entryPrice: number;
-    entryTime: Date;
     stopLoss?: number | null;
     takeProfit?: number | null;
 }
@@ -52,11 +51,11 @@ export async function captureAutoScreenshots(
 
     const normalisedSymbol = normaliseSymbol(trade.symbol);
 
-    for (const tf of timeframes) {
+    await Promise.all(timeframes.map(async (tf) => {
         const interval = mapTimeframe(tf);
         if (!interval) {
             logger.warn({ tf }, '[auto-screenshot] Unknown timeframe, skipping');
-            continue;
+            return;
         }
 
         try {
@@ -72,22 +71,27 @@ export async function captureAutoScreenshots(
             const filename = generateFilename('chart.png');
             await saveFile(pngBuffer, filename);
 
-            await prisma.media.create({
-                data: {
-                    tradeId,
-                    filename,
-                    filepath: `screenshots/${filename}`,
-                    mimetype: 'image/png',
-                    size: pngBuffer.length,
-                    type: 'AUTO',
-                    timeframe: tf,
-                    event,
-                },
-            });
+            try {
+                await prisma.media.create({
+                    data: {
+                        tradeId,
+                        filename,
+                        filepath: `screenshots/${filename}`,
+                        mimetype: 'image/png',
+                        size: pngBuffer.length,
+                        type: 'AUTO',
+                        timeframe: tf,
+                        event,
+                    },
+                });
+            } catch (dbErr) {
+                try { await deleteFile(filename); } catch { /* ignore */ }
+                throw dbErr;
+            }
 
             logger.info({ tradeId, tf, event, symbol: normalisedSymbol }, '[auto-screenshot] Captured');
         } catch (err) {
             logger.error({ err, tradeId, tf, event }, '[auto-screenshot] Failed to capture screenshot');
         }
-    }
+    }));
 }
