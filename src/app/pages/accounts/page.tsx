@@ -1268,8 +1268,10 @@ function AccountsContent() {
                         </div>
 
                         <div className="space-y-2 mb-6">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">
-                                Type <span className="text-white">{deleteTarget.name}</span> to confirm
+                            <label className="text-[10px] font-black tracking-widest text-gray-500 uppercase">
+                                Type{' '}
+                                <span className="normal-case text-white font-black">{deleteTarget.name}</span>
+                                {' '}to confirm
                             </label>
                             <input
                                 type="text"
