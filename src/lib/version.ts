@@ -15,7 +15,7 @@ export const BUILD_DATE = '2026-03-20';
  * Short summary of what changed in this build.
  * Update together with APP_VERSION and BUILD_DATE.
  */
-export const BUILD_NOTES = 'MT5 multi-account routing, Telegram flood fix, bridge key fix, digest preferences';
+export const BUILD_NOTES = 'Auto chart screenshots via Twelve Data + ECharts + Playwright';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {
