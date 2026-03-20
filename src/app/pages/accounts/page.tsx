@@ -7,7 +7,7 @@ import {
     Wallet, Building2, Loader2, ArrowRight, ChevronUp, ChevronDown,
     Link as LinkIcon, Download, Copy, Check, RefreshCw, Eye, EyeOff,
     Plus, X, Edit2, Archive, Target, DollarSign, BarChart3, AlertTriangle,
-    CheckCircle, Calendar, Shield
+    CheckCircle, Calendar, Shield, Trash2
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useCurrency } from '@/lib/currency';
@@ -234,6 +234,16 @@ function AccountsContent() {
     });
     const [addingAccount, setAddingAccount] = useState(false);
     
+    // Archived accounts state
+    const [showArchived, setShowArchived] = useState(false);
+    const [archivedAccounts, setArchivedAccounts] = useState<AccountSummary[]>([]);
+    const [archivedLoading, setArchivedLoading] = useState(false);
+
+    // Delete confirmation modal state
+    const [deleteTarget, setDeleteTarget] = useState<AccountSummary | null>(null);
+    const [deleteConfirmText, setDeleteConfirmText] = useState('');
+    const [deleting, setDeleting] = useState(false);
+
     // Edit account modal state
     const [editingAccount, setEditingAccount] = useState<AccountSummary | null>(null);
     const [editForm, setEditForm] = useState({
@@ -394,6 +404,40 @@ function AccountsContent() {
             }
         } catch (error) {
             alert('An error occurred while archiving the account.');
+        }
+    };
+
+    const loadArchivedAccounts = async () => {
+        setArchivedLoading(true);
+        try {
+            const res = await fetch('/api/accounts?includeArchived=true');
+            if (res.ok) {
+                const data = await res.json();
+                setArchivedAccounts((data.accounts ?? []).filter((a: AccountSummary) => !a.isActive));
+            }
+        } finally {
+            setArchivedLoading(false);
+        }
+    };
+
+    const handleToggleArchived = () => {
+        const next = !showArchived;
+        setShowArchived(next);
+        if (next && archivedAccounts.length === 0) loadArchivedAccounts();
+    };
+
+    const handlePermanentDelete = async () => {
+        if (!deleteTarget || deleteConfirmText !== deleteTarget.name) return;
+        setDeleting(true);
+        try {
+            const res = await fetch(`/api/accounts/${deleteTarget.id}?permanent=true`, { method: 'DELETE' });
+            if (res.ok) {
+                setArchivedAccounts(prev => prev.filter(a => a.id !== deleteTarget.id));
+                setDeleteTarget(null);
+                setDeleteConfirmText('');
+            }
+        } finally {
+            setDeleting(false);
         }
     };
 
@@ -596,6 +640,52 @@ function AccountsContent() {
                                 </div>
                             </div>
                         )}
+
+                        {/* Archived Accounts */}
+                        <div className="glass-card border-white/5">
+                    <button
+                        onClick={handleToggleArchived}
+                        className="w-full flex items-center justify-between px-6 py-4 text-left"
+                    >
+                        <div className="flex items-center gap-2">
+                            <Archive size={14} className="text-gray-500" />
+                            <span className="text-xs font-black uppercase tracking-widest text-gray-500">Archived Accounts</span>
+                        </div>
+                        {showArchived ? <ChevronUp size={14} className="text-gray-600" /> : <ChevronDown size={14} className="text-gray-600" />}
+                    </button>
+
+                    {showArchived && (
+                        <div className="border-t border-white/5 px-6 pb-6 pt-4">
+                            {archivedLoading ? (
+                                <div className="flex justify-center py-6">
+                                    <Loader2 size={20} className="animate-spin text-gray-600" />
+                                </div>
+                            ) : archivedAccounts.length === 0 ? (
+                                <p className="text-xs text-gray-600 text-center py-6">No archived accounts</p>
+                            ) : (
+                                <div className="space-y-2">
+                                    {archivedAccounts.map(account => (
+                                        <div key={account.id} className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/5">
+                                            <div>
+                                                <p className="text-sm font-bold text-gray-400">{account.name}</p>
+                                                <p className="text-[10px] text-gray-600 uppercase tracking-widest mt-0.5">
+                                                    {account.propFirm?.name ?? 'Own Money'} · {account.tradeCount} trade{account.tradeCount !== 1 ? 's' : ''}
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={() => { setDeleteTarget(account); setDeleteConfirmText(''); }}
+                                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-loss/20 text-loss/70 hover:bg-loss/10 hover:text-loss hover:border-loss/40 text-[10px] font-black uppercase tracking-widest transition-all"
+                                            >
+                                                <Trash2 size={12} />
+                                                Delete
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                        </div>
                     </div>
                 )}
 
@@ -1148,6 +1238,64 @@ function AccountsContent() {
                                     Save
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Permanent Delete Confirmation Modal */}
+            {deleteTarget && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm">
+                    <div className="glass-card w-full max-w-md mx-4 p-6 border-loss/30">
+                        <div className="flex items-start gap-4 mb-6">
+                            <div className="p-3 rounded-xl bg-loss/10 border border-loss/20 shrink-0">
+                                <AlertTriangle size={24} className="text-loss" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-black text-white uppercase tracking-tight">Permanently Delete Account</h3>
+                                <p className="text-xs text-gray-400 mt-1">This action cannot be undone.</p>
+                            </div>
+                        </div>
+
+                        <div className="p-4 rounded-xl bg-loss/5 border border-loss/20 mb-6 space-y-2">
+                            <p className="text-sm font-bold text-loss">⚠ All of the following will be permanently deleted:</p>
+                            <ul className="text-xs text-gray-400 space-y-1 ml-4 list-disc">
+                                <li>The account <span className="text-white font-bold">{deleteTarget.name}</span></li>
+                                <li>All <span className="text-white font-bold">{deleteTarget.tradeCount} trade{deleteTarget.tradeCount !== 1 ? 's' : ''}</span> and their journal entries</li>
+                                <li>All screenshots, notes, and analytics data</li>
+                                <li>All challenge phases and rule violations</li>
+                                <li>All equity snapshots and performance history</li>
+                            </ul>
+                        </div>
+
+                        <div className="space-y-2 mb-6">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+                                Type <span className="text-white">{deleteTarget.name}</span> to confirm
+                            </label>
+                            <input
+                                type="text"
+                                value={deleteConfirmText}
+                                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                                placeholder={deleteTarget.name}
+                                className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-loss/50 transition-all placeholder:text-gray-700"
+                                autoFocus
+                            />
+                        </div>
+
+                        <div className="flex items-center justify-end gap-3">
+                            <button
+                                onClick={() => { setDeleteTarget(null); setDeleteConfirmText(''); }}
+                                className="px-4 py-2 rounded-lg border border-white/10 text-gray-400 text-xs font-bold uppercase hover:bg-white/5 transition-all"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handlePermanentDelete}
+                                disabled={deleting || deleteConfirmText !== deleteTarget.name}
+                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-loss text-white text-xs font-black uppercase tracking-widest hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                                {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                                Delete Permanently
+                            </button>
                         </div>
                     </div>
                 </div>
