@@ -91,8 +91,9 @@ const CustomTooltip = ({ active, payload, label, symbol, dateFormat = 'DD-MM-YYY
 
 export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-YYYY' }: EquityChartProps) {
     const { formatAmount, formatPnl, symbol } = useCurrency();
-    const totalPnL = data.length > 0 ? data[data.length - 1].value - data[0].value : 0;
+    // currentBalance = total cumulative P&L (last data point); the curve starts conceptually at 0
     const currentBalance = data.length > 0 ? data[data.length - 1].value : 0;
+    const totalPnL = currentBalance;
 
     // Calculate dynamic Y-axis domain to make variations more visible
     // Use tight percentage-based padding to emphasize curve variations
