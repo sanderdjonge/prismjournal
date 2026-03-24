@@ -201,7 +201,7 @@ export default function PrismScoreWidget({ accountId }: Props) {
                                     cursor={{ fill: 'rgba(255,255,255,0.04)' }}
                                     contentStyle={{ background: '#0d0d14', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 11 }}
                                     formatter={(v) => [v, 'Score']}
-                                    labelFormatter={(l: string, payload?: Array<{ payload?: { week?: string } }>) => payload?.[0]?.payload?.week ?? l}
+                                    labelFormatter={(_l, payload) => (payload as Array<{ payload?: { week?: string } }>)?.[0]?.payload?.week ?? ''}
                                 />
                                 <Bar dataKey="score" radius={[3, 3, 0, 0]}>
                                     {chartData.map((entry, i) => (
