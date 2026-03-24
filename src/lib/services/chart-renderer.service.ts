@@ -59,20 +59,36 @@ async function fetchOhlc(symbol: string, interval: string, outputsize: number, e
     return data.values;
 }
 
-/** Convert a Twelve Data datetime string (UTC) to HH:mm in the given timezone. */
-function toTimeLabel(datetimeStr: string, timezone: string): string {
-    // Twelve Data returns "YYYY-MM-DD HH:MM:SS" — interpret as UTC
-    const utcDate = new Date(datetimeStr.replace(' ', 'T') + 'Z');
-    return utcDate.toLocaleTimeString('en-GB', {
-        timeZone: timezone,
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
+/**
+ * Convert a Twelve Data datetime string (UTC) to a readable label in the given timezone.
+ * Returns "HH:mm" for most candles, "DD/MM HH:mm" whenever the day changes —
+ * so multi-day charts (e.g. 85 × 15min spanning 2 calendar days) are unambiguous.
+ */
+function toTimeLabels(bars: { datetime: string }[], timezone: string): string[] {
+    let lastDay = '';
+    return bars.map(b => {
+        const utcDate = new Date(b.datetime.replace(' ', 'T') + 'Z');
+        const day = utcDate.toLocaleDateString('en-GB', {
+            timeZone: timezone,
+            day: '2-digit',
+            month: '2-digit',
+        });
+        const time = utcDate.toLocaleTimeString('en-GB', {
+            timeZone: timezone,
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+        });
+        if (day !== lastDay) {
+            lastDay = day;
+            return `${day} ${time}`; // e.g. "24/03 09:00" — shown once per day
+        }
+        return time; // e.g. "09:15"
     });
 }
 
 function buildChartOption(bars: OhlcBar[], entryPrice: number, timezone: string, stopLoss?: number | null, takeProfit?: number | null): EChartsOption {
-    const dates = bars.map(b => toTimeLabel(b.datetime, timezone));
+    const dates = toTimeLabels(bars, timezone);
     // ECharts candlestick: [open, close, low, high]
     const ohlcData = bars.map(b => [+b.open, +b.close, +b.low, +b.high]);
 
@@ -101,10 +117,10 @@ function buildChartOption(bars: OhlcBar[], entryPrice: number, timezone: string,
     return {
         backgroundColor: '#0d0d14',
         animation: false,
-        grid: { left: 70, right: 130, top: 30, bottom: 50 },
+        grid: { left: 70, right: 130, top: 30, bottom: 70 },
         xAxis: {
             data: dates,
-            axisLabel: { color: '#6b7280', fontSize: 9, rotate: 0 },
+            axisLabel: { color: '#6b7280', fontSize: 9, rotate: 30 },
             axisLine: { lineStyle: { color: '#374151' } },
             splitLine: { lineStyle: { color: '#1f2937', type: 'dashed' } },
         },
