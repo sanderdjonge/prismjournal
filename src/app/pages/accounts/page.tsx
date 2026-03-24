@@ -79,7 +79,6 @@ type ScreenshotConfig = {
     openTimeframes: string[];
     closeTimeframes: string[];
     barsOfContext: number;
-    screenshotDelayBars: number;
 };
 
 const DEFAULT_SCREENSHOT_CONFIG: ScreenshotConfig = {
@@ -87,7 +86,6 @@ const DEFAULT_SCREENSHOT_CONFIG: ScreenshotConfig = {
     openTimeframes: [],
     closeTimeframes: [],
     barsOfContext: 60,
-    screenshotDelayBars: 5,
 };
 
 const TIMEFRAME_OPTIONS = ['M1', 'M5', 'M15', 'M30', 'H1', 'H4', 'D1', 'W1'] as const;
@@ -1389,28 +1387,6 @@ function AccountsContent() {
                                             </span>
                                         </div>
 
-                                        {/* Delay bars */}
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 whitespace-nowrap">
-                                                Delay (bars)
-                                            </span>
-                                            <input
-                                                type="range"
-                                                min={0}
-                                                max={50}
-                                                step={1}
-                                                value={editForm.screenshotConfig.screenshotDelayBars}
-                                                onChange={e => setEditForm(f => ({
-                                                    ...f,
-                                                    screenshotConfig: { ...f.screenshotConfig, screenshotDelayBars: +e.target.value }
-                                                }))}
-                                                className="flex-1 accent-primary"
-                                            />
-                                            <span className="text-[10px] font-bold text-gray-400 w-8 text-right">
-                                                {editForm.screenshotConfig.screenshotDelayBars}
-                                            </span>
-                                        </div>
-                                        <p className="text-[9px] text-gray-600">Wait N bars after trade event before capturing (0 = instant). E.g. 2 bars on M15 = 30 min delay.</p>
                                     </div>
                                 )}
                             </div>
