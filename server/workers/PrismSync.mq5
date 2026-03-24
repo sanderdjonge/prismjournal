@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 #property copyright "2025, PrismJournal"
 #property link      "https://github.com/prismjournal"
-#property version   "3.10"
+#property version   "3.11"
 #property description "Syncs trades and equity snapshots to PrismJournal."
 #property description "Syncs full trade history on startup, then live trades in real-time."
 #property description "Get your Bridge Key and Sync URL from Settings > Connector Hub."
@@ -19,6 +19,16 @@ input uint     TimerPeriod = 60;                 // Seconds between equity snaps
 //--- constants
 #define  HEADER_CONTENT_TYPE "Content-Type: application/json\r\n"
 #define  HEADER_BRIDGE_KEY   "X-Bridge-Key: "
+
+//+------------------------------------------------------------------+
+//| Helper: convert broker server time to UTC                        |
+//| Subtracts the broker's GMT offset so all timestamps sent to      |
+//| PrismJournal are always in UTC regardless of broker timezone.    |
+//+------------------------------------------------------------------+
+datetime ToGmt(datetime brokerTime)
+  {
+   return brokerTime - (TimeCurrent() - TimeGMT());
+  }
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -66,7 +76,7 @@ void OnTimer()
                  "\"snapshot\":{"
                  "\"balance\":" + DoubleToString(balance, 2) + ","
                  "\"equity\":"  + DoubleToString(equity , 2) + ","
-                 "\"timestamp\":\"" + TimeToString(TimeCurrent(), TIME_DATE|TIME_MINUTES|TIME_SECONDS) + "\""
+                 "\"timestamp\":\"" + TimeToString(ToGmt(TimeCurrent()), TIME_DATE|TIME_MINUTES|TIME_SECONDS) + "\""
                  "}"
                  "}";
 
@@ -95,7 +105,6 @@ void SyncOpenPositions()
       double curPr    = PositionGetDouble(POSITION_PRICE_CURRENT);
       double profit   = PositionGetDouble(POSITION_PROFIT);
       double swap     = PositionGetDouble(POSITION_SWAP);
-      double comm     = PositionGetDouble(POSITION_COMMISSION) * 2; // MT5 charges half on open, half on close
       double sl       = PositionGetDouble(POSITION_SL);
       double tp       = PositionGetDouble(POSITION_TP);
       datetime time   = (datetime)PositionGetInteger(POSITION_TIME);
@@ -114,9 +123,8 @@ void SyncOpenPositions()
                        "\"volume\":"   + DoubleToString(volume, 2) + ","
                        "\"entryPrice\":" + DoubleToString(openPr, 5) + ","
                        "\"pnl\":"      + DoubleToString(profit, 2) + ","
-                       "\"commission\":" + DoubleToString(comm, 2) + ","
                        "\"swap\":"      + DoubleToString(swap, 2) + ","
-                       "\"entryTime\":\"" + TimeToString(time, TIME_DATE|TIME_MINUTES|TIME_SECONDS) + "\","
+                       "\"entryTime\":\"" + TimeToString(ToGmt(time), TIME_DATE|TIME_MINUTES|TIME_SECONDS) + "\","
                        "\"strategy\":\"" + Strategy + "\""
                        + OptField("stopLoss", sl, 2)
                        + OptField("takeProfit", tp, 2)
@@ -196,7 +204,7 @@ void SyncHistory()
                        "\"type\":\""   + type_str + "\","
                        "\"volume\":"   + DoubleToString(volume, 2) + ","
                        "\"entryPrice\":" + DoubleToString(price, 5) + ","
-                       "\"entryTime\":\"" + TimeToString(time, TIME_DATE|TIME_MINUTES|TIME_SECONDS) + "\","
+                       "\"entryTime\":\"" + TimeToString(ToGmt(time), TIME_DATE|TIME_MINUTES|TIME_SECONDS) + "\","
                        "\"strategy\":\"" + Strategy + "\""
                        + OptField("stopLoss", sl, 2)
                        + OptField("takeProfit", tp, 2)
@@ -222,8 +230,8 @@ void SyncHistory()
                        "\"pnl\":"      + DoubleToString(profit, 2) + ","
                        "\"commission\":" + DoubleToString(comm, 2) + ","
                        "\"swap\":"      + DoubleToString(swap, 2) + ","
-                       "\"entryTime\":\"" + TimeToString(time, TIME_DATE|TIME_MINUTES|TIME_SECONDS) + "\","
-                       "\"exitTime\":\"" + TimeToString(time, TIME_DATE|TIME_MINUTES|TIME_SECONDS) + "\","
+                       "\"entryTime\":\"" + TimeToString(ToGmt(time), TIME_DATE|TIME_MINUTES|TIME_SECONDS) + "\","
+                       "\"exitTime\":\"" + TimeToString(ToGmt(time), TIME_DATE|TIME_MINUTES|TIME_SECONDS) + "\","
                        "\"strategy\":\"" + Strategy + "\""
                        + OptField("stopLoss", sl, 2)
                        + OptField("takeProfit", tp, 2)
@@ -283,7 +291,7 @@ void OnTradeTransaction(const MqlTradeTransaction& trans,
              "\"type\":\""   + type_str + "\","
              "\"volume\":"   + DoubleToString(volume, 2) + ","
              "\"entryPrice\":" + DoubleToString(price, 5) + ","
-             "\"entryTime\":\"" + TimeToString(time, TIME_DATE|TIME_MINUTES|TIME_SECONDS) + "\","
+             "\"entryTime\":\"" + TimeToString(ToGmt(time), TIME_DATE|TIME_MINUTES|TIME_SECONDS) + "\","
              "\"strategy\":\"" + Strategy + "\""
              + OptField("stopLoss", sl, 2)
              + OptField("takeProfit", tp, 2)
@@ -305,8 +313,8 @@ void OnTradeTransaction(const MqlTradeTransaction& trans,
              "\"pnl\":"      + DoubleToString(profit, 2) + ","
              "\"commission\":" + DoubleToString(comm, 2) + ","
              "\"swap\":"      + DoubleToString(swap, 2) + ","
-             "\"entryTime\":\"" + TimeToString(time, TIME_DATE|TIME_MINUTES|TIME_SECONDS) + "\","
-             "\"exitTime\":\"" + TimeToString(time, TIME_DATE|TIME_MINUTES|TIME_SECONDS) + "\","
+             "\"entryTime\":\"" + TimeToString(ToGmt(time), TIME_DATE|TIME_MINUTES|TIME_SECONDS) + "\","
+             "\"exitTime\":\"" + TimeToString(ToGmt(time), TIME_DATE|TIME_MINUTES|TIME_SECONDS) + "\","
              "\"strategy\":\"" + Strategy + "\""
              + OptField("stopLoss", sl, 2)
              + OptField("takeProfit", tp, 2)

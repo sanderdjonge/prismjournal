@@ -178,6 +178,7 @@ function SettingsContent() {
     const [currency, setCurrency] = useState('USD');
     const [timezone, setTimezone] = useState('Europe/Amsterdam');
     const [dateFormat, setDateFormat] = useState('DD-MM-YYYY');
+    const [brokerTimezoneOffset, setBrokerTimezoneOffset] = useState(0);
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
 
@@ -284,6 +285,7 @@ function SettingsContent() {
                 if (data.displayCurrency) setCurrency(data.displayCurrency);
                 if (data.timezone) setTimezone(data.timezone);
                 if (data.dateFormat) setDateFormat(data.dateFormat);
+                if (data.brokerTimezoneOffset !== undefined) setBrokerTimezoneOffset(data.brokerTimezoneOffset);
                 if (data.twoFAEnabled !== undefined) setTwoFAEnabled(data.twoFAEnabled);
             })
             .catch(() => {});
@@ -426,7 +428,7 @@ function SettingsContent() {
                 await fetch('/api/settings', {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ displayCurrency: currency, timezone, dateFormat }),
+                    body: JSON.stringify({ displayCurrency: currency, timezone, dateFormat, brokerTimezoneOffset }),
                 });
                 setCurrencyContext(currency);
                 queryClient.invalidateQueries({ queryKey: ['settings'] });
@@ -658,6 +660,21 @@ function SettingsContent() {
                                     >
                                         {DATE_FORMAT_OPTIONS.map((o) => (
                                             <option key={o.value} value={o.value}>{o.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-600 px-1">Broker Server Timezone (UTC offset)</label>
+                                    <p className="text-[10px] text-gray-500 px-1">MT5 broker server time offset from UTC. E.g. set 3 for UTC+3 brokers so trade times are stored correctly.</p>
+                                    <select
+                                        value={brokerTimezoneOffset}
+                                        onChange={(e) => setBrokerTimezoneOffset(Number(e.target.value))}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm font-bold text-white outline-none focus:border-primary/50 transition-all appearance-none"
+                                    >
+                                        {Array.from({ length: 27 }, (_, i) => i - 12).map((offset) => (
+                                            <option key={offset} value={offset}>
+                                                {offset === 0 ? 'UTC (default)' : offset > 0 ? `UTC+${offset}` : `UTC${offset}`}
+                                            </option>
                                         ))}
                                     </select>
                                 </div>

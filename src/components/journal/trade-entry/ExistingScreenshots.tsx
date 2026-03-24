@@ -36,12 +36,7 @@ export function ExistingScreenshots({ media, onRemove, readonly = false }: Exist
                         type="button"
                         onClick={(e) => {
                             e.stopPropagation();
-                            // Open data URL in new tab
-                            const newWindow = window.open();
-                            if (newWindow) {
-                                newWindow.document.write(`<img src="${item.url}" style="max-width:100%;max-height:100vh;margin:auto;display:block;" />`);
-                                newWindow.document.close();
-                            }
+                            window.open(`${window.location.origin}${item.url}`, '_blank', 'noopener');
                         }}
                         className="absolute top-1 left-1 w-5 h-5 rounded-full bg-black/70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                     >

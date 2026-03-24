@@ -133,6 +133,7 @@ export const GET = withAuth(async (request, _ctx, session) => {
                         },
                     },
                 },
+                _count: { select: { media: true } },
             },
             skip: (page - 1) * limit,
             take: limit,
@@ -163,6 +164,7 @@ export const GET = withAuth(async (request, _ctx, session) => {
         tags: t.tags.map((tt) => tt.tag),
         accountId: t.accountId,
         accountName: t.account?.name ?? null,
+        screenshotCount: t._count.media,
     }));
 
     return NextResponse.json({

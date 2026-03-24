@@ -1,6 +1,6 @@
 import prisma from '@/lib/prisma';
 import logger from '@/lib/logger';
-import { normaliseSymbol, mapTimeframe } from '@/lib/symbol-normaliser';
+import { normaliseSymbol, mapTimeframe, isTwelveDataSymbolNotFound } from '@/lib/symbol-normaliser';
 import { renderCandlestickChart } from './chart-renderer.service';
 import { saveFile, deleteFile, generateFilename } from '@/lib/storage';
 import { autoScreenshotConfigSchema } from '@/lib/validations/screenshot-config';
@@ -10,6 +10,22 @@ interface TradeSnapshot {
     entryPrice: number;
     stopLoss?: number | null;
     takeProfit?: number | null;
+    entryTime?: string;   // ISO string — used as chart end_date anchor
+    exitTime?: string;    // ISO string — used as chart end_date anchor for CLOSE event
+}
+
+/** Maps Twelve Data interval strings to milliseconds. */
+function intervalToMs(interval: string): number {
+    const m = interval.match(/^(\d+)(min|h|day|week)$/);
+    if (!m) return 0;
+    const n = parseInt(m[1], 10);
+    switch (m[2]) {
+        case 'min':  return n * 60_000;
+        case 'h':    return n * 3_600_000;
+        case 'day':  return n * 86_400_000;
+        case 'week': return n * 604_800_000;
+        default:     return 0;
+    }
 }
 
 /**
@@ -25,15 +41,23 @@ interface TradeSnapshot {
 export async function captureAutoScreenshots(
     tradeId: string,
     accountId: string,
+    userId: string,
     event: 'OPEN' | 'CLOSE',
     trade: TradeSnapshot,
 ): Promise<void> {
     if (!process.env.TWELVE_DATA_API_KEY) return;
 
-    const account = await prisma.tradingAccount.findUnique({
-        where: { id: accountId },
-        select: { autoScreenshotConfig: true },
-    });
+    const [account, userSettings] = await Promise.all([
+        prisma.tradingAccount.findUnique({
+            where: { id: accountId },
+            select: { autoScreenshotConfig: true },
+        }),
+        prisma.userSettings.findUnique({
+            where: { userId },
+            select: { timezone: true },
+        }),
+    ]);
+    const timezone = userSettings?.timezone ?? 'Europe/Amsterdam';
 
     if (!account?.autoScreenshotConfig) return;
 
@@ -50,12 +74,34 @@ export async function captureAutoScreenshots(
     if (timeframes.length === 0) return;
 
     const normalisedSymbol = normaliseSymbol(trade.symbol);
+    const delayBars = config.screenshotDelayBars ?? 5;
+
+    // The base time anchor for the chart: entryTime for OPEN, exitTime for CLOSE
+    const baseTime = event === 'CLOSE' ? (trade.exitTime ?? trade.entryTime) : trade.entryTime;
 
     for (const tf of timeframes) {
         const interval = mapTimeframe(tf);
         if (!interval) {
             logger.warn({ tf }, '[auto-screenshot] Unknown timeframe, skipping');
             continue;
+        }
+
+        // Compute end_date: base event time + delayBars * interval duration
+        // This anchors the chart to the trade event and shows post-event context.
+        const delayMs = delayBars * intervalToMs(interval);
+        const endDate = baseTime
+            ? new Date(new Date(baseTime).getTime() + delayMs).toISOString()
+            : undefined;
+
+        // Wait for the delay before capturing so the bars actually exist in Twelve Data
+        if (delayMs > 0) {
+            const now = Date.now();
+            const eventMs = baseTime ? new Date(baseTime).getTime() : now;
+            const captureAt = eventMs + delayMs;
+            const remainingMs = captureAt - now;
+            if (remainingMs > 0) {
+                await new Promise<void>((resolve) => setTimeout(resolve, remainingMs));
+            }
         }
 
         try {
@@ -66,6 +112,8 @@ export async function captureAutoScreenshots(
                 stopLoss: trade.stopLoss,
                 takeProfit: trade.takeProfit,
                 barsOfContext: config.barsOfContext,
+                timezone,
+                endDate,
             });
 
             const filename = generateFilename('chart.png');
@@ -93,7 +141,11 @@ export async function captureAutoScreenshots(
 
             logger.info({ tradeId, tf, event, symbol: normalisedSymbol }, '[auto-screenshot] Captured');
         } catch (err) {
-            logger.error({ err, tradeId, tf, event, symbol: normalisedSymbol, rawSymbol: trade.symbol }, '[auto-screenshot] Failed to capture screenshot');
+            if (isTwelveDataSymbolNotFound(err)) {
+                logger.warn({ tradeId, tf, event, symbol: normalisedSymbol, rawSymbol: trade.symbol }, '[auto-screenshot] Symbol not available in Twelve Data — skipping (add mapping to TWELVE_DATA_SYMBOL_MAP in symbol-normaliser.ts if needed)');
+            } else {
+                logger.error({ err, tradeId, tf, event, symbol: normalisedSymbol, rawSymbol: trade.symbol }, '[auto-screenshot] Failed to capture screenshot');
+            }
         }
     }
 }

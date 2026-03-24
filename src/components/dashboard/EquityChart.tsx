@@ -31,12 +31,9 @@ type TooltipProps = {
     dateFormat?: 'DD-MM-YYYY' | 'MM-DD-YYYY' | 'YYYY-MM-DD';
 };
 
-// Softer, muted colors for the equity line
 const COLORS = {
-    positive: '#4ade80', // softer green (tailwind green-400)
-    negative: '#f87171', // softer red (tailwind red-400)
-    positiveFill: 'rgba(74, 222, 128, 0.1)', // softer green fill
-    negativeFill: 'rgba(248, 113, 113, 0.1)', // softer red fill
+    positive: '#4ade80', // green-400
+    negative: '#f87171', // red-400
 };
 
 // Format date according to preference
@@ -97,11 +94,6 @@ export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-
     const totalPnL = data.length > 0 ? data[data.length - 1].value - data[0].value : 0;
     const currentBalance = data.length > 0 ? data[data.length - 1].value : 0;
 
-    // Determine if the overall equity is positive or negative for coloring
-    const isPositive = totalPnL >= 0;
-    const lineColor = isPositive ? COLORS.positive : COLORS.negative;
-    const fillColor = isPositive ? COLORS.positiveFill : COLORS.negativeFill;
-
     // Calculate dynamic Y-axis domain to make variations more visible
     // Use tight percentage-based padding to emphasize curve variations
     const calculateYAxisDomain = () => {
@@ -122,7 +114,16 @@ export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-
     };
 
     const yAxisDomain = calculateYAxisDomain();
-    
+
+    // Where the zero line sits within the Y-axis range, as a 0–1 fraction from top.
+    // Drives the gradient split: green above zero, red below zero.
+    const zeroGradientOffset = useMemo(() => {
+        const [yMin, yMax] = yAxisDomain;
+        if (yMax === yMin) return 0.5;
+        const offset = (yMax - 0) / (yMax - yMin);
+        return Math.min(1, Math.max(0, offset));
+    }, [yAxisDomain]);
+
     // Format Y-axis values as compact currency
     const formatYAxisValue = (value: number) => {
         const absValue = Math.abs(value);
@@ -241,9 +242,19 @@ export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={processedData} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
                         <defs>
-                            <linearGradient id="equityGradient" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor={lineColor} stopOpacity={0.15} />
-                                <stop offset="95%" stopColor={lineColor} stopOpacity={0} />
+                            {/* Fill gradient: green above zero, red below zero, split at the zero line */}
+                            <linearGradient id="equityFillGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor={COLORS.positive} stopOpacity={0.18} />
+                                <stop offset={`${zeroGradientOffset * 100}%`} stopColor={COLORS.positive} stopOpacity={0.04} />
+                                <stop offset={`${zeroGradientOffset * 100}%`} stopColor={COLORS.negative} stopOpacity={0.04} />
+                                <stop offset="100%" stopColor={COLORS.negative} stopOpacity={0.18} />
+                            </linearGradient>
+                            {/* Stroke gradient: same split */}
+                            <linearGradient id="equityStrokeGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor={COLORS.positive} stopOpacity={1} />
+                                <stop offset={`${zeroGradientOffset * 100}%`} stopColor={COLORS.positive} stopOpacity={1} />
+                                <stop offset={`${zeroGradientOffset * 100}%`} stopColor={COLORS.negative} stopOpacity={1} />
+                                <stop offset="100%" stopColor={COLORS.negative} stopOpacity={1} />
                             </linearGradient>
                         </defs>
                         <CartesianGrid
@@ -275,10 +286,10 @@ export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-
                         <Area
                             type="monotone"
                             dataKey="value"
-                            stroke={lineColor}
+                            stroke="url(#equityStrokeGradient)"
                             strokeWidth={3}
                             fillOpacity={1}
-                            fill="url(#equityGradient)"
+                            fill="url(#equityFillGradient)"
                             animationDuration={1000}
                         />
                     </AreaChart>
