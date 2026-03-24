@@ -74,9 +74,12 @@ export async function captureAutoScreenshots(
     if (timeframes.length === 0) return;
 
     const normalisedSymbol = normaliseSymbol(trade.symbol);
-    const delayBars = config.screenshotDelayBars ?? 5;
 
-    // The base time anchor for the chart: entryTime for OPEN, exitTime for CLOSE
+    // Anchor the chart end to the trade event time.
+    // For OPEN: use entryTime so the chart ends at (or just after) the entry candle.
+    // For CLOSE: use exitTime so the chart ends at (or just after) the exit candle.
+    // We add a small 1-bar buffer (computed per-timeframe) so the event candle itself
+    // is fully formed and visible as the last bar. No long in-process wait needed.
     const baseTime = event === 'CLOSE' ? (trade.exitTime ?? trade.entryTime) : trade.entryTime;
 
     for (const tf of timeframes) {
@@ -86,23 +89,13 @@ export async function captureAutoScreenshots(
             continue;
         }
 
-        // Compute end_date: base event time + delayBars * interval duration
-        // This anchors the chart to the trade event and shows post-event context.
-        const delayMs = delayBars * intervalToMs(interval);
-        const endDate = baseTime
-            ? new Date(new Date(baseTime).getTime() + delayMs).toISOString()
-            : undefined;
-
-        // Wait for the delay before capturing so the bars actually exist in Twelve Data
-        if (delayMs > 0) {
-            const now = Date.now();
-            const eventMs = baseTime ? new Date(baseTime).getTime() : now;
-            const captureAt = eventMs + delayMs;
-            const remainingMs = captureAt - now;
-            if (remainingMs > 0) {
-                await new Promise<void>((resolve) => setTimeout(resolve, remainingMs));
-            }
-        }
+        // endDate = event time + 1 bar, capped at now+30s so we never request the future.
+        // This shows the event candle as the last bar on the chart.
+        const oneCandleMs = intervalToMs(interval);
+        const rawEndMs = baseTime
+            ? new Date(baseTime).getTime() + oneCandleMs
+            : Date.now();
+        const endDate = new Date(Math.min(rawEndMs, Date.now() + 30_000)).toISOString();
 
         try {
             const pngBuffer = await renderCandlestickChart({
