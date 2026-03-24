@@ -34,14 +34,24 @@ export async function saveEquitySnapshot(
     userId: string,
     snapshot: SyncEquitySnapshot,
 ): Promise<void> {
-    await prisma.equitySnapshot.create({
-        data: {
-            accountId,
-            balance: snapshot.balance,
-            equity: snapshot.equity,
-            timestamp: new Date(snapshot.timestamp),
-        },
-    });
+    await Promise.all([
+        prisma.equitySnapshot.create({
+            data: {
+                accountId,
+                balance: snapshot.balance,
+                equity: snapshot.equity,
+                timestamp: new Date(snapshot.timestamp),
+            },
+        }),
+        // Keep live balance/equity on the account record for display in accounts page etc.
+        prisma.tradingAccount.update({
+            where: { id: accountId },
+            data: {
+                currentBalance: snapshot.balance,
+                currentEquity: snapshot.equity,
+            },
+        }),
+    ]);
 
     // Fire alerts asynchronously — errors must not fail the sync
     sendDrawdownAlert(userId, snapshot.balance, snapshot.equity).catch(() => {});
