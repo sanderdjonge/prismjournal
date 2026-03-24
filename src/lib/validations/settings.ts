@@ -49,6 +49,7 @@ export const settingsUpdateSchema = z.object({
     { message: 'Invalid timezone format' }
   ).optional(),
   dateFormat: z.enum(dateFormats).optional(),
+  brokerTimezoneOffset: z.number().int().min(-12).max(14).optional(),
 });
 
 export type SettingsUpdateInput = z.infer<typeof settingsUpdateSchema>;

@@ -6,6 +6,8 @@ import { X, Eye, TrendingUp, TrendingDown, Zap, Brain, FileText, CheckCircle2, X
 import { cn } from '@/lib/cn';
 import type { JournalTrade } from '@/app/journal/page';
 import { MOOD_CONFIG } from '@/constants/tradeConfig';
+import { Lightbox } from './trade-analysis';
+import { CloseReasonBadge } from '@/components/ui/CloseReasonBadge';
 
 interface TradeViewModalProps {
     trade: JournalTrade | null;
@@ -18,12 +20,14 @@ interface MediaItem {
     id: string;
     url: string;
     timeframe: string;
+    event: string;
 }
 
 
 export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: TradeViewModalProps) {
     const [media, setMedia] = useState<MediaItem[]>([]);
     const [loadingMedia, setLoadingMedia] = useState(false);
+    const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
     // Fetch media when modal opens
     useEffect(() => {
@@ -49,6 +53,8 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
     const moodConfig = MOOD_CONFIG[moodKey] || MOOD_CONFIG.NEUTRAL;
 
     return (
+        <>
+        {lightboxUrl && <Lightbox src={lightboxUrl} alt="Trade screenshot" onClose={() => setLightboxUrl(null)} />}
         <AnimatePresence>
             {isOpen && (
                 <>
@@ -146,7 +152,7 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                                 )}>
                                     <CheckCircle2 size={14} />
                                 </div>
-                                <div>
+                                <div className="flex-1">
                                     <p className="text-xs font-bold text-white">
                                         {isClosed ? 'Trade Closed' : 'Trade Open'}
                                     </p>
@@ -156,6 +162,12 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                                         </span>
                                     </p>
                                 </div>
+                                {isClosed && (
+                                    <div className="flex flex-col items-end gap-1">
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-gray-500">Closed By</span>
+                                        <CloseReasonBadge reason={(trade as { closeReason?: string | null }).closeReason} />
+                                    </div>
+                                )}
                             </div>
 
                             {/* Row 3: TP / SL */}
@@ -252,21 +264,18 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                                             <div
                                                 key={item.id}
                                                 className="relative aspect-square rounded-lg overflow-hidden bg-white/5 group cursor-pointer"
-                                                onClick={() => {
-                                                    const newWindow = window.open();
-                                                    if (newWindow) {
-                                                        newWindow.document.write(`<img src="${item.url}" style="max-width:100%;max-height:100vh;margin:auto;display:block;" />`);
-                                                        newWindow.document.close();
-                                                    }
-                                                }}
+                                                onClick={() => setLightboxUrl(item.url)}
                                             >
                                                 <img
                                                     src={item.url}
                                                     alt={`Screenshot ${item.timeframe}`}
                                                     className="w-full h-full object-cover"
                                                 />
-                                                <div className="absolute bottom-0 left-0 right-0 bg-black/70 px-1 py-0.5">
+                                                <div className="absolute bottom-0 left-0 right-0 bg-black/70 px-1 py-0.5 flex items-center justify-between gap-1">
                                                     <p className="text-[8px] text-white truncate">{item.timeframe}</p>
+                                                    <span className={`text-[7px] font-black uppercase tracking-widest shrink-0 ${item.event === 'CLOSE' ? 'text-loss' : 'text-primary'}`}>
+                                                        {item.event === 'CLOSE' ? 'EXIT' : 'ENTRY'}
+                                                    </span>
                                                 </div>
                                             </div>
                                         ))}
@@ -292,5 +301,6 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                 </>
             )}
         </AnimatePresence>
+        </>
     );
 }

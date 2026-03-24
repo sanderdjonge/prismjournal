@@ -118,7 +118,10 @@ model TradingAccount {
   allowNewsTrading    Boolean?
   allowWeekendHolding Boolean?
   allowEA            Boolean?
-  
+
+  // Auto Chart Screenshots
+  autoScreenshotConfig Json?    // { enabled: bool, openTimeframes: string[], closeTimeframes: string[], barsOfContext: int }
+
   // Relations
   trades          Trade[]
   equitySnapshots EquitySnapshot[]
@@ -407,6 +410,9 @@ model Trade {
   mae              Float?        // Maximum Adverse Excursion
   mfe              Float?        // Maximum Favorable Excursion
   
+  // Close reason (SL / TP / MANUAL / EA / STOP_OUT)
+  closeReason      String?
+
   // Psychology & Discipline (from TradeLens)
   planCompliance   PlanCompliance?
   mood             Mood?
@@ -431,6 +437,7 @@ model Trade {
   
   // Media
   media            Media[]
+  pendingScreenshots PendingScreenshot[]
   tags             TradeTag[]
   
   // Timestamps
@@ -504,6 +511,30 @@ model Media {
   @@index([tradeId])
 }
 
+model PendingScreenshot {
+  id            String   @id @default(cuid())
+  tradeId       String
+  trade         Trade    @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  accountId     String
+  userId        String
+  event         String   // "OPEN" or "CLOSE"
+  timeframe     String   // e.g. "H4"
+  interval      String   // Twelve Data interval, e.g. "4h"
+  symbol        String   // Normalised symbol
+  entryPrice    Float
+  stopLoss      Float?
+  takeProfit    Float?
+  entryTime     String?  // ISO string
+  exitTime      String?  // ISO string
+  scheduledFor  DateTime // eventTime + delay * barDuration
+  timezone      String   @default("Europe/Amsterdam")
+  barsOfContext Int      @default(25)
+  createdAt     DateTime @default(now())
+
+  @@index([scheduledFor])
+  @@index([tradeId])
+}
+
 model Tag {
   id        String     @id @default(cuid())
   userId    String
@@ -571,11 +602,12 @@ model ExchangeRate {
 // ============================================
 
 model UserSettings {
-  userId          String @id
-  user            User   @relation(fields: [userId], references: [id])
-  displayCurrency String @default("USD")
-  timezone        String @default("Europe/Amsterdam")
-  dateFormat      String @default("DD-MM-YYYY") // DD-MM-YYYY, MM-DD-YYYY, or YYYY-MM-DD
+  userId               String @id
+  user                 User   @relation(fields: [userId], references: [id])
+  displayCurrency      String @default("USD")
+  timezone             String @default("Europe/Amsterdam")
+  dateFormat           String @default("DD-MM-YYYY") // DD-MM-YYYY, MM-DD-YYYY, or YYYY-MM-DD
+  brokerTimezoneOffset Int    @default(0)            // UTC offset of MT5 broker server, e.g. 3 for UTC+3
 }
 
 // ============================================

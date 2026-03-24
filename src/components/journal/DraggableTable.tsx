@@ -5,16 +5,15 @@ import {
     TableHeader,
     TradeRow,
     ColumnVisibilityToggle,
-    PaginationControls,
     type Column,
     type Trade,
     type SortDir,
     DEFAULT_COLUMNS,
     STORAGE_KEY_COLUMNS,
-    STORAGE_KEY_PER_PAGE,
     STORAGE_KEY_SORT,
 } from './trade-table';
 import { calcRROrZero } from '@/lib/tradeCalculations';
+import { useSettings } from '@/hooks/useSettings';
 
 // Helper function to get sort value
 function getSortValue(trade: Trade, col: string): string | number {
@@ -32,6 +31,8 @@ function getSortValue(trade: Trade, col: string): string | number {
         case 'rr': return calcRROrZero(trade);
         case 'account': return trade.accountName ?? '';
         case 'tags': return trade.tags?.[0]?.name ?? '';
+        case 'screenshots': return trade.screenshotCount ?? 0;
+        case 'closeReason': return trade.closeReason ?? '';
         default: return 0;
     }
 }
@@ -46,6 +47,7 @@ interface DraggableTableProps {
 }
 
 export default function DraggableTable({ data, onView, onEdit, selectedIds, onToggleSelect, onSelectAll }: DraggableTableProps) {
+    const { timezone } = useSettings();
     // Lazy state initialization from localStorage to avoid useEffect setState issues
     const [columns, setColumns] = useState<Column[]>(() => {
         if (typeof window === 'undefined') return DEFAULT_COLUMNS;
@@ -87,16 +89,6 @@ export default function DraggableTable({ data, onView, onEdit, selectedIds, onTo
         return 'desc';
     });
     
-    const [perPage, setPerPage] = useState(() => {
-        if (typeof window === 'undefined') return 20;
-        try {
-            const savedPP = localStorage.getItem(STORAGE_KEY_PER_PAGE);
-            if (savedPP) return Number(savedPP);
-        } catch { /* ignore */ }
-        return 20;
-    });
-    
-    const [page, setPage] = useState(0);
 
     // Track mounted state using useSyncExternalStore pattern (no setState in effect)
     const mounted = useSyncExternalStore(
@@ -121,14 +113,7 @@ export default function DraggableTable({ data, onView, onEdit, selectedIds, onTo
         const newDir: SortDir = sortCol === colId && sortDir === 'desc' ? 'asc' : 'desc';
         setSortCol(colId);
         setSortDir(newDir);
-        setPage(0);
         localStorage.setItem(STORAGE_KEY_SORT, JSON.stringify({ col: colId, dir: newDir }));
-    };
-
-    const handlePerPageChange = (val: number) => {
-        setPerPage(val);
-        setPage(0);
-        localStorage.setItem(STORAGE_KEY_PER_PAGE, String(val));
     };
 
     // Sort data
@@ -146,14 +131,9 @@ export default function DraggableTable({ data, onView, onEdit, selectedIds, onTo
         return arr;
     }, [data, sortCol, sortDir]);
 
-    // Pagination
-    const totalPages = Math.max(1, Math.ceil(sorted.length / perPage));
-    const safePage = Math.min(page, totalPages - 1);
-    const paged = sorted.slice(safePage * perPage, (safePage + 1) * perPage);
-
     // Selection state for header
-    const allSelected = paged.length > 0 && paged.every(t => selectedIds?.has(t.id));
-    const someSelected = paged.some(t => selectedIds?.has(t.id));
+    const allSelected = sorted.length > 0 && sorted.every(t => selectedIds?.has(t.id));
+    const someSelected = sorted.some(t => selectedIds?.has(t.id));
 
     if (!mounted) return null;
 
@@ -179,7 +159,7 @@ export default function DraggableTable({ data, onView, onEdit, selectedIds, onTo
                         onSelectAll={onSelectAll}
                     />
                     <tbody className="divide-y divide-white/5">
-                        {paged.map((trade) => (
+                        {sorted.map((trade) => (
                             <TradeRow
                                 key={trade.id}
                                 trade={trade}
@@ -188,21 +168,13 @@ export default function DraggableTable({ data, onView, onEdit, selectedIds, onTo
                                 onEdit={onEdit}
                                 isSelected={selectedIds?.has(trade.id)}
                                 onToggleSelect={onToggleSelect}
+                                timezone={timezone}
                             />
                         ))}
                     </tbody>
                 </table>
             </div>
 
-            {/* Pagination */}
-            <PaginationControls
-                currentPage={safePage}
-                totalPages={totalPages}
-                totalItems={sorted.length}
-                perPage={perPage}
-                onPageChange={setPage}
-                onPerPageChange={handlePerPageChange}
-            />
         </div>
     );
 }

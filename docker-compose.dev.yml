@@ -29,6 +29,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: prism-dev-app
+    shm_size: '256m'
     depends_on:
       db:
         condition: service_healthy
@@ -39,6 +40,8 @@ services:
       DATABASE_URL: "postgresql://prism_dev:prism_dev_password@db:5432/prism_journal_dev"
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3002}
       AUTH_TRUST_HOST: "true"
+      RATE_LIMIT_API: "300"
+      RATE_LIMIT_SYNC: "2000"
       STORAGE_PATH: "/app/storage"
       BACKUP_PATH: "/app/backups"
       BACKUP_KEEP_HOURLY: "24"

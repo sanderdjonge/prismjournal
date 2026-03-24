@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useCurrency } from '@/lib/currency';
+import { autoScreenshotConfigSchema } from '@/lib/validations/screenshot-config';
 
 interface AccountSummary {
     id: string;
@@ -41,6 +42,7 @@ interface AccountSummary {
     maxDailyLoss: number | null;
     maxTotalDrawdown: number | null;
     profitTarget: number | null;
+    autoScreenshotConfig: unknown;
 }
 
 interface PropFirm {
@@ -71,6 +73,24 @@ interface BridgeKeyInfo {
 
 type SortKey = 'name' | 'totalPnl' | 'tradeCount' | 'currentBalance';
 type SortDir = 'asc' | 'desc';
+
+type ScreenshotConfig = {
+    enabled: boolean;
+    openTimeframes: string[];
+    closeTimeframes: string[];
+    barsOfContext: number;
+    screenshotDelayBars: number;
+};
+
+const DEFAULT_SCREENSHOT_CONFIG: ScreenshotConfig = {
+    enabled: false,
+    openTimeframes: [],
+    closeTimeframes: [],
+    barsOfContext: 25,
+    screenshotDelayBars: 0,
+};
+
+const TIMEFRAME_OPTIONS = ['M1', 'M5', 'M15', 'M30', 'H1', 'H4', 'D1', 'W1'] as const;
 
 const PLATFORM_LABELS: Record<string, string> = {
     METATRADER5: 'MT5',
@@ -252,7 +272,19 @@ function AccountsContent() {
 
     // Edit account modal state
     const [editingAccount, setEditingAccount] = useState<AccountSummary | null>(null);
-    const [editForm, setEditForm] = useState({
+    const [editForm, setEditForm] = useState<{
+        name: string;
+        broker: string;
+        platformAccountId: string;
+        propFirmId: string;
+        accountSize: string;
+        currency: string;
+        profitSplit: string;
+        maxDailyLoss: string;
+        maxTotalDrawdown: string;
+        profitTarget: string;
+        screenshotConfig: ScreenshotConfig;
+    }>({
         name: '',
         broker: '',
         platformAccountId: '',
@@ -263,6 +295,7 @@ function AccountsContent() {
         maxDailyLoss: '',
         maxTotalDrawdown: '',
         profitTarget: '',
+        screenshotConfig: DEFAULT_SCREENSHOT_CONFIG,
     });
     const [savingEdit, setSavingEdit] = useState(false);
 
@@ -363,6 +396,11 @@ function AccountsContent() {
             maxDailyLoss: account.maxDailyLoss?.toString() || '',
             maxTotalDrawdown: account.maxTotalDrawdown?.toString() || '',
             profitTarget: account.profitTarget?.toString() || '',
+            screenshotConfig: (() => {
+                if (!account.autoScreenshotConfig) return DEFAULT_SCREENSHOT_CONFIG;
+                const result = autoScreenshotConfigSchema.safeParse(account.autoScreenshotConfig);
+                return result.success ? (result.data as ScreenshotConfig) : DEFAULT_SCREENSHOT_CONFIG;
+            })(),
         });
     };
 
@@ -385,6 +423,7 @@ function AccountsContent() {
                     maxDailyLoss: editForm.maxDailyLoss ? parseFloat(editForm.maxDailyLoss) : null,
                     maxTotalDrawdown: editForm.maxTotalDrawdown ? parseFloat(editForm.maxTotalDrawdown) : null,
                     profitTarget: editForm.profitTarget ? parseFloat(editForm.profitTarget) : null,
+                    autoScreenshotConfig: editForm.screenshotConfig,
                 }),
             });
             
@@ -1172,7 +1211,7 @@ function AccountsContent() {
                                 <>
                                     <div className="pt-4 border-t border-white/10">
                                         <h4 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-4">Prop Firm Settings</h4>
-                                        
+
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-2">
                                                 <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
@@ -1203,7 +1242,7 @@ function AccountsContent() {
 
                                     <div className="pt-4 border-t border-white/10">
                                         <h4 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-4">Rule Overrides</h4>
-                                        
+
                                         <div className="grid grid-cols-3 gap-4">
                                             <div className="space-y-2">
                                                 <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
@@ -1248,6 +1287,131 @@ function AccountsContent() {
                                     </div>
                                 </>
                             )}
+
+                            {/* Auto Chart Screenshots */}
+                            <div className="border-t border-white/5 pt-4">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div>
+                                        <h4 className="text-xs font-black uppercase tracking-widest text-gray-400">Auto Screenshots</h4>
+                                        <p className="text-[10px] text-gray-600 mt-0.5">Capture chart screenshots when trades sync</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setEditForm(f => ({
+                                            ...f,
+                                            screenshotConfig: { ...f.screenshotConfig, enabled: !f.screenshotConfig.enabled }
+                                        }))}
+                                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                                            editForm.screenshotConfig.enabled ? 'bg-primary/70' : 'bg-white/10'
+                                        }`}
+                                    >
+                                        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                                            editForm.screenshotConfig.enabled ? 'translate-x-4' : 'translate-x-1'
+                                        }`} />
+                                    </button>
+                                </div>
+
+                                {editForm.screenshotConfig.enabled && (
+                                    <div className="space-y-3">
+                                        {/* On Open */}
+                                        <div>
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">On Trade Open</p>
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {TIMEFRAME_OPTIONS.map(tf => (
+                                                    <button
+                                                        key={tf}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const current = editForm.screenshotConfig.openTimeframes;
+                                                            const next = current.includes(tf)
+                                                                ? current.filter(t => t !== tf)
+                                                                : [...current, tf];
+                                                            setEditForm(f => ({ ...f, screenshotConfig: { ...f.screenshotConfig, openTimeframes: next } }));
+                                                        }}
+                                                        className={`px-2.5 py-1 text-[10px] font-black uppercase rounded-lg border transition-all ${
+                                                            editForm.screenshotConfig.openTimeframes.includes(tf)
+                                                                ? 'bg-primary/20 text-primary border-primary/40'
+                                                                : 'bg-white/5 text-gray-500 border-white/10 hover:bg-white/10'
+                                                        }`}
+                                                    >
+                                                        {tf}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* On Close */}
+                                        <div>
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">On Trade Close</p>
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {TIMEFRAME_OPTIONS.map(tf => (
+                                                    <button
+                                                        key={tf}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const current = editForm.screenshotConfig.closeTimeframes;
+                                                            const next = current.includes(tf)
+                                                                ? current.filter(t => t !== tf)
+                                                                : [...current, tf];
+                                                            setEditForm(f => ({ ...f, screenshotConfig: { ...f.screenshotConfig, closeTimeframes: next } }));
+                                                        }}
+                                                        className={`px-2.5 py-1 text-[10px] font-black uppercase rounded-lg border transition-all ${
+                                                            editForm.screenshotConfig.closeTimeframes.includes(tf)
+                                                                ? 'bg-primary/20 text-primary border-primary/40'
+                                                                : 'bg-white/5 text-gray-500 border-white/10 hover:bg-white/10'
+                                                        }`}
+                                                    >
+                                                        {tf}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Bars of context */}
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 whitespace-nowrap">
+                                                Bars of context
+                                            </span>
+                                            <input
+                                                type="range"
+                                                min={1}
+                                                max={100}
+                                                step={1}
+                                                value={editForm.screenshotConfig.barsOfContext}
+                                                onChange={e => setEditForm(f => ({
+                                                    ...f,
+                                                    screenshotConfig: { ...f.screenshotConfig, barsOfContext: +e.target.value }
+                                                }))}
+                                                className="flex-1 accent-primary"
+                                            />
+                                            <span className="text-[10px] font-bold text-gray-400 w-8 text-right">
+                                                {editForm.screenshotConfig.barsOfContext}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 whitespace-nowrap">
+                                                Delay bars
+                                            </span>
+                                            <input
+                                                type="range"
+                                                min={0}
+                                                max={25}
+                                                step={1}
+                                                value={editForm.screenshotConfig.screenshotDelayBars}
+                                                onChange={e => setEditForm(f => ({
+                                                    ...f,
+                                                    screenshotConfig: { ...f.screenshotConfig, screenshotDelayBars: +e.target.value }
+                                                }))}
+                                                className="flex-1 accent-primary"
+                                            />
+                                            <span className="text-[10px] font-bold text-gray-400 w-8 text-right">
+                                                {editForm.screenshotConfig.screenshotDelayBars}
+                                            </span>
+                                        </div>
+
+                                    </div>
+                                )}
+                            </div>
                         </div>
                         
                         <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/10">

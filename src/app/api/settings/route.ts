@@ -10,7 +10,7 @@ export async function GET() {
     const userId = session?.user?.id;
 
     if (!userId) {
-        return NextResponse.json({ displayCurrency: 'USD', timezone: 'Europe/Amsterdam', dateFormat: 'DD-MM-YYYY', twoFAEnabled: false, isSuperuser: false });
+        return NextResponse.json({ displayCurrency: 'USD', timezone: 'Europe/Amsterdam', dateFormat: 'DD-MM-YYYY', brokerTimezoneOffset: 0, twoFAEnabled: false, isSuperuser: false });
     }
 
     const [settings, user] = await Promise.all([
@@ -22,6 +22,7 @@ export async function GET() {
         displayCurrency: settings?.displayCurrency ?? 'USD',
         timezone: settings?.timezone ?? 'Europe/Amsterdam',
         dateFormat: settings?.dateFormat ?? 'DD-MM-YYYY',
+        brokerTimezoneOffset: settings?.brokerTimezoneOffset ?? 0,
         twoFAEnabled: user?.totpEnabled ?? false,
         isSuperuser: user?.isSuperuser ?? false,
     });
@@ -44,6 +45,7 @@ export const PATCH = withAuth(async (req, _ctx, session) => {
             displayCurrency: body.displayCurrency ?? 'USD',
             timezone: body.timezone ?? 'Europe/Amsterdam',
             dateFormat: body.dateFormat ?? 'DD-MM-YYYY',
+            brokerTimezoneOffset: body.brokerTimezoneOffset ?? 0,
         },
     });
     return NextResponse.json(settings);

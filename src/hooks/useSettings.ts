@@ -6,6 +6,7 @@ type UserSettings = {
     displayCurrency: string;
     timezone: string;
     dateFormat: 'DD-MM-YYYY' | 'MM-DD-YYYY' | 'YYYY-MM-DD';
+    brokerTimezoneOffset: number;
     twoFAEnabled: boolean;
     isSuperuser: boolean;
 };
@@ -35,6 +36,7 @@ export function useSettings() {
         displayCurrency: data?.displayCurrency ?? 'USD',
         timezone: data?.timezone ?? 'Europe/Amsterdam',
         dateFormat: data?.dateFormat ?? 'DD-MM-YYYY',
+        brokerTimezoneOffset: data?.brokerTimezoneOffset ?? 0,
         twoFAEnabled: data?.twoFAEnabled ?? false,
         isSuperuser: data?.isSuperuser ?? false,
     };

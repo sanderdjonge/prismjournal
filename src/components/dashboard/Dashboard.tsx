@@ -4,7 +4,7 @@ import { useState } from 'react';
 import EquityChart from './EquityChart';
 import TradeCalendar from './TradeCalendar';
 import RecentTrades from './RecentTrades';
-import Gauge from './Gauge';
+import PrismScoreWidget from './PrismScoreWidget';
 import { cn } from '@/lib/cn';
 import { useCurrency } from '@/lib/currency';
 import { useAccounts } from '@/hooks/useAccounts';
@@ -119,25 +119,8 @@ export default function Dashboard() {
                     <EquityChart data={stats.equity} className="h-[400px]" dateFormat={dateFormat} />
                 </div>
 
-                {/* Performance Gauges */}
-                <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
-                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-500 mb-6">Performance Gauges</h3>
-                    <div className="flex flex-row flex-wrap gap-6 items-center justify-center">
-                        <Gauge
-                            value={stats.winRate}
-                            label="Win Rate"
-                            subLabel={`${Math.round(stats.winRate / 100 * stats.totalTrades)}/${stats.totalTrades} Trades`}
-                            variant="accent"
-                        />
-                        <Gauge
-                            value={stats.profitFactor}
-                            max={5}
-                            label="Profit Factor"
-                            subLabel={stats.profitFactor > 0 ? 'Live Compute' : 'No data yet'}
-                            variant="primary"
-                        />
-                    </div>
-                </div>
+                {/* Prism Score */}
+                <PrismScoreWidget accountId={selectedAccountId} />
             </div>
 
             {/* Calendar + Recent Trades */}
