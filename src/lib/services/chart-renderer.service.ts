@@ -9,6 +9,7 @@ export interface ChartRenderOptions {
     /** Twelve Data interval, e.g. "15min" */
     interval: string;
     entryPrice: number;
+    exitPrice?: number | null;
     stopLoss?: number | null;
     takeProfit?: number | null;
     /** How many candles to show before entry (default 60) */
@@ -87,30 +88,80 @@ function toTimeLabels(bars: { datetime: string }[], timezone: string): string[] 
     });
 }
 
-function buildChartOption(bars: OhlcBar[], entryPrice: number, timezone: string, stopLoss?: number | null, takeProfit?: number | null): EChartsOption {
+function buildChartOption(bars: OhlcBar[], entryPrice: number, timezone: string, stopLoss?: number | null, takeProfit?: number | null, exitPrice?: number | null): EChartsOption {
+    // Omit SL/TP lines when they would overlap with exit price or with each other.
+    const tickTolerance = entryPrice * 0.0001;
+    const slTpSame = stopLoss != null && takeProfit != null && Math.abs(stopLoss - takeProfit) <= tickTolerance;
+    const showSl = stopLoss != null && !slTpSame && (exitPrice == null || Math.abs(exitPrice - stopLoss) > tickTolerance);
+    const showTp = takeProfit != null && !slTpSame && (exitPrice == null || Math.abs(exitPrice - takeProfit) > tickTolerance);
     const dates = toTimeLabels(bars, timezone);
     // ECharts candlestick: [open, close, low, high]
     const ohlcData = bars.map(b => [+b.open, +b.close, +b.low, +b.high]);
 
-    const markLineData: object[] = [
+    // Detect decimal precision from entry price (e.g. 1.15866 → 5, 21350.5 → 1).
+    const entryStr = entryPrice.toString();
+    const decimals = entryStr.includes('.') ? entryStr.split('.')[1].length : 2;
+    const fmt = (v: number) => v.toFixed(decimals);
+
+    // Compute y-axis bounds from all price levels so the chart is tightly scaled.
+    const allPrices: number[] = [
+        ...bars.map(b => +b.low),
+        ...bars.map(b => +b.high),
+        entryPrice,
+        ...(exitPrice != null ? [exitPrice] : []),
+        ...(showSl ? [stopLoss!] : []),
+        ...(showTp ? [takeProfit!] : []),
+    ];
+    const priceMin = Math.min(...allPrices);
+    const priceMax = Math.max(...allPrices);
+    const pad = (priceMax - priceMin) * 0.05;
+
+    // Price level lines drawn as flat `line` series rather than markLine.
+    // markLine yAxis positioning in ECharts SSR quantizes to axis ticks; line
+    // series data values are rendered at the exact pixel for that y-value.
+    const n = bars.length;
+    const priceSeries: object[] = [
         {
-            yAxis: entryPrice,
-            lineStyle: { color: '#00f2ff', width: 2 },
-            label: { formatter: `Entry ${entryPrice}`, position: 'end', color: '#00f2ff', fontSize: 11, fontWeight: 'bold' },
+            type: 'line',
+            data: Array(n).fill(entryPrice),
+            lineStyle: { color: '#00f2ff', width: 2, type: 'solid' },
+            symbol: 'none',
+            silent: true,
+            z: 5,
+            endLabel: { show: true, formatter: `Entry ${fmt(entryPrice)}`, color: '#00f2ff', fontSize: 11, fontWeight: 'bold' },
         },
     ];
-    if (stopLoss != null) {
-        markLineData.push({
-            yAxis: stopLoss,
-            lineStyle: { color: '#f87171', width: 1.5, type: 'dashed' },
-            label: { formatter: `SL ${stopLoss}`, position: 'end', color: '#f87171', fontSize: 10 },
+    if (exitPrice != null) {
+        priceSeries.push({
+            type: 'line',
+            data: Array(n).fill(exitPrice),
+            lineStyle: { color: '#f59e0b', width: 2, type: 'solid' },
+            symbol: 'none',
+            silent: true,
+            z: 5,
+            endLabel: { show: true, formatter: `Exit ${fmt(exitPrice)}`, color: '#f59e0b', fontSize: 11, fontWeight: 'bold' },
         });
     }
-    if (takeProfit != null) {
-        markLineData.push({
-            yAxis: takeProfit,
+    if (showSl) {
+        priceSeries.push({
+            type: 'line',
+            data: Array(n).fill(stopLoss),
+            lineStyle: { color: '#f87171', width: 1.5, type: 'dashed' },
+            symbol: 'none',
+            silent: true,
+            z: 5,
+            endLabel: { show: true, formatter: `SL ${fmt(stopLoss!)}`, color: '#f87171', fontSize: 10 },
+        });
+    }
+    if (showTp) {
+        priceSeries.push({
+            type: 'line',
+            data: Array(n).fill(takeProfit),
             lineStyle: { color: '#4ade80', width: 1.5, type: 'dashed' },
-            label: { formatter: `TP ${takeProfit}`, position: 'end', color: '#4ade80', fontSize: 10 },
+            symbol: 'none',
+            silent: true,
+            z: 5,
+            endLabel: { show: true, formatter: `TP ${fmt(takeProfit!)}`, color: '#4ade80', fontSize: 10 },
         });
     }
 
@@ -125,35 +176,46 @@ function buildChartOption(bars: OhlcBar[], entryPrice: number, timezone: string,
             splitLine: { lineStyle: { color: '#1f2937', type: 'dashed' } },
         },
         yAxis: {
-            scale: true,
-            axisLabel: { color: '#6b7280', fontSize: 9 },
+            min: priceMin - pad,
+            max: priceMax + pad,
+            axisLabel: { color: '#6b7280', fontSize: 9, formatter: (v: number) => fmt(v) },
             axisLine: { lineStyle: { color: '#374151' } },
             splitLine: { lineStyle: { color: '#1f2937', type: 'dashed' } },
         },
-        series: [{
-            type: 'candlestick',
-            data: ohlcData,
-            itemStyle: {
-                color: '#4ade80',
-                color0: '#f87171',
-                borderColor: '#4ade80',
-                borderColor0: '#f87171',
+        series: [
+            {
+                type: 'candlestick',
+                data: ohlcData,
+                itemStyle: {
+                    color: '#4ade80',
+                    color0: '#f87171',
+                    borderColor: '#4ade80',
+                    borderColor0: '#f87171',
+                },
             },
-            markLine: {
-                silent: true,
-                symbol: ['none', 'none'],
-                data: markLineData,
-            },
-        }],
+            ...priceSeries,
+        ],
     };
 }
 
 export async function renderCandlestickChart(options: ChartRenderOptions): Promise<Buffer> {
-    const { symbol, interval, entryPrice, stopLoss, takeProfit, barsOfContext, timezone, endDate } = options;
+    const { symbol, interval, entryPrice, exitPrice, stopLoss, takeProfit, barsOfContext, timezone, endDate } = options;
 
-    const outputsize = barsOfContext + 25;
-    const bars = await fetchOhlc(symbol, interval, outputsize, endDate);
-    const option = buildChartOption(bars, entryPrice, timezone, stopLoss, takeProfit);
+    const bars = await fetchOhlc(symbol, interval, barsOfContext, endDate);
+
+    // Sanity check: if the entry price is outside 10× the OHLC range, Twelve Data
+    // returned data for a different instrument (e.g. free-tier index restriction).
+    // Discard rather than produce a broken chart.
+    const dataMin = Math.min(...bars.map(b => +b.low));
+    const dataMax = Math.max(...bars.map(b => +b.high));
+    if (entryPrice < dataMin / 10 || entryPrice > dataMax * 10) {
+        throw Object.assign(
+            new Error(`Price mismatch: entry ${entryPrice} outside OHLC range ${dataMin}–${dataMax} for ${symbol}`),
+            { code: 'PRICE_MISMATCH' },
+        );
+    }
+
+    const option = buildChartOption(bars, entryPrice, timezone, stopLoss, takeProfit, exitPrice);
 
     logger.info({ symbol, interval, barsOfContext }, 'Rendering chart via ECharts SSR');
 

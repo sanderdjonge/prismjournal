@@ -5,6 +5,7 @@ import { Eye, Pencil } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import type { Trade, Column } from './types';
 import { calcRR } from '@/lib/tradeCalculations';
+import { CloseReasonBadge } from '../../ui/CloseReasonBadge';
 
 interface TradeRowProps {
     trade: Trade;
@@ -128,6 +129,9 @@ export function TradeRow({ trade, columns, onView, onEdit, isSelected = false, o
                         <span className={`text-xs font-bold ${(trade.screenshotCount ?? 0) > 0 ? 'text-primary' : 'text-gray-600'}`}>
                             {trade.screenshotCount ?? 0}
                         </span>
+                    )}
+                    {col.id === 'closeReason' && (
+                        <CloseReasonBadge reason={trade.closeReason} />
                     )}
                     {col.id === 'actions' && (
                         <div className="flex gap-1">

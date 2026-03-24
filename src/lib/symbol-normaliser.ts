@@ -95,6 +95,13 @@ export function isTwelveDataSymbolNotFound(err: unknown): boolean {
     return msg.includes('symbol') && (msg.includes('missing or invalid') || msg.includes('not found'));
 }
 
+/** Returns true if Twelve Data returned data for a different price scale —
+ *  e.g. a free-tier restriction returning a proxy instrument for an index. */
+export function isTwelveDataPriceMismatch(err: unknown): boolean {
+    if (!(err instanceof Error)) return false;
+    return (err as NodeJS.ErrnoException & { code?: string }).code === 'PRICE_MISMATCH';
+}
+
 export function mapTimeframe(tf: string): string | null {
     return TIMEFRAME_MAP[tf.toUpperCase()] ?? null;
 }

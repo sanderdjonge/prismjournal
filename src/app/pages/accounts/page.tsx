@@ -79,13 +79,15 @@ type ScreenshotConfig = {
     openTimeframes: string[];
     closeTimeframes: string[];
     barsOfContext: number;
+    screenshotDelayBars: number;
 };
 
 const DEFAULT_SCREENSHOT_CONFIG: ScreenshotConfig = {
     enabled: false,
     openTimeframes: [],
     closeTimeframes: [],
-    barsOfContext: 60,
+    barsOfContext: 25,
+    screenshotDelayBars: 0,
 };
 
 const TIMEFRAME_OPTIONS = ['M1', 'M5', 'M15', 'M30', 'H1', 'H4', 'D1', 'W1'] as const;
@@ -1372,9 +1374,9 @@ function AccountsContent() {
                                             </span>
                                             <input
                                                 type="range"
-                                                min={20}
-                                                max={200}
-                                                step={10}
+                                                min={1}
+                                                max={100}
+                                                step={1}
                                                 value={editForm.screenshotConfig.barsOfContext}
                                                 onChange={e => setEditForm(f => ({
                                                     ...f,
@@ -1384,6 +1386,26 @@ function AccountsContent() {
                                             />
                                             <span className="text-[10px] font-bold text-gray-400 w-8 text-right">
                                                 {editForm.screenshotConfig.barsOfContext}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 whitespace-nowrap">
+                                                Delay bars
+                                            </span>
+                                            <input
+                                                type="range"
+                                                min={0}
+                                                max={25}
+                                                step={1}
+                                                value={editForm.screenshotConfig.screenshotDelayBars}
+                                                onChange={e => setEditForm(f => ({
+                                                    ...f,
+                                                    screenshotConfig: { ...f.screenshotConfig, screenshotDelayBars: +e.target.value }
+                                                }))}
+                                                className="flex-1 accent-primary"
+                                            />
+                                            <span className="text-[10px] font-bold text-gray-400 w-8 text-right">
+                                                {editForm.screenshotConfig.screenshotDelayBars}
                                             </span>
                                         </div>
 

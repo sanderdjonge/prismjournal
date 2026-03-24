@@ -21,6 +21,7 @@ export const GET = withAuth(async (request, _ctx, session) => {
     const symbol = searchParams.get('symbol');
     const side = searchParams.get('side'); // BUY/SELL
     const result = searchParams.get('result'); // WIN/LOSS/OPEN
+    const closeReasonFilter = searchParams.get('closeReason'); // SL/TP/MANUAL/EA/STOP_OUT
     const dateFrom = searchParams.get('from');
     const dateTo = searchParams.get('to');
     const search = searchParams.get('q'); // Search query
@@ -45,9 +46,9 @@ export const GET = withAuth(async (request, _ctx, session) => {
         where.symbol = { contains: symbol, mode: 'insensitive' };
     }
 
-    // Side filter (BUY/SELL) - map to LONG/SHORT
-    if (side && side !== 'ALL') {
-        where.direction = side === 'BUY' ? 'LONG' : 'SHORT';
+    // Side filter (LONG/SHORT)
+    if (side === 'LONG' || side === 'SHORT') {
+        where.direction = side;
     }
 
     // Result filter (WIN/LOSS/OPEN)
@@ -63,6 +64,11 @@ export const GET = withAuth(async (request, _ctx, session) => {
         ];
     } else if (result === 'OPEN') {
         where.exitTime = null;
+    }
+
+    // Close reason filter
+    if (closeReasonFilter) {
+        where.closeReason = closeReasonFilter;
     }
 
     // Date range filter
@@ -157,6 +163,7 @@ export const GET = withAuth(async (request, _ctx, session) => {
         time: formatDistanceToNow(t.entryTime),
         mood: t.mood,
         planCompliance: t.planCompliance,
+        closeReason: t.closeReason ?? null,
         notes: t.notes,
         strategy: t.strategy?.name ?? null,
         entryTime: t.entryTime.toISOString(),

@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 #property copyright "2025, PrismJournal"
 #property link      "https://github.com/prismjournal"
-#property version   "3.11"
+#property version   "3.14"
 #property description "Syncs trades and equity snapshots to PrismJournal."
 #property description "Syncs full trade history on startup, then live trades in real-time."
 #property description "Get your Bridge Key and Sync URL from Settings > Connector Hub."
@@ -15,6 +15,7 @@ input string   SyncUrl     = "https://prism.we-share.nl/api/sync"; // Sync URL
 input string   BridgeKey   = "";                 // Bridge Key (from PrismJournal settings)
 input string   Strategy    = "Default";          // Current Strategy Name
 input uint     TimerPeriod = 60;                 // Seconds between equity snapshots
+input uint     HistoryDays = 90;                 // Days of trade history to sync on startup (0 = all time)
 
 //--- constants
 #define  HEADER_CONTENT_TYPE "Content-Type: application/json\r\n"
@@ -126,8 +127,8 @@ void SyncOpenPositions()
                        "\"swap\":"      + DoubleToString(swap, 2) + ","
                        "\"entryTime\":\"" + TimeToString(ToGmt(time), TIME_DATE|TIME_MINUTES|TIME_SECONDS) + "\","
                        "\"strategy\":\"" + Strategy + "\""
-                       + OptField("stopLoss", sl, 2)
-                       + OptField("takeProfit", tp, 2)
+                       + OptField("stopLoss", sl, 5)
+                       + OptField("takeProfit", tp, 5)
                        + "}"
                        "}";
       SendJson(posJson);
@@ -144,12 +145,28 @@ string OptField(string name, double val, int digits)
   }
 
 //+------------------------------------------------------------------+
+//| Map DEAL_REASON integer to a human-readable close reason string  |
+//+------------------------------------------------------------------+
+string CloseReasonStr(long reason)
+  {
+   switch((int)reason)
+     {
+      case DEAL_REASON_TP:     return "TP";
+      case DEAL_REASON_SL:     return "SL";
+      case DEAL_REASON_SO:     return "STOP_OUT";
+      case DEAL_REASON_EXPERT: return "EA";
+      default:                  return "MANUAL";
+     }
+  }
+
+//+------------------------------------------------------------------+
 //| Sync full deal history on startup                                |
 //| Groups entry + exit deals by position ID for complete trades     |
 //+------------------------------------------------------------------+
 void SyncHistory()
   {
-   if(!HistorySelect(0, TimeCurrent()))
+   datetime fromTime = (HistoryDays == 0) ? 0 : TimeCurrent() - (datetime)(HistoryDays * 86400);
+   if(!HistorySelect(fromTime, TimeCurrent()))
      {
       Print("SyncHistory: Failed to select deal history");
       return;
@@ -206,8 +223,8 @@ void SyncHistory()
                        "\"entryPrice\":" + DoubleToString(price, 5) + ","
                        "\"entryTime\":\"" + TimeToString(ToGmt(time), TIME_DATE|TIME_MINUTES|TIME_SECONDS) + "\","
                        "\"strategy\":\"" + Strategy + "\""
-                       + OptField("stopLoss", sl, 2)
-                       + OptField("takeProfit", tp, 2)
+                       + OptField("stopLoss", sl, 5)
+                       + OptField("takeProfit", tp, 5)
                        + "}"
                        "}";
          SendJson(json);
@@ -216,6 +233,8 @@ void SyncHistory()
       else if(entry_type == DEAL_ENTRY_OUT || entry_type == DEAL_ENTRY_OUT_BY)
         {
          // Exit deal — update with exit info, P&L, commission, swap
+         long   reason      = HistoryDealGetInteger(deal_ticket, DEAL_REASON);
+         string closeReason = CloseReasonStr(reason);
          string json = "{"
                        "\"type\":\"TRADE_UPDATE\","
                        "\"platformAccountId\":\"" + acctId + "\","
@@ -233,8 +252,9 @@ void SyncHistory()
                        "\"entryTime\":\"" + TimeToString(ToGmt(time), TIME_DATE|TIME_MINUTES|TIME_SECONDS) + "\","
                        "\"exitTime\":\"" + TimeToString(ToGmt(time), TIME_DATE|TIME_MINUTES|TIME_SECONDS) + "\","
                        "\"strategy\":\"" + Strategy + "\""
-                       + OptField("stopLoss", sl, 2)
-                       + OptField("takeProfit", tp, 2)
+                       + OptField("stopLoss", sl, 5)
+                       + OptField("takeProfit", tp, 5)
+                       + ",\"closeReason\":\"" + closeReason + "\""
                        + "}"
                        "}";
          SendJson(json);
@@ -293,13 +313,15 @@ void OnTradeTransaction(const MqlTradeTransaction& trans,
              "\"entryPrice\":" + DoubleToString(price, 5) + ","
              "\"entryTime\":\"" + TimeToString(ToGmt(time), TIME_DATE|TIME_MINUTES|TIME_SECONDS) + "\","
              "\"strategy\":\"" + Strategy + "\""
-             + OptField("stopLoss", sl, 2)
-             + OptField("takeProfit", tp, 2)
+             + OptField("stopLoss", sl, 5)
+             + OptField("takeProfit", tp, 5)
              + "}"
              "}";
      }
    else
      {
+      long   reason      = HistoryDealGetInteger(deal_ticket, DEAL_REASON);
+      string closeReason = CloseReasonStr(reason);
       json = "{"
              "\"type\":\"TRADE_UPDATE\","
              "\"platformAccountId\":\"" + acctId + "\","
@@ -316,8 +338,9 @@ void OnTradeTransaction(const MqlTradeTransaction& trans,
              "\"entryTime\":\"" + TimeToString(ToGmt(time), TIME_DATE|TIME_MINUTES|TIME_SECONDS) + "\","
              "\"exitTime\":\"" + TimeToString(ToGmt(time), TIME_DATE|TIME_MINUTES|TIME_SECONDS) + "\","
              "\"strategy\":\"" + Strategy + "\""
-             + OptField("stopLoss", sl, 2)
-             + OptField("takeProfit", tp, 2)
+             + OptField("stopLoss", sl, 5)
+             + OptField("takeProfit", tp, 5)
+             + ",\"closeReason\":\"" + closeReason + "\""
              + "}"
              "}";
      }

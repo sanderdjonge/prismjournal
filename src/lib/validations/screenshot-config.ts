@@ -7,7 +7,9 @@ export const autoScreenshotConfigSchema = z.object({
     enabled: z.boolean().default(false),
     openTimeframes: z.array(z.enum(VALID_TIMEFRAMES)).default([]),
     closeTimeframes: z.array(z.enum(VALID_TIMEFRAMES)).default([]),
-    barsOfContext: z.number().int().min(20).max(200).default(60),
+    barsOfContext: z.number().int().min(1).max(100).default(25),
+    /** Bars to wait after the trade event before anchoring the chart end_date (0 = live/immediate). */
+    screenshotDelayBars: z.number().int().min(0).max(25).default(0),
 });
 
 export type AutoScreenshotConfig = z.infer<typeof autoScreenshotConfigSchema>;
