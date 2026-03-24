@@ -1,5 +1,5 @@
 // src/hooks/useTrades.ts
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 
 export interface TradeFilters {
     q?: string;
@@ -12,6 +12,7 @@ export interface TradeFilters {
     account?: string;
     page?: number;
     limit?: number;
+    closeReason?: string;
 }
 
 async function fetchTrades(filters: TradeFilters) {
@@ -28,6 +29,8 @@ export function useTrades(filters: TradeFilters = {}) {
     return useQuery({
         queryKey: ['trades', filters],
         queryFn: () => fetchTrades(filters),
+        placeholderData: keepPreviousData,
+        staleTime: 30_000,
     });
 }
 

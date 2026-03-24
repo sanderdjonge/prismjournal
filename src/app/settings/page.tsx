@@ -178,7 +178,6 @@ function SettingsContent() {
     const [currency, setCurrency] = useState('USD');
     const [timezone, setTimezone] = useState('Europe/Amsterdam');
     const [dateFormat, setDateFormat] = useState('DD-MM-YYYY');
-    const [brokerTimezoneOffset, setBrokerTimezoneOffset] = useState(0);
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
 
@@ -285,7 +284,6 @@ function SettingsContent() {
                 if (data.displayCurrency) setCurrency(data.displayCurrency);
                 if (data.timezone) setTimezone(data.timezone);
                 if (data.dateFormat) setDateFormat(data.dateFormat);
-                if (data.brokerTimezoneOffset !== undefined) setBrokerTimezoneOffset(data.brokerTimezoneOffset);
                 if (data.twoFAEnabled !== undefined) setTwoFAEnabled(data.twoFAEnabled);
             })
             .catch(() => {});
@@ -428,7 +426,7 @@ function SettingsContent() {
                 await fetch('/api/settings', {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ displayCurrency: currency, timezone, dateFormat, brokerTimezoneOffset }),
+                    body: JSON.stringify({ displayCurrency: currency, timezone, dateFormat }),
                 });
                 setCurrencyContext(currency);
                 queryClient.invalidateQueries({ queryKey: ['settings'] });
@@ -663,21 +661,6 @@ function SettingsContent() {
                                         ))}
                                     </select>
                                 </div>
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-600 px-1">Broker Server Timezone (UTC offset)</label>
-                                    <p className="text-[10px] text-gray-500 px-1">MT5 broker server time offset from UTC. E.g. set 3 for UTC+3 brokers so trade times are stored correctly.</p>
-                                    <select
-                                        value={brokerTimezoneOffset}
-                                        onChange={(e) => setBrokerTimezoneOffset(Number(e.target.value))}
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm font-bold text-white outline-none focus:border-primary/50 transition-all appearance-none"
-                                    >
-                                        {Array.from({ length: 27 }, (_, i) => i - 12).map((offset) => (
-                                            <option key={offset} value={offset}>
-                                                {offset === 0 ? 'UTC (default)' : offset > 0 ? `UTC+${offset}` : `UTC${offset}`}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
                             </div>
                         </div>
                     )}
@@ -828,17 +811,30 @@ function SettingsContent() {
                                                         </div>
                                                     </div>
                                                     <div className="space-y-1">
-                                                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">Send at (UTC)</label>
+                                                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">Send at</label>
                                                         <select
                                                             value={notifs.digestSendHour}
                                                             onChange={(e) => setNotifs(prev => ({ ...prev, digestSendHour: parseInt(e.target.value) }))}
                                                             className="px-3 py-1.5 bg-black/40 border border-white/10 rounded-lg text-white text-xs outline-none focus:border-primary/50 transition-all"
                                                         >
-                                                            {Array.from({ length: 24 }, (_, h) => (
-                                                                <option key={h} value={h}>
-                                                                    {String(h).padStart(2, '0')}:00 UTC
-                                                                </option>
-                                                            ))}
+                                                            {Array.from({ length: 24 }, (_, utcHour) => {
+                                                                // Convert UTC hour to user's local time for display
+                                                                const d = new Date();
+                                                                d.setUTCHours(utcHour, 0, 0, 0);
+                                                                const localLabel = d.toLocaleTimeString('en-GB', {
+                                                                    timeZone: timezone,
+                                                                    hour: '2-digit',
+                                                                    minute: '2-digit',
+                                                                    hour12: false,
+                                                                });
+                                                                return { utcHour, localLabel };
+                                                            })
+                                                                .sort((a, b) => a.localLabel.localeCompare(b.localLabel))
+                                                                .map(({ utcHour, localLabel }) => (
+                                                                    <option key={utcHour} value={utcHour}>
+                                                                        {localLabel}
+                                                                    </option>
+                                                                ))}
                                                         </select>
                                                     </div>
                                                 </div>

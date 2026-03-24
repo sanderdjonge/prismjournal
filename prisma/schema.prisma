@@ -410,6 +410,9 @@ model Trade {
   mae              Float?        // Maximum Adverse Excursion
   mfe              Float?        // Maximum Favorable Excursion
   
+  // Close reason (SL / TP / MANUAL / EA / STOP_OUT)
+  closeReason      String?
+
   // Psychology & Discipline (from TradeLens)
   planCompliance   PlanCompliance?
   mood             Mood?
@@ -434,6 +437,7 @@ model Trade {
   
   // Media
   media            Media[]
+  pendingScreenshots PendingScreenshot[]
   tags             TradeTag[]
   
   // Timestamps
@@ -504,6 +508,30 @@ model Media {
   event     String   // "OPEN" or "CLOSE"
   createdAt DateTime @default(now())
   
+  @@index([tradeId])
+}
+
+model PendingScreenshot {
+  id            String   @id @default(cuid())
+  tradeId       String
+  trade         Trade    @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  accountId     String
+  userId        String
+  event         String   // "OPEN" or "CLOSE"
+  timeframe     String   // e.g. "H4"
+  interval      String   // Twelve Data interval, e.g. "4h"
+  symbol        String   // Normalised symbol
+  entryPrice    Float
+  stopLoss      Float?
+  takeProfit    Float?
+  entryTime     String?  // ISO string
+  exitTime      String?  // ISO string
+  scheduledFor  DateTime // eventTime + delay * barDuration
+  timezone      String   @default("Europe/Amsterdam")
+  barsOfContext Int      @default(25)
+  createdAt     DateTime @default(now())
+
+  @@index([scheduledFor])
   @@index([tradeId])
 }
 

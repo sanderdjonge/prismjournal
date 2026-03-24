@@ -15,7 +15,7 @@ export const BUILD_DATE = '2026-03-24';
  * Short summary of what changed in this build.
  * Update together with APP_VERSION and BUILD_DATE.
  */
-export const BUILD_NOTES = 'Prism Score: composite 0-100 performance gauge + 12-week trend; ECharts SSR chart renderer (no Playwright); chart end_date anchor; timezone-aware axis labels';
+export const BUILD_NOTES = 'Close reason: MT5 EA v3.14 sends SL/TP/EA/STOP_OUT/MANUAL close reason; stored in DB, shown as coloured badge in journal table and trade view modal';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {

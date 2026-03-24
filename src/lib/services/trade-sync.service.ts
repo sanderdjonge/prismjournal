@@ -122,6 +122,7 @@ export async function upsertSyncTrade(
     });
     const isNew = !existing;
     const isClosed = !!trade.exitTime && !!trade.exitPrice;
+    logger.info({ ticket: trade.ticket, isNew, isClosed, isHistorySync, hasExitTime: !!trade.exitTime, hasExitPrice: !!trade.exitPrice }, '[trade-sync] trade event detected');
 
 
     // Always parse broker time directly — the EA sends UTC timestamps (TimeGMT-based)
@@ -151,6 +152,7 @@ export async function upsertSyncTrade(
     if (strategyId) updateData.strategyId = strategyId;
     if (trade.mood) updateData.mood = trade.mood;
     if (trade.planCompliance) updateData.planCompliance = trade.planCompliance;
+    if (trade.closeReason != null) updateData.closeReason = trade.closeReason;
 
     // BUY/SELL → LONG/SHORT
     const direction = trade.type === 'BUY' ? 'LONG' : 'SHORT';
@@ -176,6 +178,7 @@ export async function upsertSyncTrade(
             strategyId,
             mood: trade.mood,
             planCompliance: trade.planCompliance,
+            closeReason: trade.closeReason ?? null,
         },
         update: updateData,
     });
@@ -207,6 +210,7 @@ export async function upsertSyncTrade(
 
     // Fire auto screenshots asynchronously — must not block sync or affect notifications
     if (!isHistorySync && (isNew || isClosed)) {
+        logger.info({ ticket: trade.ticket, event: isNew ? 'OPEN' : 'CLOSE' }, '[trade-sync] firing captureAutoScreenshots');
         captureAutoScreenshots(
             upsertedTrade.id,
             accountId,
@@ -214,12 +218,12 @@ export async function upsertSyncTrade(
             isNew ? 'OPEN' : 'CLOSE',
             {
                 symbol: trade.symbol,
-                entryPrice: trade.entryPrice ?? 0,
-                stopLoss: trade.stopLoss,
-                takeProfit: trade.takeProfit,
-                // Use broker-reported time as chart anchor — broker time reflects when the
-                // trade actually opened/closed, not when the sync was received by the server.
-                // This prevents the chart window from drifting when the EA sends delayed syncs.
+                // Use upsertedTrade values — at close, the EA payload may omit SL/TP/exitPrice
+                // but the DB record always has the complete picture after the upsert.
+                entryPrice: upsertedTrade.entryPrice,
+                exitPrice: upsertedTrade.exitPrice,
+                stopLoss: upsertedTrade.stopLoss,
+                takeProfit: upsertedTrade.takeProfit,
                 entryTime: parseBrokerTime(trade.entryTime).toISOString(),
                 exitTime: trade.exitTime ? parseBrokerTime(trade.exitTime).toISOString() : undefined,
             },
