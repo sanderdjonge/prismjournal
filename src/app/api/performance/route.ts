@@ -64,7 +64,7 @@ export const GET = withAuth(async (request: NextRequest, ctx: Record<string, unk
                 exitTime: { gte: startDate, not: null },
             },
             orderBy: { exitTime: 'asc' },
-            select: { exitTime: true, pnl: true },
+            select: { exitTime: true, pnl: true, commission: true, swap: true },
         }),
     ]);
 
@@ -74,13 +74,18 @@ export const GET = withAuth(async (request: NextRequest, ctx: Record<string, unk
         const byDay = new Map<string, number>();
         let running = 0;
         for (const t of allClosedTrades) {
-            running += t.pnl ?? 0;
+            running += (t.pnl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
             const key = t.exitTime!.toISOString().split('T')[0];
             byDay.set(key, running);
         }
         equityData = Array.from(byDay.entries())
             .map(([time, value]) => ({ time, value }))
             .sort((a, b) => a.time.localeCompare(b.time));
+        // Prepend zero anchor at period start so curve visually starts at 0
+        const startKey = startDate.toISOString().split('T')[0];
+        if (equityData[0]?.time !== startKey) {
+            equityData.unshift({ time: startKey, value: 0 });
+        }
     } else if (snapshots.length >= 2) {
         const byDay = new Map<string, number>();
         for (const s of snapshots) {
@@ -90,8 +95,8 @@ export const GET = withAuth(async (request: NextRequest, ctx: Record<string, unk
         equityData = Array.from(byDay.entries()).map(([time, value]) => ({ time, value }));
     }
 
-    // --- Key stats ---
-    const pnlList = trades.map(t => t.pnl ?? 0);
+    // --- Key stats (net PnL: gross profit + commission + swap) ---
+    const pnlList = trades.map(t => (t.pnl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0));
     const netPnl = pnlList.reduce((a, b) => a + b, 0);
     const profitFactor = calculateProfitFactor(trades.map(t => ({ pnl: t.pnl ?? 0 })));
 

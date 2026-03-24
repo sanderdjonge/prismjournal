@@ -63,7 +63,7 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
                 pnl: { not: null },
             },
             orderBy: { exitTime: 'asc' },
-            select: { exitTime: true, pnl: true },
+            select: { exitTime: true, pnl: true, commission: true, swap: true },
         }),
     ]);
 
@@ -76,13 +76,18 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
         const byDay = new Map<string, number>();
         let running = 0;
         for (const t of allClosedTrades) {
-            running += t.pnl ?? 0;
+            running += (t.pnl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
             const key = t.exitTime!.toISOString().split('T')[0];
             byDay.set(key, running);
         }
         equityData = Array.from(byDay.entries())
             .map(([time, value]) => ({ time, value }))
             .sort((a, b) => a.time.localeCompare(b.time));
+        // Prepend a zero-value anchor at period start so curve visually starts at 0
+        const startKey = startDate.toISOString().split('T')[0];
+        if (equityData[0]?.time !== startKey) {
+            equityData.unshift({ time: startKey, value: 0 });
+        }
     }
 
     // --- Win rate & profit factor ---
@@ -90,8 +95,8 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
     const wins = closedTrades.filter(t => (t.pnl ?? 0) > 0);
     const losses = closedTrades.filter(t => (t.pnl ?? 0) < 0);
 
-    // --- Total P&L ---
-    const totalPnl = closedTrades.reduce((sum, t) => sum + (t.pnl ?? 0), 0);
+    // --- Total P&L (net: gross profit + commission + swap) ---
+    const totalPnl = closedTrades.reduce((sum, t) => sum + (t.pnl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0), 0);
 
     const winRate = closedTrades.length > 0 ? Math.round((wins.length / closedTrades.length) * 100) : 0;
     const profitFactor = calculateProfitFactor(closedTrades.map(t => ({ pnl: t.pnl ?? 0 })));
