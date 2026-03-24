@@ -15,6 +15,7 @@ import {
     STORAGE_KEY_SORT,
 } from './trade-table';
 import { calcRROrZero } from '@/lib/tradeCalculations';
+import { useSettings } from '@/hooks/useSettings';
 
 // Helper function to get sort value
 function getSortValue(trade: Trade, col: string): string | number {
@@ -32,6 +33,7 @@ function getSortValue(trade: Trade, col: string): string | number {
         case 'rr': return calcRROrZero(trade);
         case 'account': return trade.accountName ?? '';
         case 'tags': return trade.tags?.[0]?.name ?? '';
+        case 'screenshots': return trade.screenshotCount ?? 0;
         default: return 0;
     }
 }
@@ -46,6 +48,7 @@ interface DraggableTableProps {
 }
 
 export default function DraggableTable({ data, onView, onEdit, selectedIds, onToggleSelect, onSelectAll }: DraggableTableProps) {
+    const { timezone } = useSettings();
     // Lazy state initialization from localStorage to avoid useEffect setState issues
     const [columns, setColumns] = useState<Column[]>(() => {
         if (typeof window === 'undefined') return DEFAULT_COLUMNS;
@@ -188,6 +191,7 @@ export default function DraggableTable({ data, onView, onEdit, selectedIds, onTo
                                 onEdit={onEdit}
                                 isSelected={selectedIds?.has(trade.id)}
                                 onToggleSelect={onToggleSelect}
+                                timezone={timezone}
                             />
                         ))}
                     </tbody>

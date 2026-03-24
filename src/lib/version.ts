@@ -9,13 +9,13 @@ export const APP_VERSION = pkg.version; // e.g. "2.17.0"
  * Build date — update this whenever you bump the version.
  * Format: YYYY-MM-DD
  */
-export const BUILD_DATE = '2026-03-20';
+export const BUILD_DATE = '2026-03-24';
 
 /**
  * Short summary of what changed in this build.
  * Update together with APP_VERSION and BUILD_DATE.
  */
-export const BUILD_NOTES = 'Auto chart screenshots via Twelve Data + ECharts + Playwright';
+export const BUILD_NOTES = 'Prism Score: composite 0-100 performance gauge + 12-week trend; ECharts SSR chart renderer (no Playwright); chart end_date anchor; timezone-aware axis labels';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {

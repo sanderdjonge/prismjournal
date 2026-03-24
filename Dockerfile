@@ -60,6 +60,11 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Create storage directory for screenshots
 RUN mkdir -p /app/storage/screenshots && chown -R nextjs:nodejs /app/storage
 
+# ECharts is loaded via readFileSync (not a webpack import), so Next.js standalone
+# does not auto-include it. Copy it explicitly so chart rendering works at runtime.
+RUN mkdir -p /app/node_modules/echarts/dist
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/echarts/dist/echarts.min.js /app/node_modules/echarts/dist/echarts.min.js
+
 # Startup script that runs migrations then starts the app
 COPY --chown=nextjs:nodejs docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh

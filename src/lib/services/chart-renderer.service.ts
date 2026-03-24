@@ -1,13 +1,7 @@
-import { chromium } from 'playwright-core';
+import * as echarts from 'echarts';
+import type { EChartsOption } from 'echarts';
+import sharp from 'sharp';
 import logger from '@/lib/logger';
-import { readFileSync } from 'fs';
-import { join } from 'path';
-
-// Read once at module load — avoids CDN dependency in the headless page
-const ECHARTS_JS = readFileSync(
-    join(process.cwd(), 'node_modules/echarts/dist/echarts.min.js'),
-    'utf-8'
-);
 
 export interface ChartRenderOptions {
     /** Twelve Data formatted symbol, e.g. "EUR/USD" */
@@ -19,6 +13,10 @@ export interface ChartRenderOptions {
     takeProfit?: number | null;
     /** How many candles to show before entry (default 60) */
     barsOfContext: number;
+    /** IANA timezone for x-axis labels, e.g. "Europe/Amsterdam" */
+    timezone: string;
+    /** ISO datetime — fetch candles ending at this time (anchors chart to trade event) */
+    endDate?: string;
 }
 
 interface OhlcBar {
@@ -29,17 +27,25 @@ interface OhlcBar {
     close: string;
 }
 
-async function fetchOhlc(symbol: string, interval: string, outputsize: number): Promise<OhlcBar[]> {
+async function fetchOhlc(symbol: string, interval: string, outputsize: number, endDate?: string): Promise<OhlcBar[]> {
     const apiKey = process.env.TWELVE_DATA_API_KEY;
     if (!apiKey) throw new Error('TWELVE_DATA_API_KEY is not set');
 
-    const url =
+    let url =
         `https://api.twelvedata.com/time_series` +
         `?symbol=${encodeURIComponent(symbol)}` +
         `&interval=${interval}` +
         `&outputsize=${outputsize}` +
         `&order=ASC` +
+        `&timezone=UTC` +
         `&apikey=${apiKey}`;
+
+    if (endDate) {
+        // Format as YYYY-MM-DD HH:MM:SS (Twelve Data expects this format)
+        const d = new Date(endDate);
+        const formatted = d.toISOString().replace('T', ' ').slice(0, 19);
+        url += `&end_date=${encodeURIComponent(formatted)}`;
+    }
 
     const res = await fetch(url, { signal: AbortSignal.timeout(15_000) });
     if (!res.ok) throw new Error(`Twelve Data HTTP ${res.status}`);
@@ -53,8 +59,20 @@ async function fetchOhlc(symbol: string, interval: string, outputsize: number): 
     return data.values;
 }
 
-function buildChartOptionJson(bars: OhlcBar[], entryPrice: number, stopLoss?: number | null, takeProfit?: number | null): string {
-    const dates = bars.map(b => b.datetime);
+/** Convert a Twelve Data datetime string (UTC) to HH:mm in the given timezone. */
+function toTimeLabel(datetimeStr: string, timezone: string): string {
+    // Twelve Data returns "YYYY-MM-DD HH:MM:SS" — interpret as UTC
+    const utcDate = new Date(datetimeStr.replace(' ', 'T') + 'Z');
+    return utcDate.toLocaleTimeString('en-GB', {
+        timeZone: timezone,
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+    });
+}
+
+function buildChartOption(bars: OhlcBar[], entryPrice: number, timezone: string, stopLoss?: number | null, takeProfit?: number | null): EChartsOption {
+    const dates = bars.map(b => toTimeLabel(b.datetime, timezone));
     // ECharts candlestick: [open, close, low, high]
     const ohlcData = bars.map(b => [+b.open, +b.close, +b.low, +b.high]);
 
@@ -80,13 +98,13 @@ function buildChartOptionJson(bars: OhlcBar[], entryPrice: number, stopLoss?: nu
         });
     }
 
-    const option = {
+    return {
         backgroundColor: '#0d0d14',
         animation: false,
         grid: { left: 70, right: 130, top: 30, bottom: 50 },
         xAxis: {
             data: dates,
-            axisLabel: { color: '#6b7280', fontSize: 9, rotate: 30 },
+            axisLabel: { color: '#6b7280', fontSize: 9, rotate: 0 },
             axisLine: { lineStyle: { color: '#374151' } },
             splitLine: { lineStyle: { color: '#1f2937', type: 'dashed' } },
         },
@@ -112,59 +130,36 @@ function buildChartOptionJson(bars: OhlcBar[], entryPrice: number, stopLoss?: nu
             },
         }],
     };
-
-    return JSON.stringify(option);
 }
 
 export async function renderCandlestickChart(options: ChartRenderOptions): Promise<Buffer> {
-    const { symbol, interval, entryPrice, stopLoss, takeProfit, barsOfContext } = options;
+    const { symbol, interval, entryPrice, stopLoss, takeProfit, barsOfContext, timezone, endDate } = options;
 
     const outputsize = barsOfContext + 25;
-    const bars = await fetchOhlc(symbol, interval, outputsize);
+    const bars = await fetchOhlc(symbol, interval, outputsize, endDate);
+    const option = buildChartOption(bars, entryPrice, timezone, stopLoss, takeProfit);
 
-    const chartOptionJson = buildChartOptionJson(bars, entryPrice, stopLoss, takeProfit);
+    logger.info({ symbol, interval, barsOfContext }, 'Rendering chart via ECharts SSR');
 
-    const executablePath =
-        process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ?? '/usr/bin/chromium-browser';
-
-    logger.info({ symbol, interval, barsOfContext }, 'Launching headless browser for chart render');
-
-    const browser = await chromium.launch({
-        executablePath,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
+    // Server-side rendering — no browser required.
+    // ECharts 6 SSR renders to an SVG string entirely in Node.js.
+    // sharp converts the SVG to a PNG buffer using librsvg.
+    // This replaces the previous Playwright/Chromium approach which crashed
+    // in Alpine Docker when loading the 1.1 MB ECharts bundle.
+    const chart = echarts.init(null, null, {
+        renderer: 'svg',
+        ssr: true,
+        width: 1200,
+        height: 600,
     });
 
     try {
-        const page = await browser.newPage();
-        await page.setViewportSize({ width: 1200, height: 600 });
-
-        // Set base HTML structure without any scripts (avoids setContent choking on 1.1MB inline JS)
-        await page.setContent(`<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <style>* { margin: 0; padding: 0; } body { background: #0d0d14; }</style>
-</head>
-<body>
-  <div id="c" style="width:1200px;height:600px;"></div>
-</body>
-</html>`, { waitUntil: 'domcontentloaded' });
-
-        // Inject ECharts separately — more reliable than inlining in setContent
-        await page.addScriptTag({ content: ECHARTS_JS });
-
-        // Initialize and render synchronously via evaluate — no waitForFunction needed
-        await page.evaluate((optionJson) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const echartsAny = (window as any).echarts;
-            const chart = echartsAny.init(document.getElementById('c'), null, { renderer: 'canvas' });
-            chart.setOption(JSON.parse(optionJson));
-        }, chartOptionJson);
-
-        const buffer = await page.screenshot({ type: 'png' });
+        chart.setOption(option);
+        const svgString = chart.renderToSVGString();
+        const buffer = await sharp(Buffer.from(svgString)).png().toBuffer();
         logger.info({ symbol, interval }, 'Chart render complete');
-        return Buffer.from(buffer);
+        return buffer;
     } finally {
-        await browser.close();
+        chart.dispose();
     }
 }

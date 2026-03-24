@@ -29,6 +29,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: prism-dev-app
+    shm_size: '256m'
     depends_on:
       db:
         condition: service_healthy

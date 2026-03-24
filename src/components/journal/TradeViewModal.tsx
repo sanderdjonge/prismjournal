@@ -253,11 +253,7 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                                                 key={item.id}
                                                 className="relative aspect-square rounded-lg overflow-hidden bg-white/5 group cursor-pointer"
                                                 onClick={() => {
-                                                    const newWindow = window.open();
-                                                    if (newWindow) {
-                                                        newWindow.document.write(`<img src="${item.url}" style="max-width:100%;max-height:100vh;margin:auto;display:block;" />`);
-                                                        newWindow.document.close();
-                                                    }
+                                                    window.open(`${window.location.origin}${item.url}`, '_blank', 'noopener');
                                                 }}
                                             >
                                                 <img
