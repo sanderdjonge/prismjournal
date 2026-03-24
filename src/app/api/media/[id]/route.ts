@@ -4,7 +4,7 @@ import { deleteFile } from '@/lib/storage';
 import { withAuth } from '@/lib/api/withAuth';
 
 export const DELETE = withAuth(async (_req, ctx, session) => {
-    const { id } = (ctx as { params: { id: string } }).params;
+    const { id } = await (ctx as { params: Promise<{ id: string }> }).params;
 
     // Get media record with trade and account info
     const media = await prisma.media.findUnique({

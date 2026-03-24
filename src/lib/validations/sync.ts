@@ -38,6 +38,7 @@ export const syncTradeSchema = z.object({
   strategy: z.string().max(100, 'Strategy name too long').optional(),
   mood: moodEnum.optional().catch(undefined),
   planCompliance: planComplianceEnum.optional(),
+  closeReason: z.string().optional(),
 });
 
 /**

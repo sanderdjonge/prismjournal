@@ -5,6 +5,7 @@ import { Eye, Pencil } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import type { Trade, Column } from './types';
 import { calcRR } from '@/lib/tradeCalculations';
+import { CloseReasonBadge } from '../../ui/CloseReasonBadge';
 
 interface TradeRowProps {
     trade: Trade;
@@ -13,9 +14,10 @@ interface TradeRowProps {
     onEdit: (trade: Trade) => void;
     isSelected?: boolean;
     onToggleSelect?: (tradeId: string) => void;
+    timezone?: string;
 }
 
-export function TradeRow({ trade, columns, onView, onEdit, isSelected = false, onToggleSelect }: TradeRowProps) {
+export function TradeRow({ trade, columns, onView, onEdit, isSelected = false, onToggleSelect, timezone = 'Europe/Amsterdam' }: TradeRowProps) {
     const rr = calcRR(trade);
 
     return (
@@ -42,17 +44,17 @@ export function TradeRow({ trade, columns, onView, onEdit, isSelected = false, o
                     )}
                     {col.id === 'time' && (
                         <div className="text-xs text-gray-300">
-                            {trade.entryTime ? new Date(trade.entryTime).toLocaleDateString() : '—'}
+                            {trade.entryTime ? new Date(trade.entryTime).toLocaleDateString('en-GB', { timeZone: timezone, day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}
                             <div className="text-[10px] text-gray-600">
-                                {trade.entryTime ? new Date(trade.entryTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                                {trade.entryTime ? new Date(trade.entryTime).toLocaleTimeString('en-GB', { timeZone: timezone, hour: '2-digit', minute: '2-digit', hour12: false }) : ''}
                             </div>
                         </div>
                     )}
                     {col.id === 'exitTime' && (
                         <div className="text-xs text-gray-300">
-                            {trade.exitTime ? new Date(trade.exitTime).toLocaleDateString() : '—'}
+                            {trade.exitTime ? new Date(trade.exitTime).toLocaleDateString('en-GB', { timeZone: timezone, day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}
                             <div className="text-[10px] text-gray-600">
-                                {trade.exitTime ? new Date(trade.exitTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                                {trade.exitTime ? new Date(trade.exitTime).toLocaleTimeString('en-GB', { timeZone: timezone, hour: '2-digit', minute: '2-digit', hour12: false }) : ''}
                             </div>
                         </div>
                     )}
@@ -122,6 +124,14 @@ export function TradeRow({ trade, columns, onView, onEdit, isSelected = false, o
                         <span className="text-xs text-gray-400 truncate max-w-[120px] block">
                             {trade.accountName || '—'}
                         </span>
+                    )}
+                    {col.id === 'screenshots' && (
+                        <span className={`text-xs font-bold ${(trade.screenshotCount ?? 0) > 0 ? 'text-primary' : 'text-gray-600'}`}>
+                            {trade.screenshotCount ?? 0}
+                        </span>
+                    )}
+                    {col.id === 'closeReason' && (
+                        <CloseReasonBadge reason={trade.closeReason} />
                     )}
                     {col.id === 'actions' && (
                         <div className="flex gap-1">

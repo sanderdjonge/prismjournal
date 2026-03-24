@@ -14,7 +14,7 @@ import { useTrades, useDeleteTrade, TradeFilters } from '@/hooks/useTrades';
 import { useTags } from '@/hooks/useTags';
 import { useBulkOperations } from '@/hooks/useBulkOperations';
 import { useAccounts } from '@/hooks/useAccounts';
-import { Search, Plus, Zap, Calendar, ChevronLeft, ChevronRight, Download, Tag as TagIcon, Trash2, X, Wallet } from 'lucide-react';
+import { Search, Plus, Calendar, ChevronLeft, ChevronRight, Download, Tag as TagIcon, Trash2, X, Wallet } from 'lucide-react';
 
 export type JournalTrade = {
     id: string;
@@ -32,6 +32,7 @@ export type JournalTrade = {
     time: string;
     mood?: string | null;
     planCompliance?: string | null;
+    closeReason?: string | null;
     notes?: string | null;
     strategy?: string | null;
     entryTime?: string | null;
@@ -50,9 +51,14 @@ function JournalContent() {
     const [filterSide, setFilterSide] = useState<string>(searchParams.get('side') || 'ALL');
     const [filterResult, setFilterResult] = useState<string>(searchParams.get('result') || 'ALL');
     const [filterTag, setFilterTag] = useState<string>(searchParams.get('tag') || 'ALL');
+    const [filterCloseReason, setFilterCloseReason] = useState<string>(searchParams.get('closeReason') || 'ALL');
     const [dateFrom, setDateFrom] = useState(searchParams.get('from') || '');
     const [dateTo, setDateTo] = useState(searchParams.get('to') || '');
     const [page, setPage] = useState(parseInt(searchParams.get('page') || '1'));
+    const [limit, setLimit] = useState<number>(() => {
+        if (typeof window === 'undefined') return 25;
+        return parseInt(localStorage.getItem('journal:perPage') || '25');
+    });
 
     // Modal state
     const [selectedTrade, setSelectedTrade] = useState<JournalTrade | null>(null);
@@ -79,10 +85,12 @@ function JournalContent() {
         side: filterSide !== 'ALL' ? filterSide : undefined,
         result: filterResult !== 'ALL' ? filterResult : undefined,
         tag: filterTag !== 'ALL' ? filterTag : undefined,
+        closeReason: filterCloseReason !== 'ALL' ? filterCloseReason : undefined,
         from: dateFrom || undefined,
         to: dateTo || undefined,
         account: selectedAccountId || undefined,
         page,
+        limit,
     };
 
     // React Query hook for fetching trades
@@ -153,6 +161,13 @@ function JournalContent() {
         setPage(newPage);
         setIsAllSelected(false);
         updateUrlParams({ page: newPage.toString() });
+    };
+
+    const handleLimitChange = (newLimit: number) => {
+        setLimit(newLimit);
+        setPage(1);
+        localStorage.setItem('journal:perPage', String(newLimit));
+        updateUrlParams({ page: '1' });
     };
 
     const handleView = (trade: JournalTrade) => {
@@ -347,7 +362,7 @@ function JournalContent() {
                     </div>
 
                     <div className="glass-card flex items-center gap-1 border-white/5 bg-white/5 p-1">
-                        {['ALL', 'BUY', 'SELL'].map(type => (
+                        {['ALL', 'LONG', 'SHORT'].map(type => (
                             <button
                                 key={type}
                                 onClick={() => setFilterSide(type)}
@@ -375,6 +390,25 @@ function JournalContent() {
                                     }`}
                             >
                                 {type}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Close Reason Filter */}
+                    <div className="glass-card flex items-center gap-1 border-white/5 bg-white/5 p-1">
+                        {(['ALL', 'TP', 'SL', 'MANUAL'] as const).map(cr => (
+                            <button
+                                key={cr}
+                                onClick={() => setFilterCloseReason(cr)}
+                                className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${filterCloseReason === cr
+                                    ? cr === 'TP'     ? 'bg-emerald-500/20 text-emerald-400'
+                                    : cr === 'SL'     ? 'bg-red-500/20 text-red-400'
+                                    : cr === 'MANUAL' ? 'bg-white/10 text-gray-300'
+                                    : 'bg-white/10 text-white shadow-[0_0_15px_rgba(255,255,255,0.1)]'
+                                    : 'text-gray-600 hover:text-gray-400'
+                                }`}
+                            >
+                                {cr}
                             </button>
                         ))}
                     </div>
@@ -578,8 +612,22 @@ function JournalContent() {
                 </div>
 
                 {/* Pagination */}
-                {pagination.totalPages > 1 && (
-                    <div className="flex items-center justify-center gap-2">
+                {(pagination.totalPages > 1 || true) && (
+                    <div className="flex items-center justify-center gap-4">
+                        {/* Per-page selector */}
+                        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                            <span>Rows</span>
+                            {[10, 25, 50, 100].map(n => (
+                                <button
+                                    key={n}
+                                    onClick={() => handleLimitChange(n)}
+                                    className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest transition-all ${limit === n ? 'bg-white/15 text-white' : 'hover:bg-white/10 text-gray-500'}`}
+                                >
+                                    {n}
+                                </button>
+                            ))}
+                        </div>
+                        {pagination.totalPages > 1 && <>
                         <button
                             onClick={() => handlePageChange(pagination.page - 1)}
                             disabled={pagination.page === 1}
@@ -599,34 +647,13 @@ function JournalContent() {
                         >
                             <ChevronRight size={16} />
                         </button>
+                        </>}
+                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-2">
+                            {pagination.total > 0 ? `${pagination.total} trades` : ''}
+                        </span>
                     </div>
                 )}
 
-                {/* Status HUD */}
-                <div className="flex gap-8 px-6 py-4 glass-card border-white/5 bg-white/5 border-dashed">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-[#10b981]/10 flex items-center justify-center text-[#10b981]">
-                            <Zap size={18} />
-                        </div>
-                        <div>
-                            <p className="text-[10px] font-black uppercase text-gray-500 tracking-widest">Archive Sync</p>
-                            <p className="text-xs font-bold text-white uppercase">Operational</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-3 border-l border-white/5 pl-8">
-                        <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary">
-                            <Calendar size={18} />
-                        </div>
-                        <div>
-                            <p className="text-[10px] font-black uppercase text-gray-500 tracking-widest">Active Range</p>
-                            <p className="text-xs font-bold text-white uppercase">
-                                {pagination.total > 0
-                                    ? `${pagination.total} records`
-                                    : 'No records yet'}
-                            </p>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <TradeEntryModal

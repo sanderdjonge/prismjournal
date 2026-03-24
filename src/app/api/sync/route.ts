@@ -28,8 +28,18 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Invalid bridge key' }, { status: 401 });
     }
 
+    // Raw body log — helps diagnose silent validation rejections
+    let rawBody: unknown;
+    try {
+        rawBody = await request.clone().json();
+    } catch {
+        rawBody = '<invalid json>';
+    }
+    logger.info({ userId: user.id, rawBody }, '[sync] raw payload received');
+
     const validation = await validateBody(request, syncPayloadSchema);
     if (!validation.success) {
+        logger.warn({ userId: user.id, rawBody }, '[sync] validation failed');
         return validation.response;
     }
 

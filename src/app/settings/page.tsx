@@ -811,17 +811,30 @@ function SettingsContent() {
                                                         </div>
                                                     </div>
                                                     <div className="space-y-1">
-                                                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">Send at (UTC)</label>
+                                                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">Send at</label>
                                                         <select
                                                             value={notifs.digestSendHour}
                                                             onChange={(e) => setNotifs(prev => ({ ...prev, digestSendHour: parseInt(e.target.value) }))}
                                                             className="px-3 py-1.5 bg-black/40 border border-white/10 rounded-lg text-white text-xs outline-none focus:border-primary/50 transition-all"
                                                         >
-                                                            {Array.from({ length: 24 }, (_, h) => (
-                                                                <option key={h} value={h}>
-                                                                    {String(h).padStart(2, '0')}:00 UTC
-                                                                </option>
-                                                            ))}
+                                                            {Array.from({ length: 24 }, (_, utcHour) => {
+                                                                // Convert UTC hour to user's local time for display
+                                                                const d = new Date();
+                                                                d.setUTCHours(utcHour, 0, 0, 0);
+                                                                const localLabel = d.toLocaleTimeString('en-GB', {
+                                                                    timeZone: timezone,
+                                                                    hour: '2-digit',
+                                                                    minute: '2-digit',
+                                                                    hour12: false,
+                                                                });
+                                                                return { utcHour, localLabel };
+                                                            })
+                                                                .sort((a, b) => a.localLabel.localeCompare(b.localLabel))
+                                                                .map(({ utcHour, localLabel }) => (
+                                                                    <option key={utcHour} value={utcHour}>
+                                                                        {localLabel}
+                                                                    </option>
+                                                                ))}
                                                         </select>
                                                     </div>
                                                 </div>

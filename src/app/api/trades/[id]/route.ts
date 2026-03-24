@@ -19,13 +19,14 @@ export const GET = withAuth(async (_req, ctx, session) => {
 
     const media = await prisma.media.findMany({
         where: { tradeId: id },
-        select: { id: true, filename: true, timeframe: true },
+        select: { id: true, filename: true, timeframe: true, event: true },
     });
 
     const mediaWithUrls = media.map(m => ({
         id: m.id,
         url: `/api/media/${m.id}/file`,
         timeframe: m.timeframe,
+        event: m.event,
     }));
 
     return NextResponse.json({ media: mediaWithUrls });

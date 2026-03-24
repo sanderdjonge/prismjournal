@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { autoScreenshotConfigSchema } from './screenshot-config';
 
 /**
  * Trade platform enum for account creation
@@ -49,6 +50,8 @@ export const updateAccountSchema = z.object({
   allowNewsTrading: z.boolean().optional().nullable(),
   allowWeekendHolding: z.boolean().optional().nullable(),
   allowEA: z.boolean().optional().nullable(),
+  // Auto screenshot config
+  autoScreenshotConfig: autoScreenshotConfigSchema.optional().nullable(),
   // Prop firm rule overrides
   maxDailyLoss: z.number().min(0).max(100).optional().nullable(),
   maxTotalDrawdown: z.number().min(0).max(100).optional().nullable(),
