@@ -14,20 +14,6 @@ interface TradeSnapshot {
     exitTime?: string;    // ISO string — used as chart end_date anchor for CLOSE event
 }
 
-/** Maps Twelve Data interval strings to milliseconds. */
-function intervalToMs(interval: string): number {
-    const m = interval.match(/^(\d+)(min|h|day|week)$/);
-    if (!m) return 0;
-    const n = parseInt(m[1], 10);
-    switch (m[2]) {
-        case 'min':  return n * 60_000;
-        case 'h':    return n * 3_600_000;
-        case 'day':  return n * 86_400_000;
-        case 'week': return n * 604_800_000;
-        default:     return 0;
-    }
-}
-
 /**
  * Capture automatic chart screenshots for a trade on all configured timeframes.
  *
@@ -75,12 +61,11 @@ export async function captureAutoScreenshots(
 
     const normalisedSymbol = normaliseSymbol(trade.symbol);
 
-    // Anchor the chart end to the trade event time.
-    // For OPEN: use entryTime so the chart ends at (or just after) the entry candle.
-    // For CLOSE: use exitTime so the chart ends at (or just after) the exit candle.
-    // We add a small 1-bar buffer (computed per-timeframe) so the event candle itself
-    // is fully formed and visible as the last bar. No long in-process wait needed.
-    const baseTime = event === 'CLOSE' ? (trade.exitTime ?? trade.entryTime) : trade.entryTime;
+    // No end_date — Twelve Data returns the most recent N candles up to right now.
+    // This matches what the trader sees on TradingView at the moment of the trade event.
+    // For OPEN: shows the chart state at the moment the trade was placed.
+    // For CLOSE: shows the chart state at the moment the trade was closed.
+    // Captures happen immediately; no waiting for bars to form.
 
     for (const tf of timeframes) {
         const interval = mapTimeframe(tf);
@@ -88,14 +73,6 @@ export async function captureAutoScreenshots(
             logger.warn({ tf }, '[auto-screenshot] Unknown timeframe, skipping');
             continue;
         }
-
-        // endDate = event time + 1 bar, capped at now+30s so we never request the future.
-        // This shows the event candle as the last bar on the chart.
-        const oneCandleMs = intervalToMs(interval);
-        const rawEndMs = baseTime
-            ? new Date(baseTime).getTime() + oneCandleMs
-            : Date.now();
-        const endDate = new Date(Math.min(rawEndMs, Date.now() + 30_000)).toISOString();
 
         try {
             const pngBuffer = await renderCandlestickChart({
@@ -106,7 +83,6 @@ export async function captureAutoScreenshots(
                 takeProfit: trade.takeProfit,
                 barsOfContext: config.barsOfContext,
                 timezone,
-                endDate,
             });
 
             const filename = generateFilename('chart.png');
