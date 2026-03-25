@@ -8,6 +8,7 @@ vi.mock('next-auth', () => ({
     signIn: vi.fn(),
     signOut: vi.fn(),
   })),
+  CredentialsSignin: class CredentialsSignin extends Error {},
 }));
 
 // Mock prisma to avoid DB connection
