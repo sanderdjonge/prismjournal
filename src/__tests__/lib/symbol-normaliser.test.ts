@@ -26,10 +26,10 @@ describe('normaliseSymbol', () => {
     expect(normaliseSymbol('BTCUSD')).toBe('BTC/USD');
   });
 
-  it('passes through index symbols unchanged', () => {
-    expect(normaliseSymbol('US30')).toBe('US30');
-    expect(normaliseSymbol('NAS100')).toBe('NAS100');
-    expect(normaliseSymbol('DE40')).toBe('DE40');
+  it('maps index symbols to Twelve Data equivalents where configured', () => {
+    expect(normaliseSymbol('US30')).toBe('DJI');
+    expect(normaliseSymbol('NAS100')).toBe('NDX');
+    expect(normaliseSymbol('DE40')).toBe('DE40'); // not in map, passes through
   });
 
   it('handles already-slashed symbol', () => {
