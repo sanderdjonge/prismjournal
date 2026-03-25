@@ -232,7 +232,6 @@ describe('handlePnlCommand', () => {
 
       await handlePnlCommand('12345', 'all');
       const allCall = mockFindMany.mock.calls[0][0] as { where: { exitTime?: object } };
-      // Should have lte but NOT gte for 'all'
       const exitTimeFilter = allCall?.where?.exitTime as Record<string, unknown> | undefined;
       expect(exitTimeFilter).toBeDefined();
       expect(exitTimeFilter?.gte).toBeUndefined();
@@ -242,10 +241,26 @@ describe('handlePnlCommand', () => {
       mockFindFirst.mockResolvedValue(makeConfig());
       mockFindMany.mockResolvedValue([]);
 
+      const before = new Date();
       await handlePnlCommand('12345', 'today');
+      const after = new Date();
       const todayCall = mockFindMany.mock.calls[0][0] as { where: { exitTime?: object } };
       const todayFilter = todayCall?.where?.exitTime as Record<string, unknown> | undefined;
       expect(todayFilter?.gte).toBeInstanceOf(Date);
+
+      // Verify the 'today' start is midnight UTC of the current day
+      const gteDate = todayFilter?.gte as Date;
+      const expectedMidnight = new Date(Date.UTC(
+        before.getUTCFullYear(),
+        before.getUTCMonth(),
+        before.getUTCDate()
+      ));
+      expect(gteDate.getTime()).toBe(expectedMidnight.getTime());
+
+      // Verify lte is close to now (within 1 second)
+      const lteDate = todayFilter?.lte as Date;
+      expect(lteDate.getTime()).toBeGreaterThanOrEqual(before.getTime());
+      expect(lteDate.getTime()).toBeLessThanOrEqual(after.getTime() + 1000);
     });
   });
 });

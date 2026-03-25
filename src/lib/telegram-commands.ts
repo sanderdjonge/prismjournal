@@ -9,9 +9,8 @@ const PERIOD_LABELS: Record<PnlPeriod, string> = {
   all: 'All Time',
 };
 
-function getPeriodStart(period: PnlPeriod): Date | null {
+function getPeriodStart(period: PnlPeriod, now: Date): Date | null {
   if (period === 'all') return null;
-  const now = new Date();
   const y = now.getUTCFullYear();
   const m = now.getUTCMonth();
   const d = now.getUTCDate();
@@ -101,8 +100,8 @@ export async function handlePnlCommand(chatId: string, period: PnlPeriod): Promi
 
     const accounts = config.user.accounts;
     const accountIds = accounts.map(a => a.id);
-    const periodStart = getPeriodStart(period);
     const now = new Date();
+    const periodStart = getPeriodStart(period, now);
 
     const exitTimeFilter: { not: null; lte: Date; gte?: Date } = {
       not: null,
