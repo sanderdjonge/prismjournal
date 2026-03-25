@@ -1,6 +1,15 @@
 import prisma from './prisma';
 
-export type PnlPeriod = 'today' | 'week' | 'month' | 'all';
+export const PNL_PERIODS = ['today', 'week', 'month', 'all'] as const;
+export type PnlPeriod = typeof PNL_PERIODS[number];
+
+export const PNL_HELP =
+    `📊 <b>PrismJournal PnL</b>\n\n` +
+    `Usage:\n` +
+    `  /pnl today\n` +
+    `  /pnl week\n` +
+    `  /pnl month\n` +
+    `  /pnl all`;
 
 const PERIOD_LABELS: Record<PnlPeriod, string> = {
   today: 'Today',

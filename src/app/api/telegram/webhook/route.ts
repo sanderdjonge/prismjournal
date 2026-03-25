@@ -1,18 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendTelegramMessage } from '@/lib/telegram';
-import { handlePnlCommand, PnlPeriod } from '@/lib/telegram-commands';
+import { handlePnlCommand, PnlPeriod, PNL_PERIODS, PNL_HELP } from '@/lib/telegram-commands';
 
 const WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET;
-
-const VALID_PERIODS = new Set<PnlPeriod>(['today', 'week', 'month', 'all']);
-
-const PNL_HELP =
-    `📊 <b>PrismJournal PnL</b>\n\n` +
-    `Usage:\n` +
-    `  /pnl today\n` +
-    `  /pnl week\n` +
-    `  /pnl month\n` +
-    `  /pnl all`;
 
 export async function POST(request: NextRequest) {
     if (!process.env.TELEGRAM_BOT_TOKEN) return NextResponse.json({ ok: false });
@@ -29,7 +19,7 @@ export async function POST(request: NextRequest) {
 
     // Telegram delivers chat.id as a JSON integer — coerce to string to match AlertConfig.telegramId
     const chatId = String(message.chat.id);
-    const text = (message.text as string).trim();
+    const text = String(message.text).trim();
 
     if (text === '/start') {
         const reply =
@@ -47,7 +37,7 @@ export async function POST(request: NextRequest) {
         const parts = text.split(/\s+/);
         const periodArg = parts[1]?.toLowerCase();
 
-        if (!periodArg || !VALID_PERIODS.has(periodArg as PnlPeriod)) {
+        if (!periodArg || !(PNL_PERIODS as readonly string[]).includes(periodArg)) {
             await sendTelegramMessage(chatId, PNL_HELP);
             return NextResponse.json({ ok: true });
         }
