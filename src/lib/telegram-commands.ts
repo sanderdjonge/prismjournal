@@ -64,7 +64,7 @@ function computeSummary(trades: TradeLike[], accountId?: string): AccountSummary
 }
 
 function formatProfitFactor(s: AccountSummary): string {
-  if (s.grossLosses === 0) return s.grossProfits > 0 ? '∞' : 'N/A';
+  if (s.grossLosses === 0) return '∞';
   return (s.grossProfits / s.grossLosses).toFixed(2);
 }
 
@@ -163,6 +163,9 @@ export async function handlePnlCommand(chatId: string, period: PnlPeriod): Promi
       }
     }
 
+    if (body.length > MAX_TELEGRAM_LEN) {
+      body = body.slice(0, MAX_TELEGRAM_LEN - 1) + '…';
+    }
     return body;
   } catch (e) {
     console.error('[telegram-commands] handlePnlCommand error:', e);
