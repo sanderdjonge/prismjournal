@@ -203,6 +203,28 @@ describe('handlePnlCommand', () => {
     });
   });
 
+  describe('message truncation', () => {
+    it('truncates message to 4096 characters and appends … when output is too long', async () => {
+      // Create many accounts with long names to force the message over 4096 chars
+      const manyAccounts = Array.from({ length: 60 }, (_, i) => ({
+        id: `acc-${i}`,
+        name: `A Very Long Account Name That Takes Up Space Number ${i}`,
+        currency: 'EUR',
+      }));
+      mockFindFirst.mockResolvedValue({
+        telegramId: '12345',
+        userId: 'user-1',
+        user: { accounts: manyAccounts },
+      });
+      mockFindMany.mockResolvedValue(
+        manyAccounts.map(a => ({ pnl: 100, rMultiple: 1, accountId: a.id }))
+      );
+      const result = await handlePnlCommand('12345', 'all');
+      expect(result.length).toBeLessThanOrEqual(4096);
+      expect(result.endsWith('…')).toBe(true);
+    });
+  });
+
   describe('period query filters', () => {
     it('passes gte filter for non-all periods and no gte for all', async () => {
       mockFindFirst.mockResolvedValue(makeConfig());
