@@ -120,6 +120,7 @@ function apiTradeToRaw(t: ApiTrade): RawTrade {
         symbol: t.symbol,
         direction: t.type,
         entryPrice: t.entry,
+        // API represents open trades as exit=0 (not null); coerce to null so filter logic works correctly
         exitPrice: t.exit === 0 ? null : t.exit,
         stopLoss: t.stopLoss,
         takeProfit: t.takeProfit,
