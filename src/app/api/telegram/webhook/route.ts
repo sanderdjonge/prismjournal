@@ -1,10 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { sendTelegramMessage } from '@/lib/telegram';
+import { handlePnlCommand, PnlPeriod } from '@/lib/telegram-commands';
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET;
 
+const VALID_PERIODS = new Set<PnlPeriod>(['today', 'week', 'month', 'all']);
+
+const PNL_HELP =
+    `📊 <b>PrismJournal PnL</b>\n\n` +
+    `Usage:\n` +
+    `  /pnl today\n` +
+    `  /pnl week\n` +
+    `  /pnl month\n` +
+    `  /pnl all`;
+
 export async function POST(request: NextRequest) {
-    if (!BOT_TOKEN) return NextResponse.json({ ok: false });
+    if (!process.env.TELEGRAM_BOT_TOKEN) return NextResponse.json({ ok: false });
 
     // Fail-closed: require the webhook secret to be configured and to match.
     const secretHeader = request.headers.get('x-telegram-bot-api-secret-token');
@@ -16,8 +27,9 @@ export async function POST(request: NextRequest) {
     const message = update?.message;
     if (!message?.text) return NextResponse.json({ ok: true });
 
-    const chatId = message.chat.id;
-    const text = message.text.trim();
+    // Telegram delivers chat.id as a JSON integer — coerce to string to match AlertConfig.telegramId
+    const chatId = String(message.chat.id);
+    const text = (message.text as string).trim();
 
     if (text === '/start') {
         const reply =
@@ -27,12 +39,22 @@ export async function POST(request: NextRequest) {
             `Copy this ID and paste it in your PrismJournal settings:\n` +
             `Settings → Notifications → Telegram Chat ID\n\n` +
             `Once connected, you'll receive trade alerts here.`;
+        await sendTelegramMessage(chatId, reply);
+        return NextResponse.json({ ok: true });
+    }
 
-        await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat_id: chatId, text: reply, parse_mode: 'HTML' }),
-        });
+    if (text.startsWith('/pnl')) {
+        const parts = text.split(/\s+/);
+        const periodArg = parts[1]?.toLowerCase();
+
+        if (!periodArg || !VALID_PERIODS.has(periodArg as PnlPeriod)) {
+            await sendTelegramMessage(chatId, PNL_HELP);
+            return NextResponse.json({ ok: true });
+        }
+
+        const reply = await handlePnlCommand(chatId, periodArg as PnlPeriod);
+        await sendTelegramMessage(chatId, reply);
+        return NextResponse.json({ ok: true });
     }
 
     return NextResponse.json({ ok: true });
