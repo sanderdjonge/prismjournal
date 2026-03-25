@@ -73,4 +73,10 @@ describe('mapToQuadrantTrade', () => {
         const result = mapToQuadrantTrade({ ...rawTrade, exitPrice: null });
         expect(result.exitDistFromEntry).toBeNull();
     });
+
+    it('maps a SHORT trade with correct exitDistFromEntry', () => {
+        const shortTrade = { ...rawTrade, direction: 'SHORT', entryPrice: 1.1050, exitPrice: 1.1000 };
+        const result = mapToQuadrantTrade(shortTrade);
+        expect(result.exitDistFromEntry).toBeCloseTo(0.005, 5);
+    });
 });
