@@ -15,7 +15,7 @@ export const BUILD_DATE = '2026-03-25';
  * Short summary of what changed in this build.
  * Update together with APP_VERSION and BUILD_DATE.
  */
-export const BUILD_NOTES = 'Telegram /pnl command — period-based PnL overview (today/week/month/all) with net PnL, win rate, profit factor, avg RR, and per-account breakdown';
+export const BUILD_NOTES = 'Phase 17 Gap 2c — Exit Quality Quadrant plot replaces scatter; click-to-modal trade drill-down from analytics';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {
