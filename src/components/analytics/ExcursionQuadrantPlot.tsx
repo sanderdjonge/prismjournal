@@ -61,8 +61,8 @@ const ML = 64;   // margin left
 const MR = 32;   // margin right
 const MT = 44;   // margin top
 const MB = 52;   // margin bottom
-const VW = 800;  // SVG viewBox width
-const VH = 420;  // SVG viewBox height
+const VW = 1000; // SVG viewBox width (wider for full-width display)
+const VH = 300;  // SVG viewBox height (reduced for compact display)
 const CW = VW - ML - MR;
 const CH = VH - MT - MB;
 
@@ -108,8 +108,9 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
 
     const scaleX = (mae: number) => ML + (mae / maxMae) * CW;
     const scaleY = (eff: number) => MT + CH - (eff / 100) * CH;
-    const midX = scaleX(medianMae);
-    const midY = scaleY(50);
+    // Fixed midpoint at 50% for equal-sized quadrants
+    const midX = ML + CW / 2;
+    const midY = MT + CH / 2;
 
     // Enrich trades with zone + efficiency
     type PlotTrade = QuadrantTrade & { eff: number; zone: ZoneKey };
@@ -162,25 +163,12 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
 
                 {/* Chart */}
                 <div className="relative">
-                    <svg viewBox={`0 0 ${VW} ${VH}`} className="w-full" style={{ height: 380 }}>
-                        {/* Zone backgrounds */}
-                        <rect x={ML} y={MT} width={midX - ML} height={midY - MT} fill="rgba(251,146,60,0.06)" />
-                        <rect x={midX} y={MT} width={ML + CW - midX} height={midY - MT} fill="rgba(74,222,128,0.06)" />
-                        <rect x={ML} y={midY} width={midX - ML} height={MT + CH - midY} fill="rgba(248,113,113,0.06)" />
-                        <rect x={midX} y={midY} width={ML + CW - midX} height={MT + CH - midY} fill="rgba(250,204,21,0.045)" />
-
-                        {/* Zone labels */}
-                        {([
-                            ['SURVIVED', ML + 8, MT + 16, 'rgba(251,146,60,0.6)', 'rough entry, made it work'],
-                            ['CLEAN',    midX + 8, MT + 16, 'rgba(74,222,128,0.6)', 'clean entry, good exit'],
-                            ['PAINFUL',  ML + 8, MT + CH - 6, 'rgba(248,113,113,0.6)', 'rough entry + poor exit'],
-                            ['EARLY OUT',midX + 8, MT + CH - 6, 'rgba(250,204,21,0.6)', 'left profit on the table'],
-                        ] as const).map(([name, x, y, color, sub]) => (
-                            <g key={name}>
-                                <text x={x} y={y} fill={color} fontSize={10} fontWeight={900} fontFamily="sans-serif" letterSpacing={1.5}>{name}</text>
-                                <text x={x} y={y + 13} fill="rgba(255,255,255,0.12)" fontSize={8} fontFamily="sans-serif">{sub}</text>
-                            </g>
-                        ))}
+                    <svg viewBox={`0 0 ${VW} ${VH}`} className="w-full h-auto" preserveAspectRatio="xMidYMid meet" style={{ minHeight: 240 }}>
+                        {/* Zone backgrounds - equal quadrants */}
+                        <rect x={ML} y={MT} width={CW / 2} height={CH / 2} fill="rgba(251,146,60,0.06)" />
+                        <rect x={midX} y={MT} width={CW / 2} height={CH / 2} fill="rgba(74,222,128,0.06)" />
+                        <rect x={ML} y={midY} width={CW / 2} height={CH / 2} fill="rgba(248,113,113,0.06)" />
+                        <rect x={midX} y={midY} width={CW / 2} height={CH / 2} fill="rgba(250,204,21,0.045)" />
 
                         {/* Grid lines */}
                         {[0, 25, 50, 75, 100].map(v => (
@@ -206,7 +194,20 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                         <text x={ML + CW / 2} y={VH - 4} fill="#6b7280" fontSize={9} textAnchor="middle" fontFamily="sans-serif" fontWeight={900} letterSpacing={1.5}>MAX ADVERSE EXCURSION (pts) →</text>
                         <text x={12} y={MT + CH / 2} fill="#6b7280" fontSize={9} textAnchor="middle" fontFamily="sans-serif" fontWeight={900} letterSpacing={1.5} transform={`rotate(-90, 12, ${MT + CH / 2})`}>↑ EXIT EFFICIENCY %</text>
 
-                        {/* Dots */}
+                        {/* Zone labels - centered in each quadrant, rendered BEFORE dots */}
+                        {([
+                            ['SURVIVED', ML + CW * 0.25, MT + CH * 0.25, 'rgba(251,146,60,0.5)', 'rough entry, made it work'],
+                            ['CLEAN',    ML + CW * 0.75, MT + CH * 0.25, 'rgba(74,222,128,0.5)', 'clean entry, good exit'],
+                            ['PAINFUL',  ML + CW * 0.25, MT + CH * 0.75, 'rgba(248,113,113,0.5)', 'rough entry + poor exit'],
+                            ['EARLY OUT',ML + CW * 0.75, MT + CH * 0.75, 'rgba(250,204,21,0.5)', 'left profit on the table'],
+                        ] as const).map(([name, x, y, color, sub]) => (
+                            <g key={name} style={{ pointerEvents: 'none' }}>
+                                <text x={x} y={y - 6} fill={color} fontSize={11} fontWeight={900} fontFamily="sans-serif" letterSpacing={2} textAnchor="middle">{name}</text>
+                                <text x={x} y={y + 8} fill="rgba(255,255,255,0.25)" fontSize={8} fontFamily="sans-serif" textAnchor="middle">{sub}</text>
+                            </g>
+                        ))}
+
+                        {/* Dots - rendered AFTER labels so dots appear on top and are hoverable */}
                         {enriched.map(t => {
                             const cx = scaleX(t.mae!);
                             const cy = scaleY(t.eff);
@@ -216,11 +217,11 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                                 <circle
                                     key={t.id}
                                     cx={cx} cy={cy}
-                                    r={isHovered ? 10 : 7}
+                                    r={isHovered ? 6 : 4}
                                     fill={isWin ? '#4ade80' : '#f87171'}
                                     fillOpacity={isHovered ? 1 : 0.8}
                                     stroke={isWin ? '#86efac' : '#fca5a5'}
-                                    strokeWidth={1.5}
+                                    strokeWidth={1}
                                     style={{ cursor: 'pointer', transition: 'r 0.1s' }}
                                     onMouseEnter={() => setHoveredId(t.id)}
                                     onMouseLeave={() => setHoveredId(null)}

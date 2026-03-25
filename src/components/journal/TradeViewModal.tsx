@@ -8,6 +8,7 @@ import type { JournalTrade } from '@/app/journal/page';
 import { MOOD_CONFIG } from '@/constants/tradeConfig';
 import { Lightbox } from './trade-analysis';
 import { CloseReasonBadge } from '@/components/ui/CloseReasonBadge';
+import { ExcursionBar } from '@/components/journal/ExcursionBar';
 
 interface TradeViewModalProps {
     trade: JournalTrade | null;
@@ -28,6 +29,17 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
     const [media, setMedia] = useState<MediaItem[]>([]);
     const [loadingMedia, setLoadingMedia] = useState(false);
     const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+
+    // Prevent body scroll when modal is open
+    useEffect(() => {
+        if (isOpen) {
+            const originalOverflow = document.body.style.overflow;
+            document.body.style.overflow = 'hidden';
+            return () => {
+                document.body.style.overflow = originalOverflow;
+            };
+        }
+    }, [isOpen]);
 
     // Fetch media when modal opens
     useEffect(() => {
@@ -189,6 +201,26 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Exit Efficiency */}
+                            {isClosed && (
+                                <div className="space-y-1.5">
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1">Exit Efficiency</label>
+                                    <div className="bg-white/[0.03] border border-white/5 rounded-xl p-3">
+                                        <ExcursionBar
+                                            mae={trade.mae}
+                                            mfe={trade.mfe}
+                                            exitDistFromEntry={
+                                                trade.exit && trade.entry
+                                                    ? trade.type === 'LONG'
+                                                        ? trade.exit - trade.entry
+                                                        : trade.entry - trade.exit
+                                                    : null
+                                            }
+                                        />
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Strategy, Compliance, Mood, Notes */}
                             <div className="pt-4 border-t border-white/5 grid grid-cols-2 gap-6">
