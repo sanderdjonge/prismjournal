@@ -67,18 +67,6 @@ const CW = VW - ML - MR;
 const CH = VH - MT - MB;
 
 // ---------------------------------------------------------------------------
-// Tooltip row helper
-// ---------------------------------------------------------------------------
-function Row({ label, value, color = 'text-white' }: { label: string; value: string; color?: string }) {
-    return (
-        <div className="flex items-center justify-between gap-4 mb-1">
-            <span className="text-[9px] font-black uppercase tracking-widest text-gray-500">{label}</span>
-            <span className={`text-[11px] font-bold ${color}`}>{value}</span>
-        </div>
-    );
-}
-
-// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
@@ -182,7 +170,8 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                         <rect x={midX} y={midY} width={ML + CW - midX} height={MT + CH - midY} fill="rgba(250,204,21,0.045)" />
 
                         {/* Zone labels */}
-                        {([ ['SURVIVED', ML + 8, MT + 16, 'rgba(251,146,60,0.6)', 'rough entry, made it work'],
+                        {([
+                            ['SURVIVED', ML + 8, MT + 16, 'rgba(251,146,60,0.6)', 'rough entry, made it work'],
                             ['CLEAN',    midX + 8, MT + 16, 'rgba(74,222,128,0.6)', 'clean entry, good exit'],
                             ['PAINFUL',  ML + 8, MT + CH - 6, 'rgba(248,113,113,0.6)', 'rough entry + poor exit'],
                             ['EARLY OUT',midX + 8, MT + CH - 6, 'rgba(250,204,21,0.6)', 'left profit on the table'],
@@ -310,5 +299,17 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                 </div>
             </div>
         </>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Tooltip row helper
+// ---------------------------------------------------------------------------
+function Row({ label, value, color = 'text-white' }: { label: string; value: string; color?: string }) {
+    return (
+        <div className="flex items-center justify-between gap-4 mb-1">
+            <span className="text-[9px] font-black uppercase tracking-widest text-gray-500">{label}</span>
+            <span className={`text-[11px] font-bold ${color}`}>{value}</span>
+        </div>
     );
 }
