@@ -102,14 +102,55 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
     ), [trades, excludedTagIds]);
 
     if (plotTrades.length < 2) {
+        const allFiltered = trades.some(t =>
+            t.mae != null && t.mae > 0 && t.mfe != null && t.mfe > 0 && t.exitDistFromEntry != null
+        );
         return (
             <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
                 <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500 mb-4">
                     Exit Quality Analysis
                 </h3>
+                {availableTags.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-2 mb-4 pb-4 border-b border-white/5">
+                        <div className="flex items-center gap-1.5 mr-1">
+                            <Filter size={11} className="text-gray-600" />
+                            <span className="text-[9px] font-black uppercase tracking-widest text-gray-600">Exclude</span>
+                        </div>
+                        {availableTags.map(tag => {
+                            const isExcluded = excludedTagIds.includes(tag.id);
+                            return (
+                                <button
+                                    key={tag.id}
+                                    onClick={() => setExcludedTagIds(prev =>
+                                        isExcluded ? prev.filter(id => id !== tag.id) : [...prev, tag.id]
+                                    )}
+                                    className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-widest transition-all border ${
+                                        isExcluded
+                                            ? 'bg-red-500/20 border-red-500/40 text-red-400'
+                                            : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
+                                    }`}
+                                    style={!isExcluded && tag.color ? { borderColor: tag.color + '40', color: tag.color } : {}}
+                                >
+                                    {isExcluded && <X size={9} className="inline mr-1" />}
+                                    {tag.name}
+                                </button>
+                            );
+                        })}
+                        {excludedTagIds.length > 0 && (
+                            <button
+                                onClick={() => setExcludedTagIds([])}
+                                className="text-[9px] text-gray-500 hover:text-white font-bold uppercase tracking-widest transition-colors ml-1"
+                            >
+                                Clear
+                            </button>
+                        )}
+                    </div>
+                )}
                 <div className="flex items-center justify-center h-48 text-gray-700 text-[10px] font-black uppercase tracking-widest text-center px-8">
-                    Sync trades with the updated EA to populate this chart —<br />
-                    MAE / MFE data needed for at least 2 closed trades
+                    {allFiltered
+                        ? <>All trades hidden by tag filter —<br />remove an excluded tag to show data</>
+                        : <>Sync trades with the updated EA to populate this chart —<br />MAE / MFE data needed for at least 2 closed trades</>
+                    }
                 </div>
             </div>
         );
