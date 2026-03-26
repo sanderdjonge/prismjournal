@@ -62,8 +62,8 @@ const ML = 64;   // margin left
 const MR = 32;   // margin right
 const MT = 44;   // margin top
 const MB = 52;   // margin bottom
-const VW = 1000; // SVG viewBox width (wider for full-width display)
-const VH = 300;  // SVG viewBox height (reduced for compact display)
+const VW = 1000; // SVG viewBox width
+const VH = 240;  // SVG viewBox height
 const CW = VW - ML - MR;
 const CH = VH - MT - MB;
 
@@ -106,7 +106,7 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
             t.mae != null && t.mae > 0 && t.mfe != null && t.mfe > 0 && t.exitDistFromEntry != null
         );
         return (
-            <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
+            <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-4">
                 <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500 mb-4">
                     Exit Quality Analysis
                 </h3>
@@ -192,7 +192,7 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                 onEdit={() => { setModalOpen(false); router.push('/journal'); }}
             />
 
-            <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
+            <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-4">
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                     <div>
@@ -255,7 +255,7 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
 
                 {/* Chart */}
                 <div className="relative">
-                    <svg viewBox={`0 0 ${VW} ${VH}`} className="w-full h-auto" preserveAspectRatio="xMidYMid meet" style={{ minHeight: 240 }}>
+                    <svg viewBox={`0 0 ${VW} ${VH}`} className="w-full h-auto" preserveAspectRatio="xMidYMid meet">
                         {/* Zone backgrounds — equal quadrants */}
                         <rect x={ML}   y={MT}   width={CW / 2} height={CH / 2} fill="rgba(251,146,60,0.06)" />
                         <rect x={midX} y={MT}   width={CW / 2} height={CH / 2} fill="rgba(74,222,128,0.06)" />
@@ -283,8 +283,8 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                         })}
 
                         {/* Axis labels */}
-                        <text x={ML + CW / 2} y={VH - 4} fill="#6b7280" fontSize={9} textAnchor="middle" fontFamily="sans-serif" fontWeight={900} letterSpacing={1.5}>MAX ADVERSE EXCURSION (pts) →</text>
-                        <text x={12} y={MT + CH / 2} fill="#6b7280" fontSize={9} textAnchor="middle" fontFamily="sans-serif" fontWeight={900} letterSpacing={1.5} transform={`rotate(-90, 12, ${MT + CH / 2})`}>↑ EXIT EFFICIENCY %</text>
+                        <text x={ML + CW / 2} y={VH - 4} fill="#6b7280" fontSize={7} textAnchor="middle" fontFamily="sans-serif" fontWeight={900} letterSpacing={1.5}>MAX ADVERSE EXCURSION (pts) →</text>
+                        <text x={12} y={MT + CH / 2} fill="#6b7280" fontSize={7} textAnchor="middle" fontFamily="sans-serif" fontWeight={900} letterSpacing={1.5} transform={`rotate(-90, 12, ${MT + CH / 2})`}>↑ EXIT EFFICIENCY %</text>
 
                         {/* Zone labels — centered in equal quadrants */}
                         {([
@@ -294,8 +294,8 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                             ['EARLY OUT', ML + CW * 0.75, MT + CH * 0.75, 'rgba(250,204,21,0.5)',  'left profit on the table'],
                         ] as const).map(([name, x, y, color, sub]) => (
                             <g key={name} style={{ pointerEvents: 'none' }}>
-                                <text x={x} y={y - 6} fill={color} fontSize={11} fontWeight={900} fontFamily="sans-serif" letterSpacing={2} textAnchor="middle">{name}</text>
-                                <text x={x} y={y + 8} fill="rgba(255,255,255,0.25)" fontSize={8} fontFamily="sans-serif" textAnchor="middle">{sub}</text>
+                                <text x={x} y={y - 4} fill={color} fontSize={8} fontWeight={900} fontFamily="sans-serif" letterSpacing={2} textAnchor="middle">{name}</text>
+                                <text x={x} y={y + 7} fill="rgba(255,255,255,0.20)" fontSize={7} fontFamily="sans-serif" textAnchor="middle">{sub}</text>
                             </g>
                         ))}
 
@@ -309,7 +309,7 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                                 <circle
                                     key={t.id}
                                     cx={cx} cy={cy}
-                                    r={isHovered ? 6 : 4}
+                                    r={isHovered ? 5 : 3}
                                     fill={isWin ? '#4ade80' : '#f87171'}
                                     fillOpacity={isHovered ? 1 : 0.8}
                                     stroke={isWin ? '#86efac' : '#fca5a5'}
@@ -377,7 +377,7 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                 </div>
 
                 {/* Zone summary badges */}
-                <div className="grid grid-cols-4 gap-2.5 mt-5">
+                <div className="grid grid-cols-4 gap-2 mt-3">
                     {(Object.entries(ZONE_CONFIG) as [ZoneKey, typeof ZONE_CONFIG[ZoneKey]][]).map(([key, z]) => (
                         <div
                             key={key}
@@ -385,7 +385,7 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                             style={{ background: z.bgFill, borderColor: z.color + '33' }}
                         >
                             <p className="text-[8px] font-black uppercase tracking-widest mb-1" style={{ color: z.color }}>{z.label}</p>
-                            <p className="text-xl font-black" style={{ color: z.color }}>{zoneCounts[key]}</p>
+                            <p className="text-base font-black" style={{ color: z.color }}>{zoneCounts[key]}</p>
                             <p className="text-[9px] text-white/30 font-medium mt-0.5 leading-tight">{z.desc}</p>
                         </div>
                     ))}
