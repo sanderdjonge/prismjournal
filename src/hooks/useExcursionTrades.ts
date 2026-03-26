@@ -155,7 +155,6 @@ interface UseExcursionTradesParams {
     to?: string;
     account?: string | null;
     limit?: number;
-    excludeTagIds?: string[];  // Tag IDs to exclude from the results
 }
 
 async function fetchExcursionTrades(params: UseExcursionTradesParams): Promise<QuadrantTrade[]> {
@@ -176,17 +175,14 @@ async function fetchExcursionTrades(params: UseExcursionTradesParams): Promise<Q
         { trades: ApiTrade[] }, { trades: ApiTrade[] }
     ];
 
-    const excludeTagIds = params.excludeTagIds ?? [];
-    
     return [...(wins.trades ?? []), ...(losses.trades ?? [])]
         .filter(t => t.mae != null && t.mae > 0 && t.mfe != null && t.mfe > 0)
-        .filter(t => !t.tags?.some(tag => excludeTagIds.includes(tag.id)))
         .map(t => mapToQuadrantTrade(apiTradeToRaw(t)));
 }
 
 export function useExcursionTrades(params: UseExcursionTradesParams = {}) {
     return useQuery<QuadrantTrade[]>({
-        queryKey: ['excursion-trades', params.from ?? '', params.to ?? '', params.account ?? '', params.limit ?? 500, (params.excludeTagIds ?? []).join(',')],
+        queryKey: ['excursion-trades', params.from ?? '', params.to ?? '', params.account ?? '', params.limit ?? 500],
         queryFn: () => fetchExcursionTrades(params),
         staleTime: 30_000,
         retry: 1,

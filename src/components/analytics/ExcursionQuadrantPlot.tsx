@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { X, Filter } from 'lucide-react';
 import type { QuadrantTrade } from '@/hooks/useExcursionTrades';
 import type { JournalTrade } from '@/app/journal/page';
 import TradeViewModal from '@/components/journal/TradeViewModal';
@@ -79,13 +80,26 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
     const [selectedTrade, setSelectedTrade] = useState<JournalTrade | null>(null);
     const [modalOpen, setModalOpen] = useState(false);
     const [hoveredId, setHoveredId] = useState<string | null>(null);
+    const [excludedTagIds, setExcludedTagIds] = useState<string[]>([]);
 
-    // Only include trades with both MAE and MFE and a computable efficiency
+    // Derive unique tags from all incoming trades (for filter UI)
+    const availableTags = useMemo(() => {
+        const seen = new Map<string, { id: string; name: string; color?: string | null }>();
+        for (const t of trades) {
+            for (const tag of t.tags ?? []) {
+                if (!seen.has(tag.id)) seen.set(tag.id, tag);
+            }
+        }
+        return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name));
+    }, [trades]);
+
+    // Only include trades with both MAE and MFE, computable efficiency, and not tag-excluded
     const plotTrades = useMemo(() => trades.filter(t =>
         t.mae != null && t.mae > 0 &&
         t.mfe != null && t.mfe > 0 &&
-        t.exitDistFromEntry != null
-    ), [trades]);
+        t.exitDistFromEntry != null &&
+        !(t.tags ?? []).some(tag => excludedTagIds.includes(tag.id))
+    ), [trades, excludedTagIds]);
 
     if (plotTrades.length < 2) {
         return (
@@ -103,20 +117,19 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
 
     // Derived axis values
     const maxMae = Math.max(...plotTrades.map(t => t.mae!)) * 1.15;
-    const sortedMae = [...plotTrades.map(t => t.mae!)].sort((a, b) => a - b);
-    const medianMae = sortedMae[Math.floor(sortedMae.length / 2)];
 
     const scaleX = (mae: number) => ML + (mae / maxMae) * CW;
     const scaleY = (eff: number) => MT + CH - (eff / 100) * CH;
-    // Fixed midpoint at 50% for equal-sized quadrants
+    // Equal-sized quadrants: midX at the visual centre (maxMae/2), midY at 50% efficiency
+    const maeThreshold = maxMae / 2;
     const midX = ML + CW / 2;
-    const midY = MT + CH / 2;
+    const midY = MT + CH / 2; // == scaleY(50)
 
     // Enrich trades with zone + efficiency
     type PlotTrade = QuadrantTrade & { eff: number; zone: ZoneKey };
     const enriched: PlotTrade[] = plotTrades.map(t => {
         const eff = calcExitEfficiency(t.mae!, t.mfe!, t.exitDistFromEntry!)!;
-        const zone = assignZone(t.mae!, eff, medianMae);
+        const zone = assignZone(t.mae!, eff, maeThreshold);
         return { ...t, eff, zone };
     });
 
@@ -161,13 +174,51 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                     </div>
                 </div>
 
+                {/* Tag exclusion filter */}
+                {availableTags.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-2 mb-4 pt-3 border-t border-white/5">
+                        <div className="flex items-center gap-1.5 mr-1">
+                            <Filter size={11} className="text-gray-600" />
+                            <span className="text-[9px] font-black uppercase tracking-widest text-gray-600">Exclude</span>
+                        </div>
+                        {availableTags.map(tag => {
+                            const isExcluded = excludedTagIds.includes(tag.id);
+                            return (
+                                <button
+                                    key={tag.id}
+                                    onClick={() => setExcludedTagIds(prev =>
+                                        isExcluded ? prev.filter(id => id !== tag.id) : [...prev, tag.id]
+                                    )}
+                                    className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-widest transition-all border ${
+                                        isExcluded
+                                            ? 'bg-red-500/20 border-red-500/40 text-red-400'
+                                            : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
+                                    }`}
+                                    style={!isExcluded && tag.color ? { borderColor: tag.color + '40', color: tag.color } : {}}
+                                >
+                                    {isExcluded && <X size={9} className="inline mr-1" />}
+                                    {tag.name}
+                                </button>
+                            );
+                        })}
+                        {excludedTagIds.length > 0 && (
+                            <button
+                                onClick={() => setExcludedTagIds([])}
+                                className="text-[9px] text-gray-500 hover:text-white font-bold uppercase tracking-widest transition-colors ml-1"
+                            >
+                                Clear
+                            </button>
+                        )}
+                    </div>
+                )}
+
                 {/* Chart */}
                 <div className="relative">
                     <svg viewBox={`0 0 ${VW} ${VH}`} className="w-full h-auto" preserveAspectRatio="xMidYMid meet" style={{ minHeight: 240 }}>
-                        {/* Zone backgrounds - equal quadrants */}
-                        <rect x={ML} y={MT} width={CW / 2} height={CH / 2} fill="rgba(251,146,60,0.06)" />
-                        <rect x={midX} y={MT} width={CW / 2} height={CH / 2} fill="rgba(74,222,128,0.06)" />
-                        <rect x={ML} y={midY} width={CW / 2} height={CH / 2} fill="rgba(248,113,113,0.06)" />
+                        {/* Zone backgrounds — equal quadrants */}
+                        <rect x={ML}   y={MT}   width={CW / 2} height={CH / 2} fill="rgba(251,146,60,0.06)" />
+                        <rect x={midX} y={MT}   width={CW / 2} height={CH / 2} fill="rgba(74,222,128,0.06)" />
+                        <rect x={ML}   y={midY} width={CW / 2} height={CH / 2} fill="rgba(248,113,113,0.06)" />
                         <rect x={midX} y={midY} width={CW / 2} height={CH / 2} fill="rgba(250,204,21,0.045)" />
 
                         {/* Grid lines */}
@@ -194,12 +245,12 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                         <text x={ML + CW / 2} y={VH - 4} fill="#6b7280" fontSize={9} textAnchor="middle" fontFamily="sans-serif" fontWeight={900} letterSpacing={1.5}>MAX ADVERSE EXCURSION (pts) →</text>
                         <text x={12} y={MT + CH / 2} fill="#6b7280" fontSize={9} textAnchor="middle" fontFamily="sans-serif" fontWeight={900} letterSpacing={1.5} transform={`rotate(-90, 12, ${MT + CH / 2})`}>↑ EXIT EFFICIENCY %</text>
 
-                        {/* Zone labels - centered in each quadrant, rendered BEFORE dots */}
+                        {/* Zone labels — centered in equal quadrants */}
                         {([
-                            ['SURVIVED', ML + CW * 0.25, MT + CH * 0.25, 'rgba(251,146,60,0.5)', 'rough entry, made it work'],
-                            ['CLEAN',    ML + CW * 0.75, MT + CH * 0.25, 'rgba(74,222,128,0.5)', 'clean entry, good exit'],
-                            ['PAINFUL',  ML + CW * 0.25, MT + CH * 0.75, 'rgba(248,113,113,0.5)', 'rough entry + poor exit'],
-                            ['EARLY OUT',ML + CW * 0.75, MT + CH * 0.75, 'rgba(250,204,21,0.5)', 'left profit on the table'],
+                            ['SURVIVED',  ML + CW * 0.25, MT + CH * 0.25, 'rgba(251,146,60,0.5)',  'rough entry, made it work'],
+                            ['CLEAN',     ML + CW * 0.75, MT + CH * 0.25, 'rgba(74,222,128,0.5)',  'clean entry, good exit'],
+                            ['PAINFUL',   ML + CW * 0.25, MT + CH * 0.75, 'rgba(248,113,113,0.5)', 'rough entry + poor exit'],
+                            ['EARLY OUT', ML + CW * 0.75, MT + CH * 0.75, 'rgba(250,204,21,0.5)',  'left profit on the table'],
                         ] as const).map(([name, x, y, color, sub]) => (
                             <g key={name} style={{ pointerEvents: 'none' }}>
                                 <text x={x} y={y - 6} fill={color} fontSize={11} fontWeight={900} fontFamily="sans-serif" letterSpacing={2} textAnchor="middle">{name}</text>

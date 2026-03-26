@@ -5,22 +5,19 @@ import Gauge from '@/components/dashboard/Gauge';
 import {
     ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ComposedChart, Line,
 } from 'recharts';
-import { Target, Zap, X, Filter } from 'lucide-react';
+import { Target, Zap, X } from 'lucide-react';
 import { useCurrency } from '@/lib/currency';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useExcursionTrades } from '@/hooks/useExcursionTrades';
-import { useTags } from '@/hooks/useTags';
 import BEMetricsWidget from '@/components/analytics/BEMetricsWidget';
 import { ExcursionQuadrantPlot } from '@/components/analytics/ExcursionQuadrantPlot';
 
 export function AnalyticsContent() {
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
-    const [excludedTagIds, setExcludedTagIds] = useState<string[]>([]);
     const { formatAmount } = useCurrency();
     const { selectedAccountId } = useAccounts();
-    const { data: tagsData } = useTags();
 
     const { data } = useAnalytics({
         from: dateFrom || undefined,
@@ -32,7 +29,6 @@ export function AnalyticsContent() {
         from: dateFrom || undefined,
         to: dateTo || undefined,
         account: selectedAccountId,
-        excludeTagIds: excludedTagIds,
     });
 
     const symbolData = data.symbolData;
