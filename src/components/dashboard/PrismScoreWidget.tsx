@@ -1,6 +1,6 @@
 'use client';
 
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ReferenceLine, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ReferenceLine, ResponsiveContainer, Cell, LabelList } from 'recharts';
 import { usePrismScore } from '@/hooks/usePrismScore';
 import { cn } from '@/lib/cn';
 
@@ -45,10 +45,10 @@ function scoreLabel(score: number): string {
 
 /** SVG arc gauge */
 function ScoreGauge({ score }: { score: number }) {
-    const r = 80;
-    const stroke = 14;
+    const r = 72;
+    const stroke = 12;
     const cx = 110;
-    const cy = 100;
+    const cy = 96;
     const startAngle = 210;
     const totalArc = 300;
 
@@ -71,7 +71,7 @@ function ScoreGauge({ score }: { score: number }) {
     const color = scoreColor(score);
 
     return (
-        <svg viewBox="0 0 220 195" className="w-full max-w-[220px]">
+        <svg viewBox="0 0 220 190" width="220" height="190" className="shrink-0">
             <defs>
                 <filter id="ps-glow">
                     <feGaussianBlur stdDeviation="4" result="blur" />
@@ -151,7 +151,7 @@ export default function PrismScoreWidget({ accountId }: Props) {
             {/* Gauge + Components */}
             <div className="flex flex-col sm:flex-row items-center gap-6">
                 {/* Gauge */}
-                <div className="flex-shrink-0 flex items-center justify-center w-full sm:w-auto">
+                <div className="w-full sm:w-[220px] flex-shrink-0 flex justify-center">
                     <ScoreGauge score={score} />
                 </div>
 
@@ -186,9 +186,9 @@ export default function PrismScoreWidget({ accountId }: Props) {
             {chartData.length > 0 && (
                 <div>
                     <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/20 mb-2">12-Week Trend</p>
-                    <div className="h-20">
+                    <div className="h-24">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={chartData} margin={{ top: 4, right: 0, bottom: 0, left: 0 }} barSize={10}>
+                            <BarChart data={chartData} margin={{ top: 14, right: 0, bottom: 0, left: 0 }} barSize={10}>
                                 <XAxis
                                     dataKey="displayWeek"
                                     tick={{ fill: '#4b5563', fontSize: 8 }}
@@ -207,6 +207,11 @@ export default function PrismScoreWidget({ accountId }: Props) {
                                     {chartData.map((entry, i) => (
                                         <Cell key={i} fill={scoreColor(entry.score)} fillOpacity={0.7} />
                                     ))}
+                                    <LabelList
+                                        dataKey="score"
+                                        position="top"
+                                        style={{ fontSize: 8, fontWeight: 700, fill: 'rgba(255,255,255,0.5)' }}
+                                    />
                                 </Bar>
                             </BarChart>
                         </ResponsiveContainer>

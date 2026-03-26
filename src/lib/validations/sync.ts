@@ -35,6 +35,11 @@ export const syncTradeSchema = z.object({
   swap: z.number().nullable().optional(),
   stopLoss: z.number().nullable().optional(),
   takeProfit: z.number().nullable().optional(),
+  initialStopLoss: z.number().nullable().optional(), // EA may send this explicitly; otherwise captured on first sync
+  /** Absolute price distance from entry to worst adverse price during the trade */
+  max_adverse_excursion: z.number().nonnegative().optional(),
+  /** Absolute price distance from entry to best favorable price during the trade */
+  max_favorable_excursion: z.number().nonnegative().optional(),
   strategy: z.string().max(100, 'Strategy name too long').optional(),
   mood: moodEnum.optional().catch(undefined),
   planCompliance: planComplianceEnum.optional(),

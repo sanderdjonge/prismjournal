@@ -118,7 +118,7 @@ export async function upsertSyncTrade(
 
     const existing = await prisma.trade.findUnique({
         where: { ticket: trade.ticket },
-        select: { id: true, entryTime: true },
+        select: { id: true, entryTime: true, initialStopLoss: true, entryPrice: true },
     });
     const isNew = !existing;
     const isClosed = !!trade.exitTime && !!trade.exitPrice;
@@ -153,9 +153,49 @@ export async function upsertSyncTrade(
     if (trade.mood) updateData.mood = trade.mood;
     if (trade.planCompliance) updateData.planCompliance = trade.planCompliance;
     if (trade.closeReason != null) updateData.closeReason = trade.closeReason;
+    if (trade.max_adverse_excursion != null && trade.max_adverse_excursion > 0) updateData.mae = trade.max_adverse_excursion;
+    if (trade.max_favorable_excursion != null && trade.max_favorable_excursion > 0) updateData.mfe = trade.max_favorable_excursion;
 
     // BUY/SELL → LONG/SHORT
     const direction = trade.type === 'BUY' ? 'LONG' : 'SHORT';
+
+    // On update: detect breakeven — never overwrite initialStopLoss
+    if (!isNew && trade.stopLoss != null && existing!.initialStopLoss != null && existing!.entryPrice != null) {
+        const initialRisk = Math.abs(existing!.initialStopLoss - existing!.entryPrice);
+        const currentDistance = Math.abs(trade.stopLoss - existing!.entryPrice);
+        if (initialRisk > 0 && currentDistance <= initialRisk * 0.05) {
+            updateData.beTriggered = true;
+        }
+    }
+
+    // On update: recalculate rMultiple using initialStopLoss when available
+    if (!isNew && trade.exitPrice != null) {
+        const exitPriceVal = trade.exitPrice;
+        const entryPriceVal = existing!.entryPrice ?? trade.entryPrice ?? null;
+        const initialSL = existing!.initialStopLoss;
+        if (entryPriceVal != null && initialSL != null) {
+            const risk = Math.abs(entryPriceVal - initialSL);
+            if (risk > 0) {
+                const rawR = direction === 'LONG'
+                    ? (exitPriceVal - entryPriceVal) / risk
+                    : (entryPriceVal - exitPriceVal) / risk;
+                updateData.rMultiple = Math.round(rawR * 100) / 100;
+            }
+        }
+    }
+
+    // Compute rMultiple for new trades that have both exit and initial SL data
+    const createInitialSL = trade.initialStopLoss ?? trade.stopLoss ?? null;
+    let createRMultiple: number | null = null;
+    if (trade.exitPrice != null && trade.entryPrice != null && createInitialSL != null) {
+        const risk = Math.abs(trade.entryPrice - createInitialSL);
+        if (risk > 0) {
+            const rawR = direction === 'LONG'
+                ? (trade.exitPrice - trade.entryPrice) / risk
+                : (trade.entryPrice - trade.exitPrice) / risk;
+            createRMultiple = Math.round(rawR * 100) / 100;
+        }
+    }
 
     const upsertedTrade = await prisma.trade.upsert({
         where: { ticket: trade.ticket },
@@ -175,10 +215,14 @@ export async function upsertSyncTrade(
             swap: trade.swap,
             stopLoss: trade.stopLoss,
             takeProfit: trade.takeProfit,
+            initialStopLoss: createInitialSL,
+            rMultiple: createRMultiple,
             strategyId,
             mood: trade.mood,
             planCompliance: trade.planCompliance,
             closeReason: trade.closeReason ?? null,
+            mae: (trade.max_adverse_excursion != null && trade.max_adverse_excursion > 0) ? trade.max_adverse_excursion : undefined,
+            mfe: (trade.max_favorable_excursion != null && trade.max_favorable_excursion > 0) ? trade.max_favorable_excursion : undefined,
         },
         update: updateData,
     });
