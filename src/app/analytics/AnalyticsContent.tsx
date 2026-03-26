@@ -74,50 +74,6 @@ export function AnalyticsContent() {
                 )}
             </div>
 
-            {/* Tag Exclusion Filter */}
-            {tagsData?.tags && tagsData.tags.length > 0 && (
-                <div className="flex flex-wrap items-center gap-3 glass-card p-4 border-white/5 bg-white/5 rounded-xl">
-                    <div className="flex items-center gap-2">
-                        <Filter size={14} className="text-gray-500" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Exclude Tags</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                        {tagsData.tags.map(tag => {
-                            const isExcluded = excludedTagIds.includes(tag.id);
-                            return (
-                                <button
-                                    key={tag.id}
-                                    onClick={() => {
-                                        if (isExcluded) {
-                                            setExcludedTagIds(prev => prev.filter(id => id !== tag.id));
-                                        } else {
-                                            setExcludedTagIds(prev => [...prev, tag.id]);
-                                        }
-                                    }}
-                                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all border ${
-                                        isExcluded
-                                            ? 'bg-red-500/20 border-red-500/40 text-red-400'
-                                            : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
-                                    }`}
-                                    style={!isExcluded && tag.color ? { borderColor: tag.color + '40', color: tag.color } : {}}
-                                >
-                                    {isExcluded && <X size={10} className="inline mr-1" />}
-                                    {tag.name}
-                                </button>
-                            );
-                        })}
-                    </div>
-                    {excludedTagIds.length > 0 && (
-                        <button
-                            onClick={() => setExcludedTagIds([])}
-                            className="text-[10px] text-gray-500 hover:text-white font-bold uppercase tracking-widest transition-colors"
-                        >
-                            Clear All
-                        </button>
-                    )}
-                </div>
-            )}
-
             {/* Gauges Row */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6 flex items-center justify-center">
