@@ -172,6 +172,8 @@ export const GET = withAuth(async (request, _ctx, session) => {
         accountId: t.accountId,
         accountName: t.account?.name ?? null,
         screenshotCount: t._count.media,
+        mae: t.mae ?? null,
+        mfe: t.mfe ?? null,
     }));
 
     return NextResponse.json({

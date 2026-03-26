@@ -9,6 +9,9 @@ import { Target, Zap, X } from 'lucide-react';
 import { useCurrency } from '@/lib/currency';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useAnalytics } from '@/hooks/useAnalytics';
+import { useExcursionTrades } from '@/hooks/useExcursionTrades';
+import BEMetricsWidget from '@/components/analytics/BEMetricsWidget';
+import { ExcursionQuadrantPlot } from '@/components/analytics/ExcursionQuadrantPlot';
 
 export function AnalyticsContent() {
     const [dateFrom, setDateFrom] = useState('');
@@ -17,6 +20,12 @@ export function AnalyticsContent() {
     const { selectedAccountId } = useAccounts();
 
     const { data } = useAnalytics({
+        from: dateFrom || undefined,
+        to: dateTo || undefined,
+        account: selectedAccountId,
+    });
+
+    const { data: excursionTrades = [] } = useExcursionTrades({
         from: dateFrom || undefined,
         to: dateTo || undefined,
         account: selectedAccountId,
@@ -77,6 +86,9 @@ export function AnalyticsContent() {
                     <Gauge value={data.avgRR} max={5} label="Risk / Reward" subLabel="Mean Realized" variant="secondary" />
                 </div>
             </div>
+
+            {/* SL Management & Breakeven Metrics */}
+            <BEMetricsWidget accountId={selectedAccountId} />
 
             {/* Charts Row */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -157,6 +169,9 @@ export function AnalyticsContent() {
                     </div>
                 </div>
             </div>
+
+            {/* Exit Quality Quadrant */}
+            <ExcursionQuadrantPlot trades={excursionTrades} />
 
             {/* Bottom Row */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
