@@ -40,6 +40,8 @@ export type JournalTrade = {
     tags?: { id: string; name: string; color?: string | null }[];
     accountName?: string | null;
     accountId?: string | null;
+    mae?: number | null;
+    mfe?: number | null;
 };
 
 function JournalContent() {

@@ -409,6 +409,10 @@ model Trade {
   rMultiple        Float?
   mae              Float?        // Maximum Adverse Excursion
   mfe              Float?        // Maximum Favorable Excursion
+
+  // SL Management & Breakeven Tracking
+  initialStopLoss  Float?        // SL at trade open — never overwritten; used for true R calculation
+  beTriggered      Boolean       @default(false)  // true if SL was moved to breakeven or beyond
   
   // Close reason (SL / TP / MANUAL / EA / STOP_OUT)
   closeReason      String?

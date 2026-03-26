@@ -19,7 +19,7 @@ describe('autoScreenshotConfigSchema', () => {
     expect(result.data.enabled).toBe(false);
     expect(result.data.openTimeframes).toEqual([]);
     expect(result.data.closeTimeframes).toEqual([]);
-    expect(result.data.barsOfContext).toBe(60);
+    expect(result.data.barsOfContext).toBe(25);
   });
 
   it('rejects invalid timeframe values', () => {
@@ -31,17 +31,17 @@ describe('autoScreenshotConfigSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('rejects barsOfContext below 20', () => {
+  it('rejects barsOfContext below 1', () => {
     const result = autoScreenshotConfigSchema.safeParse({
       enabled: true,
       openTimeframes: [],
       closeTimeframes: [],
-      barsOfContext: 10,
+      barsOfContext: 0,
     });
     expect(result.success).toBe(false);
   });
 
-  it('rejects barsOfContext above 200', () => {
+  it('rejects barsOfContext above 100', () => {
     const result = autoScreenshotConfigSchema.safeParse({
       barsOfContext: 500,
     });

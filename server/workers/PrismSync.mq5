@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 #property copyright "2025, PrismJournal"
 #property link      "https://github.com/prismjournal"
-#property version   "3.14"
+#property version   "3.15"
 #property description "Syncs trades and equity snapshots to PrismJournal."
 #property description "Syncs full trade history on startup, then live trades in real-time."
 #property description "Get your Bridge Key and Sync URL from Settings > Connector Hub."
@@ -20,6 +20,73 @@ input uint     HistoryDays = 90;                 // Days of trade history to syn
 //--- constants
 #define  HEADER_CONTENT_TYPE "Content-Type: application/json\r\n"
 #define  HEADER_BRIDGE_KEY   "X-Bridge-Key: "
+
+//--- MAE/MFE tracking arrays (keyed by position ticket, parallel arrays)
+//    MT5 deal history has no per-deal extreme price fields, so we track extremes
+//    in real-time for live positions only. History syncs send mae/mfe as 0 (omitted).
+#define MAX_TRACKED_POSITIONS 200
+ulong  g_TrackTickets[MAX_TRACKED_POSITIONS];
+double g_TrackMAE[MAX_TRACKED_POSITIONS];   // lowest adverse price (BUY: lowest low, SELL: highest high)
+double g_TrackMFE[MAX_TRACKED_POSITIONS];   // highest favorable price (BUY: highest high, SELL: lowest low)
+double g_TrackEntry[MAX_TRACKED_POSITIONS]; // entry price
+long   g_TrackType[MAX_TRACKED_POSITIONS];  // POSITION_TYPE_BUY or POSITION_TYPE_SELL
+int    g_TrackCount = 0;
+
+int FindTrackedIdx(ulong ticket)
+  {
+   for(int i = 0; i < g_TrackCount; i++)
+      if(g_TrackTickets[i] == ticket) return i;
+   return -1;
+  }
+
+void InitTrackEntry(ulong ticket, double entryPr, long posType)
+  {
+   if(g_TrackCount >= MAX_TRACKED_POSITIONS) return;
+   int idx = FindTrackedIdx(ticket);
+   if(idx != -1) return; // already tracked
+   g_TrackTickets[g_TrackCount] = ticket;
+   g_TrackMAE[g_TrackCount]     = 0.0;
+   g_TrackMFE[g_TrackCount]     = 0.0;
+   g_TrackEntry[g_TrackCount]   = entryPr;
+   g_TrackType[g_TrackCount]    = posType;
+   g_TrackCount++;
+  }
+
+void RemoveTrackedIdx(int idx)
+  {
+   if(idx < 0 || idx >= g_TrackCount) return;
+   g_TrackCount--;
+   if(idx < g_TrackCount)
+     {
+      g_TrackTickets[idx] = g_TrackTickets[g_TrackCount];
+      g_TrackMAE[idx]     = g_TrackMAE[g_TrackCount];
+      g_TrackMFE[idx]     = g_TrackMFE[g_TrackCount];
+      g_TrackEntry[idx]   = g_TrackEntry[g_TrackCount];
+      g_TrackType[idx]    = g_TrackType[g_TrackCount];
+     }
+  }
+
+void UpdateExcursions(ulong ticket, double curLow, double curHigh)
+  {
+   int idx = FindTrackedIdx(ticket);
+   if(idx == -1) return;
+   double entry   = g_TrackEntry[idx];
+   long   posType = g_TrackType[idx];
+   if(posType == POSITION_TYPE_BUY)
+     {
+      double adverse   = entry - curLow;   // how far price moved against a long
+      double favorable = curHigh - entry;  // how far price moved in favour of a long
+      if(adverse   > g_TrackMAE[idx]) g_TrackMAE[idx] = adverse;
+      if(favorable > g_TrackMFE[idx]) g_TrackMFE[idx] = favorable;
+     }
+   else
+     {
+      double adverse   = curHigh - entry;  // how far price moved against a short
+      double favorable = entry - curLow;   // how far price moved in favour of a short
+      if(adverse   > g_TrackMAE[idx]) g_TrackMAE[idx] = adverse;
+      if(favorable > g_TrackMFE[idx]) g_TrackMFE[idx] = favorable;
+     }
+  }
 
 //+------------------------------------------------------------------+
 //| Helper: convert broker server time to UTC                        |
@@ -113,6 +180,18 @@ void SyncOpenPositions()
 
       string type_str = (posType == POSITION_TYPE_BUY) ? "BUY" : "SELL";
 
+      // Update MAE/MFE tracking for this live position
+      double bidPrice = SymbolInfoDouble(symbol, SYMBOL_BID);
+      double askPrice = SymbolInfoDouble(symbol, SYMBOL_ASK);
+      double curLow   = MathMin(bidPrice, askPrice);
+      double curHigh  = MathMax(bidPrice, askPrice);
+      InitTrackEntry(ticket, openPr, posType);
+      UpdateExcursions(ticket, curLow, curHigh);
+
+      int    tIdx = FindTrackedIdx(ticket);
+      double mae  = (tIdx != -1) ? g_TrackMAE[tIdx] : 0.0;
+      double mfe  = (tIdx != -1) ? g_TrackMFE[tIdx] : 0.0;
+
       string posJson = "{"
                        "\"type\":\"TRADE_UPDATE\","
                        "\"platformAccountId\":\"" + acctId + "\","
@@ -129,6 +208,8 @@ void SyncOpenPositions()
                        "\"strategy\":\"" + Strategy + "\""
                        + OptField("stopLoss", sl, 5)
                        + OptField("takeProfit", tp, 5)
+                       + OptField("max_adverse_excursion", mae, 5)
+                       + OptField("max_favorable_excursion", mfe, 5)
                        + "}"
                        "}";
       SendJson(posJson);
@@ -301,6 +382,10 @@ void OnTradeTransaction(const MqlTradeTransaction& trans,
    string json;
    if(entry_type == DEAL_ENTRY_IN)
      {
+      // Register position for live MAE/MFE tracking
+      long posTypeForTracking = (deal_type == DEAL_TYPE_BUY) ? POSITION_TYPE_BUY : POSITION_TYPE_SELL;
+      InitTrackEntry(pos_id, price, posTypeForTracking);
+
       json = "{"
              "\"type\":\"TRADE_UPDATE\","
              "\"platformAccountId\":\"" + acctId + "\","
@@ -322,6 +407,13 @@ void OnTradeTransaction(const MqlTradeTransaction& trans,
      {
       long   reason      = HistoryDealGetInteger(deal_ticket, DEAL_REASON);
       string closeReason = CloseReasonStr(reason);
+
+      // Retrieve final MAE/MFE for the closing position, then remove from tracker
+      int    cIdx = FindTrackedIdx(pos_id);
+      double mae  = (cIdx != -1) ? g_TrackMAE[cIdx] : 0.0;
+      double mfe  = (cIdx != -1) ? g_TrackMFE[cIdx] : 0.0;
+      if(cIdx != -1) RemoveTrackedIdx(cIdx);
+
       json = "{"
              "\"type\":\"TRADE_UPDATE\","
              "\"platformAccountId\":\"" + acctId + "\","
@@ -340,6 +432,8 @@ void OnTradeTransaction(const MqlTradeTransaction& trans,
              "\"strategy\":\"" + Strategy + "\""
              + OptField("stopLoss", sl, 5)
              + OptField("takeProfit", tp, 5)
+             + OptField("max_adverse_excursion", mae, 5)
+             + OptField("max_favorable_excursion", mfe, 5)
              + ",\"closeReason\":\"" + closeReason + "\""
              + "}"
              "}";
