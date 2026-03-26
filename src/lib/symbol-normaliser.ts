@@ -105,3 +105,45 @@ export function isTwelveDataPriceMismatch(err: unknown): boolean {
 export function mapTimeframe(tf: string): string | null {
     return TIMEFRAME_MAP[tf.toUpperCase()] ?? null;
 }
+
+// ---------------------------------------------------------------------------
+// Yahoo Finance symbol mapping (fallback when Twelve Data plan is insufficient)
+// ---------------------------------------------------------------------------
+
+/**
+ * Maps from Twelve Data normalised symbols → Yahoo Finance tickers.
+ * Used as a fallback when Twelve Data rejects a symbol due to plan restrictions.
+ */
+const YAHOO_SYMBOL_MAP: Record<string, string> = {
+    // Equity indices
+    'UK100':    '^FTSE',
+    'DAX':      '^GDAXI',
+    'DJI':      '^DJI',
+    'SPX':      '^GSPC',
+    'NDX':      '^NDX',
+    'NAS100':   '^NDX',
+    'US100':    '^NDX',
+    'AS51':     '^AXJO',
+    'CAC40':    '^FCHI',
+    'IBEX35':   '^IBEX',
+    'FTSEMIB':  '^FTSEMIB.MI',
+    'N225':     '^N225',
+    'HSI':      '^HSI',
+    'SHCOMP':   '000001.SS',
+    // Energy / Commodities
+    'WTI':      'CL=F',
+    'BRENT':    'BZ=F',
+    'NG1!':     'NG=F',
+};
+
+/**
+ * Convert a Twelve Data normalised symbol to its Yahoo Finance equivalent.
+ * - Explicit index/CFD overrides are looked up in YAHOO_SYMBOL_MAP.
+ * - Forex and metal pairs (e.g. "EUR/USD", "XAU/USD") become "EURUSD=X" / "XAUUSD=X".
+ * - Returns null if no mapping is known (caller should skip Yahoo fallback).
+ */
+export function toYahooSymbol(twelveDataSymbol: string): string | null {
+    if (YAHOO_SYMBOL_MAP[twelveDataSymbol]) return YAHOO_SYMBOL_MAP[twelveDataSymbol];
+    if (twelveDataSymbol.includes('/')) return twelveDataSymbol.replace('/', '') + '=X';
+    return null;
+}

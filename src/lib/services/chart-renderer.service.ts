@@ -2,6 +2,7 @@ import * as echarts from 'echarts';
 import type { EChartsOption } from 'echarts';
 import sharp from 'sharp';
 import logger from '@/lib/logger';
+import { toYahooSymbol } from '@/lib/symbol-normaliser';
 
 export interface ChartRenderOptions {
     /** Twelve Data formatted symbol, e.g. "EUR/USD" */
@@ -58,6 +59,72 @@ async function fetchOhlc(symbol: string, interval: string, outputsize: number, e
     }
 
     return data.values;
+}
+
+// ---------------------------------------------------------------------------
+// Yahoo Finance OHLC fallback (no API key required)
+// ---------------------------------------------------------------------------
+
+const YAHOO_INTERVAL_MAP: Record<string, string> = {
+    '1min': '1m', '5min': '5m', '15min': '15m', '30min': '30m',
+    '1h': '60m', '4h': '1h', '1day': '1d', '1week': '1wk',
+};
+
+const YAHOO_INTERVAL_MS: Record<string, number> = {
+    '1m': 60_000, '5m': 300_000, '15m': 900_000, '30m': 1_800_000,
+    '60m': 3_600_000, '1h': 3_600_000, '1d': 86_400_000, '1wk': 604_800_000,
+};
+
+async function fetchOhlcYahoo(yahooSymbol: string, interval: string, outputsize: number, endDate?: string): Promise<OhlcBar[]> {
+    const yahooInterval = YAHOO_INTERVAL_MAP[interval] ?? '1d';
+    const msPerBar = YAHOO_INTERVAL_MS[yahooInterval] ?? 86_400_000;
+
+    const period2 = endDate
+        ? Math.floor(new Date(endDate).getTime() / 1000)
+        : Math.floor(Date.now() / 1000);
+    // Request 2× bars to account for market-hours gaps (weekends, overnight sessions)
+    const period1 = period2 - Math.floor((outputsize * msPerBar * 2) / 1000);
+
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?interval=${yahooInterval}&period1=${period1}&period2=${period2}`;
+
+    const res = await fetch(url, {
+        signal: AbortSignal.timeout(15_000),
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+    });
+    if (!res.ok) throw new Error(`Yahoo Finance HTTP ${res.status} for ${yahooSymbol}`);
+
+    const data = await res.json() as {
+        chart: {
+            result?: Array<{
+                timestamp: number[];
+                indicators: { quote: Array<{ open: number[]; high: number[]; low: number[]; close: number[] }> };
+            }>;
+            error?: { description: string };
+        };
+    };
+
+    if (data.chart.error) throw new Error(`Yahoo Finance error: ${data.chart.error.description}`);
+    if (!data.chart.result?.[0]) throw new Error(`No data from Yahoo Finance for ${yahooSymbol}`);
+
+    const result = data.chart.result[0];
+    const { timestamp, indicators } = result;
+    const quote = indicators.quote[0];
+
+    const bars: OhlcBar[] = [];
+    for (let i = 0; i < timestamp.length; i++) {
+        if (quote.open[i] == null || quote.close[i] == null) continue;
+        const dt = new Date(timestamp[i] * 1000);
+        bars.push({
+            datetime: dt.toISOString().replace('T', ' ').slice(0, 19),
+            open:  String(quote.open[i]),
+            high:  String(quote.high[i]),
+            low:   String(quote.low[i]),
+            close: String(quote.close[i]),
+        });
+    }
+
+    if (bars.length === 0) throw new Error(`No valid bars from Yahoo Finance for ${yahooSymbol}`);
+    return bars.slice(-outputsize);
 }
 
 /**
@@ -201,7 +268,16 @@ function buildChartOption(bars: OhlcBar[], entryPrice: number, timezone: string,
 export async function renderCandlestickChart(options: ChartRenderOptions): Promise<Buffer> {
     const { symbol, interval, entryPrice, exitPrice, stopLoss, takeProfit, barsOfContext, timezone, endDate } = options;
 
-    const bars = await fetchOhlc(symbol, interval, barsOfContext, endDate);
+    // Try Twelve Data first; fall back to Yahoo Finance for symbols restricted to paid plans.
+    let bars: OhlcBar[];
+    try {
+        bars = await fetchOhlc(symbol, interval, barsOfContext, endDate);
+    } catch (tdErr) {
+        const yahooSymbol = toYahooSymbol(symbol);
+        if (!yahooSymbol) throw tdErr;
+        logger.warn({ symbol, yahooSymbol }, '[chart-renderer] Twelve Data unavailable, falling back to Yahoo Finance');
+        bars = await fetchOhlcYahoo(yahooSymbol, interval, barsOfContext, endDate);
+    }
 
     // Sanity check: if the entry price is outside 10× the OHLC range, Twelve Data
     // returned data for a different instrument (e.g. free-tier index restriction).
