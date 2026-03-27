@@ -1,23 +1,25 @@
-# Development Environment Configuration
+# PrismJournal — Development
 # Usage: docker compose -f docker-compose.dev.yml up -d
-# Note: Traefik removed for local macOS development - app exposed directly via port mapping
+# App exposed on :3002, Postgres on :5433 (to avoid conflict with prod)
 
 name: prism-dev
 
 services:
+
   db:
     image: postgres:15-alpine
     container_name: prism-dev-db
+    env_file: .env
     environment:
-      POSTGRES_USER: prism_dev
-      POSTGRES_PASSWORD: prism_dev_password
-      POSTGRES_DB: prism_journal_dev
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5433:5432"    # Dev DB on port 5433 to avoid conflict with prod
+      - "5433:5432"
     volumes:
       - prism_dev_db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U prism_dev -d prism_journal_dev"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -33,22 +35,22 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    env_file:
-      - .env
+    env_file: .env
     environment:
       NODE_ENV: development
-      DATABASE_URL: "postgresql://prism_dev:prism_dev_password@db:5432/prism_journal_dev"
-      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3002}
+      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}"
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
       AUTH_TRUST_HOST: "true"
-      RATE_LIMIT_API: "300"
-      RATE_LIMIT_SYNC: "2000"
-      STORAGE_PATH: "/app/storage"
-      BACKUP_PATH: "/app/backups"
-      BACKUP_KEEP_HOURLY: "24"
-      BACKUP_KEEP_DAILY: "30"
-      BACKUP_KEEP_WEEKLY: "12"
+      RATE_LIMIT_LOGIN: ${RATE_LIMIT_LOGIN:-10}
+      RATE_LIMIT_API: ${RATE_LIMIT_API:-300}
+      RATE_LIMIT_SYNC: ${RATE_LIMIT_SYNC:-2000}
+      STORAGE_PATH: /app/storage
+      BACKUP_PATH: /app/backups
+      BACKUP_KEEP_HOURLY: ${BACKUP_KEEP_HOURLY:-24}
+      BACKUP_KEEP_DAILY: ${BACKUP_KEEP_DAILY:-30}
+      BACKUP_KEEP_WEEKLY: ${BACKUP_KEEP_WEEKLY:-12}
     ports:
-      - "3002:3000"    # Dev app on port 3002
+      - "3002:3000"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health || exit 1"]
       interval: 30s
@@ -61,7 +63,6 @@ services:
     networks:
       - prism-dev-network
 
-  # Automated database backup — dumps to ./backups/ (host filesystem, survives everything)
   backup:
     image: postgres:15-alpine
     container_name: prism-dev-backup
@@ -69,15 +70,16 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    env_file: .env
     environment:
       PGHOST: db
       PGPORT: 5432
-      PGUSER: prism_dev
-      PGPASSWORD: prism_dev_password
-      PGDATABASE: prism_journal_dev
-      BACKUP_KEEP_HOURLY: "24"
-      BACKUP_KEEP_DAILY: "30"
-      BACKUP_KEEP_WEEKLY: "12"
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB}
+      BACKUP_KEEP_HOURLY: ${BACKUP_KEEP_HOURLY:-24}
+      BACKUP_KEEP_DAILY: ${BACKUP_KEEP_DAILY:-30}
+      BACKUP_KEEP_WEEKLY: ${BACKUP_KEEP_WEEKLY:-12}
     volumes:
       - ./backups:/backups
       - ./scripts/db-backup.sh:/scripts/db-backup.sh:ro
@@ -86,14 +88,15 @@ services:
     networks:
       - prism-dev-network
 
-  # Cloudflare tunnel for secure external access
-  prism-dev-tunnel:
+  tunnel:
     image: cloudflare/cloudflared:latest
     container_name: prism-dev-tunnel
     restart: unless-stopped
     command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    env_file: .env
     depends_on:
-      - app
+      app:
+        condition: service_healthy
     networks:
       - prism-dev-network
 
