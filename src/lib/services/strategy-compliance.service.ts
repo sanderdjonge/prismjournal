@@ -222,7 +222,7 @@ async function evaluateMinRRRatio(
       ruleType: 'MIN_RR_RATIO',
       limitValue: rule.limit,
       actualValue: rrRatio,
-      pnlImpact: trade.pnl,
+      pnlImpact: trade.pnl ?? undefined,
       description: `R:R ratio below minimum: ${rrRatio.toFixed(2)} vs required ${rule.limit}`,
     };
   }
@@ -356,7 +356,7 @@ async function evaluateMaxHoldingTime(
       ruleType: 'MAX_HOLDING_TIME',
       limitValue: rule.maxMinutes,
       actualValue: holdingMinutes,
-      pnlImpact: trade.pnl,
+      pnlImpact: trade.pnl ?? undefined,
       description: `Holding time ${Math.round(holdingMinutes)}min exceeds max ${rule.maxMinutes}min`,
     };
   }
@@ -376,7 +376,7 @@ async function evaluateMinHoldingTime(
       ruleType: 'MIN_HOLDING_TIME',
       limitValue: rule.minMinutes,
       actualValue: holdingMinutes,
-      pnlImpact: trade.pnl,
+      pnlImpact: trade.pnl ?? undefined,
       description: `Holding time ${Math.round(holdingMinutes)}min below min ${rule.minMinutes}min`,
     };
   }
