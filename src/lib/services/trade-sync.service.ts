@@ -273,6 +273,73 @@ export async function upsertSyncTrade(
             },
         ).catch((err) => {
             logger.error({ err, tradeId: upsertedTrade.id }, '[trade-sync] captureAutoScreenshots rejected unexpectedly');
+
+    // Phase 19: Evaluate strategy compliance for closed trades with strategy
+    if (isClosed && strategyId) {
+        evaluateCompliance(
+            trade,
+            strategyId,
+            { id: upsertedTrade.id, entryPrice: upsertedTrade.entryPrice, exitPrice: upsertedTrade.exitPrice, stopLoss: upsertedTrade.stopLoss, takeProfit: upsertedTrade.takeProfit, entryTime: upsertedTrade.entryTime, exitTime: upsertedTrade.exitTime, pnl: upsertedTrade.pnl, initialStopLoss: upsertedTrade.initialStopLoss },
+            userId,
+            accountId,
+            direction,
+        ).catch((err) => {
+            logger.error({ err, ticket: trade.ticket }, "[trade-sync] evaluateCompliance rejected unexpectedly");
         });
+    }
+        });
+    }
+}
+
+// ============================================
+// Phase 19: Strategy Compliance Integration
+// ============================================
+import { evaluateAndRecordCompliance, TradeContext } from './strategy-compliance.service';
+
+/**
+ * Evaluate strategy compliance for a closed trade.
+ * Only runs for trades that have a strategy assigned.
+ */
+async function evaluateCompliance(
+    trade: SyncTrade,
+    strategyId: string,
+    upsertedTrade: { id: string; entryPrice: number; exitPrice: number | null; stopLoss: number | null; takeProfit: number | null; entryTime: Date; exitTime: Date | null; pnl: number | null; initialStopLoss: number | null },
+    userId: string,
+    accountId: string,
+    direction: 'LONG' | 'SHORT',
+): Promise<void> {
+    // Only evaluate when trade is closed
+    if (!trade.exitTime || !upsertedTrade.exitTime) return;
+
+    const tradeContext: TradeContext = {
+        id: upsertedTrade.id,
+        accountId,
+        userId,
+        strategyId,
+        symbol: trade.symbol,
+        direction,
+        entryPrice: upsertedTrade.entryPrice,
+        exitPrice: upsertedTrade.exitPrice,
+        stopLoss: upsertedTrade.stopLoss,
+        takeProfit: upsertedTrade.takeProfit,
+        volume: trade.volume,
+        entryTime: upsertedTrade.entryTime,
+        exitTime: upsertedTrade.exitTime,
+        pnl: upsertedTrade.pnl,
+        initialStopLoss: upsertedTrade.initialStopLoss,
+    };
+
+    try {
+        const result = await evaluateAndRecordCompliance(tradeContext, strategyId);
+        if (!result.isCompliant) {
+            logger.info({
+                ticket: trade.ticket,
+                strategyId,
+                violations: result.violations.length,
+                adherenceScore: result.adherenceScore,
+            }, '[trade-sync] strategy compliance violations recorded');
+        }
+    } catch (err) {
+        logger.error({ err, ticket: trade.ticket }, '[trade-sync] failed to evaluate compliance');
     }
 }
