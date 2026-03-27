@@ -50,7 +50,9 @@ export function AddFilterPicker({
     setSearchQuery('')
     setTextValue('')
     // Pre-check all currently active multi-select values
-    const current = activeFilters.filter(f => f.id === id).map(f => f.removeValue ?? '')
+    const current = activeFilters
+      .filter(f => f.id === id && f.removeValue !== undefined)
+      .map(f => f.removeValue as string)
     setSelectedMulti(current)
   }
 
