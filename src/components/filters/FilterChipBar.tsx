@@ -51,10 +51,26 @@ export function FilterChipBar({
     return () => document.removeEventListener('keydown', handleKey)
   }, [isOpen])
 
+  // Enrich labels for filters whose options are dynamic (e.g. account, tag).
+  // useFilters only has access to static config.options, so dynamic-option filters
+  // fall back to the raw URL value as their label. FilterChipBar has dynamicOptions
+  // and can resolve the human-readable label here before passing to FilterChip.
+  const enrichedFilters = activeFilters.map(filter => {
+    const opts = dynamicOptions[filter.id]
+    if (opts && filter.removeValue) {
+      const opt = opts.find(o => o.value === filter.removeValue)
+      if (opt) {
+        const cfg = config.find(c => c.id === filter.id)
+        return { ...filter, label: `${cfg?.label ?? filter.id}: ${opt.label}` }
+      }
+    }
+    return filter
+  })
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       {/* Active chips */}
-      {activeFilters.map((filter, i) => (
+      {enrichedFilters.map((filter) => (
         <FilterChip key={`${filter.id}-${filter.removeValue ?? filter.label}`} filter={filter} onRemove={onRemove} />
       ))}
 
