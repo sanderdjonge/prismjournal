@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useDebouncedCallback } from 'use-debounce';
 import { toast } from 'sonner';
 import DashboardShell from '@/components/layout/DashboardShell';
 import DraggableTable from '@/components/journal/DraggableTable';
@@ -14,7 +13,9 @@ import { useTrades, useDeleteTrade, TradeFilters } from '@/hooks/useTrades';
 import { useTags } from '@/hooks/useTags';
 import { useBulkOperations } from '@/hooks/useBulkOperations';
 import { useAccounts } from '@/hooks/useAccounts';
-import { Search, Plus, Calendar, ChevronLeft, ChevronRight, Download, Tag as TagIcon, Trash2, X, Wallet } from 'lucide-react';
+import { useFilters, FilterConfig } from '@/hooks/useFilters';
+import { FilterChipBar } from '@/components/filters/FilterChipBar';
+import { Plus, ChevronLeft, ChevronRight, Download, Tag as TagIcon, Trash2, X, Wallet } from 'lucide-react';
 
 export type JournalTrade = {
     id: string;
@@ -44,18 +45,28 @@ export type JournalTrade = {
     mfe?: number | null;
 };
 
+const JOURNAL_FILTER_CONFIG: FilterConfig[] = [
+  { id: 'side', label: 'Side', type: 'single-select', options: [
+    { value: 'LONG', label: 'Long' }, { value: 'SHORT', label: 'Short' },
+  ]},
+  { id: 'result', label: 'Result', type: 'single-select', options: [
+    { value: 'WIN', label: 'Win' }, { value: 'LOSS', label: 'Loss' }, { value: 'OPEN', label: 'Open' },
+  ]},
+  { id: 'closeReason', label: 'Close Reason', type: 'single-select', options: [
+    { value: 'TP', label: 'TP' }, { value: 'SL', label: 'SL' }, { value: 'MANUAL', label: 'Manual' },
+  ]},
+  { id: 'tag', label: 'Tag', type: 'multi-select' },
+  { id: 'account', label: 'Account', type: 'single-select' },
+  { id: 'dateRange', label: 'Date Range', type: 'date-range', paramKeys: ['from', 'to'] },
+  { id: 'search', label: 'Search', type: 'text' },
+]
+
 function JournalContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
 
-    // Filter state (kept as-is to feed into query key)
-    const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
-    const [filterSide, setFilterSide] = useState<string>(searchParams.get('side') || 'ALL');
-    const [filterResult, setFilterResult] = useState<string>(searchParams.get('result') || 'ALL');
-    const [filterTag, setFilterTag] = useState<string>(searchParams.get('tag') || 'ALL');
-    const [filterCloseReason, setFilterCloseReason] = useState<string>(searchParams.get('closeReason') || 'ALL');
-    const [dateFrom, setDateFrom] = useState(searchParams.get('from') || '');
-    const [dateTo, setDateTo] = useState(searchParams.get('to') || '');
+    const { activeFilters, addFilter, removeFilter, setMultiFilter, clearAll, getParam } = useFilters(JOURNAL_FILTER_CONFIG)
+
     const [page, setPage] = useState(parseInt(searchParams.get('page') || '1'));
     const [limit, setLimit] = useState<number>(() => {
         if (typeof window === 'undefined') return 25;
@@ -79,18 +90,18 @@ function JournalContent() {
     const [accountDropdownOpen, setAccountDropdownOpen] = useState(false);
 
     // Account switcher (syncs with topnav)
-    const { accounts, selectedAccountId, selectAccount } = useAccounts();
+    const { accounts } = useAccounts();
 
     // Build filters object for React Query
     const filters: TradeFilters = {
-        q: searchQuery || undefined,
-        side: filterSide !== 'ALL' ? filterSide : undefined,
-        result: filterResult !== 'ALL' ? filterResult : undefined,
-        tag: filterTag !== 'ALL' ? filterTag : undefined,
-        closeReason: filterCloseReason !== 'ALL' ? filterCloseReason : undefined,
-        from: dateFrom || undefined,
-        to: dateTo || undefined,
-        account: selectedAccountId || undefined,
+        q: getParam('search') || undefined,
+        side: getParam('side') || undefined,
+        result: getParam('result') || undefined,
+        tag: activeFilters.find(f => f.id === 'tag')?.removeValue || undefined,
+        closeReason: getParam('closeReason') || undefined,
+        from: getParam('from') || undefined,
+        to: getParam('to') || undefined,
+        account: getParam('account') || undefined,
         page,
         limit,
     };
@@ -114,62 +125,34 @@ function JournalContent() {
         }
     }, [isError]);
 
-    // Update URL params when filters change
-    const updateUrlParams = useCallback((params: Record<string, string | null>) => {
-        const newSearchParams = new URLSearchParams(searchParams.toString());
-
-        Object.entries(params).forEach(([key, value]) => {
-            if (value && value !== 'ALL' && value !== '') {
-                newSearchParams.set(key, value);
-            } else {
-                newSearchParams.delete(key);
-            }
-        });
-
-        const newUrl = newSearchParams.toString()
-            ? `${window.location.pathname}?${newSearchParams.toString()}`
-            : window.location.pathname;
-
-        router.replace(newUrl, { scroll: false });
-    }, [searchParams, router]);
-
-    // Debounced search to prevent excessive API calls
-    const debouncedSearch = useDebouncedCallback((value: string) => {
-        setSearchQuery(value);
-        setPage(1); // Reset to page 1 on search
-        updateUrlParams({ q: value || null });
-    }, 300);
-
-    // Update URL when filters change
-    useEffect(() => {
-        updateUrlParams({
-            side: filterSide,
-            result: filterResult,
-            tag: filterTag !== 'ALL' ? filterTag : null,
-            from: dateFrom || null,
-            to: dateTo || null,
-        });
-    }, [filterSide, filterResult, filterTag, dateFrom, dateTo, updateUrlParams]);
-
     // Reset to page 1 and clear selection when filters change
     useEffect(() => {
         setPage(1);
         setSelectedIds(new Set());
         setIsAllSelected(false);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [searchQuery, filterSide, filterResult, filterTag, dateFrom, dateTo, selectedAccountId]);
+    }, [activeFilters]);
 
     const handlePageChange = (newPage: number) => {
         setPage(newPage);
         setIsAllSelected(false);
-        updateUrlParams({ page: newPage.toString() });
+        const newSearchParams = new URLSearchParams(searchParams.toString());
+        newSearchParams.set('page', newPage.toString());
+        const newUrl = newSearchParams.toString()
+            ? `${window.location.pathname}?${newSearchParams.toString()}`
+            : window.location.pathname;
+        router.replace(newUrl, { scroll: false });
     };
 
     const handleLimitChange = (newLimit: number) => {
         setLimit(newLimit);
         setPage(1);
         localStorage.setItem('journal:perPage', String(newLimit));
-        updateUrlParams({ page: '1' });
+        const newSearchParams = new URLSearchParams(searchParams.toString());
+        newSearchParams.set('page', '1');
+        const newUrl = newSearchParams.toString()
+            ? `${window.location.pathname}?${newSearchParams.toString()}`
+            : window.location.pathname;
+        router.replace(newUrl, { scroll: false });
     };
 
     const handleView = (trade: JournalTrade) => {
@@ -224,16 +207,15 @@ function JournalContent() {
 
     const handleExportCsv = async () => {
         try {
-            const params = new URLSearchParams();
-            if (searchQuery) params.set('q', searchQuery);
-            if (filterSide !== 'ALL') params.set('side', filterSide);
-            if (filterResult !== 'ALL') params.set('result', filterResult);
-            if (dateFrom) params.set('from', dateFrom);
-            if (dateTo) params.set('to', dateTo);
-
+            const params = new URLSearchParams()
+            if (getParam('search')) params.set('q', getParam('search')!)
+            if (getParam('side')) params.set('side', getParam('side')!)
+            if (getParam('result')) params.set('result', getParam('result')!)
+            if (getParam('from')) params.set('from', getParam('from')!)
+            if (getParam('to')) params.set('to', getParam('to')!)
             const res = await fetch(`/api/trades/export?${params.toString()}`);
             if (!res.ok) throw new Error('Export failed');
-            
+
             const blob = await res.blob();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -268,14 +250,15 @@ function JournalContent() {
             return;
         }
         try {
-            const params = new URLSearchParams();
-            if (searchQuery) params.set('q', searchQuery);
-            if (filterSide !== 'ALL') params.set('side', filterSide);
-            if (filterResult !== 'ALL') params.set('result', filterResult);
-            if (filterTag !== 'ALL') params.set('tag', filterTag);
-            if (dateFrom) params.set('from', dateFrom);
-            if (dateTo) params.set('to', dateTo);
-            if (selectedAccountId) params.set('account', selectedAccountId);
+            const params = new URLSearchParams()
+            if (getParam('search')) params.set('q', getParam('search')!)
+            if (getParam('side')) params.set('side', getParam('side')!)
+            if (getParam('result')) params.set('result', getParam('result')!)
+            const tagValue = activeFilters.find(f => f.id === 'tag')?.removeValue
+            if (tagValue) params.set('tag', tagValue)
+            if (getParam('from')) params.set('from', getParam('from')!)
+            if (getParam('to')) params.set('to', getParam('to')!)
+            if (getParam('account')) params.set('account', getParam('account')!)
             params.set('idsOnly', 'true');
             const res = await fetch(`/api/trades?${params.toString()}`);
             if (!res.ok) throw new Error();
@@ -350,136 +333,19 @@ function JournalContent() {
                     </div>
                 </div>
 
-                {/* Filters Bar */}
-                <div className="flex flex-wrap items-center gap-3">
-                    <div className="glass-card flex items-center gap-3 px-4 py-2 border-white/5 bg-white/5 focus-within:border-primary/50 transition-all">
-                        <Search size={14} className="text-gray-500" />
-                        <input
-                            type="text"
-                            placeholder="Search symbol, ticket..."
-                            className="bg-transparent border-none outline-none text-xs text-white placeholder:text-gray-600 w-40 font-bold"
-                            defaultValue={searchQuery}
-                            onChange={(e) => debouncedSearch(e.target.value)}
-                        />
-                    </div>
-
-                    <div className="glass-card flex items-center gap-1 border-white/5 bg-white/5 p-1">
-                        {['ALL', 'LONG', 'SHORT'].map(type => (
-                            <button
-                                key={type}
-                                onClick={() => setFilterSide(type)}
-                                className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${filterSide === type
-                                    ? 'bg-white/10 text-white shadow-[0_0_15px_rgba(255,255,255,0.1)]'
-                                    : 'text-gray-600 hover:text-gray-400'
-                                    }`}
-                            >
-                                {type}
-                            </button>
-                        ))}
-                    </div>
-
-                    <div className="glass-card flex items-center gap-1 border-white/5 bg-white/5 p-1">
-                        {['ALL', 'WIN', 'LOSS', 'OPEN'].map(type => (
-                            <button
-                                key={type}
-                                onClick={() => setFilterResult(type)}
-                                className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${filterResult === type
-                                    ? type === 'WIN' ? 'bg-profit/20 text-profit' :
-                                      type === 'LOSS' ? 'bg-loss/20 text-loss' :
-                                      type === 'OPEN' ? 'bg-secondary/20 text-secondary' :
-                                      'bg-white/10 text-white shadow-[0_0_15px_rgba(255,255,255,0.1)]'
-                                    : 'text-gray-600 hover:text-gray-400'
-                                    }`}
-                            >
-                                {type}
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* Close Reason Filter */}
-                    <div className="glass-card flex items-center gap-1 border-white/5 bg-white/5 p-1">
-                        {(['ALL', 'TP', 'SL', 'MANUAL'] as const).map(cr => (
-                            <button
-                                key={cr}
-                                onClick={() => setFilterCloseReason(cr)}
-                                className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${filterCloseReason === cr
-                                    ? cr === 'TP'     ? 'bg-emerald-500/20 text-emerald-400'
-                                    : cr === 'SL'     ? 'bg-red-500/20 text-red-400'
-                                    : cr === 'MANUAL' ? 'bg-white/10 text-gray-300'
-                                    : 'bg-white/10 text-white shadow-[0_0_15px_rgba(255,255,255,0.1)]'
-                                    : 'text-gray-600 hover:text-gray-400'
-                                }`}
-                            >
-                                {cr}
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* Account Filter */}
-                    {accounts.length > 1 && (
-                        <div className="glass-card flex items-center gap-1 border-white/5 bg-white/5 p-1">
-                            <Wallet size={12} className="text-gray-500 ml-1" />
-                            <select
-                                value={selectedAccountId || ''}
-                                onChange={(e) => selectAccount(e.target.value || null)}
-                                className="bg-transparent border-none outline-none text-[10px] text-white font-bold uppercase tracking-widest cursor-pointer"
-                            >
-                                <option value="" className="bg-gray-900">ALL ACCOUNTS</option>
-                                {accounts.map((acc) => (
-                                    <option key={acc.id} value={acc.id} className="bg-gray-900">
-                                        {acc.name.toUpperCase()}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    )}
-
-                    {/* Tag Filter */}
-                    {tags.length > 0 && (
-                        <div className="glass-card flex items-center gap-1 border-white/5 bg-white/5 p-1">
-                            <TagIcon size={12} className="text-gray-500 ml-1" />
-                            <select
-                                value={filterTag}
-                                onChange={(e) => setFilterTag(e.target.value)}
-                                className="bg-transparent border-none outline-none text-[10px] text-white font-bold uppercase tracking-widest cursor-pointer"
-                            >
-                                <option value="ALL" className="bg-gray-900">ALL TAGS</option>
-                                {tags.map((tag) => (
-                                    <option key={tag.id} value={tag.id} className="bg-gray-900">
-                                        {tag.name.toUpperCase()}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    )}
-
-                    <div className="glass-card flex items-center gap-2 border-white/5 bg-white/5 px-3 py-1.5">
-                        <Calendar size={12} className="text-gray-500" />
-                        <input
-                            type="date"
-                            value={dateFrom}
-                            onChange={(e) => setDateFrom(e.target.value)}
-                            className="bg-transparent border-none outline-none text-[10px] text-white font-bold w-28 [color-scheme:dark]"
-                            placeholder="From"
-                        />
-                        <span className="text-gray-600 text-[10px]">—</span>
-                        <input
-                            type="date"
-                            value={dateTo}
-                            onChange={(e) => setDateTo(e.target.value)}
-                            className="bg-transparent border-none outline-none text-[10px] text-white font-bold w-28 [color-scheme:dark]"
-                            placeholder="To"
-                        />
-                        {(dateFrom || dateTo) && (
-                            <button
-                                onClick={() => { setDateFrom(''); setDateTo(''); }}
-                                className="text-gray-500 hover:text-white text-[10px] font-black ml-1"
-                            >
-                                ×
-                            </button>
-                        )}
-                    </div>
-                </div>
+                {/* Filter Chips */}
+                <FilterChipBar
+                  config={JOURNAL_FILTER_CONFIG}
+                  activeFilters={activeFilters}
+                  onAdd={addFilter}
+                  onSetMulti={setMultiFilter}
+                  onRemove={removeFilter}
+                  onClear={clearAll}
+                  dynamicOptions={{
+                    tag: tags.map(t => ({ value: t.id, label: t.name })),
+                    account: accounts.map(a => ({ value: a.id, label: a.name })),
+                  }}
+                />
 
                 {/* Bulk Action Toolbar */}
                 {selectedIds.size > 0 && (
