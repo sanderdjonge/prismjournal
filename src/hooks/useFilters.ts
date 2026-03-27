@@ -1,6 +1,6 @@
 'use client'
 
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { useMemo, useCallback } from 'react'
 
 export type FilterType = 'single-select' | 'multi-select' | 'date-range' | 'text'
@@ -28,16 +28,29 @@ export interface ActiveFilter {
   paramKeys: string[]  // URL keys to clear when removing this chip
 }
 
+function getParamKeys(cfg: FilterConfig): string[] {
+  if (cfg.type === 'date-range') {
+    return cfg.paramKeys ?? ['dateFrom', 'dateTo']
+  }
+  return cfg.paramKeys ?? [cfg.id]
+}
+
+/**
+ * @param config Filter configuration array.
+ * Must be a stable reference across renders (defined at module level or wrapped in useMemo).
+ * An inline array literal will defeat memoization.
+ */
 export function useFilters(config: FilterConfig[]) {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const pathname = usePathname()
 
   const activeFilters = useMemo<ActiveFilter[]>(() => {
     const filters: ActiveFilter[] = []
 
     for (const cfg of config) {
       if (cfg.type === 'date-range') {
-        const keys = cfg.paramKeys ?? ['dateFrom', 'dateTo']
+        const keys = getParamKeys(cfg)
         const from = searchParams.get(keys[0])
         const to = searchParams.get(keys[1])
         if (from || to) {
@@ -77,8 +90,8 @@ export function useFilters(config: FilterConfig[]) {
 
   const buildUrl = useCallback((params: URLSearchParams): string => {
     const qs = params.toString()
-    return qs ? `${window.location.pathname}?${qs}` : window.location.pathname
-  }, [])
+    return qs ? `${pathname}?${qs}` : pathname
+  }, [pathname])
 
   const addFilter = useCallback(
     (id: string, value: string | { from: string; to: string }) => {
@@ -127,7 +140,7 @@ export function useFilters(config: FilterConfig[]) {
   const clearAll = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString())
     for (const cfg of config) {
-      const keys = cfg.paramKeys ?? [cfg.id]
+      const keys = getParamKeys(cfg)
       for (const key of keys) params.delete(key)
     }
     router.replace(buildUrl(params), { scroll: false })
