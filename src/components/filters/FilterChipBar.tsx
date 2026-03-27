@@ -55,7 +55,7 @@ export function FilterChipBar({
     <div className="flex flex-wrap items-center gap-2">
       {/* Active chips */}
       {activeFilters.map((filter, i) => (
-        <FilterChip key={`${filter.id}-${filter.removeValue ?? i}`} filter={filter} onRemove={onRemove} />
+        <FilterChip key={`${filter.id}-${filter.removeValue ?? filter.label}`} filter={filter} onRemove={onRemove} />
       ))}
 
       {/* Add filter button + popover */}
