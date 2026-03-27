@@ -1,22 +1,35 @@
 'use client';
 
-import { useState } from 'react';
 import EquityChart from '@/components/dashboard/EquityChart';
 import Gauge from '@/components/dashboard/Gauge';
 import { TrendingUp, ArrowDownLeft, Activity, Target, BarChart3 } from 'lucide-react';
 import { useCurrency } from '@/lib/currency';
-import { cn } from '@/lib/cn';
 import { useAccounts } from '@/hooks/useAccounts';
 import { usePerformance } from '@/hooks/usePerformance';
+import { useFilters, FilterConfig } from '@/hooks/useFilters';
+import { FilterChipBar } from '@/components/filters/FilterChipBar';
 
 const MONTH_LABELS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
 
-export function PerformanceContent() {
-    const [period, setPeriod] = useState<'7' | '30' | '90' | '365'>('30');
-    const { formatPnl, formatAmount } = useCurrency();
-    const { selectedAccountId } = useAccounts();
+const PERFORMANCE_FILTER_CONFIG: FilterConfig[] = [
+  { id: 'period', label: 'Period', type: 'single-select', options: [
+    { value: '7', label: '7D' },
+    { value: '30', label: '30D' },
+    { value: '90', label: '90D' },
+    { value: '365', label: '1Y' },
+  ]},
+  { id: 'account', label: 'Account', type: 'single-select' },
+]
 
-    const { data } = usePerformance({ period, accountId: selectedAccountId });
+export function PerformanceContent() {
+    const { formatPnl, formatAmount } = useCurrency();
+    const { accounts } = useAccounts();
+    const { activeFilters, addFilter, removeFilter, setMultiFilter, clearAll, getParam } = useFilters(PERFORMANCE_FILTER_CONFIG);
+
+    const { data } = usePerformance({
+        period: getParam('period') ?? '30',
+        accountId: getParam('account') || undefined,
+    });
 
     const STATS = [
         { id: 'stat_pnl', label: 'Net P&L', val: formatPnl(data.netPnl), status: data.netPnl >= 0 ? 'text-profit' : 'text-loss', icon: TrendingUp },
@@ -38,22 +51,17 @@ export function PerformanceContent() {
                         Deep Audit of Equity Evolution & Edge Stability
                     </p>
                 </div>
-                <div className="flex gap-2">
-                    {(['7', '30', '90', '365'] as const).map((d) => (
-                        <button
-                            key={d}
-                            onClick={() => setPeriod(d)}
-                            className={cn(
-                                "px-4 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all duration-300",
-                                period === d
-                                    ? "bg-primary/20 text-primary border border-primary/30"
-                                    : "bg-white/5 text-gray-500 border border-white/5 hover:bg-white/10 hover:text-white"
-                            )}
-                        >
-                            {d === '365' ? '1Y' : `${d}D`}
-                        </button>
-                    ))}
-                </div>
+                <FilterChipBar
+                    config={PERFORMANCE_FILTER_CONFIG}
+                    activeFilters={activeFilters}
+                    onAdd={addFilter}
+                    onSetMulti={setMultiFilter}
+                    onRemove={removeFilter}
+                    onClear={clearAll}
+                    dynamicOptions={{
+                        account: accounts.map(a => ({ value: a.id, label: a.name })),
+                    }}
+                />
             </div>
 
             {/* Top Row: Equity Chart + Expectancy Gauge */}
