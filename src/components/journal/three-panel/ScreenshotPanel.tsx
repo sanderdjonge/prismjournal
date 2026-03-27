@@ -59,6 +59,19 @@ export function ScreenshotPanel({ trade }: ScreenshotPanelProps) {
         }
     }, [media, selectedEvent]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    // Auto-switch event if current event has no screenshots
+    useEffect(() => {
+        if (media.length > 0) {
+            const hasOpen = media.some(m => m.event === 'OPEN');
+            const hasClose = media.some(m => m.event === 'CLOSE');
+            if (selectedEvent === 'OPEN' && !hasOpen && hasClose) {
+                setSelectedEvent('CLOSE');
+            } else if (selectedEvent === 'CLOSE' && !hasClose && hasOpen) {
+                setSelectedEvent('OPEN');
+            }
+        }
+    }, [media, selectedEvent]);
+
     const activeShot = media.find(m => m.event === selectedEvent && m.timeframe === selectedTf);
 
     const duration = trade ? computeDuration(trade.entryTime, trade.exitTime) : null;
