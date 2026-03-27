@@ -51,18 +51,20 @@ export function PerformanceContent() {
                         Deep Audit of Equity Evolution & Edge Stability
                     </p>
                 </div>
-                <FilterChipBar
-                    config={PERFORMANCE_FILTER_CONFIG}
-                    activeFilters={activeFilters}
-                    onAdd={addFilter}
-                    onSetMulti={setMultiFilter}
-                    onRemove={removeFilter}
-                    onClear={clearAll}
-                    dynamicOptions={{
-                        account: accounts.map(a => ({ value: a.id, label: a.name })),
-                    }}
-                />
             </div>
+
+            {/* Filters */}
+            <FilterChipBar
+                config={PERFORMANCE_FILTER_CONFIG}
+                activeFilters={activeFilters}
+                onAdd={addFilter}
+                onSetMulti={setMultiFilter}
+                onRemove={removeFilter}
+                onClear={clearAll}
+                dynamicOptions={{
+                    account: accounts.map(a => ({ value: a.id, label: a.name })),
+                }}
+            />
 
             {/* Top Row: Equity Chart + Expectancy Gauge */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
