@@ -9,6 +9,7 @@ let mockSearchParams = new URLSearchParams()
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: mockReplace }),
   useSearchParams: () => mockSearchParams,
+  usePathname: () => '/trades',
 }))
 
 const SIDE_CONFIG: FilterConfig[] = [
@@ -121,6 +122,18 @@ describe('useFilters — clearAll', () => {
     expect(calledUrl).not.toContain('tag=')
     expect(calledUrl).not.toContain('dateFrom=')
     expect(calledUrl).not.toContain('dateTo=')
+  })
+
+  it('clears dateFrom and dateTo when paramKeys is absent from date-range config', () => {
+    mockSearchParams = new URLSearchParams('dateFrom=2026-01-01&dateTo=2026-03-27')
+    const implicitDateConfig: FilterConfig[] = [
+      { id: 'dateRange', label: 'Date Range', type: 'date-range' }  // no paramKeys
+    ]
+    const { result } = renderHook(() => useFilters(implicitDateConfig))
+    act(() => { result.current.clearAll() })
+    const calledUrl = mockReplace.mock.calls[0][0] as string
+    expect(calledUrl).not.toContain('dateFrom')
+    expect(calledUrl).not.toContain('dateTo')
   })
 })
 
