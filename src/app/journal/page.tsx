@@ -43,6 +43,11 @@ export type JournalTrade = {
     accountId?: string | null;
     mae?: number | null;
     mfe?: number | null;
+    screenshotCount?: number;
+    entryRating?: number | null;
+    exitRating?: number | null;
+    managementRating?: number | null;
+    rMultiple?: number | null;
 };
 
 const JOURNAL_FILTER_CONFIG: FilterConfig[] = [
