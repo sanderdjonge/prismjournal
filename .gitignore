@@ -71,3 +71,4 @@ _material/
 
 # Python verification scripts (legacy, should not be committed)
 scripts/verify_prism_*.py
+.worktrees/
