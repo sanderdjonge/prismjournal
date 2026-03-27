@@ -9,13 +9,13 @@ export const APP_VERSION = pkg.version; // e.g. "2.17.0"
  * Build date — update this whenever you bump the version.
  * Format: YYYY-MM-DD
  */
-export const BUILD_DATE = '2026-03-25';
+export const BUILD_DATE = '2026-03-27';
 
 /**
  * Short summary of what changed in this build.
  * Update together with APP_VERSION and BUILD_DATE.
  */
-export const BUILD_NOTES = 'Phase 17 Gap 2c — Exit Quality Quadrant plot replaces scatter; click-to-modal trade drill-down from analytics';
+export const BUILD_NOTES = 'Phase 18 — Filter Chip System: URL-persisted chip-based filters on Journal, Analytics, and Performance pages';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {
