@@ -61,3 +61,13 @@ docker-volumes/
 # File storage (screenshots, etc.)
 storage/
 .worktrees/
+
+# AI code stuff
+CLAUDE.md
+AGENTS.md
+.claude/
+.next/
+.playwright-mcp/
+_material/
+docs/
+skills/
