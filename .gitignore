@@ -62,12 +62,12 @@ docker-volumes/
 storage/
 .worktrees/
 
-# AI code stuff
+# AI tooling (local only — not for version control)
 CLAUDE.md
 AGENTS.md
 .claude/
-.next/
 .playwright-mcp/
 _material/
-docs/
-skills/
+
+# Python verification scripts (legacy, should not be committed)
+scripts/verify_prism_*.py
