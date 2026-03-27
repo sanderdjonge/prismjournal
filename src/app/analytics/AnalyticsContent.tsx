@@ -1,34 +1,39 @@
 'use client';
 
-import { useState } from 'react';
 import Gauge from '@/components/dashboard/Gauge';
 import {
     ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ComposedChart, Line,
 } from 'recharts';
-import { Target, Zap, X } from 'lucide-react';
+import { Target, Zap } from 'lucide-react';
 import { useCurrency } from '@/lib/currency';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useExcursionTrades } from '@/hooks/useExcursionTrades';
 import BEMetricsWidget from '@/components/analytics/BEMetricsWidget';
 import { ExcursionQuadrantPlot } from '@/components/analytics/ExcursionQuadrantPlot';
+import { useFilters, FilterConfig } from '@/hooks/useFilters';
+import { FilterChipBar } from '@/components/filters/FilterChipBar';
+
+const ANALYTICS_FILTER_CONFIG: FilterConfig[] = [
+    { id: 'dateRange', label: 'Date Range', type: 'date-range', paramKeys: ['from', 'to'] },
+    { id: 'account', label: 'Account', type: 'single-select' },
+]
 
 export function AnalyticsContent() {
-    const [dateFrom, setDateFrom] = useState('');
-    const [dateTo, setDateTo] = useState('');
     const { formatAmount } = useCurrency();
-    const { selectedAccountId } = useAccounts();
+    const { selectedAccountId, accounts } = useAccounts();
+    const { activeFilters, addFilter, removeFilter, setMultiFilter, clearAll, getParam } = useFilters(ANALYTICS_FILTER_CONFIG);
 
     const { data } = useAnalytics({
-        from: dateFrom || undefined,
-        to: dateTo || undefined,
-        account: selectedAccountId,
+        from: getParam('from') || undefined,
+        to: getParam('to') || undefined,
+        account: getParam('account') || undefined,
     });
 
     const { data: excursionTrades = [] } = useExcursionTrades({
-        from: dateFrom || undefined,
-        to: dateTo || undefined,
-        account: selectedAccountId,
+        from: getParam('from') || undefined,
+        to: getParam('to') || undefined,
+        account: getParam('account') || undefined,
     });
 
     const symbolData = data.symbolData;
@@ -47,32 +52,18 @@ export function AnalyticsContent() {
                 </div>
             </div>
 
-            {/* Date Range Selector */}
-            <div className="flex items-center gap-4 glass-card p-4 border-white/5 bg-white/5 rounded-xl">
-                <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Date Range</span>
-                <input
-                    type="date"
-                    value={dateFrom}
-                    onChange={e => setDateFrom(e.target.value)}
-                    className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm font-bold text-white outline-none focus:border-primary/50"
-                />
-                <span className="text-gray-600 font-bold">→</span>
-                <input
-                    type="date"
-                    value={dateTo}
-                    onChange={e => setDateTo(e.target.value)}
-                    className="bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm font-bold text-white outline-none focus:border-primary/50"
-                />
-                {(dateFrom || dateTo) && (
-                    <button
-                        onClick={() => { setDateFrom(''); setDateTo(''); }}
-                        className="flex items-center gap-1 text-xs text-gray-500 hover:text-white font-bold uppercase tracking-widest transition-colors"
-                    >
-                        <X size={12} />
-                        Clear
-                    </button>
-                )}
-            </div>
+            {/* Filters */}
+            <FilterChipBar
+                config={ANALYTICS_FILTER_CONFIG}
+                activeFilters={activeFilters}
+                onAdd={addFilter}
+                onSetMulti={setMultiFilter}
+                onRemove={removeFilter}
+                onClear={clearAll}
+                dynamicOptions={{
+                    account: accounts.map(a => ({ value: a.id, label: a.name })),
+                }}
+            />
 
             {/* Gauges Row */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
