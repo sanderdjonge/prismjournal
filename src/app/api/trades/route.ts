@@ -174,6 +174,10 @@ export const GET = withAuth(async (request, _ctx, session) => {
         screenshotCount: t._count.media,
         mae: t.mae ?? null,
         mfe: t.mfe ?? null,
+        entryRating: t.entryRating ?? null,
+        exitRating: t.exitRating ?? null,
+        managementRating: t.managementRating ?? null,
+        rMultiple: t.rMultiple ?? null,
     }));
 
     return NextResponse.json({
