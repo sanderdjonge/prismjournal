@@ -29,7 +29,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: prism-prod-app
+    container_name: prod_app
     shm_size: '256m'
     restart: unless-stopped
     depends_on:
@@ -38,20 +38,12 @@ services:
     env_file: .env
     environment:
       NODE_ENV: production
-      DATABASE_URL: ${DATABASE_URL}
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}"
       NEXTAUTH_URL: ${NEXTAUTH_URL}
-      RESEND_API_KEY: ${RESEND_API_KEY}
-      CRON_SECRET: ${CRON_SECRET}
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
-      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET}
-      NEBUL_API_KEY: ${NEBUL_API_KEY}
-      NEBUL_BASE_URL: ${NEBUL_BASE_URL}
-      NEBUL_MODEL: ${NEBUL_MODEL}
+      AUTH_TRUST_HOST: "true"
       RATE_LIMIT_LOGIN: ${RATE_LIMIT_LOGIN:-10}
       RATE_LIMIT_API: ${RATE_LIMIT_API:-100}
       RATE_LIMIT_SYNC: ${RATE_LIMIT_SYNC:-600}
-      AUTH_TRUST_HOST: "true"
       STORAGE_PATH: /app/storage
       BACKUP_PATH: /app/backups
       BACKUP_KEEP_HOURLY: ${BACKUP_KEEP_HOURLY:-24}
@@ -78,7 +70,7 @@ services:
         condition: service_healthy
     env_file: .env
     environment:
-      PGHOST: prod_db
+      PGHOST: db
       PGPORT: 5432
       PGUSER: ${POSTGRES_USER}
       PGPASSWORD: ${POSTGRES_PASSWORD}
