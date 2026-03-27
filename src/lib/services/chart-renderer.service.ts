@@ -83,7 +83,7 @@ async function fetchOhlcYahoo(yahooSymbol: string, interval: string, outputsize:
         ? Math.floor(new Date(endDate).getTime() / 1000)
         : Math.floor(Date.now() / 1000);
     // Request 2× bars to account for market-hours gaps (weekends, overnight sessions)
-    const period1 = period2 - Math.floor((outputsize * msPerBar * 2) / 1000);
+    const lookbackMultiplier = ["1m", "5m", "15m", "30m", "60m", "1h"].includes(yahooInterval) ? 5 : 2; const period1 = period2 - Math.floor((outputsize * msPerBar * lookbackMultiplier) / 1000);
 
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?interval=${yahooInterval}&period1=${period1}&period2=${period2}`;
 

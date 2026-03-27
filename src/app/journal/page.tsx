@@ -582,13 +582,12 @@ function JournalContent() {
                 )}
             </div>
 
-            <TradeEntryModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onTradeAdded={handleTradeAdded} />
+            <TradeEntryModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSaved={handleTradeAdded} />
             <TradeViewModal
                 isOpen={isViewModalOpen}
                 onClose={handleViewModalClose}
                 trade={selectedTrade}
                 onEdit={handleSwitchToEdit}
-                onDelete={handleTradeDeleted}
             />
             <TradeEditModal
                 isOpen={isEditModalOpen}
@@ -602,7 +601,7 @@ function JournalContent() {
                 onConfirm={handleBulkDelete}
                 title="Delete Selected Trades"
                 message={`Are you sure you want to delete ${'$'}{selectedIds.size} trade${'$'}{selectedIds.size !== 1 ? 's' : ''}? This action cannot be undone.`}
-                confirmText="Delete"
+                confirmLabel="Delete"
                 variant="danger"
             />
         </DashboardShell>
