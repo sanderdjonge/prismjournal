@@ -55,7 +55,7 @@ const JOURNAL_FILTER_CONFIG: FilterConfig[] = [
   { id: 'closeReason', label: 'Close Reason', type: 'single-select', options: [
     { value: 'TP', label: 'TP' }, { value: 'SL', label: 'SL' }, { value: 'MANUAL', label: 'Manual' },
   ]},
-  { id: 'tag', label: 'Tag', type: 'multi-select' },
+  { id: 'tag', label: 'Tag', type: 'single-select' },
   { id: 'account', label: 'Account', type: 'single-select' },
   { id: 'dateRange', label: 'Date Range', type: 'date-range', paramKeys: ['from', 'to'] },
   { id: 'search', label: 'Search', type: 'text' },
@@ -213,6 +213,9 @@ function JournalContent() {
             if (getParam('result')) params.set('result', getParam('result')!)
             if (getParam('from')) params.set('from', getParam('from')!)
             if (getParam('to')) params.set('to', getParam('to')!)
+            const tagValue = activeFilters.find(f => f.id === 'tag')?.removeValue
+            if (tagValue) params.set('tag', tagValue)
+            if (getParam('account')) params.set('account', getParam('account')!)
             const res = await fetch(`/api/trades/export?${params.toString()}`);
             if (!res.ok) throw new Error('Export failed');
 
