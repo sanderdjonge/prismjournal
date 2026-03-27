@@ -8,6 +8,7 @@ import DraggableTable from '@/components/journal/DraggableTable';
 import TradeViewModal from '@/components/journal/TradeViewModal';
 import TradeEditModal from '@/components/journal/TradeEditModal';
 import TradeEntryModal from '@/components/journal/TradeEntryModal';
+import { JournalThreePanelView } from '@/components/journal/JournalThreePanelView';
 import { SkeletonRow, ConfirmModal } from '@/components/ui';
 import { useTrades, useDeleteTrade, TradeFilters } from '@/hooks/useTrades';
 import { useTags } from '@/hooks/useTags';
@@ -15,7 +16,7 @@ import { useBulkOperations } from '@/hooks/useBulkOperations';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useFilters, FilterConfig } from '@/hooks/useFilters';
 import { FilterChipBar } from '@/components/filters/FilterChipBar';
-import { Plus, ChevronLeft, ChevronRight, Download, Tag as TagIcon, Trash2, X, Wallet } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Download, Tag as TagIcon, Trash2, X, Wallet, LayoutGrid, Columns3 } from 'lucide-react';
 
 export type JournalTrade = {
     id: string;
@@ -84,6 +85,9 @@ function JournalContent() {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
+    // View mode state (table vs 3-panel)
+    const [viewMode, setViewMode] = useState<'table' | 'panel'>('table');
+
     // Bulk selection state
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [isAllSelected, setIsAllSelected] = useState(false);
@@ -137,13 +141,22 @@ function JournalContent() {
         setIsAllSelected(false);
     }, [activeFilters]);
 
+    // Clear bulk selection when switching to panel mode
+    const handleViewModeChange = (mode: 'table' | 'panel') => {
+        setViewMode(mode);
+        if (mode === 'panel') {
+            setSelectedIds(new Set());
+            setIsAllSelected(false);
+        }
+    };
+
     const handlePageChange = (newPage: number) => {
         setPage(newPage);
         setIsAllSelected(false);
         const newSearchParams = new URLSearchParams(searchParams.toString());
         newSearchParams.set('page', newPage.toString());
         const newUrl = newSearchParams.toString()
-            ? `${window.location.pathname}?${newSearchParams.toString()}`
+            ? `${'$'}{window.location.pathname}?${'$'}{newSearchParams.toString()}`
             : window.location.pathname;
         router.replace(newUrl, { scroll: false });
     };
@@ -155,7 +168,7 @@ function JournalContent() {
         const newSearchParams = new URLSearchParams(searchParams.toString());
         newSearchParams.set('page', '1');
         const newUrl = newSearchParams.toString()
-            ? `${window.location.pathname}?${newSearchParams.toString()}`
+            ? `${'$'}{window.location.pathname}?${'$'}{newSearchParams.toString()}`
             : window.location.pathname;
         router.replace(newUrl, { scroll: false });
     };
@@ -221,14 +234,14 @@ function JournalContent() {
             const tagValue = activeFilters.find(f => f.id === 'tag')?.removeValue
             if (tagValue) params.set('tag', tagValue)
             if (getParam('account')) params.set('account', getParam('account')!)
-            const res = await fetch(`/api/trades/export?${params.toString()}`);
+            const res = await fetch(`/api/trades/export?${'$'}{params.toString()}`);
             if (!res.ok) throw new Error('Export failed');
 
             const blob = await res.blob();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `trades_${new Date().toISOString().split('T')[0]}.csv`;
+            a.download = `trades_${'$'}{new Date().toISOString().split('T')[0]}.csv`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
@@ -268,7 +281,7 @@ function JournalContent() {
             if (getParam('to')) params.set('to', getParam('to')!)
             if (getParam('account')) params.set('account', getParam('account')!)
             params.set('idsOnly', 'true');
-            const res = await fetch(`/api/trades?${params.toString()}`);
+            const res = await fetch(`/api/trades?${'$'}{params.toString()}`);
             if (!res.ok) throw new Error();
             const data = await res.json();
             setSelectedIds(new Set(data.ids));
@@ -325,6 +338,30 @@ function JournalContent() {
                     </div>
 
                     <div className="flex gap-3">
+                        {/* View Mode Toggle */}
+                        <div className="flex gap-[2px] bg-white/5 border border-white/10 rounded-xl p-[2px]">
+                            <button
+                                onClick={() => handleViewModeChange('table')}
+                                className={`h-9 px-3 rounded-[10px] text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all ${
+                                    viewMode === 'table'
+                                        ? 'bg-white/10 text-white'
+                                        : 'text-gray-500 hover:text-white'
+                                }`}
+                            >
+                                <LayoutGrid size={14} /> Table
+                            </button>
+                            <button
+                                onClick={() => handleViewModeChange('panel')}
+                                className={`h-9 px-3 rounded-[10px] text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all ${
+                                    viewMode === 'panel'
+                                        ? 'bg-white/10 text-white'
+                                        : 'text-gray-500 hover:text-white'
+                                }`}
+                            >
+                                <Columns3 size={14} /> Panel
+                            </button>
+                        </div>
+
                         <button
                             onClick={handleExportCsv}
                             className="h-10 px-6 rounded-xl bg-white/5 border border-white/10 text-white font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:bg-white/10 transition-all active:scale-95 shrink-0"
@@ -355,8 +392,8 @@ function JournalContent() {
                   }}
                 />
 
-                {/* Bulk Action Toolbar */}
-                {selectedIds.size > 0 && (
+                {/* Bulk Action Toolbar - only show in table mode */}
+                {viewMode === 'table' && selectedIds.size > 0 && (
                     <div className="glass-card border-primary/20 bg-primary/5 px-4 py-3 flex items-center justify-between overflow-visible relative z-[50]">
                         <div className="flex items-center gap-3">
                             <span className="text-[10px] font-black uppercase tracking-widest text-primary">
@@ -386,7 +423,6 @@ function JournalContent() {
                             )}
                         </div>
                         <div className="flex items-center gap-2">
-                            {/* Move to Account Dropdown */}
                             {accounts.length > 1 && (
                                 <div className="relative">
                                     <button
@@ -411,7 +447,6 @@ function JournalContent() {
                                 </div>
                             )}
 
-                            {/* Tag Dropdown */}
                             <div className="relative">
                                 <button
                                     onClick={() => setTagDropdownOpen(!tagDropdownOpen)}
@@ -446,7 +481,6 @@ function JournalContent() {
                                 )}
                             </div>
 
-                            {/* Delete Button */}
                             <button
                                 onClick={() => setIsDeleteModalOpen(true)}
                                 className="h-8 px-4 rounded-lg bg-danger/10 border border-danger/20 text-danger font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:bg-danger/20 transition-all"
@@ -457,111 +491,119 @@ function JournalContent() {
                     </div>
                 )}
 
-                {/* Main Table Container */}
-                <div className="glass-card border-white/5 bg-black/40 backdrop-blur-md overflow-hidden">
-                    {isFetching && !data ? (
-                        <div className="divide-y divide-white/5">
-                            {Array.from({ length: 8 }).map((_, i) => (
-                                <SkeletonRow key={i} />
-                            ))}
-                        </div>
-                    ) : trades.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-48 gap-3 text-gray-600">
-                            <p className="text-[10px] font-black uppercase tracking-widest">No records found</p>
-                            <button
-                                onClick={() => setIsModalOpen(true)}
-                                className="text-primary text-[10px] font-black uppercase tracking-widest hover:underline"
-                            >
-                                + Log your first trade
-                            </button>
-                        </div>
-                    ) : (
-                        <DraggableTable
-                            data={trades}
-                            onView={handleView}
-                            onEdit={handleEdit}
-                            selectedIds={selectedIds}
-                            onToggleSelect={handleToggleSelect}
-                            onSelectAll={handleSelectAll}
-                        />
-                    )}
-                </div>
+                {/* Main Content - Table or Panel View */}
+                {viewMode === 'panel' ? (
+                    <div className="glass-card border-white/5 bg-black/40 backdrop-blur-md overflow-hidden">
+                        {isFetching && !data ? (
+                            <div className="flex items-center justify-center h-[400px]">
+                                <div className="text-[10px] font-black uppercase tracking-widest text-gray-500 animate-pulse">Loading...</div>
+                            </div>
+                        ) : trades.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center h-[400px] gap-3 text-gray-600">
+                                <p className="text-[10px] font-black uppercase tracking-widest">No records found</p>
+                                <button
+                                    onClick={() => setIsModalOpen(true)}
+                                    className="text-primary text-[10px] font-black uppercase tracking-widest hover:underline"
+                                >
+                                    + Log your first trade
+                                </button>
+                            </div>
+                        ) : (
+                            <JournalThreePanelView trades={trades} />
+                        )}
+                    </div>
+                ) : (
+                    <div className="glass-card border-white/5 bg-black/40 backdrop-blur-md overflow-hidden">
+                        {isFetching && !data ? (
+                            <div className="divide-y divide-white/5">
+                                {Array.from({ length: 8 }).map((_, i) => (
+                                    <SkeletonRow key={i} />
+                                ))}
+                            </div>
+                        ) : trades.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center h-48 gap-3 text-gray-600">
+                                <p className="text-[10px] font-black uppercase tracking-widest">No records found</p>
+                                <button
+                                    onClick={() => setIsModalOpen(true)}
+                                    className="text-primary text-[10px] font-black uppercase tracking-widest hover:underline"
+                                >
+                                    + Log your first trade
+                                </button>
+                            </div>
+                        ) : (
+                            <DraggableTable
+                                data={trades}
+                                onView={handleView}
+                                onEdit={handleEdit}
+                                selectedIds={selectedIds}
+                                onToggleSelect={handleToggleSelect}
+                                onSelectAll={handleSelectAll}
+                            />
+                        )}
+                    </div>
+                )}
 
-                {/* Pagination */}
-                {(pagination.totalPages > 1 || true) && (
+                {/* Pagination - only show in table mode */}
+                {viewMode === 'table' && (pagination.totalPages > 1 || true) && (
                     <div className="flex items-center justify-center gap-4">
-                        {/* Per-page selector */}
                         <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-500">
                             <span>Rows</span>
                             {[10, 25, 50, 100].map(n => (
                                 <button
                                     key={n}
                                     onClick={() => handleLimitChange(n)}
-                                    className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest transition-all ${limit === n ? 'bg-white/15 text-white' : 'hover:bg-white/10 text-gray-500'}`}
+                                    className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest transition-all ${'$'}{limit === n ? 'bg-white/15 text-white' : 'hover:bg-white/10 text-gray-500'}`}
                                 >
                                     {n}
                                 </button>
                             ))}
                         </div>
-                        {pagination.totalPages > 1 && <>
-                        <button
-                            onClick={() => handlePageChange(pagination.page - 1)}
-                            disabled={pagination.page === 1}
-                            className="p-2 rounded-lg glass-card border-white/5 bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
-                        >
-                            <ChevronLeft size={16} />
-                        </button>
-                        <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-gray-500">
-                            <span className="text-white">{pagination.page}</span>
-                            <span>of</span>
-                            <span className="text-white">{pagination.totalPages}</span>
+
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => handlePageChange(page - 1)}
+                                disabled={page === 1}
+                                className="h-8 w-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                            >
+                                <ChevronLeft size={16} />
+                            </button>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                                Page {page} of {pagination.totalPages}
+                            </span>
+                            <button
+                                onClick={() => handlePageChange(page + 1)}
+                                disabled={page === pagination.totalPages}
+                                className="h-8 w-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                            >
+                                <ChevronRight size={16} />
+                            </button>
                         </div>
-                        <button
-                            onClick={() => handlePageChange(pagination.page + 1)}
-                            disabled={pagination.page === pagination.totalPages}
-                            className="p-2 rounded-lg glass-card border-white/5 bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
-                        >
-                            <ChevronRight size={16} />
-                        </button>
-                        </>}
-                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-2">
-                            {pagination.total > 0 ? `${pagination.total} trades` : ''}
-                        </span>
                     </div>
                 )}
-
             </div>
 
-            <TradeEntryModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onSaved={handleTradeAdded}
-            />
-
+            <TradeEntryModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onTradeAdded={handleTradeAdded} />
             <TradeViewModal
-                trade={selectedTrade}
                 isOpen={isViewModalOpen}
                 onClose={handleViewModalClose}
-                onEdit={handleSwitchToEdit}
-            />
-
-            <TradeEditModal
                 trade={selectedTrade}
+                onEdit={handleSwitchToEdit}
+                onDelete={handleTradeDeleted}
+            />
+            <TradeEditModal
                 isOpen={isEditModalOpen}
                 onClose={handleEditModalClose}
+                trade={selectedTrade}
                 onSaved={handleTradeSaved}
             />
-
-            {/* Bulk Delete Confirmation Modal */}
             <ConfirmModal
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}
                 onConfirm={handleBulkDelete}
-                title="Delete Trades"
-                message={`Are you sure you want to delete ${selectedIds.size} trade${selectedIds.size !== 1 ? 's' : ''}? This action cannot be undone.`}
-                confirmLabel="Delete"
+                title="Delete Selected Trades"
+                message={`Are you sure you want to delete ${'$'}{selectedIds.size} trade${'$'}{selectedIds.size !== 1 ? 's' : ''}? This action cannot be undone.`}
+                confirmText="Delete"
                 variant="danger"
-                isLoading={isDeleting}
             />
         </DashboardShell>
     );
@@ -569,13 +611,7 @@ function JournalContent() {
 
 export default function JournalPage() {
     return (
-        <Suspense fallback={
-            <DashboardShell>
-                <div className="flex items-center justify-center h-96 text-gray-600 text-[10px] font-black uppercase tracking-widest">
-                    Loading Vault...
-                </div>
-            </DashboardShell>
-        }>
+        <Suspense fallback={<div className="flex items-center justify-center h-screen text-gray-500">Loading...</div>}>
             <JournalContent />
         </Suspense>
     );
