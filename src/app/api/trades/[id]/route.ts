@@ -4,6 +4,7 @@ import { validateBody, tradeUpdateSchema } from '@/lib/validations';
 import { deleteFile } from '@/lib/storage';
 import { getAllUserAccounts } from '@/lib/getAccount';
 import { withAuth } from '@/lib/api/withAuth';
+import { evaluateAndRecordCompliance, TradeContext } from '@/lib/services/strategy-compliance.service';
 
 export const GET = withAuth(async (_req, ctx, session) => {
     const { id } = await (ctx as { params: Promise<{ id: string }> }).params;
@@ -109,7 +110,37 @@ export const PATCH = withAuth(async (req, ctx, session) => {
     const trade = await prisma.trade.update({
         where: { id },
         data: updateData,
+        include: { strategy: true },
     });
+
+    // Evaluate strategy compliance when trade is closed with a strategy
+    const isNowClosed = body.status === 'CLOSED' || (existingTrade.status === 'CLOSED' && !body.status);
+    const effectiveStrategyId = strategyId !== undefined ? strategyId : existingTrade.strategyId;
+    
+    if (effectiveStrategyId && isNowClosed && trade.exitTime) {
+        try {
+            const tradeContext: TradeContext = {
+                id: trade.id,
+                accountId: trade.accountId,
+                userId: existingTrade.account.userId,
+                strategyId: effectiveStrategyId,
+                symbol: trade.symbol,
+                direction: trade.direction,
+                entryPrice: trade.entryPrice,
+                exitPrice: trade.exitPrice,
+                stopLoss: trade.stopLoss,
+                takeProfit: trade.takeProfit,
+                volume: trade.volume,
+                entryTime: trade.entryTime,
+                exitTime: trade.exitTime,
+                pnl: trade.pnl,
+                initialStopLoss: trade.initialStopLoss,
+            };
+            await evaluateAndRecordCompliance(tradeContext, effectiveStrategyId);
+        } catch (err) {
+            console.error('[trades] Failed to evaluate compliance:', err);
+        }
+    }
 
     return NextResponse.json({ success: true, id: trade.id });
 });

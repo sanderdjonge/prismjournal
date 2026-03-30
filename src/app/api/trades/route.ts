@@ -6,6 +6,7 @@ import { validateBody, tradeCreateSchema } from '@/lib/validations';
 import { Prisma } from '@prisma/client';
 import { withAuth } from '@/lib/api/withAuth';
 import { cacheDelete } from '@/lib/api/cache';
+import { evaluateAndRecordCompliance, TradeContext } from '@/lib/services/strategy-compliance.service';
 
 export const GET = withAuth(async (request, _ctx, session) => {
     const userId = session.user.id;
@@ -261,6 +262,32 @@ export const POST = withAuth(async (req, _ctx, session) => {
         },
         include: { strategy: true },
     });
+
+    // Evaluate strategy compliance for closed trades with strategy assigned
+    if (trade.strategyId && trade.status === 'CLOSED' && trade.exitTime) {
+        try {
+            const tradeContext: TradeContext = {
+                id: trade.id,
+                accountId: account.id,
+                userId,
+                strategyId: trade.strategyId,
+                symbol: trade.symbol,
+                direction: trade.direction,
+                entryPrice: trade.entryPrice,
+                exitPrice: trade.exitPrice,
+                stopLoss: trade.stopLoss,
+                takeProfit: trade.takeProfit,
+                volume: trade.volume,
+                entryTime: trade.entryTime,
+                exitTime: trade.exitTime,
+                pnl: trade.pnl,
+                initialStopLoss: trade.initialStopLoss,
+            };
+            await evaluateAndRecordCompliance(tradeContext, trade.strategyId);
+        } catch (err) {
+            console.error('[trades] Failed to evaluate compliance:', err);
+        }
+    }
 
     cacheDelete(`dashboard:${userId}`);
     cacheDelete(`analytics:${userId}`);
