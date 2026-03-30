@@ -76,9 +76,12 @@ export default function RecentTrades({ trades }: RecentTradesProps) {
                 {/* Active Positions */}
                 <section>
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-500 group-hover/trades:text-gray-300 transition-colors">
-                            Current Trades
-                        </h3>
+                        <div>
+                            <h3 className="text-sm font-semibold text-gray-100">
+                                Current Trades
+                            </h3>
+                            <p className="text-xs text-gray-500">Live positions</p>
+                        </div>
                         <div className="flex items-center gap-1">
                             <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
                             <span className="text-[8px] font-black text-accent uppercase tracking-widest">Live Flow</span>
@@ -94,9 +97,12 @@ export default function RecentTrades({ trades }: RecentTradesProps) {
                 {/* Historical Log */}
                 <section>
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-500 group-hover/trades:text-gray-300 transition-colors">
-                            Recent History
-                        </h3>
+                        <div>
+                            <h3 className="text-sm font-semibold text-gray-100">
+                                Recent History
+                            </h3>
+                            <p className="text-xs text-gray-500">Closed trades</p>
+                        </div>
                     </div>
                     <div className="space-y-1">
                         {recentTrades.map(renderTradeItem)}

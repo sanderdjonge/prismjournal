@@ -44,8 +44,8 @@ export default function BEMetricsWidget({ accountId }: Props) {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">SL Management & Breakeven</h3>
-                    <p className="text-[8px] text-gray-600 mt-0.5 font-bold">{tradeCount} trades with initial SL data</p>
+                    <h3 className="text-sm font-semibold text-gray-100">SL Management & Breakeven</h3>
+                    <p className="text-xs text-gray-500">{tradeCount} trades with initial SL data</p>
                 </div>
                 <ShieldCheck size={14} className="text-gray-700" />
             </div>

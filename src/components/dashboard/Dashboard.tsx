@@ -82,7 +82,10 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Key Metrics Widget */}
                 <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
-                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-500 mb-6">Key Metrics</h3>
+                    <div className="mb-6">
+                        <h3 className="text-sm font-semibold text-gray-100">Key Metrics</h3>
+                        <p className="text-xs text-gray-500">Performance overview</p>
+                    </div>
                     <div className="grid grid-cols-2 gap-x-8 gap-y-6">
                         <MetricRow label="Total P&L" value={formatPnl(stats.totalPnl)} variant={stats.totalPnl >= 0 ? 'profit' : 'loss'} />
                         <MetricRow label="Win Rate" value={`${stats.winRate.toFixed(1)}%`} subValue={`${Math.round(stats.winRate / 100 * stats.totalTrades)}W / ${stats.totalTrades - Math.round(stats.winRate / 100 * stats.totalTrades)}L`} variant={stats.winRate >= 50 ? 'profit' : 'loss'} />
@@ -95,7 +98,10 @@ export default function Dashboard() {
 
                 {/* Performance Breakdown Widget */}
                 <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
-                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-500 mb-6">Performance Breakdown</h3>
+                    <div className="mb-6">
+                        <h3 className="text-sm font-semibold text-gray-100">Performance Breakdown</h3>
+                        <p className="text-xs text-gray-500">Trade statistics</p>
+                    </div>
                     <div className="grid grid-cols-2 gap-x-8 gap-y-6">
                         <MetricRow label="Total Trades" value={stats.totalTrades.toString()} />
                         <MetricRow label="Avg Duration" value={

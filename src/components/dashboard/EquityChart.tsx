@@ -277,9 +277,10 @@ export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-
             {/* Header Info - Simplified for High Density */}
             <div className="flex justify-between items-start mb-2 z-10 p-4 pb-0">
                 <div>
-                    <h4 className="text-[9px] font-black uppercase tracking-widest text-gray-500 group-hover:text-gray-300 transition-colors">
+                    <h4 className="text-sm font-semibold text-gray-100">
                         Equity Evolution
                     </h4>
+                    <p className="text-xs text-gray-500">Account balance over time</p>
                     <div className="mt-1">
                         <h2 className="text-2xl font-black font-mono tracking-tighter text-white">
                             {formatAmount(currentBalance)}
@@ -288,7 +289,7 @@ export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-
                 </div>
 
                 <div className="text-right">
-                    <p className="text-[8px] font-black uppercase tracking-widest text-gray-600">Total P&L</p>
+                    <p className="text-xs text-gray-500">Total P&L</p>
                     <p className={`text-sm font-mono font-bold ${totalPnL >= 0 ? 'text-profit' : 'text-loss'}`}>
                         {formatPnl(totalPnL)}
                     </p>

@@ -81,10 +81,12 @@ export default function TiltmeterWidget({ periodDays = 30, strategyId, accountId
     <div className="bg-gray-800 rounded-lg p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-100">
-          Tiltmeter
-        </h3>
-        <span className="text-xs text-gray-500">Last {periodDays} days</span>
+        <div>
+          <h3 className="text-sm font-semibold text-gray-100">
+            Tiltmeter
+          </h3>
+          <p className="text-xs text-gray-500">Last {periodDays} days</p>
+        </div>
       </div>
 
       {/* Main Score Display */}

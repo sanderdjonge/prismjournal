@@ -95,10 +95,10 @@ export default function TradeCalendar({ data }: TradeCalendarProps) {
             {/* Header */}
             <div className="flex items-center justify-between mb-3 shrink-0">
                 <div>
-                    <h3 className="text-sm font-black uppercase tracking-widest text-gray-500 group-hover/calendar:text-gray-300 transition-colors">
+                    <h3 className="text-sm font-semibold text-gray-100">
                         Trade Calendar
                     </h3>
-                    <p className="text-xl font-black text-white tracking-tight mt-1">
+                    <p className="text-xs text-gray-500">
                         {today.format('MMMM YYYY')}
                     </p>
                 </div>
