@@ -13,7 +13,7 @@ export interface TradeFilters {
     page?: number;
     limit?: number;
     closeReason?: string;
-    strategyId?: string | null;
+    strategyId?: string;
 }
 
 async function fetchTrades(filters: TradeFilters) {
