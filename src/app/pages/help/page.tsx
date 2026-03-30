@@ -6,7 +6,7 @@ import PropFirmReferenceTable, { type PropFirmRow } from '@/components/prop-firm
 import {
     HelpCircle, BookOpen, Building2, Loader2, LayoutDashboard,
     BarChart2, BookMarked, Shield, TrendingUp, ChevronDown, ChevronRight,
-    Info, AlertTriangle, Lightbulb,
+    Info, AlertTriangle, Lightbulb, Target,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
@@ -230,7 +230,7 @@ function DashboardSection() {
 function AnalyticsSection() {
     return (
         <SectionCard id="analytics" title="Analytics Page" icon={<BarChart2 size={16} />}>
-            <P>Deeper statistical view accessible from the sidebar. Use the date-range pickers at the top to isolate any period — a single month, a strategy test window, or a specific market regime.</P>
+            <P>Deeper statistical view accessible from the sidebar. Use the date-range and account filters at the top to isolate any period — a single month, a strategy test window, or a specific market regime.</P>
 
             <SubSection title="Gauges row">
                 <StatTable rows={[
@@ -238,6 +238,16 @@ function AnalyticsSection() {
                     ['Expectancy', 'Average P&L per trade in currency, scaled to max $3,000.'],
                     ['Risk / Reward', 'Mean realised reward-to-risk ratio. How many dollars earned per dollar risked.'],
                 ]} />
+            </SubSection>
+
+            <SubSection title="Breakeven Metrics Widget">
+                <P>Tracks how often your trades hit breakeven (BE) and what happens afterward. Key metrics:</P>
+                <StatTable rows={[
+                    ['BE Trigger Rate', 'Percentage of trades where price hit your initial stop loss distance before any other action.'],
+                    ['BE Survival Rate', 'Of trades that hit BE, what percentage still closed in profit.'],
+                    ['BE Avg Outcome', 'Average P&L for trades that triggered breakeven vs. those that did not.'],
+                ]} />
+                <Tip>If your BE Survival Rate is low, moving to breakeven may be hurting more than helping — you are getting stopped out on noise that would have been a winner.</Tip>
             </SubSection>
 
             <SubSection title="Edge Profile by Symbol">
@@ -249,8 +259,29 @@ function AnalyticsSection() {
                 <P>Line chart of your <em>running average P&L per trade</em> as trade count increases. A line that stabilises flat after an early settling period confirms a real, consistent edge. A line that peaks early then falls suggests your edge may be smaller than initial results implied.</P>
             </SubSection>
 
-            <SubSection title="Trades by Hour of Day">
-                <P>Histogram of how many trades you opened in each hour (00–23). Taller bars = more activity at that hour. Cross-reference with your P&L by time to find your best and worst trading hours.</P>
+            <SubSection title="Trading Hours Widget">
+                <P>24-hour histogram showing when you trade and how you perform. Use the dropdown at top-right to switch views:</P>
+                <BenchmarkTable
+                    headers={['View', 'What it shows']}
+                    rows={[
+                        ['Trades', 'Stacked green/red bars showing wins and losses per hour'],
+                        ['Win Rate', 'Win rate percentage per hour (green ≥60%, yellow 40-60%, red <40%)'],
+                        ['Profit', 'Total P&L per hour — green for profit, red for loss'],
+                        ['R:R', 'Average risk/reward ratio per hour'],
+                    ]}
+                />
+                <Tip>Hover any bar to see detailed stats. Cross-reference with your P&L by time to find your best and worst trading hours.</Tip>
+            </SubSection>
+
+            <SubSection title="Exit Quality Quadrant">
+                <P>Visual scatter plot mapping every closed trade by its Maximum Favorable Excursion (MFE) and Maximum Adverse Excursion (MAE). Each dot is a trade:</P>
+                <StatTable rows={[
+                    ['X-axis (MAE)', 'How far price moved against you — the worst it got before exit'],
+                    ['Y-axis (MFE)', 'How far price moved in your favour — the best it got before exit'],
+                    ['Colour', 'Green = winner, Red = loser'],
+                    ['Quadrant zones', 'Clean (top-right), Early Out (top-left), Survived (bottom-right), Painful (bottom-left)'],
+                ]} />
+                <Note>Clean exits are near the top-right — you captured most of the move. Painful exits are bottom-left — price went against you and never recovered. Reviewing your Painful trades reveals where your entries or timing need work.</Note>
             </SubSection>
 
             <SubSection title="Mean Loss / Trade">
@@ -326,6 +357,119 @@ function JournalSection() {
             <SubSection title="Screenshots">
                 <P>Attach chart screenshots to any trade — multiple images per trade, tagged with timeframe (M15, H1, etc.) and capture point (Entry or Close). Screenshots are stored securely and linked to the trade record.</P>
                 <Tip>Attach one screenshot at entry and one at exit for every trade. Reviewing them six months later alongside your notes is more valuable than memory alone.</Tip>
+            </SubSection>
+
+            <SubSection title="Bulk Operations">
+                <P>Select multiple trades at once using the checkboxes on the left. Bulk actions include:</P>
+                <StatTable rows={[
+                    ['Bulk Delete', 'Remove multiple trades at once'],
+                    ['Bulk Tag', 'Apply a tag to all selected trades'],
+                    ['Bulk Strategy', 'Assign or unassign a strategy to multiple trades'],
+                    ['Bulk Account', 'Move trades between accounts'],
+                ]} />
+                <Note>Strategy assignment triggers automatic compliance re-evaluation for all closed trades in the selection.</Note>
+            </SubSection>
+
+            <SubSection title="Filters">
+                <P>Narrow down your journal view with filter chips at the top:</P>
+                <StatTable rows={[
+                    ['Date Range', 'Filter by entry date — preset ranges or custom'],
+                    ['Side', 'Long or Short trades only'],
+                    ['Result', 'Winners, losers, or breakeven trades'],
+                    ['Symbol', 'Filter by instrument'],
+                    ['Tag', 'Show only trades with a specific tag'],
+                    ['Account', 'View trades from a specific account'],
+                    ['Strategy', 'Filter by assigned strategy'],
+                ]} />
+            </SubSection>
+        </SectionCard>
+    );
+}
+
+// ─── Section: Strategies ─────────────────────────────────────────────────────
+
+function StrategiesSection() {
+    return (
+        <SectionCard id="strategies" title="Strategies" icon={<Target size={16} />}>
+            <P>Strategies let you define rules for your trading and track adherence. Each strategy has configurable rules, and PrismJournal automatically evaluates closed trades against those rules.</P>
+
+            <SubSection title="Creating a Strategy">
+                <P>Go to <strong className="text-white">Strategies</strong> in the sidebar. Click <strong className="text-white">+ New Strategy</strong> and give it a name and optional description. Then add rules from the available types:</P>
+                <BenchmarkTable
+                    headers={['Rule Type', 'What it checks']}
+                    rows={[
+                        ['Max Daily Loss', 'Limit loss per calendar day'],
+                        ['Max Daily Trades', 'Limit number of trades per day'],
+                        ['Min R:R Ratio', 'Require minimum risk/reward ratio'],
+                        ['Mandatory Stop Loss', 'Require stop loss on every trade'],
+                        ['Max Position Size', 'Limit lot/contract size'],
+                        ['No Overtrading', 'Limit trades per hour'],
+                        ['Allowed Hours', 'Only trade during specific hours'],
+                        ['Allowed Symbols', 'Restrict trading to specific instruments'],
+                        ['Max Holding Time', 'Maximum time to hold a position'],
+                        ['Min Holding Time', 'Minimum time before closing'],
+                    ]}
+                />
+            </SubSection>
+
+            <SubSection title="Adherence Score">
+                <P>Every strategy shows an <strong className="text-white">Adherence %</strong> — the percentage of trades that followed all enabled rules. 100% means perfect compliance.</P>
+                <BenchmarkTable
+                    headers={['Score', 'Interpretation']}
+                    rows={[
+                        ['80-100%', 'Excellent discipline — following your plan'],
+                        ['60-80%', 'Good but room for improvement'],
+                        ['40-60%', 'Inconsistent — review which rules you break most'],
+                        ['0-40%', 'Poor — strategy may not match your actual trading'],
+                    ]}
+                />
+            </SubSection>
+
+            <SubSection title="Tiltmeter">
+                <P>The <strong className="text-white">Tiltmeter</strong> shows your current risk of tilt based on recent rule violations. It aggregates violations by severity:</P>
+                <StatTable rows={[
+                    ['Low (🧘)', 'Few recent violations — you are trading clean'],
+                    ['Medium (😐)', 'Some violations — stay disciplined'],
+                    ['High (😤)', 'Multiple violations — consider pausing'],
+                    ['Critical (🤯)', 'Many violations — take a break and review'],
+                ]} />
+                <Warning>Violations are weighted by severity. Max Daily Loss and Mandatory Stop Loss are serious; Allowed Hours is minor. The tiltmeter helps you recognise when emotional trading is creeping in.</Warning>
+            </SubSection>
+
+            <SubSection title="Assigning Strategies to Trades">
+                <P>In the Journal, use the <strong className="text-white">Strategy</strong> column to assign a strategy to each trade. You can also bulk-assign via the selection dropdown. Once assigned, closed trades are automatically evaluated against all enabled rules.</P>
+                <Note>Re-assigning a strategy re-evaluates compliance from scratch. Previous violations are cleared and new ones are calculated.</Note>
+            </SubSection>
+        </SectionCard>
+    );
+}
+
+// ─── Section: Performance Page ───────────────────────────────────────────────
+
+function PerformanceSection() {
+    return (
+        <SectionCard id="performance" title="Performance Ledger" icon={<TrendingUp size={16} />}>
+            <P>A focused view on equity evolution and edge stability. Filter by period (7D/30D/90D/1Y) and account at the top.</P>
+
+            <SubSection title="Key Metrics">
+                <StatTable rows={[
+                    ['Net P&L', 'Total profit/loss for the selected period'],
+                    ['Max Drawdown', 'Largest peak-to-trough decline'],
+                    ['Sharpe Ratio', 'Risk-adjusted return — higher is better'],
+                    ['Profit Factor', 'Gross profit ÷ gross loss'],
+                ]} />
+            </SubSection>
+
+            <SubSection title="Master Equity Curve">
+                <P>Your cumulative P&L over time. Shows the full equity journey for the selected period, not just the summary. Hover any point for exact date and balance.</P>
+            </SubSection>
+
+            <SubSection title="Trade Expectancy Gauge">
+                <P>Average P&L per trade. Multiply by your typical monthly trade count to project income. Also shows average win and average loss for context.</P>
+            </SubSection>
+
+            <SubSection title="Monthly Returns">
+                <P>Bar chart showing P&L by calendar month. Green bars are profitable months; red bars are losing months. Useful for identifying seasonal patterns or regime changes in your performance.</P>
             </SubSection>
         </SectionCard>
     );
@@ -560,8 +704,10 @@ const NAV_SECTIONS: Section[] = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={13} /> },
     { id: 'analytics', label: 'Analytics', icon: <BarChart2 size={13} /> },
     { id: 'journal', label: 'Trade Journal', icon: <BookMarked size={13} /> },
+    { id: 'strategies', label: 'Strategies', icon: <Target size={13} /> },
+    { id: 'performance', label: 'Performance Ledger', icon: <TrendingUp size={13} /> },
     { id: 'accounts', label: 'Accounts & Prop Firms', icon: <Shield size={13} /> },
-    { id: 'statistics', label: 'Understanding Statistics', icon: <TrendingUp size={13} /> },
+    { id: 'statistics', label: 'Understanding Statistics', icon: <BarChart2 size={13} /> },
     { id: 'prop-firms', label: 'Prop Firm Reference', icon: <Building2 size={13} /> },
     { id: 'faq', label: 'FAQ', icon: <HelpCircle size={13} /> },
 ];
@@ -638,6 +784,8 @@ function HelpContent() {
                     <DashboardSection />
                     <AnalyticsSection />
                     <JournalSection />
+                    <StrategiesSection />
+                    <PerformanceSection />
                     <AccountsSection />
                     <StatisticsSection />
                     <PropFirmSection firms={firms} loading={loading} />
