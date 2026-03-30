@@ -229,19 +229,20 @@ async function computeWeeklyDigestData(accountId: string, userId: string): Promi
       return dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day);
     });
 
-  // Top instruments
-  const instrumentMap = new Map<string, { trades: number; wins: number; pnl: number }>();
+  // Top instruments (case-insensitive grouping)
+  const instrumentMap = new Map<string, { trades: number; wins: number; pnl: number; originalSymbol: string }>();
   trades.forEach(trade => {
-    const current = instrumentMap.get(trade.symbol) || { trades: 0, wins: 0, pnl: 0 };
+    const normalizedSymbol = trade.symbol.toUpperCase();
+    const current = instrumentMap.get(normalizedSymbol) || { trades: 0, wins: 0, pnl: 0, originalSymbol: trade.symbol };
     current.trades++;
     current.pnl += trade.pnl || 0;
     if ((trade.pnl || 0) > 0) current.wins++;
-    instrumentMap.set(trade.symbol, current);
+    instrumentMap.set(normalizedSymbol, current);
   });
 
   const topInstruments = Array.from(instrumentMap.entries())
-    .map(([symbol, data]) => ({
-      symbol,
+    .map(([, data]) => ({
+      symbol: data.originalSymbol,
       trades: data.trades,
       winRate: (data.wins / data.trades) * 100,
       pnl: data.pnl,

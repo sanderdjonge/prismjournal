@@ -11,6 +11,7 @@ import { useAnalytics } from '@/hooks/useAnalytics';
 import { useExcursionTrades } from '@/hooks/useExcursionTrades';
 import BEMetricsWidget from '@/components/analytics/BEMetricsWidget';
 import { ExcursionQuadrantPlot } from '@/components/analytics/ExcursionQuadrantPlot';
+import { TradingHoursWidget } from '@/components/analytics/TradingHoursWidget';
 import { useFilters, FilterConfig } from '@/hooks/useFilters';
 import { FilterChipBar } from '@/components/filters/FilterChipBar';
 
@@ -39,7 +40,6 @@ export function AnalyticsContent() {
     const symbolData = data.symbolData;
     const expectancyData = data.expectancyData;
     const sessionData = data.sessionData;
-    const maxSession = Math.max(...sessionData.map(s => s.count), 1);
 
     return (
         <div className="space-y-6 pb-10">
@@ -172,32 +172,9 @@ export function AnalyticsContent() {
 
             {/* Bottom Row */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Session Distribution */}
-                <div className="lg:col-span-2 glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
-                    <div className="mb-4">
-                        <h3 className="text-sm font-semibold text-gray-100">Trades by Hour of Day</h3>
-                        <p className="text-xs text-gray-500">When you open trades — find your most active trading hours</p>
-                    </div>
-                    <div className="flex items-end gap-1 h-24 mb-2">
-                        {sessionData.map((s) => (
-                            <div
-                                key={s.hour}
-                                className="flex-1 rounded-t transition-all group/bar relative cursor-default"
-                                style={{ height: s.count > 0 ? `${Math.max((s.count / maxSession) * 100, 4)}%` : '4px' }}
-                            >
-                                <div className={`w-full h-full rounded-t ${s.count > 0 ? 'bg-primary/40 group-hover/bar:bg-primary/70' : 'bg-white/5'} transition-colors`} />
-                                {s.count > 0 && (
-                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 rounded bg-black/90 border border-white/10 text-[9px] font-black text-white whitespace-nowrap opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none z-10">
-                                        {s.hour.toString().padStart(2, '0')}:00
-                                        <span className="block text-primary text-center">{s.count} trade{s.count !== 1 ? 's' : ''}</span>
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                    <div className="flex justify-between text-[7px] font-black text-gray-700 uppercase tracking-widest">
-                        <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span>
-                    </div>
+                {/* Trading Hours Widget */}
+                <div className="lg:col-span-2">
+                    <TradingHoursWidget data={sessionData} />
                 </div>
 
                 {/* Risk Degradation */}
