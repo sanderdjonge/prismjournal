@@ -41,6 +41,7 @@ type DashboardData = {
     consecutiveWins: number;
     consecutiveLosses: number;
     avgDurationMinutes?: number;
+    accountBalance: number;
 };
 
 export default function Dashboard() {
@@ -139,7 +140,7 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 {/* Trade Calendar — 3/4 width */}
                 <div className="lg:col-span-3 glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl overflow-hidden min-h-[480px]">
-                    <TradeCalendar data={stats.calendar} />
+                    <TradeCalendar data={stats.calendar} accountBalance={stats.accountBalance} />
                 </div>
 
                 {/* Recent Trades — 1/4 width */}

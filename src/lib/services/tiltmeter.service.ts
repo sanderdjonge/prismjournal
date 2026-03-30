@@ -46,7 +46,8 @@ export async function calculateTiltmeter(
   userId: string,
   accountId?: string,
   periodDays: number = 30,
-  persist: boolean = false
+  persist: boolean = false,
+  strategyId?: string
 ): Promise<TiltmeterScore> {
   const periodEnd = new Date();
   const periodStart = new Date(periodEnd.getTime() - periodDays * 24 * 60 * 60 * 1000);
@@ -57,6 +58,7 @@ export async function calculateTiltmeter(
     occurredAt: { gte: periodStart, lte: periodEnd },
   };
   if (accountId) where.accountId = accountId;
+  if (strategyId) where.strategyId = strategyId;
 
   const violations = await prisma.strategyViolation.findMany({
     where,

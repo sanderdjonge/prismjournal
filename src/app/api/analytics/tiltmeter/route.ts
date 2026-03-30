@@ -7,6 +7,7 @@ export const GET = withAuth(async (req: NextRequest, _ctx, session) => {
   const { searchParams } = new URL(req.url);
   // Support both 'accountId' and 'account' for backwards compatibility
   const accountId = searchParams.get('accountId') || searchParams.get('account') || undefined;
+  const strategyId = searchParams.get('strategyId') || undefined;
   const periodDays = parseInt(searchParams.get('periodDays') || '30');
   const history = searchParams.get('history') === 'true';
   const persist = searchParams.get('persist') === 'true';
@@ -31,7 +32,8 @@ export const GET = withAuth(async (req: NextRequest, _ctx, session) => {
     session.user.id,
     accountId,
     periodDays,
-    persist // Only persist when explicitly requested
+    persist, // Only persist when explicitly requested
+    strategyId
   );
   return NextResponse.json(score);
 });
