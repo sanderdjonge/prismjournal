@@ -236,7 +236,7 @@ export default function StrategyDetailClient() {
               <ComplianceWidget periodDays={30} strategyId={strategy.id} />
             </div>
             <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
-              <TiltmeterWidget periodDays={30} />
+              <TiltmeterWidget periodDays={30} strategyId={strategy.id} />
             </div>
             
             {/* Quick Stats */}

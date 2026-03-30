@@ -15,7 +15,7 @@ export const BUILD_DATE = '2026-03-30';
  * Short summary of what changed in this build.
  * Update together with APP_VERSION and BUILD_DATE.
  */
-export const BUILD_NOTES = 'Phase 20 — Strategy column/filter/bulk assign, ALLOWED_SYMBOLS normalisation, TiltmeterWidget violation breakdown, strategies list metrics, tiltmeter history from violations, Trading Hours widget';
+export const BUILD_NOTES = 'Phase 20 — Pre-trade notes (form, list, widget), setup checklists, auto-link on MT5 sync; Phase 21 (partial) — Calendar navigation';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {

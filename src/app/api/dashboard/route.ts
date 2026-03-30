@@ -22,6 +22,7 @@ const emptyResponse = {
     worstTrade: 0,
     consecutiveWins: 0,
     consecutiveLosses: 0,
+    accountBalance: 0,
 };
 
 export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, unknown>, session: Session & { user: { id: string } }) => {
@@ -184,13 +185,14 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
     }));
 
     // --- Calendar data (trades by EXIT date, aggregated in PostgreSQL) ---
-    const calendarRaw = await prisma.$queryRaw<{ date: string; pnl: number; count: number; wins: number; losses: number }[]>`
+    const calendarRaw = await prisma.$queryRaw<{ date: string; pnl: number; count: number; wins: number; losses: number; avg_rr: number | null }[]>`
       SELECT
         TO_CHAR("exitTime" AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS date,
         SUM(pnl)::float AS pnl,
         COUNT(*)::int AS count,
         COUNT(*) FILTER (WHERE pnl > 0)::int AS wins,
-        COUNT(*) FILTER (WHERE pnl < 0)::int AS losses
+        COUNT(*) FILTER (WHERE pnl < 0)::int AS losses,
+        AVG("rMultiple") FILTER (WHERE "rMultiple" IS NOT NULL)::float AS avg_rr
       FROM "Trade"
       WHERE "accountId" = ANY(${filteredIds}::text[])
         AND "exitTime" IS NOT NULL
@@ -199,9 +201,9 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
       ORDER BY date DESC
     `;
 
-    const calendarMap: Record<string, { pnl: number; count: number; wins: number; losses: number }> = {};
+    const calendarMap: Record<string, { pnl: number; count: number; wins: number; losses: number; avgRR: number | null }> = {};
     for (const row of calendarRaw) {
-        calendarMap[row.date] = { pnl: row.pnl, count: row.count, wins: row.wins, losses: row.losses };
+        calendarMap[row.date] = { pnl: row.pnl, count: row.count, wins: row.wins, losses: row.losses, avgRR: row.avg_rr ?? null };
     }
     const calendarData = Object.entries(calendarMap).map(([date, data]) => ({
         date,
@@ -209,7 +211,14 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
         trades: data.count,
         wins: data.wins,
         losses: data.losses,
+        avgRR: data.avgRR,
     }));
+
+    // Get account balance for % Profit calculation
+    // Use currentBalance if available, otherwise fall back to balance, then accountSize
+    const accountBalance = allAccounts.length > 0
+        ? allAccounts.reduce((sum, acc) => sum + (acc.currentBalance ?? acc.balance ?? acc.accountSize ?? 0), 0)
+        : 0;
 
     const responseData = {
         equity: equityData,
@@ -227,6 +236,7 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
         consecutiveWins,
         consecutiveLosses,
         avgDurationMinutes,
+        accountBalance,
     };
 
     cacheSet(cacheKey, responseData, 60_000);

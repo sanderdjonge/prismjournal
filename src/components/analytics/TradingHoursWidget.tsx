@@ -197,45 +197,49 @@ export function TradingHoursWidget({ data, currency = 'USD' }: TradingHoursWidge
                     const heights = getBarHeight(hour);
                     const colors = getBarColor(hour);
                     const hasData = hour.count > 0;
+                    const barHeight = hasData ? Math.max(heights.total, 4) : 4;
 
                     return (
                         <div
                             key={hour.hour}
-                            className="flex-1 flex flex-col items-center h-full justify-end"
+                            className="flex-1 flex flex-col items-center h-full"
                         >
-                            <div
-                                className="w-full rounded-t transition-all group/bar relative cursor-default"
-                                style={{ height: hasData ? `${Math.max(heights.total, 4)}%` : '4px', minHeight: '4px' }}
-                            >
-                                {viewMode === 'trades' && hasData ? (
-                                    // Stacked bar for wins/losses
-                                    <div className="w-full h-full flex flex-col justify-end">
-                                        <div
-                                            className="w-full rounded-t bg-loss transition-colors group-hover/bar:bg-loss/80"
-                                            style={{ height: `${100 - heights.winRatio}%` }}
-                                        />
-                                        <div
-                                            className="w-full bg-profit transition-colors group-hover/bar:bg-profit/80"
-                                            style={{ height: `${heights.winRatio}%` }}
-                                        />
-                                    </div>
-                                ) : (
-                                    <div className={cn(
-                                        'w-full h-full rounded-t transition-colors',
-                                        hasData ? colors : 'bg-white/5',
-                                        hasData && 'group-hover/bar:opacity-80'
-                                    )} />
-                                )}
-                                
-                                {/* Tooltip */}
-                                {hasData && (
-                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1.5 rounded bg-black/95 border border-white/10 text-[9px] font-bold whitespace-nowrap opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none z-10">
-                                        {getTooltipContent(hour)}
-                                    </div>
-                                )}
+                            {/* Bar area - flex-1 to take remaining space, items-end to align bars to bottom */}
+                            <div className="flex-1 w-full flex items-end justify-center">
+                                <div
+                                    className="w-full rounded-t transition-all group/bar relative cursor-default"
+                                    style={{ height: `${barHeight}%` }}
+                                >
+                                    {viewMode === 'trades' && hasData ? (
+                                        // Stacked bar for wins/losses
+                                        <div className="w-full h-full flex flex-col rounded-t overflow-hidden">
+                                            <div
+                                                className="w-full bg-loss transition-colors group-hover/bar:bg-loss/80"
+                                                style={{ height: `${100 - heights.winRatio}%` }}
+                                            />
+                                            <div
+                                                className="w-full bg-profit transition-colors group-hover/bar:bg-profit/80"
+                                                style={{ height: `${heights.winRatio}%` }}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className={cn(
+                                            'w-full h-full rounded-t transition-colors',
+                                            hasData ? colors : 'bg-white/5',
+                                            hasData && 'group-hover/bar:opacity-80'
+                                        )} />
+                                    )}
+                                    
+                                    {/* Tooltip */}
+                                    {hasData && (
+                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1.5 rounded bg-black/95 border border-white/10 text-[9px] font-bold whitespace-nowrap opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none z-10">
+                                            {getTooltipContent(hour)}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                             {/* Time label under each bar */}
-                            <span className="text-[10px] font-bold text-gray-600 mt-1 tabular-nums">
+                            <span className="text-[10px] font-bold text-gray-600 tabular-nums shrink-0">
                                 {hour.hour.toString().padStart(2, '0')}
                             </span>
                         </div>

@@ -185,6 +185,7 @@ async function evaluateMaxDailyTrades(
       ruleType: 'MAX_DAILY_TRADES',
       limitValue: rule.limit,
       actualValue: todayTradeCount + 1,
+      pnlImpact: trade.pnl ?? undefined,
       description: `Max daily trades exceeded: ${todayTradeCount + 1} vs limit ${rule.limit}`,
     };
   }
@@ -258,6 +259,7 @@ async function evaluateAllowedTimeWindows(
       ruleType: 'ALLOWED_TIME_WINDOWS',
       limitValue: 1,
       actualValue: 0,
+      pnlImpact: trade.pnl ?? undefined,
       description: `Trade opened outside allowed time windows at ${timeStr}`,
     };
   }
@@ -293,6 +295,7 @@ async function evaluateAllowedSymbols(
       ruleType: 'ALLOWED_SYMBOLS',
       limitValue: 1,
       actualValue: 0,
+      pnlImpact: trade.pnl ?? undefined,
       description: `Symbol ${trade.symbol} (${normalizedTradeSymbol}) is ${rule.mode === 'ALLOW' ? 'not in allowed list' : 'blocked'}. Allowed: ${rule.symbols.join(', ')}`,
     };
   }
@@ -310,6 +313,7 @@ async function evaluateMaxPositionSize(
       ruleType: 'MAX_POSITION_SIZE',
       limitValue: rule.limit,
       actualValue: trade.volume,
+      pnlImpact: trade.pnl ?? undefined,
       description: `Position size ${trade.volume} exceeds limit ${rule.limit}`,
     };
   }
@@ -334,6 +338,7 @@ async function evaluateNoOvertrading(
       ruleType: 'NO_OVERTRADING',
       limitValue: rule.maxTradesPerHour,
       actualValue: recentTrades + 1,
+      pnlImpact: trade.pnl ?? undefined,
       description: `Overtrading: ${recentTrades + 1} trades in last hour vs limit ${rule.maxTradesPerHour}`,
     };
   }
@@ -350,6 +355,7 @@ async function evaluateMandatoryStopLoss(
       ruleType: 'MANDATORY_STOP_LOSS',
       limitValue: 1,
       actualValue: 0,
+      pnlImpact: trade.pnl ?? undefined,
       description: 'Trade opened without stop loss',
     };
   }

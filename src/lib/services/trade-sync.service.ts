@@ -6,6 +6,58 @@ import type { SyncTrade } from '@/lib/validations';
 import { captureAutoScreenshots } from './auto-screenshot.service';
 
 /**
+ * Auto-link a pre-trade note to a newly synced trade.
+ * Matches by: userId + symbol + direction + entryTime within ±5 minutes of note creation.
+ */
+async function linkPreTradeNote(
+    userId: string,
+    tradeId: string,
+    symbol: string,
+    direction: string,
+    entryTime: Date,
+): Promise<void> {
+    try {
+        // Look for pending notes matching symbol and direction
+        // Entry time must be within ±5 minutes of note creation
+        const fiveMinutesMs = 5 * 60 * 1000;
+        const entryTimeMs = entryTime.getTime();
+
+        const matchingNote = await prisma.preTradeNote.findFirst({
+            where: {
+                userId,
+                symbol,
+                direction: direction as 'LONG' | 'SHORT',
+                status: 'PENDING',
+                createdAt: {
+                    gte: new Date(entryTimeMs - fiveMinutesMs),
+                    lte: new Date(entryTimeMs + fiveMinutesMs),
+                },
+            },
+            orderBy: { createdAt: 'desc' }, // Most recent first
+        });
+
+        if (!matchingNote) {
+            logger.debug({ symbol, direction, entryTime }, '[trade-sync] no matching pre-trade note found');
+            return;
+        }
+
+        // Link the note to the trade
+        await prisma.preTradeNote.update({
+            where: { id: matchingNote.id },
+            data: {
+                tradeId,
+                status: 'LINKED',
+                linkedAt: new Date(),
+            },
+        });
+
+        logger.info({ noteId: matchingNote.id, tradeId, symbol, direction }, '[trade-sync] auto-linked pre-trade note');
+    } catch (err) {
+        logger.error({ err, symbol, direction, tradeId }, '[trade-sync] failed to link pre-trade note');
+    }
+}
+
+/**
  * Ensure a tag named `tagName` exists for the user and apply it to the trade.
  * Safe to call multiple times — idempotent via upsert.
  */
@@ -230,6 +282,15 @@ export async function upsertSyncTrade(
     // Auto-apply MT5 platform tag for synced trades
     if (isNew) {
         applyPlatformTag(userId, upsertedTrade.id, 'MT5').catch(() => {});
+
+        // Auto-link to pre-trade note if matching
+        linkPreTradeNote(
+            userId,
+            upsertedTrade.id,
+            trade.symbol,
+            direction,
+            entryTime,
+        ).catch(() => {});
     }
 
     // Skip notifications during history replay to avoid flooding Telegram
