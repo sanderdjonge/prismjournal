@@ -107,9 +107,10 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
         );
         return (
             <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-4">
-                <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500 mb-4">
-                    Exit Quality Analysis
-                </h3>
+                <div className="mb-4">
+                    <h3 className="text-sm font-semibold text-gray-100">Exit Quality Analysis</h3>
+                    <p className="text-xs text-gray-500">MAE/MFE quadrant plot</p>
+                </div>
                 {availableTags.length > 0 && (
                     <div className="flex flex-wrap items-center gap-2 mb-4 pb-4 border-b border-white/5">
                         <div className="flex items-center gap-1.5 mr-1">
@@ -196,10 +197,10 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                     <div>
-                        <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">
+                        <h3 className="text-sm font-semibold text-gray-100">
                             Exit Quality Analysis
                         </h3>
-                        <p className="text-[8px] text-gray-600 font-bold mt-1">
+                        <p className="text-xs text-gray-500 mt-1">
                             Entry risk (X) × Exit efficiency (Y) — click any dot to view trade
                         </p>
                     </div>

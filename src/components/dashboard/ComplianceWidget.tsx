@@ -64,9 +64,12 @@ export default function ComplianceWidget({ periodDays = 30, strategyId, accountI
 
   return (
     <div className="bg-gray-800 rounded-lg p-6">
-      <h3 className="text-lg font-semibold text-gray-100 mb-4">
-        Plan Adherence
-      </h3>
+      <div className="mb-4">
+        <h3 className="text-sm font-semibold text-gray-100">
+          Plan Adherence
+        </h3>
+        <p className="text-xs text-gray-500">Last {periodDays} days</p>
+      </div>
 
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div>
@@ -85,17 +88,17 @@ export default function ComplianceWidget({ periodDays = 30, strategyId, accountI
 
       {stats.costOfViolations > 0 && (
         <div className="mt-4 p-3 bg-red-900/30 rounded border border-red-800">
-          <div className="text-sm text-red-300">
+          <div className="text-xs text-red-300">
             Deviating from your plan cost you
           </div>
-          <div className="text-xl font-bold text-red-400">
+          <div className="text-lg font-bold text-red-400">
             ${stats.costOfViolations.toFixed(2)}
           </div>
         </div>
       )}
 
       <div className="mt-4 text-xs text-gray-500">
-        Last {periodDays} days • {stats.totalTrades} trades
+        {stats.totalTrades} trades
       </div>
     </div>
   );

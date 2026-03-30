@@ -86,7 +86,10 @@ export function AnalyticsContent() {
                 {/* Asset Distribution */}
                 <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
                     <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">Edge Profile by Symbol</h3>
+                        <div>
+                            <h3 className="text-sm font-semibold text-gray-100">Edge Profile by Symbol</h3>
+                            <p className="text-xs text-gray-500">Performance breakdown by instrument</p>
+                        </div>
                         <Target size={14} className="text-gray-700" />
                     </div>
                     <div className="h-[200px]">
@@ -127,7 +130,10 @@ export function AnalyticsContent() {
                 {/* Expectancy Evolution */}
                 <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
                     <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">Edge Evolution</h3>
+                        <div>
+                            <h3 className="text-sm font-semibold text-gray-100">Edge Evolution</h3>
+                            <p className="text-xs text-gray-500">Expectancy trend over time</p>
+                        </div>
                         <Zap size={14} className="text-primary/40" />
                     </div>
                     <div className="h-[200px]">
@@ -168,8 +174,10 @@ export function AnalyticsContent() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Session Distribution */}
                 <div className="lg:col-span-2 glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
-                    <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2">Trades by Hour of Day</h3>
-                    <p className="text-[8px] text-gray-600 font-bold mb-4">When you open trades — find your most active trading hours</p>
+                    <div className="mb-4">
+                        <h3 className="text-sm font-semibold text-gray-100">Trades by Hour of Day</h3>
+                        <p className="text-xs text-gray-500">When you open trades — find your most active trading hours</p>
+                    </div>
                     <div className="flex items-end gap-1 h-24 mb-2">
                         {sessionData.map((s) => (
                             <div
@@ -195,11 +203,11 @@ export function AnalyticsContent() {
                 {/* Risk Degradation */}
                 <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6 flex flex-col justify-between">
                     <div>
-                        <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500 mb-4">Mean Loss / Trade</h3>
+                        <h3 className="text-sm font-semibold text-gray-100 mb-1">Mean Loss / Trade</h3>
+                        <p className="text-xs text-gray-500 mb-4">Average losing trade amount</p>
                         <p className="text-2xl font-black text-white tracking-tighter">
                             {formatAmount(data.meanDrawdown)}
                         </p>
-                        <p className="text-[8px] font-black uppercase tracking-widest text-gray-600 mt-1">Avg Losing Trade</p>
                     </div>
                     <div className="space-y-4">
                         <div className="h-1 bg-white/10 rounded-full overflow-hidden">

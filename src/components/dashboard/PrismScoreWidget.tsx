@@ -137,8 +137,8 @@ export default function PrismScoreWidget({ accountId }: Props) {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white/40">Prism Score</h3>
-                    <p className="text-[10px] text-gray-600 mt-0.5">Composite performance quality</p>
+                    <h3 className="text-sm font-semibold text-gray-100">Prism Score</h3>
+                    <p className="text-xs text-gray-500">Composite performance quality</p>
                 </div>
                 <div
                     className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border"

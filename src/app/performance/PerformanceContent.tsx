@@ -70,7 +70,10 @@ export function PerformanceContent() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Equity Curve */}
                 <div className="lg:col-span-2 glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
-                    <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500 mb-4">Master Equity Curve</h3>
+                    <div className="mb-4">
+                        <h3 className="text-sm font-semibold text-gray-100">Master Equity Curve</h3>
+                        <p className="text-xs text-gray-500">Account balance over time</p>
+                    </div>
                     <div className="h-[250px]">
                         <EquityChart data={data.equity} />
                     </div>
@@ -113,9 +116,13 @@ export function PerformanceContent() {
 
             {/* Monthly Return Matrix */}
             <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6 overflow-hidden">
-                <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500 mb-6 flex items-center gap-2">
-                    <BarChart3 size={14} /> Monthly Return Matrix
-                </h3>
+                <div className="mb-6 flex items-center gap-2">
+                    <BarChart3 size={14} className="text-gray-500" />
+                    <div>
+                        <h3 className="text-sm font-semibold text-gray-100">Monthly Return Matrix</h3>
+                        <p className="text-xs text-gray-500">Performance by month</p>
+                    </div>
+                </div>
                 <div className="grid grid-cols-12 gap-1.5 text-center">
                     {MONTH_LABELS.map((m, i) => (
                         <div key={i} className="text-[8px] font-black text-gray-700 uppercase mb-1">{m}</div>
