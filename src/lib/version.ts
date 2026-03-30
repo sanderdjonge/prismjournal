@@ -15,7 +15,7 @@ export const BUILD_DATE = '2026-03-30';
  * Short summary of what changed in this build.
  * Update together with APP_VERSION and BUILD_DATE.
  */
-export const BUILD_NOTES = 'Trading Hours widget: dropdown to switch between Trades (W/L stacked), Win Rate %, Profit, and R:R views per hour';
+export const BUILD_NOTES = 'Phase 20 — Strategy column/filter/bulk assign, ALLOWED_SYMBOLS normalisation, TiltmeterWidget violation breakdown, strategies list metrics, tiltmeter history from violations, Trading Hours widget';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {
