@@ -265,13 +265,27 @@ async function evaluateAllowedTimeWindows(
   return null;
 }
 
+// Helper to normalize symbol names for comparison
+// Strips broker suffixes (e.g., UK100.CASH -> UK100) and normalizes case
+function normalizeSymbol(symbol: string): string {
+  // Split on dot and take first part (strips .CASH, .RAW, etc.)
+  const baseSymbol = symbol.split('.')[0];
+  return baseSymbol.toUpperCase();
+}
+
 async function evaluateAllowedSymbols(
   rule: any,
   trade: TradeContext
 ): Promise<ViolationResult | null> {
+  // Normalize trade symbol for comparison
+  const normalizedTradeSymbol = normalizeSymbol(trade.symbol);
+  
+  // Normalize allowed symbols from rule
+  const normalizedAllowedSymbols = rule.symbols.map((s: string) => normalizeSymbol(s));
+  
   const symbolAllowed = rule.mode === 'ALLOW'
-    ? rule.symbols.includes(trade.symbol)
-    : !rule.symbols.includes(trade.symbol);
+    ? normalizedAllowedSymbols.includes(normalizedTradeSymbol)
+    : !normalizedAllowedSymbols.includes(normalizedTradeSymbol);
 
   if (!symbolAllowed) {
     return {
@@ -279,7 +293,7 @@ async function evaluateAllowedSymbols(
       ruleType: 'ALLOWED_SYMBOLS',
       limitValue: 1,
       actualValue: 0,
-      description: `Symbol ${trade.symbol} is ${rule.mode === 'ALLOW' ? 'not allowed' : 'blocked'}`,
+      description: `Symbol ${trade.symbol} (${normalizedTradeSymbol}) is ${rule.mode === 'ALLOW' ? 'not in allowed list' : 'blocked'}. Allowed: ${rule.symbols.join(', ')}`,
     };
   }
 
