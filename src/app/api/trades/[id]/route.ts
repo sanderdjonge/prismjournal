@@ -113,30 +113,36 @@ export const PATCH = withAuth(async (req, ctx, session) => {
         include: { strategy: true },
     });
 
-    // Evaluate strategy compliance when trade is closed with a strategy
-    const isNowClosed = body.status === 'CLOSED' || (existingTrade.status === 'CLOSED' && !body.status);
-    const effectiveStrategyId = strategyId !== undefined ? strategyId : existingTrade.strategyId;
-    
-    if (effectiveStrategyId && isNowClosed && trade.exitTime) {
+    // Re-evaluate compliance only when strategyId is explicitly changed on a closed trade.
+    // Always clear existing violations for this trade first (clean slate), then evaluate
+    // with the new strategy. If strategy is removed (null), violations are simply cleared.
+    const strategyChanged = strategyId !== undefined;
+    const isClosedTrade = trade.status === 'CLOSED' && trade.exitTime;
+
+    if (strategyChanged && isClosedTrade) {
         try {
-            const tradeContext: TradeContext = {
-                id: trade.id,
-                accountId: trade.accountId,
-                userId: existingTrade.account.userId,
-                strategyId: effectiveStrategyId,
-                symbol: trade.symbol,
-                direction: trade.direction,
-                entryPrice: trade.entryPrice,
-                exitPrice: trade.exitPrice,
-                stopLoss: trade.stopLoss,
-                takeProfit: trade.takeProfit,
-                volume: trade.volume,
-                entryTime: trade.entryTime,
-                exitTime: trade.exitTime,
-                pnl: trade.pnl,
-                initialStopLoss: trade.initialStopLoss,
-            };
-            await evaluateAndRecordCompliance(tradeContext, effectiveStrategyId);
+            await prisma.strategyViolation.deleteMany({ where: { tradeId: trade.id } });
+
+            if (strategyId) {
+                const tradeContext: TradeContext = {
+                    id: trade.id,
+                    accountId: trade.accountId,
+                    userId: existingTrade.account.userId,
+                    strategyId,
+                    symbol: trade.symbol,
+                    direction: trade.direction,
+                    entryPrice: trade.entryPrice,
+                    exitPrice: trade.exitPrice,
+                    stopLoss: trade.stopLoss,
+                    takeProfit: trade.takeProfit,
+                    volume: trade.volume,
+                    entryTime: trade.entryTime,
+                    exitTime: trade.exitTime!,
+                    pnl: trade.pnl,
+                    initialStopLoss: trade.initialStopLoss,
+                };
+                await evaluateAndRecordCompliance(tradeContext, strategyId);
+            }
         } catch (err) {
             console.error('[trades] Failed to evaluate compliance:', err);
         }
