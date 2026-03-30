@@ -62,19 +62,22 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
         });
     }
 
-    // --- Symbol aggregation ---
-    const symbolMap = new Map<string, { profit: number; wins: number; total: number }>();
+    // --- Symbol aggregation (case-insensitive) ---
+    const symbolMap = new Map<string, { profit: number; wins: number; total: number; originalSymbol: string }>();
     for (const t of trades) {
         const pnl = t.pnl ?? 0;
-        const existing = symbolMap.get(t.symbol) ?? { profit: 0, wins: 0, total: 0 };
-        symbolMap.set(t.symbol, {
+        const normalizedSymbol = t.symbol.toUpperCase();
+        const existing = symbolMap.get(normalizedSymbol) ?? { profit: 0, wins: 0, total: 0, originalSymbol: t.symbol };
+        symbolMap.set(normalizedSymbol, {
             profit: existing.profit + pnl,
             wins: existing.wins + (pnl > 0 ? 1 : 0),
             total: existing.total + 1,
+            // Keep the most recent original symbol presentation
+            originalSymbol: t.symbol,
         });
     }
-    const symbolData = Array.from(symbolMap.entries()).map(([symbol, d]) => ({
-        symbol,
+    const symbolData = Array.from(symbolMap.entries()).map(([normalizedSymbol, d]) => ({
+        symbol: d.originalSymbol,
         profit: Math.round(d.profit),
         winRate: Math.round((d.wins / d.total) * 100),
     })).sort((a, b) => b.profit - a.profit);
@@ -97,7 +100,7 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
             accountId: { in: filteredIds },
             ...(Object.keys(dateFilter).length > 0 && { entryTime: dateFilter }),
         },
-        select: { entryTime: true, pnl: true, exitTime: true },
+        select: { entryTime: true, pnl: true, exitTime: true, rMultiple: true },
     });
 
     const hourBuckets = Array.from({ length: 24 }, (_, h) => ({
@@ -106,6 +109,8 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
         wins: 0,
         losses: 0,
         totalPnl: 0,
+        totalRR: 0,
+        rrCount: 0,
     }));
 
     for (const trade of allTradesForHours) {
@@ -116,10 +121,22 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
             if (trade.pnl > 0) hourBuckets[h].wins++;
             else if (trade.pnl < 0) hourBuckets[h].losses++;
         }
+        if (trade.rMultiple != null) {
+            hourBuckets[h].totalRR += trade.rMultiple;
+            hourBuckets[h].rrCount++;
+        }
     }
 
-    // Return all 24 hours (chart expects full array)
-    const sessionData = hourBuckets;
+    // Calculate derived metrics and format for frontend
+    const sessionData = hourBuckets.map(h => ({
+        hour: h.hour,
+        count: h.count,
+        wins: h.wins,
+        losses: h.losses,
+        totalPnl: Math.round(h.totalPnl * 100) / 100,
+        winRate: h.count > 0 ? Math.round((h.wins / h.count) * 100) : 0,
+        avgRR: h.rrCount > 0 ? Math.round((h.totalRR / h.rrCount) * 100) / 100 : 0,
+    }));
 
     // --- Key metrics ---
     const pnlValues = trades.map(t => ({ pnl: t.pnl ?? 0 }));

@@ -9,7 +9,15 @@ interface AnalyticsParams {
 
 type SymbolRow = { symbol: string; profit: number; winRate: number };
 type ExpectancyRow = { trade: number; val: number };
-type SessionRow = { hour: number; count: number };
+type SessionRow = {
+    hour: number;
+    count: number;
+    wins: number;
+    losses: number;
+    totalPnl: number;
+    winRate: number;
+    avgRR: number;
+};
 export type AnalyticsData = {
     symbolData: SymbolRow[];
     expectancyData: ExpectancyRow[];
