@@ -5,14 +5,22 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DashboardShell from '@/components/layout/DashboardShell';
 import StrategyRulesEditor from '@/components/strategies/StrategyRulesEditor';
+import { SetupChecklistEditor } from '@/components/strategies/SetupChecklistEditor';
 import ComplianceWidget from '@/components/dashboard/ComplianceWidget';
 import TiltmeterWidget from '@/components/dashboard/TiltmeterWidget';
 import { ArrowLeft, Edit2, Trash2, X, Check, Loader2, RefreshCw } from 'lucide-react';
+
+interface ChecklistItem {
+  id: string;
+  label: string;
+  order: number;
+}
 
 interface Strategy {
   id: string;
   name: string;
   description: string | null;
+  setupChecklist: ChecklistItem[] | null;
   createdAt: Date;
   _count: {
     trades: number;
@@ -225,9 +233,17 @@ export default function StrategyDetailClient() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Rules Editor - Main Column */}
-          <div className="lg:col-span-2 glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
-            <StrategyRulesEditor strategyId={strategy.id} />
+          {/* Main Column - Rules + Checklist */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
+              <StrategyRulesEditor strategyId={strategy.id} />
+            </div>
+            <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
+              <SetupChecklistEditor
+                strategyId={strategy.id}
+                initialChecklist={strategy.setupChecklist || []}
+              />
+            </div>
           </div>
 
           {/* Sidebar with widgets */}
