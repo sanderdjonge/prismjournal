@@ -133,7 +133,7 @@ export default function StrategyDetailClient() {
                   {strategy.trades.map(trade => (
                     <tr key={trade.id} className="border-b border-white/5 last:border-0">
                       <td className="py-3 text-gray-400">
-                        {trade.exitTime?.toLocaleDateString() || '—'}
+                        {trade.exitTime ? new Date(trade.exitTime).toLocaleDateString() : '—'}
                       </td>
                       <td className={`py-3 font-mono ${trade.pnl && trade.pnl >= 0 ? 'text-profit' : 'text-loss'}`}>
                         {trade.pnl ? `$${trade.pnl.toFixed(2)}` : '—'}
