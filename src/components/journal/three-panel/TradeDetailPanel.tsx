@@ -6,7 +6,14 @@ import { useUpdateTrade } from '@/hooks/useTrades';
 import { ExcursionBar } from '@/components/journal/ExcursionBar';
 import { computeDuration, deriveListZone } from './TradeListPanel';
 import { MOOD_OPTIONS, COMPLIANCE_OPTIONS } from '@/constants/tradeConfig';
+import { SetupChecklist } from '@/components/pre-trade/SetupChecklist';
 import type { JournalTrade } from '@/app/journal/page';
+
+interface StrategyWithChecklist {
+    id: string;
+    name: string;
+    setupChecklist: Array<{ id: string; label: string; order: number }> | null;
+}
 
 interface TradeDetailPanelProps {
     trade: JournalTrade;
@@ -55,13 +62,34 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
     const [notes, setNotes] = useState(trade.notes ?? '');
     const [mood, setMood] = useState(trade.mood ?? '');
     const [compliance, setCompliance] = useState(trade.planCompliance ?? '');
+    const [strategy, setStrategy] = useState<StrategyWithChecklist | null>(null);
+    const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
 
     // Reset local editable state when the selected trade changes
     useEffect(() => {
         setNotes(trade.notes ?? '');
         setMood(trade.mood ?? '');
         setCompliance(trade.planCompliance ?? '');
+        setStrategy(null);
+        setCheckedItems({});
     }, [trade.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Fetch strategy with checklist when trade has a strategyId
+    useEffect(() => {
+        if (trade.strategyId) {
+            fetch(`/api/strategies/${trade.strategyId}`)
+                .then(res => res.json())
+                .then(data => {
+                    setStrategy(data);
+                })
+                .catch(err => {
+                    console.error('Failed to fetch strategy:', err);
+                    setStrategy(null);
+                });
+        } else {
+            setStrategy(null);
+        }
+    }, [trade.strategyId]);
 
     const handleRating = (field: 'entryRating' | 'exitRating' | 'managementRating', val: number) => {
         update.mutate(
@@ -264,6 +292,23 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                                 </span>
                             ))}
                         </div>
+                    </div>
+                )}
+
+                {/* Setup Checklist - shown when trade has a strategy with checklist */}
+                {trade.strategyId && strategy?.setupChecklist && strategy.setupChecklist.length > 0 && (
+                    <div className="space-y-2">
+                        <div className="text-[9px] font-black uppercase tracking-[0.18em] text-gray-500">
+                            Setup Checklist
+                            {strategy.name && <span className="text-gray-600 ml-1">({strategy.name})</span>}
+                        </div>
+                        <SetupChecklist
+                            tradeId={trade.id}
+                            strategyId={trade.strategyId}
+                            initialChecklist={strategy.setupChecklist}
+                            initialChecked={checkedItems}
+                            onSave={(checked) => setCheckedItems(checked)}
+                        />
                     </div>
                 )}
 
