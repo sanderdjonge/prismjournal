@@ -27,8 +27,9 @@ const MENU_ITEMS = [
     { label: 'Dashboard', href: '/' },
     { label: 'Performance', href: '/performance' },
     { label: 'Analytics', href: '/analytics' },
-    { label: 'Trading Accounts', href: '/pages/accounts' },
     { label: 'Journal', href: '/journal' },
+    { label: 'Trading Accounts', href: '/pages/accounts' },
+    { label: 'Strategies', href: '/pages/strategies' },
     { label: 'Calculator', href: '/calculator', icon: Calculator },
 ];
 
