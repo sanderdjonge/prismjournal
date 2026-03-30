@@ -88,6 +88,19 @@ function JournalContent() {
     // View mode state (table vs 3-panel)
     const [viewMode, setViewMode] = useState<'table' | 'panel'>('table');
 
+    // Mobile detection — 3-panel requires ~900px minimum width
+    const [isMobile, setIsMobile] = useState(false);
+    useEffect(() => {
+        const mq = window.matchMedia('(max-width: 768px)');
+        setIsMobile(mq.matches);
+        const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+        mq.addEventListener('change', handler);
+        return () => mq.removeEventListener('change', handler);
+    }, []);
+    useEffect(() => {
+        if (isMobile && viewMode === 'panel') setViewMode('table');
+    }, [isMobile]); // eslint-disable-line react-hooks/exhaustive-deps
+
     // Bulk selection state
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [isAllSelected, setIsAllSelected] = useState(false);
@@ -338,7 +351,8 @@ function JournalContent() {
                     </div>
 
                     <div className="flex gap-3">
-                        {/* View Mode Toggle */}
+                        {/* View Mode Toggle — hidden on mobile (3-panel requires ~900px) */}
+                        {!isMobile && (
                         <div className="flex gap-[2px] bg-white/5 border border-white/10 rounded-xl p-[2px]">
                             <button
                                 onClick={() => handleViewModeChange('table')}
@@ -361,6 +375,7 @@ function JournalContent() {
                                 <Columns3 size={14} /> Panel
                             </button>
                         </div>
+                        )}
 
                         <button
                             onClick={handleExportCsv}
