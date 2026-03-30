@@ -9,8 +9,10 @@ import {
     YAxis,
     Tooltip,
     CartesianGrid,
+    Line,
 } from 'recharts';
 import { useCurrency } from '@/lib/currency';
+import { useTiltmeterHistory } from '@/hooks/useTiltmeter';
 
 type DataPoint = {
     time: string;
@@ -21,14 +23,17 @@ type EquityChartProps = {
     data: DataPoint[];
     className?: string;
     dateFormat?: 'DD-MM-YYYY' | 'MM-DD-YYYY' | 'YYYY-MM-DD';
+    showTiltmeter?: boolean;
+    accountId?: string | null;
 };
 
 type TooltipProps = {
     active?: boolean;
-    payload?: Array<{ value: number }>;
+    payload?: Array<{ value: number; dataKey: string }>;
     label?: string;
     symbol: string;
     dateFormat?: 'DD-MM-YYYY' | 'MM-DD-YYYY' | 'YYYY-MM-DD';
+    showTiltmeter?: boolean;
 };
 
 const COLORS = {
@@ -73,15 +78,23 @@ const formatDate = (dateStr: string, format: 'DD-MM-YYYY' | 'MM-DD-YYYY' | 'YYYY
     }
 };
 
-const CustomTooltip = ({ active, payload, label, symbol, dateFormat = 'DD-MM-YYYY' }: TooltipProps) => {
+const CustomTooltip = ({ active, payload, label, symbol, dateFormat = 'DD-MM-YYYY', showTiltmeter = false }: TooltipProps) => {
     if (active && payload && payload.length) {
         const formattedLabel = formatDate(label || '', dateFormat);
+        const equityData = payload.find(p => p.dataKey === 'value');
+        const tiltmeterData = payload.find(p => p.dataKey === 'tiltmeter');
+        
         return (
             <div className="glass-card p-4 border-primary/20 bg-black/80 backdrop-blur-md">
                 <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1">{formattedLabel}</p>
                 <p className="text-xl font-black text-primary tracking-tighter">
-                    {symbol}{payload[0].value.toLocaleString()}
+                    {equityData ? `${symbol}${equityData.value.toLocaleString()}` : 'N/A'}
                 </p>
+                {showTiltmeter && tiltmeterData?.value != null && (
+                    <p className="text-sm font-bold text-amber-500 mt-1">
+                        Tilt: {tiltmeterData.value.toFixed(0)}
+                    </p>
+                )}
             </div>
         );
     }
@@ -89,8 +102,26 @@ const CustomTooltip = ({ active, payload, label, symbol, dateFormat = 'DD-MM-YYY
 };
 
 
-export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-YYYY' }: EquityChartProps) {
+export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-YYYY', showTiltmeter = false, accountId = null }: EquityChartProps) {
     const { formatAmount, formatPnl, symbol } = useCurrency();
+    
+    // Calculate date range from sorted data to ensure correct range for tiltmeter fetch
+    const dateRange = useMemo(() => {
+        if (data.length === 0) return { start: undefined, end: undefined };
+        const sorted = [...data].sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
+        return {
+            start: new Date(sorted[0].time),
+            end: new Date(sorted[sorted.length - 1].time)
+        };
+    }, [data]);
+    
+    // Fetch tiltmeter history if enabled
+    const { data: tiltmeterData, isLoading: isLoadingTiltmeter, isError: isTiltmeterError } = useTiltmeterHistory(
+        accountId,
+        dateRange.start,
+        dateRange.end,
+        showTiltmeter
+    );
     // currentBalance = total cumulative P&L (last data point); the curve starts conceptually at 0
     const currentBalance = data.length > 0 ? data[data.length - 1].value : 0;
     const totalPnL = currentBalance;
@@ -211,6 +242,32 @@ export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-
 
         return filledData;
     }, [data]);
+    
+    // Merge tiltmeter data with equity data for overlay
+    const chartData = useMemo(() => {
+        if (!showTiltmeter || !tiltmeterData?.snapshots) return processedData;
+        
+        // Helper to normalize date strings to YYYY-MM-DD format consistently
+        const getDateKey = (date: string | Date): string => {
+            if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+                return date;
+            }
+            return new Date(date).toISOString().split('T')[0];
+        };
+        
+        // Create a map of tiltmeter scores by date
+        const tiltmeterByDate = new Map<string, number>();
+        tiltmeterData.snapshots.forEach(s => {
+            const dateKey = getDateKey(s.date);
+            tiltmeterByDate.set(dateKey, s.score);
+        });
+        
+        // Merge tiltmeter data into equity data
+        return processedData.map(point => ({
+            ...point,
+            tiltmeter: tiltmeterByDate.get(getDateKey(point.time)) ?? null,
+        }));
+    }, [processedData, tiltmeterData, showTiltmeter]);
 
     return (
         <div className={`flex flex-col h-full w-full group relative ${className}`}>
@@ -235,13 +292,28 @@ export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-
                     <p className={`text-sm font-mono font-bold ${totalPnL >= 0 ? 'text-profit' : 'text-loss'}`}>
                         {formatPnl(totalPnL)}
                     </p>
+                    {/* Tiltmeter loading/error indicator */}
+                    {showTiltmeter && (
+                        <div className="mt-1">
+                            {isLoadingTiltmeter && (
+                                <p className="text-[8px] font-medium text-amber-500/60 animate-pulse">
+                                    Loading tilt...
+                                </p>
+                            )}
+                            {isTiltmeterError && (
+                                <p className="text-[8px] font-medium text-red-400" title="Failed to load tiltmeter data">
+                                    ⚠ Tilt error
+                                </p>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
 
             {/* Main Curve Area - Increased height utilization */}
             <div className="flex-1 w-full min-h-0 pl-1 pr-2">
                 <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={processedData} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
+                    <AreaChart data={chartData} margin={{ top: 10, right: showTiltmeter ? 50 : 10, left: 0, bottom: 5 }}>
                         <defs>
                             {/* Fill gradient: green above zero, red below zero, split at the zero line */}
                             <linearGradient id="equityFillGradient" x1="0" y1="0" x2="0" y2="1">
@@ -275,6 +347,7 @@ export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-
                             minTickGap={50}
                         />
                         <YAxis
+                            yAxisId="equity"
                             dataKey="value"
                             axisLine={false}
                             tickLine={false}
@@ -283,8 +356,21 @@ export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-
                             width={58}
                             domain={yAxisDomain}
                         />
-                        <Tooltip content={<CustomTooltip symbol={symbol} dateFormat={dateFormat} />} />
+                        {showTiltmeter && (
+                            <YAxis
+                                yAxisId="tiltmeter"
+                                orientation="right"
+                                domain={[0, 100]}
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fill: '#f59e0b', fontSize: 9, fontWeight: 600, fontFamily: 'monospace' }}
+                                tickFormatter={(v) => `${v}`}
+                                width={40}
+                            />
+                        )}
+                        <Tooltip content={<CustomTooltip symbol={symbol} dateFormat={dateFormat} showTiltmeter={showTiltmeter} />} />
                         <Area
+                            yAxisId="equity"
                             type="monotone"
                             dataKey="value"
                             stroke="url(#equityStrokeGradient)"
@@ -293,6 +379,19 @@ export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-
                             fill="url(#equityFillGradient)"
                             animationDuration={1000}
                         />
+                        {showTiltmeter && (
+                            <Line
+                                yAxisId="tiltmeter"
+                                type="monotone"
+                                dataKey="tiltmeter"
+                                stroke="#f59e0b"
+                                strokeWidth={2}
+                                strokeDasharray="4 2"
+                                dot={false}
+                                connectNulls
+                                animationDuration={500}
+                            />
+                        )}
                     </AreaChart>
                 </ResponsiveContainer>
             </div>
