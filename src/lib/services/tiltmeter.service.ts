@@ -137,6 +137,82 @@ export async function getTiltmeterHistory(
   startDate?: Date,
   endDate?: Date
 ): Promise<TiltmeterHistory> {
+  // Set default date range if not provided
+  const end = endDate || new Date();
+  const start = startDate || new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+  // First check if we have any snapshots
+  const snapshotCount = await prisma.tiltmeterSnapshot.count({
+    where: { userId }
+  });
+
+  // If no snapshots exist, calculate from violations directly
+  if (snapshotCount === 0) {
+    // Get violations grouped by date
+    const where: any = {
+      userId,
+      occurredAt: { gte: start, lte: end }
+    };
+    if (accountId) where.accountId = accountId;
+
+    const violations = await prisma.strategyViolation.findMany({
+      where,
+      select: {
+        occurredAt: true,
+        ruleType: true,
+      },
+      orderBy: { occurredAt: 'asc' }
+    });
+
+    // Group violations by date and calculate daily scores
+    const violationsByDate = new Map<string, { count: number; weightedScore: number }>();
+
+    for (const v of violations) {
+      const dateKey = v.occurredAt.toISOString().split('T')[0];
+      const weight = RULE_TYPE_WEIGHTS[v.ruleType] || 1.0;
+      
+      const existing = violationsByDate.get(dateKey) || { count: 0, weightedScore: 0 };
+      existing.count += 1;
+      existing.weightedScore += weight;
+      violationsByDate.set(dateKey, existing);
+    }
+
+    // Generate snapshots for each day in range
+    const snapshots: Array<{ date: Date; score: number; violationCount: number }> = [];
+    const currentDate = new Date(start);
+    
+    while (currentDate <= end) {
+      const dateKey = currentDate.toISOString().split('T')[0];
+      const dayData = violationsByDate.get(dateKey);
+      
+      // Calculate cumulative score up to this date
+      let cumulativeWeightedScore = 0;
+      const lookbackStart = new Date(currentDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+      
+      for (const [d, data] of violationsByDate.entries()) {
+        if (d >= lookbackStart.toISOString().split('T')[0] && d <= dateKey) {
+          // Apply recency decay
+          const dayDiff = Math.floor((currentDate.getTime() - new Date(d).getTime()) / (24 * 60 * 60 * 1000));
+          const recency = Math.max(0.1, 1 - dayDiff / 30);
+          cumulativeWeightedScore += data.weightedScore * recency;
+        }
+      }
+      
+      const score = Math.min(100, Math.round(cumulativeWeightedScore * 10));
+      
+      snapshots.push({
+        date: new Date(currentDate),
+        score,
+        violationCount: dayData?.count || 0,
+      });
+      
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return { snapshots };
+  }
+
+  // Original logic for when snapshots exist
   const where: any = { userId };
   if (accountId) where.accountId = accountId;
   if (startDate || endDate) {
