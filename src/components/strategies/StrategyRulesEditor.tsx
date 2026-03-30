@@ -334,6 +334,111 @@ function RuleConfigEditor({ rule, onChange }: { rule: Rule; onChange: (updates: 
         </div>
       );
     
+    case 'ALLOWED_TIME_WINDOWS':
+      return (
+        <div className="space-y-4">
+          <div className="flex items-center gap-4">
+            <label className="text-xs font-black uppercase tracking-widest text-gray-500 w-24">Timezone</label>
+            <select
+              value={rule.timezone || 'UTC'}
+              onChange={(e) => onChange({ timezone: e.target.value })}
+              className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white focus:border-primary/50 focus:outline-none"
+            >
+              <option value="UTC" className="bg-gray-900">UTC</option>
+              <option value="America/New_York" className="bg-gray-900">New York (EST)</option>
+              <option value="America/Chicago" className="bg-gray-900">Chicago (CST)</option>
+              <option value="America/Los_Angeles" className="bg-gray-900">Los Angeles (PST)</option>
+              <option value="Europe/London" className="bg-gray-900">London (GMT)</option>
+              <option value="Europe/Amsterdam" className="bg-gray-900">Amsterdam (CET)</option>
+              <option value="Asia/Tokyo" className="bg-gray-900">Tokyo (JST)</option>
+              <option value="Asia/Singapore" className="bg-gray-900">Singapore (SGT)</option>
+              <option value="Australia/Sydney" className="bg-gray-900">Sydney (AEDT)</option>
+            </select>
+          </div>
+          
+          <div>
+            <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-3 block">Trading Windows</label>
+            <div className="space-y-2">
+              {(rule.windows || []).map((window: { start: string; end: string }, index: number) => (
+                <div key={index} className="flex items-center gap-3">
+                  <input
+                    type="time"
+                    value={window.start}
+                    onChange={(e) => {
+                      const newWindows = [...(rule.windows || [])];
+                      newWindows[index] = { ...newWindows[index], start: e.target.value };
+                      onChange({ windows: newWindows });
+                    }}
+                    className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-primary/50 focus:outline-none"
+                  />
+                  <span className="text-gray-500">to</span>
+                  <input
+                    type="time"
+                    value={window.end}
+                    onChange={(e) => {
+                      const newWindows = [...(rule.windows || [])];
+                      newWindows[index] = { ...newWindows[index], end: e.target.value };
+                      onChange({ windows: newWindows });
+                    }}
+                    className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-primary/50 focus:outline-none"
+                  />
+                  <button
+                    onClick={() => {
+                      const newWindows = (rule.windows || []).filter((_: unknown, i: number) => i !== index);
+                      onChange({ windows: newWindows });
+                    }}
+                    className="text-red-400 hover:text-red-300 text-xs font-bold uppercase tracking-wide transition-colors"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => {
+                const newWindows = [...(rule.windows || []), { start: '09:00', end: '17:00' }];
+                onChange({ windows: newWindows });
+              }}
+              className="mt-3 text-primary hover:text-primary/80 text-sm font-bold transition-colors"
+            >
+              + Add Time Window
+            </button>
+          </div>
+        </div>
+      );
+    
+    case 'ALLOWED_SYMBOLS':
+      return (
+        <div className="space-y-4">
+          <div className="flex items-center gap-4">
+            <label className="text-xs font-black uppercase tracking-widest text-gray-500 w-24">Mode</label>
+            <select
+              value={rule.mode || 'ALLOW'}
+              onChange={(e) => onChange({ mode: e.target.value })}
+              className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white focus:border-primary/50 focus:outline-none"
+            >
+              <option value="ALLOW" className="bg-gray-900">Allow Only</option>
+              <option value="BLOCK" className="bg-gray-900">Block</option>
+            </select>
+          </div>
+          
+          <div>
+            <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Symbols</label>
+            <input
+              type="text"
+              value={(rule.symbols || []).join(', ')}
+              onChange={(e) => {
+                const symbols = e.target.value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+                onChange({ symbols });
+              }}
+              placeholder="EURUSD, GBPUSD, XAUUSD..."
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:border-primary/50 focus:outline-none transition-colors"
+            />
+            <p className="text-gray-500 text-xs mt-1">Comma-separated list of trading symbols</p>
+          </div>
+        </div>
+      );
+    
     default:
       return <p className="text-sm text-gray-500">No additional configuration needed.</p>;
   }
