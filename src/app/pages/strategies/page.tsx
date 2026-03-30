@@ -18,17 +18,45 @@ export default async function StrategiesPage() {
     orderBy: { createdAt: 'desc' },
   });
 
-  // Transform to plain object for client component
-  const strategiesData = strategies.map(s => ({
-    id: s.id,
-    name: s.name,
-    description: s.description,
-    createdAt: s.createdAt,
-    _count: {
-      trades: s._count.trades,
-      violations: 0, // Will be calculated separately if needed
-    },
-  }));
+  // Calculate metrics for each strategy
+  const strategiesWithMetrics = await Promise.all(
+    strategies.map(async (s) => {
+      // Get violation count
+      const violationCount = await prisma.strategyViolation.count({
+        where: { strategyId: s.id }
+      });
 
-  return <StrategiesClient strategies={strategiesData} />;
+      // Get unique trades with violations
+      const tradesWithViolations = await prisma.strategyViolation.groupBy({
+        by: ['tradeId'],
+        where: { strategyId: s.id },
+        _count: true
+      });
+
+      // Calculate adherence
+      const totalTrades = s._count.trades;
+      const tradesWithViolationsCount = tradesWithViolations.length;
+      const adherenceScore = totalTrades > 0 
+        ? Math.round(((totalTrades - tradesWithViolationsCount) / totalTrades) * 100)
+        : 100;
+
+      // Calculate tiltmeter (0 violations = 0, 10+ = 100)
+      const tiltmeterScore = Math.min(100, violationCount * 10);
+
+      return {
+        id: s.id,
+        name: s.name,
+        description: s.description,
+        createdAt: s.createdAt,
+        _count: {
+          trades: s._count.trades,
+          violations: violationCount,
+        },
+        adherenceScore: Math.max(0, adherenceScore),
+        tiltmeterScore,
+      };
+    })
+  );
+
+  return <StrategiesClient strategies={strategiesWithMetrics} />;
 }
