@@ -1,12 +1,11 @@
-import { PrismaClient, StrategyRuleType } from '@prisma/client';
+import { StrategyRuleType } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import {
   StrategyRulesConfig,
   StrategyRule,
   validateRules,
   getEnabledRules,
 } from '../validations/strategy-rules';
-
-const prisma = new PrismaClient();
 
 // ============================================
 // Types
