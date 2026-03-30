@@ -120,6 +120,14 @@ export function TradeRow({ trade, columns, onView, onEdit, isSelected = false, o
                             )}
                         </div>
                     )}
+                    {col.id === 'strategy' && (
+                        <span className="text-xs">
+                            {trade.strategy
+                                ? <span className="text-white/80 font-medium">{trade.strategy}</span>
+                                : <span className="text-gray-600">—</span>
+                            }
+                        </span>
+                    )}
                     {col.id === 'account' && (
                         <span className="text-xs text-gray-400 truncate max-w-[120px] block">
                             {trade.accountName || '—'}
