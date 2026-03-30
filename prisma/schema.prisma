@@ -48,6 +48,8 @@ model User {
   customStats         CustomStat[]
   tags                Tag[]
   passwordResetTokens PasswordResetToken[]
+  preTradeNotes       PreTradeNote[]
+  challenges          TradingChallenge[]
 }
 
 // ============================================
@@ -128,6 +130,8 @@ model TradingAccount {
   challengePhases ChallengePhase[]
   violations      RuleViolation[]
   dailySnapshots  DailyAccountSnapshot[]
+  preTradeNotes   PreTradeNote[]
+  challenges      TradingChallenge[]
 
   @@unique([userId, platform, platformAccountId])
   @@index([userId])
@@ -360,11 +364,16 @@ model Strategy {
   description String?
 
   // Phase 19: User-defined strategy rules for plan adherence
-  rules     Json? // StrategyRules configuration (see StrategyRuleType enum)
+  rules Json? // StrategyRules configuration (see StrategyRuleType enum)
+
+  // Phase 20: Setup checklist for entry criteria
+  setupChecklist Json? // [{ id, label, order }] - checklist items for trade entry
+
   createdAt DateTime @default(now())
 
-  trades     Trade[]
-  violations StrategyViolation[]
+  trades               Trade[]
+  violations           StrategyViolation[]
+  checklistCompletions ChecklistCompletion[]
 
   @@index([userId])
 }
@@ -447,6 +456,12 @@ model Trade {
   media              Media[]
   pendingScreenshots PendingScreenshot[]
   tags               TradeTag[]
+
+  // Phase 20: Pre-trade note linking (reverse relation - FK is on PreTradeNote)
+  preTradeNote PreTradeNote?
+
+  // Phase 20: Checklist completion tracking
+  checklistCompletion ChecklistCompletion?
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -787,4 +802,177 @@ model TiltmeterSnapshot {
   @@index([userId])
   @@index([accountId])
   @@index([periodStart, periodEnd])
+}
+
+// ============================================
+// Pre-Trade Notes (Phase 20)
+// ============================================
+
+enum PreTradeNoteStatus {
+  PENDING // Created, waiting for trade
+  LINKED // Linked to a trade
+  NOT_RELEVANT // User marked as not relevant
+  EXPIRED // Not linked within reasonable time (optional)
+}
+
+model PreTradeNote {
+  id        String          @id @default(cuid())
+  userId    String
+  user      User            @relation(fields: [userId], references: [id])
+  accountId String? // Optional: specific account intended
+  account   TradingAccount? @relation(fields: [accountId], references: [id])
+
+  // Planned trade details
+  symbol       String
+  direction    TradeDirection
+  body         String         @db.Text // Analysis/rationale
+  plannedEntry Float? // Optional planned entry price
+
+  // Linking to actual trade
+  status   PreTradeNoteStatus @default(PENDING)
+  trade    Trade?             @relation(fields: [tradeId], references: [id])
+  tradeId  String?            @unique
+  linkedAt DateTime?
+
+  // Setup checklist completion (if strategy assigned later)
+  checklistStatus Json? // { [checklistId]: boolean }
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([userId, status])
+  @@index([tradeId])
+  @@index([symbol, direction])
+}
+
+// ============================================
+// Economic Events (Phase 21b)
+// ============================================
+
+enum EconomicEventImpact {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model EconomicEvent {
+  id String @id @default(cuid())
+
+  // Event details
+  name     String // "FOMC", "NFP", "CPI", etc.
+  date     DateTime            @db.Date
+  time     String? // "14:30 EST"
+  currency String // "USD", "EUR", "GBP", etc.
+  impact   EconomicEventImpact @default(MEDIUM)
+
+  // Values
+  forecast String?
+  actual   String?
+  previous String?
+
+  // Source tracking
+  source     String? // "ForexFactory", "FMP", etc.
+  externalId String? @unique // ID from external API
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+  @@index([currency])
+  @@index([impact])
+}
+
+// ============================================
+// Trading Challenges (Phase 22)
+// ============================================
+
+enum ChallengeScope {
+  GLOBAL // All accounts combined
+  PER_ACCOUNT // Specific account only
+}
+
+model TradingChallenge {
+  id        String          @id @default(cuid())
+  userId    String
+  user      User            @relation(fields: [userId], references: [id])
+  accountId String? // Set if scope is PER_ACCOUNT
+  account   TradingAccount? @relation(fields: [accountId], references: [id])
+
+  // Challenge details
+  name        String
+  description String?
+  scope       ChallengeScope @default(GLOBAL)
+
+  // Rules (reuse StrategyRuleType pattern)
+  rules Json // [{ type, value, operator }] - same structure as Strategy.rules
+
+  // Duration
+  startDate DateTime
+  endDate   DateTime?
+  isActive  Boolean   @default(true)
+
+  // Progress (denormalized for performance)
+  daysPassed Int @default(0)
+  daysFailed Int @default(0)
+  totalDays  Int @default(0)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  evaluations ChallengeEvaluation[]
+
+  @@index([userId, isActive])
+  @@index([accountId])
+  @@index([startDate])
+}
+
+model ChallengeEvaluation {
+  id          String           @id @default(cuid())
+  challengeId String
+  challenge   TradingChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  // Evaluation
+  date           DateTime @db.Date
+  passed         Boolean
+  failureReasons Json? // Array of rule IDs that failed
+
+  // Linked trades for this day
+  tradeIds String[] // Array of trade IDs evaluated
+
+  createdAt DateTime @default(now())
+
+  @@unique([challengeId, date])
+  @@index([challengeId, date])
+  @@index([passed])
+}
+
+// ============================================
+// Checklist Completion (Phase 20 - Trade-level)
+// ============================================
+
+model ChecklistCompletion {
+  id         String   @id @default(cuid())
+  tradeId    String
+  trade      Trade    @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  strategyId String
+  strategy   Strategy @relation(fields: [strategyId], references: [id])
+
+  // Checklist state at time of trade
+  checklist Json // [{ id, label, checked }]
+
+  // Summary
+  totalItems    Int
+  checkedItems  Int
+  completionPct Float // 0-100
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tradeId])
+  @@index([strategyId])
+  @@index([completionPct])
 }
