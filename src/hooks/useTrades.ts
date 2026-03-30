@@ -13,12 +13,13 @@ export interface TradeFilters {
     page?: number;
     limit?: number;
     closeReason?: string;
+    strategyId?: string | null;
 }
 
 async function fetchTrades(filters: TradeFilters) {
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([k, v]) => {
-        if (v !== undefined && v !== '') params.set(k, String(v));
+        if (v !== undefined && v !== null && v !== '') params.set(k, String(v));
     });
     const res = await fetch(`/api/trades?${params}`);
     if (!res.ok) throw new Error('Failed to fetch trades');
