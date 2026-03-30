@@ -7,7 +7,7 @@ import DashboardShell from '@/components/layout/DashboardShell';
 import StrategyRulesEditor from '@/components/strategies/StrategyRulesEditor';
 import ComplianceWidget from '@/components/dashboard/ComplianceWidget';
 import TiltmeterWidget from '@/components/dashboard/TiltmeterWidget';
-import { ArrowLeft, Edit2, Trash2, X, Check, Loader2 } from 'lucide-react';
+import { ArrowLeft, Edit2, Trash2, X, Check, Loader2, RefreshCw } from 'lucide-react';
 
 interface Strategy {
   id: string;
@@ -35,6 +35,8 @@ export default function StrategyDetailClient() {
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isReevaluating, setIsReevaluating] = useState(false);
+  const [reevaluateResult, setReevaluateResult] = useState<{ evaluated: number; violations: number } | null>(null);
 
   useEffect(() => {
     if (params.id) {
@@ -94,6 +96,24 @@ export default function StrategyDetailClient() {
     } finally {
       setIsDeleting(false);
       setShowDeleteConfirm(false);
+    }
+  }
+
+  async function handleReevaluate() {
+    if (!strategy) return;
+    setIsReevaluating(true);
+    setReevaluateResult(null);
+    try {
+      const res = await fetch(`/api/strategies/${strategy.id}/re-evaluate`, { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        setReevaluateResult({ evaluated: data.tradesEvaluated, violations: data.totalViolations });
+        router.refresh();
+      }
+    } catch (err) {
+      console.error('Failed to re-evaluate:', err);
+    } finally {
+      setIsReevaluating(false);
     }
   }
 
@@ -173,6 +193,14 @@ export default function StrategyDetailClient() {
               </div>
               <div className="flex gap-2">
                 <button
+                  onClick={handleReevaluate}
+                  disabled={isReevaluating}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-lg text-sm text-primary hover:text-primary/80 transition-colors disabled:opacity-50"
+                >
+                  <RefreshCw size={14} className={isReevaluating ? 'animate-spin' : ''} />
+                  {isReevaluating ? 'Evaluating...' : 'Re-evaluate'}
+                </button>
+                <button
                   onClick={() => setIsEditing(true)}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm text-gray-400 hover:text-white transition-colors"
                 >
@@ -187,6 +215,11 @@ export default function StrategyDetailClient() {
                   Delete
                 </button>
               </div>
+              {reevaluateResult && (
+                <p className="text-sm text-gray-400 mt-2">
+                  ✓ Evaluated {reevaluateResult.evaluated} trades, found {reevaluateResult.violations} violations
+                </p>
+              )}
             </div>
           )}
         </div>
