@@ -28,6 +28,7 @@ export type JournalTrade = {
     entry: number;
     exit: number;
     stopLoss?: number | null;
+    initialStopLoss?: number | null;
     takeProfit?: number | null;
     commission?: number;
     swap?: number;

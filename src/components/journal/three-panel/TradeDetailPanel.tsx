@@ -147,6 +147,21 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                     <Cell label="Exit">
                         <span className="font-mono text-[13px] font-semibold text-white">{trade.exit && trade.exit > 0 ? fmt(trade.exit) : '—'}</span>
                     </Cell>
+                    <Cell label="Stop Loss">
+                        <div className="flex flex-col">
+                            <span className="font-mono text-[13px] font-semibold text-loss">{trade.stopLoss ? fmt(trade.stopLoss) : '—'}</span>
+                            {/* Show initial SL if different from current SL */}
+                            {(trade as { initialStopLoss?: number | null }).initialStopLoss != null &&
+                             (trade as { initialStopLoss?: number | null }).initialStopLoss !== trade.stopLoss && (
+                                <span className="text-[9px] text-gray-500 mt-0.5">
+                                    Initial: {fmt((trade as { initialStopLoss?: number | null }).initialStopLoss!)}
+                                </span>
+                            )}
+                        </div>
+                    </Cell>
+                    <Cell label="Take Profit">
+                        <span className="font-mono text-[13px] font-semibold text-profit">{trade.takeProfit ? fmt(trade.takeProfit) : '—'}</span>
+                    </Cell>
                     <Cell label="Entry Time">
                         <span className="text-[11px] font-semibold text-gray-300">{entryDateStr}</span>
                     </Cell>
