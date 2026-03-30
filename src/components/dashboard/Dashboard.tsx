@@ -116,7 +116,13 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Equity Curve */}
                 <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl">
-                    <EquityChart data={stats.equity} className="h-[400px]" dateFormat={dateFormat} />
+                    <EquityChart 
+                        data={stats.equity} 
+                        className="h-[400px]" 
+                        dateFormat={dateFormat}
+                        showTiltmeter={true}
+                        accountId={selectedAccountId}
+                    />
                 </div>
 
                 {/* Prism Score */}

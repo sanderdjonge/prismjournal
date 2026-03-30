@@ -15,7 +15,7 @@ export const BUILD_DATE = '2026-03-30';
  * Short summary of what changed in this build.
  * Update together with APP_VERSION and BUILD_DATE.
  */
-export const BUILD_NOTES = 'Phase 17 Gap 3 — 3-panel journal review mode: trade list + screenshot viewer + inline detail editor';
+export const BUILD_NOTES = 'Phase 19 — Plan Adherence & Tiltmeter: Strategy rules compliance, tiltmeter overlay on equity curve';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {
