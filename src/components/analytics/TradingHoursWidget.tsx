@@ -201,7 +201,7 @@ export function TradingHoursWidget({ data, currency = 'USD' }: TradingHoursWidge
                     return (
                         <div
                             key={hour.hour}
-                            className="flex-1 flex flex-col items-center"
+                            className="flex-1 flex flex-col items-center h-full justify-end"
                         >
                             <div
                                 className="w-full rounded-t transition-all group/bar relative cursor-default"
@@ -235,7 +235,7 @@ export function TradingHoursWidget({ data, currency = 'USD' }: TradingHoursWidge
                                 )}
                             </div>
                             {/* Time label under each bar */}
-                            <span className="text-[6px] font-bold text-gray-600 mt-1 tabular-nums">
+                            <span className="text-[10px] font-bold text-gray-600 mt-1 tabular-nums">
                                 {hour.hour.toString().padStart(2, '0')}
                             </span>
                         </div>
