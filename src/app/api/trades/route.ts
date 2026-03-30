@@ -217,19 +217,19 @@ export const POST = withAuth(async (req, _ctx, session) => {
         if (specified) account = specified;
     }
 
-    // Find or create strategy
+    // Use strategyId if provided, otherwise find existing strategy by name
     let strategyId: string | null = null;
-    if (body.strategy) {
-        const strat = await prisma.strategy.upsert({
-            where: { id: `strat_${body.strategy.replace(/\W+/g, '_').toLowerCase()}` },
-            update: {},
-            create: {
-                id: `strat_${body.strategy.replace(/\W+/g, '_').toLowerCase()}`,
+    if (body.strategyId) {
+        strategyId = body.strategyId;
+    } else if (body.strategy) {
+        // Find existing strategy by name (don't auto-create)
+        const existingStrategy = await prisma.strategy.findFirst({
+            where: {
                 name: body.strategy,
                 userId: account.userId,
             },
         });
-        strategyId = strat.id;
+        strategyId = existingStrategy?.id || null;
     }
 
     const ticket = `MANUAL-${Date.now()}`;

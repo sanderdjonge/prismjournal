@@ -10,16 +10,23 @@ interface TiltmeterScore {
 
 interface Props {
   periodDays?: number;
+  strategyId?: string;
+  accountId?: string;
 }
 
-export default function TiltmeterWidget({ periodDays = 30 }: Props) {
+export default function TiltmeterWidget({ periodDays = 30, strategyId, accountId }: Props) {
   const [data, setData] = useState<TiltmeterScore | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchScore() {
       try {
-        const res = await fetch(`/api/analytics/tiltmeter?periodDays=${periodDays}`);
+        const params = new URLSearchParams();
+        params.set('periodDays', String(periodDays));
+        if (strategyId) params.set('strategyId', strategyId);
+        if (accountId) params.set('accountId', accountId);
+        
+        const res = await fetch(`/api/analytics/tiltmeter?${params}`);
         if (res.ok) {
           const score = await res.json();
           setData(score);
@@ -31,7 +38,7 @@ export default function TiltmeterWidget({ periodDays = 30 }: Props) {
       }
     }
     fetchScore();
-  }, [periodDays]);
+  }, [periodDays, strategyId, accountId]);
 
   if (loading) {
     return (

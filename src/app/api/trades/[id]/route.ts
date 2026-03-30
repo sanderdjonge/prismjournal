@@ -51,20 +51,21 @@ export const PATCH = withAuth(async (req, ctx, session) => {
         return NextResponse.json({ error: 'Trade not found' }, { status: 404 });
     }
 
-    // Handle strategy - find or create
+    // Handle strategy - use existing strategyId or find by name
     let strategyId: string | null | undefined = undefined;
-    if (body.strategy !== undefined) {
+    if (body.strategyId !== undefined) {
+        // If strategyId is explicitly provided, use it directly
+        strategyId = body.strategyId || null;
+    } else if (body.strategy !== undefined) {
+        // Legacy: strategy field contains name - find existing strategy by name
         if (body.strategy) {
-            const strat = await prisma.strategy.upsert({
-                where: { id: `strat_${body.strategy.replace(/\W+/g, '_').toLowerCase()}` },
-                update: {},
-                create: {
-                    id: `strat_${body.strategy.replace(/\W+/g, '_').toLowerCase()}`,
+            const existingStrategy = await prisma.strategy.findFirst({
+                where: {
                     name: body.strategy,
                     userId: existingTrade.account.userId,
                 },
             });
-            strategyId = strat.id;
+            strategyId = existingStrategy?.id || null;
         } else {
             strategyId = null;
         }

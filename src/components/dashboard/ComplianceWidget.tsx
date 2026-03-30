@@ -13,16 +13,23 @@ interface ComplianceStats {
 
 interface Props {
   periodDays?: number;
+  strategyId?: string;
+  accountId?: string;
 }
 
-export default function ComplianceWidget({ periodDays = 30 }: Props) {
+export default function ComplianceWidget({ periodDays = 30, strategyId, accountId }: Props) {
   const [stats, setStats] = useState<ComplianceStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchStats() {
       try {
-        const res = await fetch(`/api/analytics/compliance?periodDays=${periodDays}`);
+        const params = new URLSearchParams();
+        params.set('periodDays', String(periodDays));
+        if (strategyId) params.set('strategyId', strategyId);
+        if (accountId) params.set('accountId', accountId);
+        
+        const res = await fetch(`/api/analytics/compliance?${params}`);
         if (res.ok) {
           const data = await res.json();
           setStats(data);
@@ -34,7 +41,7 @@ export default function ComplianceWidget({ periodDays = 30 }: Props) {
       }
     }
     fetchStats();
-  }, [periodDays]);
+  }, [periodDays, strategyId, accountId]);
 
   if (loading) {
     return (
