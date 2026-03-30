@@ -19,7 +19,45 @@ export const GET = withAuth(async (
         }
     });
 
-    return NextResponse.json({ strategies });
+    // Calculate adherence and tiltmeter for each strategy
+    const strategiesWithMetrics = await Promise.all(
+        strategies.map(async (strategy) => {
+            // Get violation count for this strategy
+            const violationCount = await prisma.strategyViolation.count({
+                where: { strategyId: strategy.id }
+            });
+
+            // Get unique trades that have violations for this strategy
+            const tradesWithViolations = await prisma.strategyViolation.groupBy({
+                by: ['tradeId'],
+                where: { strategyId: strategy.id },
+                _count: true
+            });
+
+            // Calculate adherence (trades without violations / total trades)
+            const totalTrades = strategy._count.trades;
+            const tradesWithViolationsCount = tradesWithViolations.length;
+            const adherenceScore = totalTrades > 0 
+                ? Math.round(((totalTrades - tradesWithViolationsCount) / totalTrades) * 100)
+                : 100;
+
+            // Simple tilt calculation based on violation count
+            // Scale: 0 violations = 0, 10+ violations = 100
+            const tiltmeterScore = Math.min(100, violationCount * 10);
+
+            return {
+                ...strategy,
+                _count: {
+                    trades: strategy._count.trades,
+                    violations: violationCount
+                },
+                adherenceScore: Math.max(0, adherenceScore),
+                tiltmeterScore
+            };
+        })
+    );
+
+    return NextResponse.json({ strategies: strategiesWithMetrics });
 });
 
 // POST /api/strategies - Create a new strategy

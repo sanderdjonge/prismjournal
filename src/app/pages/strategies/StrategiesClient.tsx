@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Target, AlertTriangle } from 'lucide-react';
 import DashboardShell from '@/components/layout/DashboardShell';
 
 interface Strategy {
@@ -15,6 +15,8 @@ interface Strategy {
     trades: number;
     violations: number;
   };
+  adherenceScore: number;
+  tiltmeterScore: number;
 }
 
 interface Props {
@@ -48,7 +50,12 @@ export default function StrategiesClient({ strategies: initialStrategies }: Prop
 
       if (res.ok) {
         const data = await res.json();
-        setStrategies(prev => [{ ...data.strategy, _count: { trades: 0, violations: 0 } }, ...prev]);
+        setStrategies(prev => [{ 
+          ...data.strategy, 
+          _count: { trades: 0, violations: 0 },
+          adherenceScore: 100,
+          tiltmeterScore: 0
+        }, ...prev]);
         setShowModal(false);
         setNewStrategy({ name: '', description: '' });
         router.refresh();
@@ -61,6 +68,29 @@ export default function StrategiesClient({ strategies: initialStrategies }: Prop
     } finally {
       setIsCreating(false);
     }
+  }
+
+  function getAdherenceColor(score: number): string {
+    if (score >= 80) return 'text-green-400';
+    if (score >= 60) return 'text-yellow-400';
+    if (score >= 40) return 'text-orange-400';
+    return 'text-red-400';
+  }
+
+  function getTiltmeterColor(score: number): string {
+    if (score <= 20) return 'text-green-400';
+    if (score <= 40) return 'text-green-300';
+    if (score <= 60) return 'text-yellow-400';
+    if (score <= 80) return 'text-orange-400';
+    return 'text-red-400';
+  }
+
+  function getTiltmeterEmoji(score: number): string {
+    if (score <= 20) return '🧘';
+    if (score <= 40) return '😌';
+    if (score <= 60) return '😐';
+    if (score <= 80) return '😤';
+    return '🤯';
   }
 
   return (
@@ -104,23 +134,55 @@ export default function StrategiesClient({ strategies: initialStrategies }: Prop
                 href={`/pages/strategies/${strategy.id}`}
                 className="glass-card p-5 border-white/5 hover:border-primary/20 hover:bg-white/[0.03] transition-all group"
               >
-                <div className="flex justify-between items-start">
-                  <div>
+                <div className="flex justify-between items-start gap-4">
+                  <div className="flex-1 min-w-0">
                     <h3 className="text-lg font-bold text-white group-hover:text-primary transition-colors">{strategy.name}</h3>
                     {strategy.description && (
-                      <p className="text-gray-400 text-sm mt-1">{strategy.description}</p>
+                      <p className="text-gray-400 text-sm mt-1 truncate">{strategy.description}</p>
                     )}
-                  </div>
-                  <div className="text-right text-sm">
-                    <div className="text-gray-400">
+                    <div className="text-sm text-gray-500 mt-2">
                       <span className="font-mono">{strategy._count.trades}</span>
                       <span className="text-gray-600 ml-1">trades</span>
                     </div>
-                    {strategy._count.violations > 0 && (
-                      <div className="text-red-400 text-xs mt-1">{strategy._count.violations} violations</div>
-                    )}
+                  </div>
+                  
+                  {/* Metrics Grid */}
+                  <div className="flex gap-4 shrink-0">
+                    {/* Adherence */}
+                    <div className="text-center">
+                      <div className="flex items-center gap-1 mb-1">
+                        <Target size={14} className="text-gray-500" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Adherence</span>
+                      </div>
+                      <div className={`text-2xl font-black ${getAdherenceColor(strategy.adherenceScore)}`}>
+                        {strategy.adherenceScore}%
+                      </div>
+                    </div>
+                    
+                    {/* Tiltmeter */}
+                    <div className="text-center">
+                      <div className="flex items-center gap-1 mb-1">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Tilt</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-xl">{getTiltmeterEmoji(strategy.tiltmeterScore)}</span>
+                        <span className={`text-lg font-bold ${getTiltmeterColor(strategy.tiltmeterScore)}`}>
+                          {strategy.tiltmeterScore}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
+                
+                {/* Violations indicator */}
+                {strategy._count.violations > 0 && (
+                  <div className="mt-3 pt-3 border-t border-white/5 flex items-center gap-2 text-xs">
+                    <AlertTriangle size={12} className="text-red-400" />
+                    <span className="text-red-400 font-medium">
+                      {strategy._count.violations} rule violation{strategy._count.violations !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                )}
               </Link>
             ))}
           </div>
