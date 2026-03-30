@@ -32,6 +32,7 @@ export interface Trade {
     closeReason?: string | null;
     notes?: string | null;
     strategy?: string | null;
+    strategyId?: string | null;
     entryTime?: string | null;
     exitTime?: string | null;
     tags?: Tag[];
@@ -55,12 +56,13 @@ export const DEFAULT_COLUMNS: Column[] = [
     { id: 'status', label: 'Status', visible: true, sortable: true, mobileVisible: false },
     { id: 'rr', label: 'RR', visible: true, sortable: true, mobileVisible: false },
     { id: 'tags', label: 'Tags', visible: true, sortable: true, mobileVisible: false },
+    { id: 'strategy', label: 'Strategy', visible: false, sortable: true, mobileVisible: false },
     { id: 'account', label: 'Account', visible: false, sortable: true, mobileVisible: false },
     { id: 'screenshots', label: 'Screenshots', visible: false, sortable: true, mobileVisible: false },
     { id: 'closeReason', label: 'Close', visible: true, sortable: true, mobileVisible: false },
     { id: 'actions', label: '', visible: true, sortable: false, mobileVisible: true },
 ];
 
-export const STORAGE_KEY_COLUMNS = 'prism_journal_columns_v3';
+export const STORAGE_KEY_COLUMNS = 'prism_journal_columns_v4';
 export const STORAGE_KEY_PER_PAGE = 'prism_journal_per_page';
 export const STORAGE_KEY_SORT = 'prism_journal_sort';

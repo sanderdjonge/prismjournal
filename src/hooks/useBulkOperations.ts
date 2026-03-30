@@ -4,8 +4,9 @@ import { toast } from 'sonner';
 interface BulkDeleteRequest { action: 'delete'; tradeIds: string[]; }
 interface BulkTagRequest { action: 'tag'; tradeIds: string[]; tagId: string; }
 interface BulkAccountRequest { action: 'account'; tradeIds: string[]; accountId: string; }
-type BulkRequest = BulkDeleteRequest | BulkTagRequest | BulkAccountRequest;
-interface BulkResponse { deleted?: number; tagged?: number; moved?: number; }
+interface BulkStrategyRequest { action: 'setStrategy'; tradeIds: string[]; strategyId: string | null; }
+type BulkRequest = BulkDeleteRequest | BulkTagRequest | BulkAccountRequest | BulkStrategyRequest;
+interface BulkResponse { deleted?: number; tagged?: number; moved?: number; updated?: number; }
 
 async function bulkOperation(request: BulkRequest): Promise<BulkResponse> {
     const res = await fetch('/api/trades/bulk', {
@@ -86,11 +87,32 @@ export function useBulkOperations() {
         },
     });
 
+    const bulkStrategy = useMutation({
+        mutationFn: async ({ tradeIds, strategyId }: { tradeIds: string[]; strategyId: string | null }) => {
+            const chunks = chunkArray(tradeIds, 100);
+            let total = 0;
+            for (const chunk of chunks) {
+                const r = await bulkOperation({ action: 'setStrategy', tradeIds: chunk, strategyId });
+                total += r.updated ?? 0;
+            }
+            return { updated: total };
+        },
+        onSuccess: (data) => {
+            toast.success(`Strategy updated on ${data.updated} trades`);
+            queryClient.invalidateQueries({ queryKey: ['trades'] });
+        },
+        onError: (error: Error) => {
+            toast.error(error.message || 'Failed to update strategy');
+        },
+    });
+
     return {
         bulkDelete: bulkDelete.mutateAsync,
         bulkTag: bulkTag.mutateAsync,
         bulkAccount: bulkAccount.mutateAsync,
+        bulkStrategy: bulkStrategy.mutateAsync,
         isDeleting: bulkDelete.isPending,
         isTagging: bulkTag.isPending,
+        isSettingStrategy: bulkStrategy.isPending,
     };
 }

@@ -12,11 +12,12 @@ import { JournalThreePanelView } from '@/components/journal/JournalThreePanelVie
 import { SkeletonRow, ConfirmModal } from '@/components/ui';
 import { useTrades, useDeleteTrade, TradeFilters } from '@/hooks/useTrades';
 import { useTags } from '@/hooks/useTags';
+import { useStrategies } from '@/hooks/useStrategies';
 import { useBulkOperations } from '@/hooks/useBulkOperations';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useFilters, FilterConfig } from '@/hooks/useFilters';
 import { FilterChipBar } from '@/components/filters/FilterChipBar';
-import { Plus, ChevronLeft, ChevronRight, Download, Tag as TagIcon, Trash2, X, Wallet, LayoutGrid, Columns3 } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Download, Tag as TagIcon, Trash2, X, Wallet, LayoutGrid, Columns3, Crosshair } from 'lucide-react';
 
 export type JournalTrade = {
     id: string;
@@ -37,6 +38,7 @@ export type JournalTrade = {
     closeReason?: string | null;
     notes?: string | null;
     strategy?: string | null;
+    strategyId?: string | null;
     entryTime?: string | null;
     exitTime?: string | null;
     tags?: { id: string; name: string; color?: string | null }[];
@@ -63,6 +65,7 @@ const JOURNAL_FILTER_CONFIG: FilterConfig[] = [
     { value: 'TP', label: 'TP' }, { value: 'SL', label: 'SL' }, { value: 'MANUAL', label: 'Manual' },
   ]},
   { id: 'tag', label: 'Tag', type: 'single-select' },
+  { id: 'strategyId', label: 'Strategy', type: 'single-select' },
   { id: 'account', label: 'Account', type: 'single-select' },
   { id: 'dateRange', label: 'Date Range', type: 'date-range', paramKeys: ['from', 'to'] },
   { id: 'search', label: 'Search', type: 'text' },
@@ -107,9 +110,10 @@ function JournalContent() {
     const [isAllSelected, setIsAllSelected] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
+    const [strategyDropdownOpen, setStrategyDropdownOpen] = useState(false);
 
     // Bulk operations hook
-    const { bulkDelete, bulkTag, bulkAccount, isDeleting } = useBulkOperations();
+    const { bulkDelete, bulkTag, bulkAccount, bulkStrategy, isDeleting, isSettingStrategy } = useBulkOperations();
     const [accountDropdownOpen, setAccountDropdownOpen] = useState(false);
 
     // Account switcher (syncs with topnav)
@@ -126,6 +130,7 @@ function JournalContent() {
         from: getParam('from') || undefined,
         to: getParam('to') || undefined,
         account: getParam('account') || undefined,
+        strategyId: getParam('strategyId') || undefined,
         page,
         limit,
     };
@@ -137,6 +142,10 @@ function JournalContent() {
     // Fetch tags for filter dropdown
     const { data: tagsData } = useTags();
     const tags = tagsData?.tags ?? [];
+
+    // Fetch strategies for filter dropdown
+    const { data: strategiesData } = useStrategies();
+    const strategies = strategiesData?.strategies ?? [];
 
     // Derived state from React Query
     const trades = (data?.trades as JournalTrade[] | undefined) ?? [];
@@ -340,6 +349,16 @@ function JournalContent() {
         }
     };
 
+    const handleBulkStrategy = async (strategyId: string | null) => {
+        try {
+            await bulkStrategy({ tradeIds: Array.from(selectedIds), strategyId });
+            setStrategyDropdownOpen(false);
+            setSelectedIds(new Set());
+        } catch {
+            // Error handled in hook
+        }
+    };
+
     return (
         <DashboardShell>
             <div className="space-y-6">
@@ -407,6 +426,10 @@ function JournalContent() {
                     tag: tags.map(t => ({ value: t.id, label: t.name })),
                     account: accounts.map(a => ({ value: a.id, label: a.name })),
                     symbol: [...new Set(trades.map(t => t.symbol))].sort().map(s => ({ value: s, label: s })),
+                    strategyId: [
+                        { value: 'none', label: 'Unassigned' },
+                        ...strategies.map(s => ({ value: s.id, label: s.name })),
+                    ],
                   }}
                 />
 
@@ -494,6 +517,43 @@ function JournalContent() {
                                                     {tag.name}
                                                 </button>
                                             ))
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="relative">
+                                <button
+                                    onClick={() => setStrategyDropdownOpen(!strategyDropdownOpen)}
+                                    disabled={isSettingStrategy}
+                                    className="h-8 px-4 rounded-lg bg-white/5 border border-white/10 text-white font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:bg-white/10 transition-all disabled:opacity-50"
+                                >
+                                    <Crosshair size={12} /> Set Strategy
+                                </button>
+                                {strategyDropdownOpen && (
+                                    <div className="absolute top-full right-0 mt-1 glass-card border-white/10 bg-gray-900/95 rounded-lg overflow-hidden z-[500] min-w-[180px]">
+                                        {strategies.length === 0 ? (
+                                            <div className="px-3 py-2 text-[10px] text-gray-500">No strategies available</div>
+                                        ) : (
+                                            <>
+                                                {strategies.map((strategy) => (
+                                                    <button
+                                                        key={strategy.id}
+                                                        onClick={() => handleBulkStrategy(strategy.id)}
+                                                        className="w-full px-3 py-2 text-left text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 text-gray-300 hover:text-white"
+                                                    >
+                                                        {strategy.name}
+                                                    </button>
+                                                ))}
+                                                <div className="border-t border-white/10 mt-1 pt-1">
+                                                    <button
+                                                        onClick={() => handleBulkStrategy(null)}
+                                                        className="w-full px-3 py-2 text-left text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 text-gray-500 hover:text-danger"
+                                                    >
+                                                        Remove strategy
+                                                    </button>
+                                                </div>
+                                            </>
                                         )}
                                     </div>
                                 )}
