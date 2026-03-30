@@ -165,6 +165,7 @@ export const GET = withAuth(async (request, _ctx, session) => {
         entry: t.entryPrice,
         exit: t.exitPrice ?? 0,
         stopLoss: t.stopLoss ?? null,
+        initialStopLoss: t.initialStopLoss ?? null,
         takeProfit: t.takeProfit ?? null,
         commission: t.commission ?? 0,
         swap: t.swap ?? 0,

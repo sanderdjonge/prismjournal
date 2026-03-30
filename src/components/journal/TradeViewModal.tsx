@@ -199,6 +199,13 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                                     <div className="w-full bg-loss/5 border border-loss/10 rounded-xl p-3 text-sm font-bold text-white">
                                         {trade.stopLoss?.toFixed(5) || '—'}
                                     </div>
+                                    {/* Show initial SL if different from current SL */}
+                                    {trade.initialStopLoss != null && trade.initialStopLoss !== trade.stopLoss && (
+                                        <div className="text-[10px] text-gray-400 mt-1 px-1 flex items-center gap-1">
+                                            <span className="text-gray-500">Initial:</span>
+                                            <span className="font-mono">{trade.initialStopLoss.toFixed(5)}</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
