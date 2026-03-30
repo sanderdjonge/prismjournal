@@ -135,15 +135,12 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
     }
 
     // --- Average R-Multiple ---
-    const tradesWithRR = closedTrades.filter(t => t.stopLoss && t.entryPrice);
+    // Use stored rMultiple field (calculated at sync time using initialStopLoss)
+    // rather than recalculating incorrectly from current stopLoss
+    const tradesWithRR = closedTrades.filter(t => t.rMultiple != null);
     let avgRMultiple = 0;
     if (tradesWithRR.length > 0) {
-        const rMultiples = tradesWithRR.map(t => {
-            const risk = Math.abs(t.entryPrice - (t.stopLoss ?? 0));
-            if (risk === 0) return 0;
-            return (t.pnl ?? 0) / risk;
-        });
-        avgRMultiple = rMultiples.reduce((a, b) => a + b, 0) / rMultiples.length;
+        avgRMultiple = tradesWithRR.reduce((sum, t) => sum + (t.rMultiple ?? 0), 0) / tradesWithRR.length;
     }
 
     // --- Consecutive Wins/Losses ---
