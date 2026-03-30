@@ -28,6 +28,7 @@ export const GET = withAuth(async (request, _ctx, session) => {
     const search = searchParams.get('q'); // Search query
     const tagFilter = searchParams.get('tag'); // Tag ID filter
     const accountFilter = searchParams.get('account'); // Specific account ID filter
+    const strategyFilter = searchParams.get('strategyId');
 
     // Pagination — cap limit to 500 to prevent runaway queries
     const limit = Math.min(500, Math.max(1, parseInt(searchParams.get('limit') || '50') || 50));
@@ -94,6 +95,13 @@ export const GET = withAuth(async (request, _ctx, session) => {
             { entryReason: { contains: search, mode: 'insensitive' } },
             { exitReason: { contains: search, mode: 'insensitive' } },
         ];
+    }
+
+    // Strategy filter
+    if (strategyFilter === 'none') {
+        where.strategyId = null;
+    } else if (strategyFilter) {
+        where.strategyId = strategyFilter;
     }
 
     // Tag filter - find trades with a specific tag (by ID)
@@ -167,6 +175,7 @@ export const GET = withAuth(async (request, _ctx, session) => {
         closeReason: t.closeReason ?? null,
         notes: t.notes,
         strategy: t.strategy?.name ?? null,
+        strategyId: t.strategyId ?? null,
         entryTime: t.entryTime.toISOString(),
         exitTime: t.exitTime?.toISOString() ?? null,
         tags: t.tags.map((tt) => tt.tag),
