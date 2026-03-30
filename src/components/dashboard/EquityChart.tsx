@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import {
     ResponsiveContainer,
-    AreaChart,
+    ComposedChart,
     Area,
     XAxis,
     YAxis,
@@ -313,7 +313,7 @@ export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-
             {/* Main Curve Area - Increased height utilization */}
             <div className="flex-1 w-full min-h-0 pl-1 pr-2">
                 <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData} margin={{ top: 10, right: showTiltmeter ? 50 : 10, left: 0, bottom: 5 }}>
+                    <ComposedChart data={chartData} margin={{ top: 10, right: showTiltmeter ? 50 : 10, left: 0, bottom: 5 }}>
                         <defs>
                             {/* Fill gradient: green above zero, red below zero, split at the zero line */}
                             <linearGradient id="equityFillGradient" x1="0" y1="0" x2="0" y2="1">
@@ -392,7 +392,7 @@ export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-
                                 animationDuration={500}
                             />
                         )}
-                    </AreaChart>
+                    </ComposedChart>
                 </ResponsiveContainer>
             </div>
         </div>
