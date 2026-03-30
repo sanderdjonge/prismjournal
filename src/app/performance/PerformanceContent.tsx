@@ -75,7 +75,7 @@ export function PerformanceContent() {
                         <p className="text-xs text-gray-500">Account balance over time</p>
                     </div>
                     <div className="h-[250px]">
-                        <EquityChart data={data.equity} />
+                        <EquityChart data={data.equity} showHeader={false} />
                     </div>
                 </div>
 

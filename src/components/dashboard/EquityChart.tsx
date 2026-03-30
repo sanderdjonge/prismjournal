@@ -25,6 +25,7 @@ type EquityChartProps = {
     dateFormat?: 'DD-MM-YYYY' | 'MM-DD-YYYY' | 'YYYY-MM-DD';
     showTiltmeter?: boolean;
     accountId?: string | null;
+    showHeader?: boolean;
 };
 
 type TooltipProps = {
@@ -102,7 +103,7 @@ const CustomTooltip = ({ active, payload, label, symbol, dateFormat = 'DD-MM-YYY
 };
 
 
-export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-YYYY', showTiltmeter = false, accountId = null }: EquityChartProps) {
+export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-YYYY', showTiltmeter = false, accountId = null, showHeader = true }: EquityChartProps) {
     const { formatAmount, formatPnl, symbol } = useCurrency();
     
     // Calculate date range from sorted data to ensure correct range for tiltmeter fetch
@@ -275,6 +276,7 @@ export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-
             <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -mr-32 -mt-32 pointer-events-none" />
 
             {/* Header Info - Simplified for High Density */}
+            {showHeader && (
             <div className="flex justify-between items-start mb-2 z-10 p-4 pb-0">
                 <div>
                     <h4 className="text-sm font-semibold text-gray-100">
@@ -310,6 +312,7 @@ export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-
                     )}
                 </div>
             </div>
+            )}
 
             {/* Main Curve Area - Increased height utilization */}
             <div className="flex-1 w-full min-h-0 pl-1 pr-2">
