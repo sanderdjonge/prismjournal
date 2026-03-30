@@ -1,6 +1,5 @@
-import { PrismaClient, StrategyRuleType } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { StrategyRuleType } from '@prisma/client';
+import prisma from '@/lib/prisma';
 
 // ============================================
 // Types
@@ -46,7 +45,8 @@ const RULE_TYPE_WEIGHTS: Record<StrategyRuleType, number> = {
 export async function calculateTiltmeter(
   userId: string,
   accountId?: string,
-  periodDays: number = 30
+  periodDays: number = 30,
+  persist: boolean = false
 ): Promise<TiltmeterScore> {
   const periodEnd = new Date();
   const periodStart = new Date(periodEnd.getTime() - periodDays * 24 * 60 * 60 * 1000);
@@ -105,16 +105,18 @@ export async function calculateTiltmeter(
   const score = Math.min(100, Math.round(totalWeightedScore * scale));
 
   // Save snapshot
-  await prisma.tiltmeterSnapshot.create({
-    data: {
-      userId,
-      accountId: accountId || null,
-      score,
-      components,
-      periodStart,
-      periodEnd,
-    },
-  });
+  if (persist) {
+    await prisma.tiltmeterSnapshot.create({
+      data: {
+        userId,
+        accountId: accountId || null,
+        score,
+        components,
+        periodStart,
+        periodEnd,
+      },
+    });
+  }
 
   return {
     score,

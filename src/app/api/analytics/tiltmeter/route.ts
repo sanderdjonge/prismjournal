@@ -26,5 +26,5 @@ export const GET = withAuth(async (req: NextRequest, _ctx, session) => {
     accountId,
     periodDays
   );
-  return NextResponse.json({ score });
+  return NextResponse.json(score);
 });
