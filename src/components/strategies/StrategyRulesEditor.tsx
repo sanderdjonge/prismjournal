@@ -408,6 +408,22 @@ function RuleConfigEditor({ rule, onChange }: { rule: Rule; onChange: (updates: 
       );
     
     case 'ALLOWED_SYMBOLS':
+      const presetSymbols = [
+        { category: 'Indices', symbols: ['UK100', 'GER40', 'US30', 'US100', 'US500', 'JPN225'] },
+        { category: 'Forex Major', symbols: ['EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'USDCHF', 'NZDUSD'] },
+        { category: 'Commodities', symbols: ['XAUUSD', 'XAGUSD', 'USOIL', 'UKOIL', 'NATGAS'] },
+        { category: 'Crypto', symbols: ['BTCUSD', 'ETHUSD', 'XRPUSD', 'SOLUSD'] },
+      ];
+      
+      const toggleSymbol = (symbol: string) => {
+        const currentSymbols = rule.symbols || [];
+        const exists = currentSymbols.includes(symbol);
+        const newSymbols = exists
+          ? currentSymbols.filter((s: string) => s !== symbol)
+          : [...currentSymbols, symbol];
+        onChange({ symbols: newSymbols });
+      };
+      
       return (
         <div className="space-y-4">
           <div className="flex items-center gap-4">
@@ -423,18 +439,47 @@ function RuleConfigEditor({ rule, onChange }: { rule: Rule; onChange: (updates: 
           </div>
           
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Symbols</label>
+            <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-3 block">Quick Add</label>
+            {presetSymbols.map(category => (
+              <div key={category.category} className="mb-3">
+                <p className="text-gray-500 text-xs mb-2">{category.category}</p>
+                <div className="flex flex-wrap gap-2">
+                  {category.symbols.map(symbol => {
+                    const isSelected = (rule.symbols || []).includes(symbol);
+                    return (
+                      <button
+                        key={symbol}
+                        onClick={() => toggleSymbol(symbol)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                          isSelected
+                            ? 'bg-primary text-black'
+                            : 'bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:border-white/20'
+                        }`}
+                      >
+                        {symbol}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div>
+            <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Custom Symbols</label>
             <input
               type="text"
-              value={(rule.symbols || []).join(', ')}
+              value={(rule.symbols || []).filter((s: string) => !presetSymbols.flatMap(c => c.symbols).includes(s)).join(', ')}
               onChange={(e) => {
-                const symbols = e.target.value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
-                onChange({ symbols });
+                const customSymbols = e.target.value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+                const presetSymbolsList = presetSymbols.flatMap(c => c.symbols);
+                const selectedPresets = (rule.symbols || []).filter((s: string) => presetSymbolsList.includes(s));
+                onChange({ symbols: [...selectedPresets, ...customSymbols] });
               }}
-              placeholder="EURUSD, GBPUSD, XAUUSD..."
+              placeholder="Add other symbols..."
               className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:border-primary/50 focus:outline-none transition-colors"
             />
-            <p className="text-gray-500 text-xs mt-1">Comma-separated list of trading symbols</p>
+            <p className="text-gray-500 text-xs mt-1">Comma-separated list of additional symbols</p>
           </div>
         </div>
       );

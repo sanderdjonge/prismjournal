@@ -58,6 +58,7 @@ const JOURNAL_FILTER_CONFIG: FilterConfig[] = [
   { id: 'result', label: 'Result', type: 'single-select', options: [
     { value: 'WIN', label: 'Win' }, { value: 'LOSS', label: 'Loss' }, { value: 'OPEN', label: 'Open' },
   ]},
+  { id: 'symbol', label: 'Symbol', type: 'single-select' },
   { id: 'closeReason', label: 'Close Reason', type: 'single-select', options: [
     { value: 'TP', label: 'TP' }, { value: 'SL', label: 'SL' }, { value: 'MANUAL', label: 'Manual' },
   ]},
@@ -119,6 +120,7 @@ function JournalContent() {
         q: getParam('search') || undefined,
         side: getParam('side') || undefined,
         result: getParam('result') || undefined,
+        symbol: getParam('symbol') || undefined,
         tag: activeFilters.find(f => f.id === 'tag')?.removeValue || undefined,
         closeReason: getParam('closeReason') || undefined,
         from: getParam('from') || undefined,
@@ -404,6 +406,7 @@ function JournalContent() {
                   dynamicOptions={{
                     tag: tags.map(t => ({ value: t.id, label: t.name })),
                     account: accounts.map(a => ({ value: a.id, label: a.name })),
+                    symbol: [...new Set(trades.map(t => t.symbol))].sort().map(s => ({ value: s, label: s })),
                   }}
                 />
 
