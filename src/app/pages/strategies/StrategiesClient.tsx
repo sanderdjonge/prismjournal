@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Plus, X } from 'lucide-react';
+import DashboardShell from '@/components/layout/DashboardShell';
 
 interface Strategy {
   id: string;
@@ -63,7 +64,7 @@ export default function StrategiesClient({ strategies: initialStrategies }: Prop
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <DashboardShell>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Strategies</h1>
         <button
@@ -173,6 +174,6 @@ export default function StrategiesClient({ strategies: initialStrategies }: Prop
           </div>
         </div>
       )}
-    </div>
+    </DashboardShell>
   );
 }
