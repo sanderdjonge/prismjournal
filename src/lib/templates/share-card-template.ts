@@ -22,6 +22,8 @@ interface ShareCardTemplateData {
   profitFactor?: number;
 }
 
+export type { ShareCardTemplateData };
+
 export function generateShareCardHtml(data: ShareCardTemplateData): string {
   const { trade, screenshotUrl, showPrismScore, prismScore, winRate, profitFactor } = data;
   
