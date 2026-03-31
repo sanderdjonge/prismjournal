@@ -204,8 +204,8 @@ export function TradingHoursWidget({ data, currency = 'USD' }: TradingHoursWidge
                             key={hour.hour}
                             className="flex-1 flex flex-col items-center h-full"
                         >
-                            {/* Bar area - flex-1 to take remaining space, items-end to align bars to bottom */}
-                            <div className="flex-1 w-full flex items-end justify-center">
+                            {/* Bar area - explicit height for percentage-based children */}
+                            <div className="flex-1 w-full flex items-end justify-center min-h-0">
                                 <div
                                     className="w-full rounded-t transition-all group/bar relative cursor-default"
                                     style={{ height: `${barHeight}%` }}

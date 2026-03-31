@@ -13,6 +13,7 @@ import BEMetricsWidget from '@/components/analytics/BEMetricsWidget';
 import { ExcursionQuadrantPlot } from '@/components/analytics/ExcursionQuadrantPlot';
 import { TradingHoursWidget } from '@/components/analytics/TradingHoursWidget';
 import { WhatIfSimulator } from '@/components/analytics/WhatIfSimulator';
+import BenchmarkComparison from '@/components/analytics/BenchmarkComparison';
 import { useFilters, FilterConfig } from '@/hooks/useFilters';
 import { FilterChipBar } from '@/components/filters/FilterChipBar';
 
@@ -84,6 +85,9 @@ export function AnalyticsContent() {
 
             {/* What-If Simulator */}
             <WhatIfSimulator />
+
+            {/* Benchmark Comparison */}
+            <BenchmarkComparison accountId={selectedAccountId ?? undefined} />
 
             {/* Charts Row */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

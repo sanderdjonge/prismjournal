@@ -441,9 +441,12 @@ model Trade {
   followedPlan     Boolean?
 
   // Classification (from TradeLens)
-  source    TradeSource   @default(MANUAL)
-  platform  TradePlatform @default(MANUAL)
-  setupType String?
+  source          TradeSource @default(MANUAL)
+  platform        TradePlatform @default(MANUAL)
+  setupType       String?
+  
+  // Phase 24: Hypothetical/Missed Trade Tracking
+  hypotheticalData Json? // Would-be entry/exit data for missed trades
 
   // Notes
   notes          String?
@@ -492,6 +495,8 @@ enum TradeSource {
   PAPER
   LIVE
   MANUAL
+  MT5_SYNC     // Synced from MT5 platform
+  HYPOTHETICAL // Missed trade - trade not taken but tracked
 }
 
 enum TradePlatform {
