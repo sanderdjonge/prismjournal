@@ -26,6 +26,9 @@ export const GET = withAuth(async (
             _count: {
                 select: { trades: true },
             },
+            checklist: {
+                include: { items: { orderBy: { order: 'asc' } } },
+            },
         },
     });
 
@@ -48,7 +51,7 @@ export const PATCH = withAuth(async (
     const id = pathParts[pathParts.length - 1];
 
     const body = await req.json();
-    const { name, description } = body;
+    const { name, description, checklistId } = body;
 
     // Verify ownership
     const existing = await prisma.strategy.findFirst({
@@ -59,11 +62,36 @@ export const PATCH = withAuth(async (
         return NextResponse.json({ error: 'Strategy not found' }, { status: 404 });
     }
 
+    // If checklistId is provided (non-null), verify it belongs to the user
+    if (checklistId != null && checklistId !== '') {
+        const checklist = await prisma.checklist.findFirst({
+            where: { id: checklistId, userId: session.user.id },
+        });
+        if (!checklist) {
+            return NextResponse.json({ error: 'Checklist not found' }, { status: 404 });
+        }
+    }
+
+    // Build update data — allow explicit null to clear checklistId
+    const updateData: {
+        name?: string;
+        description?: string | null;
+        checklistId?: string | null;
+    } = {
+        name: name ?? existing.name,
+        description: description ?? existing.description,
+    };
+    if ('checklistId' in body) {
+        updateData.checklistId = checklistId ?? null;
+    }
+
     const updated = await prisma.strategy.update({
         where: { id },
-        data: {
-            name: name ?? existing.name,
-            description: description ?? existing.description,
+        data: updateData,
+        include: {
+            checklist: {
+                include: { items: { orderBy: { order: 'asc' } } },
+            },
         },
     });
 
