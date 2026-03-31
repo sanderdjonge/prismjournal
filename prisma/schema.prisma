@@ -50,6 +50,7 @@ model User {
   passwordResetTokens PasswordResetToken[]
   preTradeNotes       PreTradeNote[]
   challenges          TradingChallenge[]
+  checklists          Checklist[]
 }
 
 // ============================================
@@ -366,8 +367,9 @@ model Strategy {
   // Phase 19: User-defined strategy rules for plan adherence
   rules Json? // StrategyRules configuration (see StrategyRuleType enum)
 
-  // Phase 20: Setup checklist for entry criteria
-  setupChecklist Json? // [{ id, label, order }] - checklist items for trade entry
+  // Phase 23: Linked reusable checklist (replaces inline setupChecklist JSON)
+  checklistId String?
+  checklist   Checklist? @relation(fields: [checklistId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
 
@@ -802,6 +804,35 @@ model TiltmeterSnapshot {
   @@index([userId])
   @@index([accountId])
   @@index([periodStart, periodEnd])
+}
+
+// ============================================
+// Checklists (Phase 23 — standalone reusable)
+// ============================================
+
+model Checklist {
+  id         String          @id @default(cuid())
+  userId     String
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  items      ChecklistItem[]
+  strategies Strategy[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model ChecklistItem {
+  id          String    @id @default(cuid())
+  checklistId String
+  checklist   Checklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  label       String
+  required    Boolean   @default(false)
+  order       Int       @default(0)
+
+  @@index([checklistId])
 }
 
 // ============================================
