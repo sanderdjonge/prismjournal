@@ -15,7 +15,7 @@ export const BUILD_DATE = '2026-03-31';
  * Short summary of what changed in this build.
  * Update together with APP_VERSION and BUILD_DATE.
  */
-export const BUILD_NOTES = 'Trading challenges: detail modal, evaluation log, historical backfill; PrismScoreWidget horizontal layout';
+export const BUILD_NOTES = 'Phase 23: What-If Scenario Simulator - filter trades by day/hour/R:R, compare actual vs simulated performance';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {
