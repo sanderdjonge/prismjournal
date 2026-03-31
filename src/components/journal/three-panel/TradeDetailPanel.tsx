@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { Share2 } from 'lucide-react';
 import { useUpdateTrade } from '@/hooks/useTrades';
 import { ExcursionBar } from '@/components/journal/ExcursionBar';
 import { computeDuration, deriveListZone } from './TradeListPanel';
 import { MOOD_OPTIONS, COMPLIANCE_OPTIONS } from '@/constants/tradeConfig';
 import { SetupChecklist } from '@/components/pre-trade/SetupChecklist';
+import { ShareTradeModal } from '@/components/trades/ShareTradeModal';
 import type { JournalTrade } from '@/app/journal/page';
 
 interface ChecklistItemWithRequired {
@@ -75,6 +77,7 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
     const [compliance, setCompliance] = useState(trade.planCompliance ?? '');
     const [strategy, setStrategy] = useState<StrategyWithChecklist | null>(null);
     const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
+    const [shareModalOpen, setShareModalOpen] = useState(false);
 
     // Reset local editable state when the selected trade changes
     useEffect(() => {
@@ -148,14 +151,23 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
         >
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] flex-shrink-0">
                 <span className="text-[9px] font-black uppercase tracking-[0.22em] text-gray-500">Trade Details</span>
-                {zone && (
-                    <span className={`text-[8px] font-black uppercase tracking-[0.12em] px-2 py-[2px] rounded ${
-                        zone === 'Clean' ? 'bg-profit/10 text-profit' :
-                        zone === 'Painful' ? 'bg-loss/10 text-loss' :
-                        zone === 'EarlyOut' ? 'bg-yellow-400/10 text-yellow-400' :
-                        'bg-orange-400/10 text-orange-400'
-                    }`}>{zone}</span>
-                )}
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setShareModalOpen(true)}
+                        className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-gray-500 hover:text-white"
+                        title="Share trade"
+                    >
+                        <Share2 size={14} />
+                    </button>
+                    {zone && (
+                        <span className={`text-[8px] font-black uppercase tracking-[0.12em] px-2 py-[2px] rounded ${
+                            zone === 'Clean' ? 'bg-profit/10 text-profit' :
+                            zone === 'Painful' ? 'bg-loss/10 text-loss' :
+                            zone === 'EarlyOut' ? 'bg-yellow-400/10 text-yellow-400' :
+                            'bg-orange-400/10 text-orange-400'
+                        }`}>{zone}</span>
+                    )}
+                </div>
             </div>
 
             <div className="flex-1 p-4 flex flex-col gap-4 min-h-0">
@@ -343,6 +355,16 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                     {update.isPending ? 'Saving...' : 'Save Changes'}
                 </button>
             </div>
+
+            {/* Share Trade Modal */}
+            <ShareTradeModal
+                isOpen={shareModalOpen}
+                onClose={() => setShareModalOpen(false)}
+                tradeId={trade.id}
+                symbol={trade.symbol}
+                direction={trade.type}
+                pnl={trade.pnl}
+            />
         </div>
     );
 }
