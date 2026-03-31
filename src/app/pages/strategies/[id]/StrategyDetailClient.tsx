@@ -5,22 +5,30 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DashboardShell from '@/components/layout/DashboardShell';
 import StrategyRulesEditor from '@/components/strategies/StrategyRulesEditor';
-import { SetupChecklistEditor } from '@/components/strategies/SetupChecklistEditor';
 import ComplianceWidget from '@/components/dashboard/ComplianceWidget';
 import TiltmeterWidget from '@/components/dashboard/TiltmeterWidget';
-import { ArrowLeft, Edit2, Trash2, X, Check, Loader2, RefreshCw } from 'lucide-react';
+import { useChecklists } from '@/hooks/useChecklists';
+import { ArrowLeft, Edit2, Trash2, Check, Loader2, RefreshCw, ChevronDown } from 'lucide-react';
 
-interface ChecklistItem {
+interface ChecklistItemData {
   id: string;
   label: string;
+  required: boolean;
   order: number;
+}
+
+interface ChecklistRelation {
+  id: string;
+  name: string;
+  items: ChecklistItemData[];
 }
 
 interface Strategy {
   id: string;
   name: string;
   description: string | null;
-  setupChecklist: ChecklistItem[] | null;
+  checklistId: string | null;
+  checklist: ChecklistRelation | null;
   createdAt: Date;
   _count: {
     trades: number;
@@ -45,6 +53,9 @@ export default function StrategyDetailClient() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isReevaluating, setIsReevaluating] = useState(false);
   const [reevaluateResult, setReevaluateResult] = useState<{ evaluated: number; violations: number } | null>(null);
+  const [isSavingChecklist, setIsSavingChecklist] = useState(false);
+
+  const { data: checklistsData } = useChecklists();
 
   useEffect(() => {
     if (params.id) {
@@ -104,6 +115,28 @@ export default function StrategyDetailClient() {
     } finally {
       setIsDeleting(false);
       setShowDeleteConfirm(false);
+    }
+  }
+
+  async function handleChecklistChange(checklistId: string | null) {
+    if (!strategy) return;
+    setIsSavingChecklist(true);
+    try {
+      const res = await fetch(`/api/strategies/${strategy.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ checklistId }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setStrategy(prev =>
+          prev ? { ...prev, checklistId: updated.checklistId, checklist: updated.checklist ?? null } : null
+        );
+      }
+    } catch (err) {
+      console.error('Failed to update checklist:', err);
+    } finally {
+      setIsSavingChecklist(false);
     }
   }
 
@@ -239,10 +272,49 @@ export default function StrategyDetailClient() {
               <StrategyRulesEditor strategyId={strategy.id} />
             </div>
             <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
-              <SetupChecklistEditor
-                strategyId={strategy.id}
-                initialChecklist={strategy.setupChecklist || []}
-              />
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-100">Entry Checklist</h3>
+                    <p className="text-xs text-gray-500">Select a reusable checklist for this strategy</p>
+                  </div>
+                  {isSavingChecklist && <Loader2 size={14} className="animate-spin text-primary" />}
+                </div>
+
+                {/* Checklist selector */}
+                <div className="relative">
+                  <select
+                    value={strategy.checklistId ?? ''}
+                    onChange={(e) => handleChecklistChange(e.target.value || null)}
+                    disabled={isSavingChecklist}
+                    className="w-full appearance-none px-3 py-2 pr-8 bg-white/[0.03] border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-primary/50 disabled:opacity-50 cursor-pointer"
+                  >
+                    <option value="">None</option>
+                    {(checklistsData?.checklists ?? []).map((cl) => (
+                      <option key={cl.id} value={cl.id}>
+                        {cl.name} ({cl.items.length} items)
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+                </div>
+
+                {/* Read-only preview of selected checklist items */}
+                {strategy.checklist && strategy.checklist.items.length > 0 && (
+                  <div className="space-y-1.5">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">Items in this checklist</p>
+                    {strategy.checklist.items.map((item) => (
+                      <div key={item.id} className="flex items-center gap-2 text-xs text-gray-400">
+                        <span className="w-1 h-1 rounded-full bg-gray-600 shrink-0" />
+                        <span className="flex-1">{item.label}</span>
+                        {item.required && (
+                          <span className="text-[8px] font-black uppercase tracking-widest text-red-400/70">Required</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
