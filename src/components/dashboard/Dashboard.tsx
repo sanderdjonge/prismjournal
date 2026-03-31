@@ -6,6 +6,7 @@ import TradeCalendar from './TradeCalendar';
 import RecentTrades from './RecentTrades';
 import PrismScoreWidget from './PrismScoreWidget';
 import { PreTradeNotesWidget } from '@/components/pre-trade';
+import { ChallengeProgressWidget } from '@/components/challenges/ChallengeProgressWidget';
 import { cn } from '@/lib/cn';
 import { useCurrency } from '@/lib/currency';
 import { useAccounts } from '@/hooks/useAccounts';
@@ -144,12 +145,13 @@ export default function Dashboard() {
                     <TradeCalendar data={stats.calendar} accountBalance={stats.accountBalance} />
                 </div>
 
-                {/* Recent Trades + Pre-Trade Notes — 1/4 width */}
+                {/* Recent Trades + Pre-Trade Notes + Challenges — 1/4 width */}
                 <div className="space-y-6">
                     <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl overflow-hidden">
                         <RecentTrades trades={stats.trades} />
                     </div>
                     <PreTradeNotesWidget />
+                    <ChallengeProgressWidget />
                 </div>
             </div>
         </div>
