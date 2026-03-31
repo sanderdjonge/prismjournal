@@ -15,7 +15,7 @@ export const BUILD_DATE = '2026-03-31';
  * Short summary of what changed in this build.
  * Update together with APP_VERSION and BUILD_DATE.
  */
-export const BUILD_NOTES = 'Phase 20 — Pre-trade notes (form, list, widget), setup checklists, auto-link on MT5 sync; Phase 21 (partial) — Calendar navigation';
+export const BUILD_NOTES = 'Standalone reusable checklists with required items, checklist selector on strategy, checklist completion in trade journal; pre-trade notes DELETE endpoint; calendar navigation';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {
