@@ -142,3 +142,21 @@ export function useDeleteChallenge(id: string) {
         },
     });
 }
+
+export function useBackfillChallenge(id: string) {
+    const queryClient = useQueryClient();
+    
+    return useMutation({
+        mutationFn: async () => {
+            const res = await fetch(`/api/challenges/${id}/backfill`, {
+                method: 'POST',
+            });
+            if (!res.ok) throw new Error('Failed to backfill challenge');
+            return res.json() as Promise<{ success: boolean; daysEvaluated: number }>;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['challenges'] });
+            queryClient.invalidateQueries({ queryKey: ['challenge', id] });
+        },
+    });
+}
