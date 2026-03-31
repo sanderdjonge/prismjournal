@@ -2,16 +2,15 @@
 
 import Gauge from '@/components/dashboard/Gauge';
 import {
-    ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ComposedChart, Line,
+    ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell,
 } from 'recharts';
-import { Target, Zap } from 'lucide-react';
+import { Target } from 'lucide-react';
 import { useCurrency } from '@/lib/currency';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useExcursionTrades } from '@/hooks/useExcursionTrades';
 import BEMetricsWidget from '@/components/analytics/BEMetricsWidget';
 import { ExcursionQuadrantPlot } from '@/components/analytics/ExcursionQuadrantPlot';
-import { TradingHoursWidget } from '@/components/analytics/TradingHoursWidget';
 import { WhatIfSimulator } from '@/components/analytics/WhatIfSimulator';
 import BenchmarkComparison from '@/components/analytics/BenchmarkComparison';
 import { useFilters, FilterConfig } from '@/hooks/useFilters';
@@ -40,8 +39,6 @@ export function AnalyticsContent() {
     });
 
     const symbolData = data.symbolData;
-    const expectancyData = data.expectancyData;
-    const sessionData = data.sessionData;
 
     return (
         <div className="space-y-6 pb-10">
@@ -80,128 +77,78 @@ export function AnalyticsContent() {
                 </div>
             </div>
 
-            {/* SL Management & Breakeven Metrics */}
-            <BEMetricsWidget accountId={selectedAccountId} />
-
             {/* What-If Simulator */}
             <WhatIfSimulator />
 
-            {/* Benchmark Comparison */}
-            <BenchmarkComparison accountId={selectedAccountId ?? undefined} />
-
-            {/* Charts Row */}
+            {/* SL Management & Benchmark - 2 columns */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Asset Distribution */}
-                <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
-                    <div className="flex items-center justify-between mb-6">
-                        <div>
-                            <h3 className="text-sm font-semibold text-gray-100">Edge Profile by Symbol</h3>
-                            <p className="text-xs text-gray-500">Performance breakdown by instrument</p>
-                        </div>
-                        <Target size={14} className="text-gray-700" />
-                    </div>
-                    <div className="h-[200px]">
-                        {symbolData.length > 0 ? (
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={symbolData}>
-                                    <XAxis dataKey="symbol" axisLine={false} tickLine={false} tick={{ fill: '#4b5563', fontSize: 8, fontWeight: 900 }} />
-                                    <YAxis hide />
-                                    <Tooltip
-                                        cursor={{ fill: 'rgba(255,255,255,0.03)' }}
-                                        content={({ active, payload }) => {
-                                            if (!active || !payload?.length) return null;
-                                            const d = payload[0].payload;
-                                            return (
-                                                <div className="bg-black/90 border border-white/10 rounded-lg px-3 py-2 text-[10px] font-black space-y-1">
-                                                    <p className="text-white uppercase tracking-widest">{d.symbol}</p>
-                                                    <p className={d.profit >= 0 ? 'text-profit' : 'text-loss'}>
-                                                        P&L: {d.profit >= 0 ? '+' : ''}{formatAmount(d.profit)}
-                                                    </p>
-                                                    <p className="text-gray-400">Win rate: {d.winRate}%</p>
-                                                </div>
-                                            );
-                                        }}
-                                    />
-                                    <Bar dataKey="profit" radius={[2, 2, 0, 0]}>
-                                        {symbolData.map((entry, i) => (
-                                            <Cell key={i} fill={entry.profit >= 0 ? '#4ade80' : '#f87171'} fillOpacity={0.6} />
-                                        ))}
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
-                        ) : (
-                            <div className="flex items-center justify-center h-full text-gray-700 text-[10px] font-black uppercase tracking-widest">No data yet</div>
-                        )}
-                    </div>
-                </div>
+                <BEMetricsWidget accountId={selectedAccountId} />
+                <BenchmarkComparison accountId={selectedAccountId ?? undefined} />
+            </div>
 
-                {/* Expectancy Evolution */}
-                <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
-                    <div className="flex items-center justify-between mb-6">
-                        <div>
-                            <h3 className="text-sm font-semibold text-gray-100">Edge Evolution</h3>
-                            <p className="text-xs text-gray-500">Expectancy trend over time</p>
-                        </div>
-                        <Zap size={14} className="text-primary/40" />
+            {/* Asset Distribution */}
+            <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <h3 className="text-sm font-semibold text-gray-100">Edge Profile by Symbol</h3>
+                        <p className="text-xs text-gray-500">Performance breakdown by instrument</p>
                     </div>
-                    <div className="h-[200px]">
-                        {expectancyData.length > 1 ? (
-                            <ResponsiveContainer width="100%" height="100%">
-                                <ComposedChart data={expectancyData}>
-                                    <XAxis dataKey="trade" axisLine={false} tickLine={false} tick={{ fill: '#4b5563', fontSize: 8, fontWeight: 900 }} />
-                                    <YAxis hide />
-                                    <Tooltip
-                                        cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1 }}
-                                        content={({ active, payload }) => {
-                                            if (!active || !payload?.length) return null;
-                                            const d = payload[0].payload;
-                                            return (
-                                                <div className="bg-black/90 border border-white/10 rounded-lg px-3 py-2 text-[10px] font-black space-y-1">
-                                                    <p className="text-gray-400">Trade #{d.trade}</p>
-                                                    <p className={d.val >= 0 ? 'text-profit' : 'text-loss'}>
-                                                        Avg P&L: {d.val >= 0 ? '+' : ''}{formatAmount(d.val)}
-                                                    </p>
-                                                </div>
-                                            );
-                                        }}
-                                    />
-                                    <Line type="monotone" dataKey="val" stroke="#7000ff" strokeWidth={2} dot={false} />
-                                </ComposedChart>
-                            </ResponsiveContainer>
-                        ) : (
-                            <div className="flex items-center justify-center h-full text-gray-700 text-[10px] font-black uppercase tracking-widest">Need more trades</div>
-                        )}
-                    </div>
+                    <Target size={14} className="text-gray-700" />
+                </div>
+                <div className="h-[200px]">
+                    {symbolData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={symbolData}>
+                                <XAxis dataKey="symbol" axisLine={false} tickLine={false} tick={{ fill: '#4b5563', fontSize: 8, fontWeight: 900 }} />
+                                <YAxis hide />
+                                <Tooltip
+                                    cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                                    content={({ active, payload }) => {
+                                        if (!active || !payload?.length) return null;
+                                        const d = payload[0].payload;
+                                        return (
+                                            <div className="bg-black/90 border border-white/10 rounded-lg px-3 py-2 text-[10px] font-black space-y-1">
+                                                <p className="text-white uppercase tracking-widest">{d.symbol}</p>
+                                                <p className={d.profit >= 0 ? 'text-profit' : 'text-loss'}>
+                                                    P&L: {d.profit >= 0 ? '+' : ''}{formatAmount(d.profit)}
+                                                </p>
+                                                <p className="text-gray-400">Win rate: {d.winRate}%</p>
+                                            </div>
+                                        );
+                                    }}
+                                />
+                                <Bar dataKey="profit" radius={[2, 2, 0, 0]}>
+                                    {symbolData.map((entry, i) => (
+                                        <Cell key={i} fill={entry.profit >= 0 ? '#4ade80' : '#f87171'} fillOpacity={0.6} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <div className="flex items-center justify-center h-full text-gray-700 text-[10px] font-black uppercase tracking-widest">No data yet</div>
+                    )}
                 </div>
             </div>
 
             {/* Exit Quality Quadrant */}
             <ExcursionQuadrantPlot trades={excursionTrades} />
 
-            {/* Bottom Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Trading Hours Widget */}
-                <div className="lg:col-span-2">
-                    <TradingHoursWidget data={sessionData} />
+            {/* Risk Degradation */}
+            <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6 flex flex-col justify-between">
+                <div>
+                    <h3 className="text-sm font-semibold text-gray-100 mb-1">Mean Loss / Trade</h3>
+                    <p className="text-xs text-gray-500 mb-4">Average losing trade amount</p>
+                    <p className="text-2xl font-black text-white tracking-tighter">
+                        {formatAmount(data.meanDrawdown)}
+                    </p>
                 </div>
-
-                {/* Risk Degradation */}
-                <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6 flex flex-col justify-between">
-                    <div>
-                        <h3 className="text-sm font-semibold text-gray-100 mb-1">Mean Loss / Trade</h3>
-                        <p className="text-xs text-gray-500 mb-4">Average losing trade amount</p>
-                        <p className="text-2xl font-black text-white tracking-tighter">
-                            {formatAmount(data.meanDrawdown)}
-                        </p>
+                <div className="space-y-4">
+                    <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+                        <div className="h-full bg-loss" style={{ width: data.profitFactor ? `${Math.min(100, (1 / data.profitFactor) * 100)}%` : '0%' }} />
                     </div>
-                    <div className="space-y-4">
-                        <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-                            <div className="h-full bg-loss" style={{ width: data.profitFactor ? `${Math.min(100, (1 / data.profitFactor) * 100)}%` : '0%' }} />
-                        </div>
-                        <p className="text-[8px] font-bold text-gray-600 italic leading-tight">
-                            {data.profitFactor >= 2 ? '"Strong risk control maintained."' : '"Focus on improving your edge."'}
-                        </p>
-                    </div>
+                    <p className="text-[8px] font-bold text-gray-600 italic leading-tight">
+                        {data.profitFactor >= 2 ? '"Strong risk control maintained."' : '"Focus on improving your edge."'}
+                    </p>
                 </div>
             </div>
         </div>

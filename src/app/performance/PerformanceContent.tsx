@@ -2,12 +2,17 @@
 
 import EquityChart from '@/components/dashboard/EquityChart';
 import Gauge from '@/components/dashboard/Gauge';
-import { TrendingUp, ArrowDownLeft, Activity, Target, BarChart3 } from 'lucide-react';
+import { TrendingUp, ArrowDownLeft, Activity, Target, BarChart3, Zap } from 'lucide-react';
 import { useCurrency } from '@/lib/currency';
 import { useAccounts } from '@/hooks/useAccounts';
 import { usePerformance } from '@/hooks/usePerformance';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import { useFilters, FilterConfig } from '@/hooks/useFilters';
 import { FilterChipBar } from '@/components/filters/FilterChipBar';
+import { TradingHoursWidget } from '@/components/analytics/TradingHoursWidget';
+import {
+    ResponsiveContainer, ComposedChart, Line, XAxis, YAxis, Tooltip,
+} from 'recharts';
 
 const MONTH_LABELS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
 
@@ -23,13 +28,20 @@ const PERFORMANCE_FILTER_CONFIG: FilterConfig[] = [
 
 export function PerformanceContent() {
     const { formatPnl, formatAmount } = useCurrency();
-    const { accounts } = useAccounts();
+    const { accounts, selectedAccountId } = useAccounts();
     const { activeFilters, addFilter, removeFilter, setMultiFilter, clearAll, getParam } = useFilters(PERFORMANCE_FILTER_CONFIG);
 
     const { data } = usePerformance({
         period: getParam('period') ?? '30',
         accountId: getParam('account') || undefined,
     });
+
+    // Get analytics data for Edge Evolution and Trading Hours
+    const { data: analyticsData } = useAnalytics({
+        account: getParam('account') || undefined,
+    });
+    const expectancyData = analyticsData.expectancyData;
+    const sessionData = analyticsData.sessionData;
 
     const STATS = [
         { id: 'stat_pnl', label: 'Net P&L', val: formatPnl(data.netPnl), status: data.netPnl >= 0 ? 'text-profit' : 'text-loss', icon: TrendingUp },
@@ -112,6 +124,51 @@ export function PerformanceContent() {
                         <p className={`text-xl font-black tracking-tighter ${stat.status}`}>{stat.val}</p>
                     </div>
                 ))}
+            </div>
+
+            {/* Edge Evolution & Trading Hours - 2 columns */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Edge Evolution */}
+                <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 className="text-sm font-semibold text-gray-100">Edge Evolution</h3>
+                            <p className="text-xs text-gray-500">Expectancy trend over time</p>
+                        </div>
+                        <Zap size={14} className="text-primary/40" />
+                    </div>
+                    <div className="h-[200px]">
+                        {expectancyData.length > 1 ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <ComposedChart data={expectancyData}>
+                                    <XAxis dataKey="trade" axisLine={false} tickLine={false} tick={{ fill: '#4b5563', fontSize: 8, fontWeight: 900 }} />
+                                    <YAxis hide />
+                                    <Tooltip
+                                        cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1 }}
+                                        content={({ active, payload }) => {
+                                            if (!active || !payload?.length) return null;
+                                            const d = payload[0].payload;
+                                            return (
+                                                <div className="bg-black/90 border border-white/10 rounded-lg px-3 py-2 text-[10px] font-black space-y-1">
+                                                    <p className="text-gray-400">Trade #{d.trade}</p>
+                                                    <p className={d.val >= 0 ? 'text-profit' : 'text-loss'}>
+                                                        Avg P&L: {d.val >= 0 ? '+' : ''}{formatAmount(d.val)}
+                                                    </p>
+                                                </div>
+                                            );
+                                        }}
+                                    />
+                                    <Line type="monotone" dataKey="val" stroke="#7000ff" strokeWidth={2} dot={false} />
+                                </ComposedChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="flex items-center justify-center h-full text-gray-700 text-[10px] font-black uppercase tracking-widest">Need more trades</div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Trading Hours Widget */}
+                <TradingHoursWidget data={sessionData} />
             </div>
 
             {/* Monthly Return Matrix */}
