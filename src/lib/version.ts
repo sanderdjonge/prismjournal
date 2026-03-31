@@ -9,7 +9,7 @@ export const APP_VERSION = pkg.version; // e.g. "2.17.0"
  * Build date — update this whenever you bump the version.
  * Format: YYYY-MM-DD
  */
-export const BUILD_DATE = '2026-03-30';
+export const BUILD_DATE = '2026-03-31';
 
 /**
  * Short summary of what changed in this build.

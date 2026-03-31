@@ -109,6 +109,32 @@ export const POST = withAuth(async (
     return NextResponse.json(note, { status: 201 });
 });
 
+// DELETE /api/pre-trade-notes?id=xxx - Hard-delete a pre-trade note
+export const DELETE = withAuth(async (
+    request: NextRequest,
+    _ctx: Record<string, unknown>,
+    session: Session & { user: { id: string } }
+) => {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+        return NextResponse.json({ error: 'Note ID required' }, { status: 400 });
+    }
+
+    const existing = await prisma.preTradeNote.findFirst({
+        where: { id, userId: session.user.id },
+    });
+
+    if (!existing) {
+        return NextResponse.json({ error: 'Note not found' }, { status: 404 });
+    }
+
+    await prisma.preTradeNote.delete({ where: { id } });
+
+    return NextResponse.json({ deleted: true });
+});
+
 // PATCH /api/pre-trade-notes - Batch update (for linking)
 export const PATCH = withAuth(async (
     request: NextRequest,
