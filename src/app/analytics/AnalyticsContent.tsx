@@ -12,6 +12,7 @@ import { useExcursionTrades } from '@/hooks/useExcursionTrades';
 import BEMetricsWidget from '@/components/analytics/BEMetricsWidget';
 import { ExcursionQuadrantPlot } from '@/components/analytics/ExcursionQuadrantPlot';
 import { TradingHoursWidget } from '@/components/analytics/TradingHoursWidget';
+import { WhatIfSimulator } from '@/components/analytics/WhatIfSimulator';
 import { useFilters, FilterConfig } from '@/hooks/useFilters';
 import { FilterChipBar } from '@/components/filters/FilterChipBar';
 
@@ -80,6 +81,9 @@ export function AnalyticsContent() {
 
             {/* SL Management & Breakeven Metrics */}
             <BEMetricsWidget accountId={selectedAccountId} />
+
+            {/* What-If Simulator */}
+            <WhatIfSimulator />
 
             {/* Charts Row */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
