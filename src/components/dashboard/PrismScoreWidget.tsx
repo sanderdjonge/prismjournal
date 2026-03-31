@@ -1,6 +1,5 @@
 'use client';
 
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ReferenceLine, ResponsiveContainer, Cell, LabelList } from 'recharts';
 import { usePrismScore } from '@/hooks/usePrismScore';
 import { cn } from '@/lib/cn';
 
@@ -17,11 +16,17 @@ const COMPONENT_LABELS: Record<string, string> = {
     consistency:    'Consistency',
 };
 
-const COMPONENT_ORDER = ['profitFactor', 'winLossRatio', 'maxDrawdown', 'winRate', 'recoveryFactor', 'consistency'];
-const COMPONENT_WEIGHTS: Record<string, number> = {
-    profitFactor: 25, winLossRatio: 20, maxDrawdown: 20,
-    winRate: 15, recoveryFactor: 10, consistency: 10,
+// Short labels for compact view
+const COMPONENT_SHORT_LABELS: Record<string, string> = {
+    profitFactor:   'PF',
+    winLossRatio:   'W/L',
+    maxDrawdown:    'DD',
+    winRate:        'WR',
+    recoveryFactor: 'Rec',
+    consistency:    'Con',
 };
+
+const COMPONENT_ORDER = ['profitFactor', 'winLossRatio', 'maxDrawdown', 'winRate', 'recoveryFactor', 'consistency'];
 
 function scoreColor(score: number): string {
     if (score >= 80) return '#4ade80'; // green
@@ -43,63 +48,90 @@ function scoreLabel(score: number): string {
     return 'Needs Work';
 }
 
-/** SVG arc gauge */
-function ScoreGauge({ score }: { score: number }) {
-    const r = 72;
-    const stroke = 12;
-    const cx = 110;
-    const cy = 96;
-    const startAngle = 210;
-    const totalArc = 300;
-
-    const polar = (angle: number) => {
-        const rad = (angle - 90) * Math.PI / 180;
-        return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
-    };
-
-    const start = polar(startAngle);
-    const bgEnd  = polar(startAngle + totalArc);
-
-    const pct = Math.min(Math.max(score / 100, 0), 1);
-    const progressAngle = startAngle + totalArc * pct;
-    const progressEnd = polar(progressAngle);
-    const largeArc = totalArc * pct > 180 ? 1 : 0;
-
-    const bgPath = `M ${start.x} ${start.y} A ${r} ${r} 0 1 1 ${bgEnd.x} ${bgEnd.y}`;
-    const fgPath = `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 1 ${progressEnd.x} ${progressEnd.y}`;
-
+/** Compact circular gauge for horizontal layout */
+function CompactScoreGauge({ score }: { score: number }) {
+    const r = 40;
+    const stroke = 7;
+    const cx = 50;
+    const cy = 50;
+    const circumference = 2 * Math.PI * r;
+    // Arc from 135° to 45° (270° arc, leaving 90° gap at bottom)
+    const arcLength = circumference * 0.75;
+    const progress = (score / 100) * arcLength;
     const color = scoreColor(score);
 
     return (
-        <svg viewBox="0 0 220 190" width="220" height="190" className="shrink-0">
+        <svg viewBox="0 0 100 100" width="80" height="80" className="shrink-0">
             <defs>
-                <filter id="ps-glow">
-                    <feGaussianBlur stdDeviation="4" result="blur" />
+                <filter id="ps-glow-compact">
+                    <feGaussianBlur stdDeviation="2" result="blur" />
                     <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
                 </filter>
             </defs>
             {/* Track */}
-            <path d={bgPath} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={stroke} strokeLinecap="round" />
+            <circle
+                cx={cx} cy={cy} r={r}
+                fill="none"
+                stroke="rgba(255,255,255,0.08)"
+                strokeWidth={stroke}
+                strokeLinecap="round"
+                strokeDasharray={`${arcLength} ${circumference}`}
+                transform="rotate(135 50 50)"
+            />
             {/* Progress */}
             {score > 0 && (
-                <path
-                    d={fgPath} fill="none"
-                    stroke={color} strokeWidth={stroke} strokeLinecap="round"
-                    filter="url(#ps-glow)"
-                    style={{ transition: 'stroke-dashoffset 1s ease-out' }}
+                <circle
+                    cx={cx} cy={cy} r={r}
+                    fill="none"
+                    stroke={color}
+                    strokeWidth={stroke}
+                    strokeLinecap="round"
+                    strokeDasharray={`${progress} ${circumference}`}
+                    transform="rotate(135 50 50)"
+                    filter="url(#ps-glow-compact)"
+                    style={{ transition: 'stroke-dasharray 0.8s ease-out' }}
                 />
             )}
             {/* Center score */}
-            <text x={cx} y={cy - 6} textAnchor="middle" fill={color} fontSize={42} fontWeight={900} fontFamily="inherit">
+            <text x={cx} y={cy - 4} textAnchor="middle" fill={color} fontSize={22} fontWeight={900} fontFamily="inherit">
                 {score}
             </text>
-            <text x={cx} y={cy + 14} textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize={10} fontWeight={700} fontFamily="inherit" letterSpacing={3}>
+            <text x={cx} y={cy + 10} textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize={7} fontWeight={600} fontFamily="inherit">
                 / 100
             </text>
-            <text x={cx} y={cy + 33} textAnchor="middle" fill={color} fontSize={11} fontWeight={800} fontFamily="inherit" letterSpacing={2}>
-                {scoreLabel(score).toUpperCase()}
-            </text>
         </svg>
+    );
+}
+
+/** Sparkline trend using pure CSS */
+function TrendSparkline({ data }: { data: Array<{ score: number; week: string }> }) {
+    if (!data || data.length === 0) return null;
+
+    return (
+        <div className="flex flex-col items-center justify-center h-full">
+            <p className="text-[7px] font-black uppercase tracking-widest text-white/20 mb-1">TREND</p>
+            <div className="flex items-end gap-0.5 h-14 w-full">
+                {data.map((entry, i) => {
+                    const isLast = i === data.length - 1;
+                    const height = Math.max(8, (entry.score / 100) * 100);
+                    const color = scoreColor(entry.score);
+                    
+                    return (
+                        <div
+                            key={entry.week}
+                            className="flex-1 rounded-sm transition-all hover:opacity-100"
+                            style={{
+                                height: `${height}%`,
+                                backgroundColor: color,
+                                opacity: isLast ? 0.8 : 0.6,
+                                boxShadow: isLast ? `0 0 4px ${color}40` : 'none',
+                            }}
+                            title={`${entry.week}: ${entry.score}`}
+                        />
+                    );
+                })}
+            </div>
+        </div>
     );
 }
 
@@ -108,16 +140,16 @@ export default function PrismScoreWidget({ accountId }: Props) {
 
     if (isLoading) {
         return (
-            <div className="glass-card p-6 animate-pulse">
-                <div className="h-4 w-32 bg-white/5 rounded mb-4" />
-                <div className="h-40 bg-white/5 rounded" />
+            <div className="glass-card p-4 animate-pulse">
+                <div className="h-4 w-28 bg-white/5 rounded mb-3" />
+                <div className="h-20 bg-white/5 rounded" />
             </div>
         );
     }
 
     if (isError || !data) {
         return (
-            <div className="glass-card p-6 flex items-center justify-center min-h-[200px]">
+            <div className="glass-card p-4 flex items-center justify-center min-h-[120px]">
                 <p className="text-gray-500 text-sm">Prism Score unavailable</p>
             </div>
         );
@@ -126,49 +158,39 @@ export default function PrismScoreWidget({ accountId }: Props) {
     const { score, components, weeklyHistory } = data;
     const color = scoreColor(score);
 
-    // Format weekly history for the chart — show last 8 weeks label only on alternating weeks to avoid crowding
-    const chartData = weeklyHistory.map((w, i) => ({
-        ...w,
-        displayWeek: i % 2 === 0 ? w.week.replace(/^\d{4}-/, '') : '',
-    }));
-
     return (
-        <div className="glass-card p-5 space-y-5" style={{ background: scoreBg(score) }}>
+        <div className="glass-card rounded-2xl p-4" style={{ background: scoreBg(score) }}>
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-3">
                 <div>
                     <h3 className="text-sm font-semibold text-gray-100">Prism Score</h3>
-                    <p className="text-xs text-gray-500">Composite performance quality</p>
+                    <p className="text-[10px] text-gray-500">Composite performance</p>
                 </div>
                 <div
-                    className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border"
+                    className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border"
                     style={{ color, borderColor: color + '40', background: color + '10' }}
                 >
                     {scoreLabel(score)}
                 </div>
             </div>
 
-            {/* Gauge + Components */}
-            <div className="flex flex-col sm:flex-row items-center gap-6">
-                {/* Gauge */}
-                <div className="w-full sm:w-[220px] flex-shrink-0 flex justify-center">
-                    <ScoreGauge score={score} />
+            {/* Horizontal Layout: Gauge | Components | Sparkline */}
+            <div className="flex items-stretch gap-3">
+                {/* Compact circular gauge */}
+                <div className="flex-shrink-0 flex items-center justify-center">
+                    <CompactScoreGauge score={score} />
                 </div>
 
-                {/* Component breakdown */}
-                <div className="flex-1 w-full space-y-2 min-w-0">
+                {/* Component bars - 2 column grid */}
+                <div className="flex-1 grid grid-cols-2 gap-x-3 gap-y-1.5 content-center min-w-0">
                     {COMPONENT_ORDER.map((key) => {
                         const val = components[key as keyof typeof components] ?? 0;
-                        const weight = COMPONENT_WEIGHTS[key];
                         const barColor = scoreColor(val);
                         return (
                             <div key={key} className="space-y-0.5">
                                 <div className="flex justify-between items-center">
-                                    <span className="text-[10px] text-gray-500 font-medium">{COMPONENT_LABELS[key]}</span>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-[9px] text-gray-600">{weight}%</span>
-                                        <span className="text-[10px] font-black" style={{ color: barColor }}>{val}</span>
-                                    </div>
+                                    <span className="text-[9px] text-gray-500">{COMPONENT_SHORT_LABELS[key]}</span>
+                                    <span className="text-[9px] font-bold" style={{ color: barColor }}>{val}</span>
                                 </div>
                                 <div className="h-1 bg-white/5 rounded-full overflow-hidden">
                                     <div
@@ -180,44 +202,14 @@ export default function PrismScoreWidget({ accountId }: Props) {
                         );
                     })}
                 </div>
-            </div>
 
-            {/* Weekly trend */}
-            {chartData.length > 0 && (
-                <div>
-                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-white/20 mb-2">12-Week Trend</p>
-                    <div className="h-24">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={chartData} margin={{ top: 14, right: 0, bottom: 0, left: 0 }} barSize={10}>
-                                <XAxis
-                                    dataKey="displayWeek"
-                                    tick={{ fill: '#4b5563', fontSize: 8 }}
-                                    axisLine={false}
-                                    tickLine={false}
-                                />
-                                <YAxis domain={[0, 100]} hide />
-                                <ReferenceLine y={50} stroke="rgba(255,255,255,0.08)" strokeDasharray="3 3" />
-                                <Tooltip
-                                    cursor={{ fill: 'rgba(255,255,255,0.04)' }}
-                                    contentStyle={{ background: '#0d0d14', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 11 }}
-                                    formatter={(v) => [v, 'Score']}
-                                    labelFormatter={(_l, payload) => (payload as unknown as Array<{ payload?: { week?: string } }>)?.[0]?.payload?.week ?? ''}
-                                />
-                                <Bar dataKey="score" radius={[3, 3, 0, 0]}>
-                                    {chartData.map((entry, i) => (
-                                        <Cell key={i} fill={scoreColor(entry.score)} fillOpacity={0.7} />
-                                    ))}
-                                    <LabelList
-                                        dataKey="score"
-                                        position="top"
-                                        style={{ fontSize: 8, fontWeight: 700, fill: 'rgba(255,255,255,0.5)' }}
-                                    />
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
+                {/* Trend sparkline */}
+                {weeklyHistory && weeklyHistory.length > 0 && (
+                    <div className="flex-shrink-0 w-12 flex items-stretch">
+                        <TrendSparkline data={weeklyHistory} />
                     </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 }
