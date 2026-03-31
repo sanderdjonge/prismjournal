@@ -19,7 +19,10 @@ export const GET = withAuth(async (_req, ctx, session) => {
     }
 
     const media = await prisma.media.findMany({
-        where: { tradeId: id },
+        where: {
+            tradeId: id,
+            type: { not: 'SHARE_CARD' }, // Exclude share cards from screenshot view
+        },
         select: { id: true, filename: true, timeframe: true, event: true },
     });
 

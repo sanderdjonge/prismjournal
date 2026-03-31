@@ -19,6 +19,7 @@ type Platform = 'discord' | 'twitter' | 'reddit' | 'general';
 export function ShareTradeModal({ isOpen, onClose, tradeId, symbol, direction, pnl }: ShareTradeModalProps) {
     const [includeScreenshot, setIncludeScreenshot] = useState(true);
     const [showPrismScore, setShowPrismScore] = useState(false);
+    const [isPublic, setIsPublic] = useState(false); // Cards are private by default
     const [platform, setPlatform] = useState<Platform>('general');
     const [discordWebhook, setDiscordWebhook] = useState('');
     const [customMessage, setCustomMessage] = useState('');
@@ -47,6 +48,7 @@ export function ShareTradeModal({ isOpen, onClose, tradeId, symbol, direction, p
                     tradeId,
                     includeScreenshot,
                     showPrismScore,
+                    isPublic,
                     platform,
                 }),
             });
@@ -188,6 +190,28 @@ export function ShareTradeModal({ isOpen, onClose, tradeId, symbol, direction, p
                                         <div className={cn(
                                             "absolute top-1 w-4 h-4 rounded-full bg-white transition-transform",
                                             showPrismScore ? "translate-x-5" : "translate-x-1"
+                                        )} />
+                                    </button>
+                                </div>
+
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Share2 size={18} className="text-gray-500" />
+                                        <div>
+                                            <span className="text-sm text-gray-300">Public link</span>
+                                            <p className="text-[10px] text-gray-600">Anyone with the link can view</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => setIsPublic(!isPublic)}
+                                        className={cn(
+                                            "w-10 h-6 rounded-full transition-colors relative",
+                                            isPublic ? "bg-green-500" : "bg-white/10"
+                                        )}
+                                    >
+                                        <div className={cn(
+                                            "absolute top-1 w-4 h-4 rounded-full bg-white transition-transform",
+                                            isPublic ? "translate-x-5" : "translate-x-1"
                                         )} />
                                     </button>
                                 </div>
