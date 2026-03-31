@@ -15,7 +15,7 @@ export const BUILD_DATE = '2026-03-31';
  * Short summary of what changed in this build.
  * Update together with APP_VERSION and BUILD_DATE.
  */
-export const BUILD_NOTES = 'Phase 24: Missed Trades & Benchmark Comparison - track hypothetical trades, compare performance vs SPY/QQQ';
+export const BUILD_NOTES = 'Phase 25 complete: public profile widget with embeddable PNG, settings tab, widget.png API, profile toggle & stat visibility controls';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {

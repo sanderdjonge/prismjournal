@@ -148,7 +148,7 @@ export const GET = withAuth(async (request, _ctx, session) => {
                         },
                     },
                 },
-                _count: { select: { media: true } },
+                _count: { select: { media: { where: { type: { not: 'SHARE_CARD' } } } } },
             },
             skip: (page - 1) * limit,
             take: limit,

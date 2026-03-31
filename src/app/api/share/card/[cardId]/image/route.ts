@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { readFile } from '@/lib/storage';
+import { auth } from '@/lib/auth';
 
 export async function GET(
     request: NextRequest,
@@ -21,15 +22,19 @@ export async function GET(
             return NextResponse.json({ error: 'Card not found or expired' }, { status: 404 });
         }
 
-        // Check if card is public or expired
+        // Check expiration
         const isExpired = new Date() > shareCard.expiresAt;
         if (isExpired) {
             return NextResponse.json({ error: 'Card has expired' }, { status: 410 });
         }
 
-        // For private cards, we allow access via the unique card ID
-        // The ID itself is the "key" - it's a cuid that's hard to guess
-        // If more security is needed, we can add auth check here
+        // Private cards require the owner's session
+        if (!shareCard.isPublic) {
+            const session = await auth();
+            if (!session?.user?.id || session.user.id !== shareCard.userId) {
+                return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            }
+        }
 
         // Read the image file
         const imageBuffer = await readFile(shareCard.media.filename);

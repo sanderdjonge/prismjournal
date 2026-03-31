@@ -50,14 +50,17 @@ export function generateWidgetHtml(data: WidgetTemplateData): string {
   <meta charset="UTF-8">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    
+
+    html, body {
+      width: 300px;
+      height: 200px;
+      overflow: hidden;
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: linear-gradient(135deg, #0a0a0a 0%, #1a0a20 100%);
       color: #ffffff;
-      width: 300px;
-      height: 200px;
-      overflow: hidden;
     }
     
     .widget {

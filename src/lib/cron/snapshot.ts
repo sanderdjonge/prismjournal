@@ -2,6 +2,7 @@ import prisma from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { notifyRuleViolation } from '@/lib/notifications';
 import { updateTradingDaysCount, autoAdvancePhaseIfNeeded } from '@/lib/prop-firm/challenge-service';
+import { cleanupExpiredCards } from '@/lib/services/share-card.service';
 import { RuleType, ViolationSeverity } from '@prisma/client';
 
 let running = false;
@@ -147,6 +148,9 @@ export async function runDailySnapshot(): Promise<void> {
                 timestamp: { lt: cutoff },
             },
         });
+
+        // Clean up expired share cards (DB records + Media records + files on disk)
+        await cleanupExpiredCards();
 
         console.log(`[snapshot] Done — ${new Date().toISOString()}`);
     } catch (err) {

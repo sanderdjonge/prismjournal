@@ -20,12 +20,13 @@ interface ShareCardTemplateData {
   prismScore?: number;
   winRate?: number;
   profitFactor?: number;
+  comment?: string;
 }
 
 export type { ShareCardTemplateData };
 
 export function generateShareCardHtml(data: ShareCardTemplateData): string {
-  const { trade, screenshotUrl, showPrismScore, prismScore, winRate, profitFactor } = data;
+  const { trade, screenshotUrl, showPrismScore, prismScore, winRate, profitFactor, comment } = data;
   
   const isProfit = trade.pnl >= 0;
   const pnlColor = isProfit ? '#4ade80' : '#f87171';
@@ -46,14 +47,17 @@ export function generateShareCardHtml(data: ShareCardTemplateData): string {
   <meta charset="UTF-8">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    
+
+    html, body {
+      width: 600px;
+      height: 350px;
+      overflow: hidden;
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: linear-gradient(135deg, #0a0a0a 0%, #1a0a20 100%);
       color: #ffffff;
-      width: 600px;
-      height: 350px;
-      overflow: hidden;
     }
     
     .card {
@@ -263,6 +267,19 @@ export function generateShareCardHtml(data: ShareCardTemplateData): string {
       font-size: 14px;
       font-weight: 600;
     }
+
+    .comment {
+      font-size: 11px;
+      color: #9ca3af;
+      font-style: italic;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding-top: 8px;
+      margin-top: 4px;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
   </style>
 </head>
 <body>
@@ -319,6 +336,8 @@ export function generateShareCardHtml(data: ShareCardTemplateData): string {
       </div>
     </div>
     
+    ${comment ? `<div class="comment">${comment.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>` : ''}
+
     ${showPrismScore ? `
     <div class="footer">
       <div class="prism-score">

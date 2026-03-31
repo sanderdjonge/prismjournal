@@ -39,6 +39,10 @@ import {
     Trash2,
     ChevronUp,
     ChevronDown,
+    Share2,
+    ExternalLink,
+    ToggleLeft,
+    ToggleRight,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { APP_VERSION, versionToPhase } from '@/lib/version';
@@ -277,6 +281,20 @@ function SettingsContent() {
     const [viewingAccountDetails, setViewingAccountDetails] = useState<any | null>(null);
     const [viewingAccountLoading, setViewingAccountLoading] = useState(false);
 
+    // Public profile / widget state
+    const [profileLoading, setProfileLoading] = useState(false);
+    const [profileSaving, setProfileSaving] = useState(false);
+    const [profileEnabled, setProfileEnabled] = useState(false);
+    const [profileId, setProfileId] = useState<string | null>(null);
+    const [profileStats, setProfileStats] = useState({
+        showWinRate: true,
+        showEquityCurve: true,
+        showPrismScore: false,
+    });
+    const [widgetPreviewKey, setWidgetPreviewKey] = useState(0);
+    const [urlCopied, setUrlCopied] = useState(false);
+    const [embedCopied, setEmbedCopied] = useState(false);
+
     useEffect(() => {
         fetch('/api/settings')
             .then((r) => r.json())
@@ -400,6 +418,54 @@ function SettingsContent() {
             setAccountsLoading(false);
         }
     };
+
+    // Load public profile settings when switching to sharing tab
+    useEffect(() => {
+        if (activeTab !== 'sharing' || profileLoading || profileId !== null) return;
+        setProfileLoading(true);
+        fetch('/api/settings/profile')
+            .then(r => r.json())
+            .then(data => {
+                setProfileEnabled(data.publicProfileEnabled ?? false);
+                setProfileId(data.publicProfileId ?? null);
+                setProfileStats(data.publicProfileStats ?? { showWinRate: true, showEquityCurve: true, showPrismScore: false });
+            })
+            .catch(() => {})
+            .finally(() => setProfileLoading(false));
+    }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    async function handleToggleProfile(enabled: boolean) {
+        setProfileSaving(true);
+        try {
+            const res = await fetch('/api/settings/profile', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ publicProfileEnabled: enabled }),
+            });
+            const data = await res.json();
+            setProfileEnabled(data.publicProfileEnabled);
+            setProfileId(data.publicProfileId ?? null);
+            if (enabled) setWidgetPreviewKey(k => k + 1);
+        } catch { /* ignore */ } finally { setProfileSaving(false); }
+    }
+
+    async function handleUpdateProfileStats(stats: typeof profileStats) {
+        setProfileStats(stats);
+        setProfileSaving(true);
+        try {
+            await fetch('/api/settings/profile', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ publicProfileStats: stats }),
+            });
+            setWidgetPreviewKey(k => k + 1);
+        } catch { /* ignore */ } finally { setProfileSaving(false); }
+    }
+
+    function getWidgetUrl() {
+        if (!profileId) return '';
+        return `${window.location.origin}/api/public/${profileId}/widget.png`;
+    }
 
     async function handleCopy(text: string, label: string) {
         await navigator.clipboard.writeText(text);
@@ -579,6 +645,7 @@ function SettingsContent() {
         { id: 'notifications', label: 'Notifications', icon: Bell },
         { id: 'security', label: 'Security', icon: Shield },
         { id: 'tags', label: 'Tags', icon: Tag },
+        { id: 'sharing', label: 'Sharing', icon: Share2 },
     ];
 
     type ToggleKey = 'telegramAlerts' | 'weeklyDigest' | 'volatilityWarnings' | 'inAppToast';
@@ -1313,6 +1380,157 @@ function SettingsContent() {
                                     </div>
                                 )}
                             </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'sharing' && (
+                        <div className="space-y-8 animate-fade-in">
+                            <div>
+                                <h3 className="text-2xl font-black text-white tracking-tighter uppercase italic mb-2">Public Profile & Widget</h3>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Share your trading stats with an embeddable performance card</p>
+                            </div>
+
+                            {profileLoading ? (
+                                <div className="flex items-center gap-3 text-gray-500">
+                                    <Loader2 size={16} className="animate-spin" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest">Loading…</span>
+                                </div>
+                            ) : (
+                                <div className="space-y-6">
+                                    {/* Enable toggle */}
+                                    <div className="flex items-center justify-between p-5 bg-white/[0.03] border border-white/[0.06] rounded-xl">
+                                        <div>
+                                            <p className="text-sm font-bold text-white">Enable Public Profile</p>
+                                            <p className="text-[10px] text-gray-500 mt-0.5">Generates a shareable widget image with your trading stats</p>
+                                        </div>
+                                        <button
+                                            onClick={() => handleToggleProfile(!profileEnabled)}
+                                            disabled={profileSaving}
+                                            className="shrink-0 disabled:opacity-50"
+                                            title={profileEnabled ? 'Disable public profile' : 'Enable public profile'}
+                                        >
+                                            {profileEnabled
+                                                ? <ToggleRight size={36} className="text-primary" />
+                                                : <ToggleLeft size={36} className="text-gray-600" />}
+                                        </button>
+                                    </div>
+
+                                    {profileEnabled && (
+                                        <>
+                                            {/* Stat toggles */}
+                                            <div>
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-3">Visible on Widget</p>
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                    {([
+                                                        { key: 'showWinRate', label: 'Win Rate' },
+                                                        { key: 'showEquityCurve', label: 'Equity Curve' },
+                                                        { key: 'showPrismScore', label: 'Prism Score' },
+                                                    ] as { key: keyof typeof profileStats; label: string }[]).map(({ key, label }) => (
+                                                        <button
+                                                            key={key}
+                                                            onClick={() => handleUpdateProfileStats({ ...profileStats, [key]: !profileStats[key] })}
+                                                            disabled={profileSaving}
+                                                            className={cn(
+                                                                'flex items-center gap-3 p-4 rounded-xl border font-bold text-[10px] uppercase tracking-widest transition-all text-left disabled:opacity-50',
+                                                                profileStats[key]
+                                                                    ? 'bg-primary/10 border-primary/30 text-primary'
+                                                                    : 'bg-white/[0.03] border-white/[0.06] text-gray-500 hover:bg-white/[0.05]'
+                                                            )}
+                                                        >
+                                                            {profileStats[key] ? <CheckCircle size={14} /> : <Eye size={14} />}
+                                                            {label}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Widget preview */}
+                                            {profileId && (
+                                                <div className="space-y-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Widget Preview</p>
+                                                        <button
+                                                            onClick={() => setWidgetPreviewKey(k => k + 1)}
+                                                            className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-gray-500 hover:text-white transition-colors"
+                                                        >
+                                                            <RefreshCw size={11} /> Refresh
+                                                        </button>
+                                                    </div>
+
+                                                    {/* Preview image — 300×200 rendered at 1:1 */}
+                                                    <div className="inline-block rounded-xl overflow-hidden border border-white/10">
+                                                        <img
+                                                            key={widgetPreviewKey}
+                                                            src={`/api/public/${profileId}/widget.png?t=${widgetPreviewKey}`}
+                                                            alt="Widget preview"
+                                                            style={{ width: 300, height: 200, display: 'block' }}
+                                                        />
+                                                    </div>
+
+                                                    {/* Widget URL */}
+                                                    <div className="space-y-2">
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Widget URL</p>
+                                                        <div className="flex gap-2">
+                                                            <input
+                                                                readOnly
+                                                                value={getWidgetUrl()}
+                                                                className="flex-1 bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3 text-xs font-mono text-gray-300 outline-none select-all"
+                                                            />
+                                                            <button
+                                                                onClick={async () => {
+                                                                    await navigator.clipboard.writeText(getWidgetUrl());
+                                                                    setUrlCopied(true);
+                                                                    setTimeout(() => setUrlCopied(false), 2000);
+                                                                }}
+                                                                className="px-4 py-3 bg-white/[0.05] border border-white/[0.06] rounded-xl hover:bg-white/10 transition-colors"
+                                                                title="Copy URL"
+                                                            >
+                                                                {urlCopied ? <Check size={14} className="text-primary" /> : <Copy size={14} className="text-gray-400" />}
+                                                            </button>
+                                                            <a
+                                                                href={getWidgetUrl()}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="px-4 py-3 bg-white/[0.05] border border-white/[0.06] rounded-xl hover:bg-white/10 transition-colors"
+                                                                title="Open in new tab"
+                                                            >
+                                                                <ExternalLink size={14} className="text-gray-400" />
+                                                            </a>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Embed code */}
+                                                    <div className="space-y-2">
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">HTML Embed Code</p>
+                                                        <div className="relative">
+                                                            <pre className="bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3 text-[11px] font-mono text-gray-400 overflow-x-auto whitespace-pre-wrap">
+{`<a href="https://prismjournal.app" target="_blank">
+  <img src="${getWidgetUrl()}"
+       alt="My Trading Performance"
+       width="300" height="200" />
+</a>`}
+                                                            </pre>
+                                                            <button
+                                                                onClick={async () => {
+                                                                    const code = `<a href="https://prismjournal.app" target="_blank">\n  <img src="${getWidgetUrl()}"\n       alt="My Trading Performance"\n       width="300" height="200" />\n</a>`;
+                                                                    await navigator.clipboard.writeText(code);
+                                                                    setEmbedCopied(true);
+                                                                    setTimeout(() => setEmbedCopied(false), 2000);
+                                                                }}
+                                                                className="absolute top-3 right-3 p-1.5 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
+                                                                title="Copy embed code"
+                                                            >
+                                                                {embedCopied ? <Check size={12} className="text-primary" /> : <Copy size={12} className="text-gray-400" />}
+                                                            </button>
+                                                        </div>
+                                                        <p className="text-[9px] text-gray-600 uppercase tracking-wider">Widget updates automatically every 24 hours via daily cron</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     )}
 
