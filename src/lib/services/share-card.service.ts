@@ -73,20 +73,16 @@ export async function generateShareCard(options: ShareCardOptions): Promise<Shar
     throw new Error('Unauthorized: Trade does not belong to user');
   }
 
-  // Get user settings
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { 
-      showPrismScoreOnShare: true,
-    },
-  });
+  // User settings could be fetched here if needed for future features
 
   // Calculate Prism Score if needed
+  // Note: showPrismScore comes from the toggle in ShareTradeModal
+  // The user account setting showPrismScoreOnShare is separate (for future use)
   let prismScore: number | undefined;
   let winRate: number | undefined;
   let profitFactor: number | undefined;
 
-  if (showPrismScore && user?.showPrismScoreOnShare) {
+  if (showPrismScore) {
     // Get user's closed trades for score calculation
     const userTrades = await prisma.trade.findMany({
       where: {
@@ -132,7 +128,7 @@ export async function generateShareCard(options: ShareCardOptions): Promise<Shar
       closedAt: trade.exitTime,
     },
     screenshotUrl,
-    showPrismScore: showPrismScore && (user?.showPrismScoreOnShare ?? false),
+    showPrismScore, // Directly use the toggle value from ShareTradeModal
     prismScore,
     winRate,
     profitFactor,

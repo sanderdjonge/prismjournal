@@ -22,6 +22,10 @@ export default auth(async (req) => {
   const isCronEndpoint = nextUrl.pathname.startsWith('/api/cron');
   const isHealthEndpoint = nextUrl.pathname === '/api/health';
   const isRegisterEndpoint = nextUrl.pathname === '/api/auth/register';
+  // Public share card images (for social media embeds)
+  const isShareCardImage = nextUrl.pathname.match(/^\/api\/share\/card\/[^/]+\/image$/);
+  // Public profile widgets
+  const isPublicProfile = nextUrl.pathname.match(/^\/api\/public\/[^/]+$/);
 
   // ====== RATE LIMITING ======
 
@@ -56,8 +60,8 @@ export default auth(async (req) => {
   }
 
   // General API rate limiting — configurable via RATE_LIMIT_API env var (default: 100/min)
-  // Skips webhooks, cron, and health endpoints
-  if (nextUrl.pathname.startsWith('/api/') && !isTelegramWebhook && !isCronEndpoint && !isHealthEndpoint && !isRegisterEndpoint && !isSyncApi) {
+  // Skips webhooks, cron, health, and public endpoints
+  if (nextUrl.pathname.startsWith('/api/') && !isTelegramWebhook && !isCronEndpoint && !isHealthEndpoint && !isRegisterEndpoint && !isSyncApi && !isShareCardImage && !isPublicProfile) {
     const rateLimitResponse = await apiLimiter.check(req, API_RATE_LIMIT);
     if (rateLimitResponse) {
       warnAuditEvent('RATE_LIMIT_HIT', { endpoint: nextUrl.pathname, ip: req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown' });
@@ -72,6 +76,9 @@ export default auth(async (req) => {
 
   // Allow unauthenticated access to password reset pages
   if (isForgotPasswordPage || isResetPasswordPage) return;
+
+  // Allow unauthenticated access to public share card images and profile widgets
+  if (isShareCardImage || isPublicProfile) return;
 
   // Redirect unauthenticated users to login
   // Only log SESSION_INVALID when a session cookie is present but auth is null (stale/expired session),
