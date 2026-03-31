@@ -51,6 +51,17 @@ model User {
   preTradeNotes       PreTradeNote[]
   challenges          TradingChallenge[]
   checklists          Checklist[]
+
+  // Social Sharing Settings
+  showPrismScoreOnShare Boolean @default(false)
+
+  // Public Profile (for embeddable widget)
+  publicProfileId      String? @unique
+  publicProfileEnabled Boolean @default(false)
+  publicProfileStats   Json? // { showWinRate: bool, showEquityCurve: bool, showPrismScore: bool, showGrowth: bool }
+
+  // Relations
+  shareCards ShareCard[]
 }
 
 // ============================================
@@ -461,6 +472,7 @@ model Trade {
   media              Media[]
   pendingScreenshots PendingScreenshot[]
   tags               TradeTag[]
+  shareCards         ShareCard[]
 
   // Phase 20: Pre-trade note linking (reverse relation - FK is on PreTradeNote)
   preTradeNote PreTradeNote?
@@ -533,10 +545,12 @@ model Media {
   filepath  String // Relative path from storage root (e.g., "screenshots/abc123.png")
   mimetype  String // MIME type (e.g., "image/png")
   size      Int // File size in bytes
-  type      String // "AUTO" or "MANUAL"
+  type      String // "AUTO", "MANUAL", or "SHARE_CARD"
   timeframe String? // e.g. "M15"
   event     String // "OPEN" or "CLOSE"
   createdAt DateTime @default(now())
+
+  shareCard ShareCard?
 
   @@index([tradeId])
 }
@@ -563,6 +577,35 @@ model PendingScreenshot {
 
   @@index([scheduledFor])
   @@index([tradeId])
+}
+
+// ============================================
+// Share Cards (Social Sharing)
+// ============================================
+
+model ShareCard {
+  id        String   @id @default(cuid())
+  tradeId   String
+  trade     Trade    @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Card configuration
+  includeScreenshot Boolean @default(true)
+  showPrismScore    Boolean @default(false)
+  platform          String  // "discord" | "twitter" | "reddit" | "general"
+
+  // Generated file
+  mediaId String? @unique
+  media   Media?   @relation(fields: [mediaId], references: [id], onDelete: SetNull)
+
+  // Metadata
+  createdAt DateTime @default(now())
+  expiresAt DateTime // 24-hour TTL for cleanup
+
+  @@index([tradeId])
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model Tag {
