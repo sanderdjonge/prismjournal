@@ -34,8 +34,11 @@ export default auth(async (req) => {
     }
   }
 
-  // Rate limit login page — configurable via RATE_LIMIT_LOGIN env var (default: 10/min)
-  if (isLoginPage) {
+  // Rate limit sign-in POST only — configurable via RATE_LIMIT_LOGIN env var (default: 10/min)
+  // We check /api/auth/signin (the NextAuth POST endpoint) rather than the /login page load,
+  // so legitimate page renders don't count against the limit.
+  const isSignInPost = nextUrl.pathname === '/api/auth/signin' && req.method === 'POST';
+  if (isSignInPost) {
     const rateLimitResponse = await loginLimiter.check(req, LOGIN_RATE_LIMIT);
     if (rateLimitResponse) {
       warnAuditEvent('RATE_LIMIT_HIT', { endpoint: '/login', ip: req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown' });
