@@ -67,7 +67,7 @@ export const POST = withAuth(async (
     session: Session & { user: { id: string } }
 ) => {
     const body = await req.json();
-    const { name, description } = body;
+    const { name, description, checklistId } = body;
 
     if (!name || typeof name !== 'string' || !name.trim()) {
         return NextResponse.json({ error: 'Strategy name is required' }, { status: 400 });
@@ -84,11 +84,22 @@ export const POST = withAuth(async (
         return NextResponse.json({ error: 'Strategy already exists' }, { status: 409 });
     }
 
+    // Verify checklist ownership if provided
+    if (checklistId) {
+        const checklist = await prisma.checklist.findFirst({
+            where: { id: checklistId, userId: session.user.id },
+        });
+        if (!checklist) {
+            return NextResponse.json({ error: 'Checklist not found' }, { status: 404 });
+        }
+    }
+
     const strategy = await prisma.strategy.create({
         data: {
             userId: session.user.id,
             name: name.trim(),
             description: description?.trim() || null,
+            checklistId: checklistId || null,
         }
     });
 
