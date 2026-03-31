@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Target, Plus, X, ChevronRight, AlertTriangle, CheckCircle2, XCircle, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useChallenges, useCreateChallenge, type TradingChallenge, type ChallengeRule } from '@/hooks/useChallenges';
+import { ChallengeDetailModal } from './ChallengeDetailModal';
 
 const RULE_LABELS: Record<string, string> = {
     MAX_DAILY_LOSS: 'Max Daily Loss',
@@ -266,7 +267,8 @@ function CreateChallengeModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
 
 export function ChallengeProgressWidget() {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
-    const { data: challenges, isLoading } = useChallenges(true); // Active only
+    const [selectedChallengeId, setSelectedChallengeId] = useState<string | null>(null);
+    const { data: challenges, isLoading, refetch } = useChallenges(true); // Active only
     
     const activeChallenges = challenges?.filter(c => c.isActive) || [];
     
@@ -309,7 +311,7 @@ export function ChallengeProgressWidget() {
                             <ChallengeCard
                                 key={challenge.id}
                                 challenge={challenge}
-                                onClick={() => {/* TODO: Navigate to detail */}}
+                                onClick={() => setSelectedChallengeId(challenge.id)}
                             />
                         ))}
                         {activeChallenges.length > 3 && (
@@ -324,6 +326,12 @@ export function ChallengeProgressWidget() {
             </div>
             
             <CreateChallengeModal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} />
+            <ChallengeDetailModal
+                challengeId={selectedChallengeId}
+                isOpen={!!selectedChallengeId}
+                onClose={() => setSelectedChallengeId(null)}
+                onDelete={() => refetch()}
+            />
         </>
     );
 }
