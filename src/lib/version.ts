@@ -15,7 +15,7 @@ export const BUILD_DATE = '2026-03-31';
  * Short summary of what changed in this build.
  * Update together with APP_VERSION and BUILD_DATE.
  */
-export const BUILD_NOTES = 'Trading challenges with rule builder, progress widget, auto-evaluation on trade sync; PrismScoreWidget horizontal layout with full labels';
+export const BUILD_NOTES = 'Trading challenges: detail modal, evaluation log, historical backfill; PrismScoreWidget horizontal layout';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {
