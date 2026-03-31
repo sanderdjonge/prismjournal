@@ -8,6 +8,7 @@ const generateCardSchema = z.object({
     tradeId: z.string(),
     includeScreenshot: z.boolean().default(true),
     showPrismScore: z.boolean().default(false),
+    isPublic: z.boolean().default(false),
     platform: z.enum(['discord', 'twitter', 'reddit', 'general']).default('general'),
 });
 
@@ -25,6 +26,7 @@ export const POST = withAuth(async (
             userId: session.user.id,
             includeScreenshot: validated.includeScreenshot,
             showPrismScore: validated.showPrismScore,
+            isPublic: validated.isPublic,
             platform: validated.platform,
         });
 

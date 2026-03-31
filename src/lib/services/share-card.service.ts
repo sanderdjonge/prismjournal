@@ -3,7 +3,7 @@
 import { chromium, Browser, Page } from 'playwright';
 import prisma from '@/lib/prisma';
 import logger from '@/lib/logger';
-import { saveFile, generateFilename, readFile } from '@/lib/storage';
+import { saveFile, generateFilename, readFile, deleteFile } from '@/lib/storage';
 import { generateShareCardHtml } from '@/lib/templates/share-card-template';
 import { computePrismScore } from '@/lib/services/prism-score.service';
 import type { TradeDirection } from '@prisma/client';
@@ -13,6 +13,7 @@ export interface ShareCardOptions {
   userId: string;
   includeScreenshot: boolean;
   showPrismScore: boolean;
+  isPublic: boolean;
   platform: 'discord' | 'twitter' | 'reddit' | 'general';
 }
 
@@ -46,7 +47,7 @@ export async function closeShareCardBrowser(): Promise<void> {
 }
 
 export async function generateShareCard(options: ShareCardOptions): Promise<ShareCardResult> {
-  const { tradeId, userId, includeScreenshot, showPrismScore, platform } = options;
+  const { tradeId, userId, includeScreenshot, showPrismScore, isPublic, platform } = options;
 
   // Fetch trade data
   const trade = await prisma.trade.findUnique({
@@ -159,7 +160,23 @@ export async function generateShareCard(options: ShareCardOptions): Promise<Shar
     const filename = generateFilename('share-card.png');
     await saveFile(pngBuffer, filename);
 
-    // Create media record
+    // Check if a share card already exists for this trade + user
+    const existingCard = await prisma.shareCard.findUnique({
+      where: { tradeId_userId: { tradeId, userId } },
+      include: { media: true },
+    });
+
+    // If exists and has old media, delete the old media file and record
+    if (existingCard?.media) {
+      try {
+        await deleteFile(existingCard.media.filename);
+      } catch {
+        // Ignore if file doesn't exist
+      }
+      await prisma.media.delete({ where: { id: existingCard.media.id } });
+    }
+
+    // Create new media record
     const media = await prisma.media.create({
       data: {
         tradeId,
@@ -172,14 +189,24 @@ export async function generateShareCard(options: ShareCardOptions): Promise<Shar
       },
     });
 
-    // Create share card record
+    // Upsert share card record (update if exists, create if not)
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-    const shareCard = await prisma.shareCard.create({
-      data: {
+    const shareCard = await prisma.shareCard.upsert({
+      where: { tradeId_userId: { tradeId, userId } },
+      update: {
+        includeScreenshot,
+        showPrismScore,
+        isPublic,
+        platform,
+        mediaId: media.id,
+        expiresAt,
+      },
+      create: {
         tradeId,
         userId,
         includeScreenshot,
         showPrismScore,
+        isPublic,
         platform,
         mediaId: media.id,
         expiresAt,

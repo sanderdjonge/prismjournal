@@ -595,6 +595,9 @@ model ShareCard {
   showPrismScore    Boolean @default(false)
   platform          String  // "discord" | "twitter" | "reddit" | "general"
 
+  // Visibility - cards are private by default
+  isPublic Boolean @default(false)
+
   // Generated file
   mediaId String? @unique
   media   Media?   @relation(fields: [mediaId], references: [id], onDelete: SetNull)
@@ -603,6 +606,7 @@ model ShareCard {
   createdAt DateTime @default(now())
   expiresAt DateTime // 24-hour TTL for cleanup
 
+  @@unique([tradeId, userId]) // One card per trade per user - update instead of create duplicates
   @@index([tradeId])
   @@index([userId])
   @@index([expiresAt])
