@@ -204,7 +204,7 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                             Entry risk (X) × Exit efficiency (Y) — click any dot to view trade
                         </p>
                     </div>
-                    <div className="flex items-center gap-4 text-[8px] font-black uppercase tracking-widest">
+                    <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest">
                         <span className="flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full bg-green-400 inline-block" />
                             <span className="text-gray-500">Profitable</span>
@@ -267,7 +267,7 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                         {[0, 25, 50, 75, 100].map(v => (
                             <g key={v}>
                                 <line x1={ML} y1={scaleY(v)} x2={ML + CW} y2={scaleY(v)} stroke="rgba(255,255,255,0.05)" strokeWidth={1} strokeDasharray="4 4" />
-                                <text x={ML - 6} y={scaleY(v) + 4} fill="#4b5563" fontSize={8} textAnchor="end" fontFamily="sans-serif" fontWeight={700}>{v}%</text>
+                                <text x={ML - 6} y={scaleY(v) + 4} fill="#4b5563" fontSize={10} textAnchor="end" fontFamily="sans-serif" fontWeight={700}>{v}%</text>
                             </g>
                         ))}
 
@@ -280,12 +280,12 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                         {[0, 1, 2, 3, 4].map(i => {
                             const v = (maxMae / 4) * i;
                             const x = scaleX(v);
-                            return <text key={i} x={x} y={MT + CH + 16} fill="#4b5563" fontSize={8} textAnchor="middle" fontFamily="sans-serif" fontWeight={700}>{v.toFixed(1)}</text>;
+                            return <text key={i} x={x} y={MT + CH + 16} fill="#4b5563" fontSize={10} textAnchor="middle" fontFamily="sans-serif" fontWeight={700}>{v.toFixed(1)}</text>;
                         })}
 
                         {/* Axis labels */}
-                        <text x={ML + CW / 2} y={VH - 4} fill="#6b7280" fontSize={7} textAnchor="middle" fontFamily="sans-serif" fontWeight={900} letterSpacing={1.5}>MAX ADVERSE EXCURSION (pts) →</text>
-                        <text x={12} y={MT + CH / 2} fill="#6b7280" fontSize={7} textAnchor="middle" fontFamily="sans-serif" fontWeight={900} letterSpacing={1.5} transform={`rotate(-90, 12, ${MT + CH / 2})`}>↑ EXIT EFFICIENCY %</text>
+                        <text x={ML + CW / 2} y={VH - 4} fill="#6b7280" fontSize={9} textAnchor="middle" fontFamily="sans-serif" fontWeight={900} letterSpacing={1.5}>MAX ADVERSE EXCURSION (pts) →</text>
+                        <text x={12} y={MT + CH / 2} fill="#6b7280" fontSize={9} textAnchor="middle" fontFamily="sans-serif" fontWeight={900} letterSpacing={1.5} transform={`rotate(-90, 12, ${MT + CH / 2})`}>↑ EXIT EFFICIENCY %</text>
 
                         {/* Zone labels — centered in equal quadrants */}
                         {([
@@ -295,8 +295,8 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                             ['EARLY OUT', ML + CW * 0.75, MT + CH * 0.75, 'rgba(250,204,21,0.5)',  'left profit on the table'],
                         ] as const).map(([name, x, y, color, sub]) => (
                             <g key={name} style={{ pointerEvents: 'none' }}>
-                                <text x={x} y={y - 4} fill={color} fontSize={8} fontWeight={900} fontFamily="sans-serif" letterSpacing={2} textAnchor="middle">{name}</text>
-                                <text x={x} y={y + 7} fill="rgba(255,255,255,0.20)" fontSize={7} fontFamily="sans-serif" textAnchor="middle">{sub}</text>
+                                <text x={x} y={y - 4} fill={color} fontSize={10} fontWeight={900} fontFamily="sans-serif" letterSpacing={2} textAnchor="middle">{name}</text>
+                                <text x={x} y={y + 7} fill="rgba(255,255,255,0.20)" fontSize={9} fontFamily="sans-serif" textAnchor="middle">{sub}</text>
                             </g>
                         ))}
 
@@ -356,7 +356,7 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                                 }}
                             >
                                 <p className="text-xs font-black text-white uppercase tracking-wide mb-0.5">{hovered.symbol}</p>
-                                {exitDate && <p className="text-[9px] font-black uppercase tracking-widest text-gray-600 mb-2.5">{exitDate}</p>}
+                                {exitDate && <p className="text-[10px] font-black uppercase tracking-widest text-gray-600 mb-2.5">{exitDate}</p>}
                                 <Row label="Captured" value={`${hovered.exitDistFromEntry != null && hovered.exitDistFromEntry >= 0 ? '+' : ''}${hovered.exitDistFromEntry?.toFixed(4) ?? '—'} pts`} color={isWin ? 'text-green-400' : 'text-red-400'} />
                                 <Row label="Best available (MFE)" value={`+${hovered.mfe?.toFixed(4) ?? '—'} pts`} />
                                 {hovered.mfe != null && hovered.exitDistFromEntry != null && (
@@ -367,11 +367,11 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                                 {slMsg && <Row label="Your stop" value={slMsg} />}
                                 <Row label="Exit efficiency" value={`${hovered.eff.toFixed(1)}%`} />
                                 <Row label="P&L" value={`${pnlSign}${hovered.pnl.toFixed(2)}`} color={isWin ? 'text-green-400' : 'text-red-400'} />
-                                <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest" style={{ background: zone.color + '22', color: zone.color, border: `1px solid ${zone.color}44` }}>
+                                <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest" style={{ background: zone.color + '22', color: zone.color, border: `1px solid ${zone.color}44` }}>
                                     {zone.label}
                                 </div>
-                                <p className="text-[10px] text-white/30 italic mt-1.5">{zone.desc}</p>
-                                <p className="text-[8px] text-white/20 mt-2 uppercase tracking-widest">Click to view trade →</p>
+                                <p className="text-[11px] text-white/30 italic mt-1.5">{zone.desc}</p>
+                                <p className="text-[10px] text-white/20 mt-2 uppercase tracking-widest">Click to view trade →</p>
                             </div>
                         );
                     })()}
@@ -385,9 +385,9 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                             className="rounded-xl p-3 border"
                             style={{ background: z.bgFill, borderColor: z.color + '33' }}
                         >
-                            <p className="text-[8px] font-black uppercase tracking-widest mb-1" style={{ color: z.color }}>{z.label}</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: z.color }}>{z.label}</p>
                             <p className="text-base font-black" style={{ color: z.color }}>{zoneCounts[key]}</p>
-                            <p className="text-[9px] text-white/30 font-medium mt-0.5 leading-tight">{z.desc}</p>
+                            <p className="text-[10px] text-white/30 font-medium mt-0.5 leading-tight">{z.desc}</p>
                         </div>
                     ))}
                 </div>
@@ -402,8 +402,8 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
 function Row({ label, value, color = 'text-white' }: { label: string; value: string; color?: string }) {
     return (
         <div className="flex items-center justify-between gap-4 mb-1">
-            <span className="text-[9px] font-black uppercase tracking-widest text-gray-500">{label}</span>
-            <span className={`text-[11px] font-bold ${color}`}>{value}</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">{label}</span>
+            <span className={`text-[12px] font-bold ${color}`}>{value}</span>
         </div>
     );
 }

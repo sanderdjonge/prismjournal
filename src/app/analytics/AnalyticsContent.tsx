@@ -75,12 +75,22 @@ export function AnalyticsContent() {
                 <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6 flex items-center justify-center">
                     <Gauge value={data.avgRR} max={5} label="Risk / Reward" subLabel="Mean Realized" variant="secondary" />
                 </div>
-                <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-5 flex flex-col justify-center space-y-1">
-                    <div className="flex justify-between items-center text-gray-500">
-                        <span className="text-[8px] font-black uppercase tracking-widest">Mean Loss</span>
-                        <ArrowDownLeft size={12} />
+                <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-5 flex flex-col justify-between">
+                    <div>
+                        <div className="flex justify-between items-center text-gray-500 mb-2">
+                            <span className="text-[10px] font-black uppercase tracking-widest">Mean Loss</span>
+                            <ArrowDownLeft size={12} />
+                        </div>
+                        <p className="text-xl font-black tracking-tighter text-loss">{formatAmount(data.meanDrawdown)}</p>
                     </div>
-                    <p className="text-xl font-black tracking-tighter text-loss">{formatAmount(data.meanDrawdown)}</p>
+                    <div className="space-y-2 mt-3">
+                        <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+                            <div className="h-full bg-loss" style={{ width: data.profitFactor ? `${Math.min(100, (1 / data.profitFactor) * 100)}%` : '0%' }} />
+                        </div>
+                        <p className="text-[10px] font-bold text-gray-600 italic leading-tight">
+                            {data.profitFactor >= 2 ? '"Strong risk control"' : '"Improve your edge"'}
+                        </p>
+                    </div>
                 </div>
             </div>
 
@@ -90,26 +100,35 @@ export function AnalyticsContent() {
                 <BenchmarkComparison accountId={selectedAccountId ?? undefined} />
             </div>
 
-            {/* Exit Quality & Edge Profile - 2 columns */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Exit Quality Quadrant */}
-                <ExcursionQuadrantPlot trades={excursionTrades} />
+            {/* Exit Quality (3 cols) & Edge Profile (1 col) */}
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                {/* Exit Quality Quadrant - 3 columns */}
+                <div className="lg:col-span-3">
+                    <ExcursionQuadrantPlot trades={excursionTrades} />
+                </div>
 
-                {/* Asset Distribution */}
+                {/* Asset Distribution - 1 column */}
                 <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
                     <div className="flex items-center justify-between mb-6">
                         <div>
-                            <h3 className="text-sm font-semibold text-gray-100">Edge Profile by Symbol</h3>
-                            <p className="text-xs text-gray-500">Performance breakdown by instrument</p>
+                            <h3 className="text-sm font-semibold text-gray-100">Edge Profile</h3>
+                            <p className="text-[10px] text-gray-500">By symbol</p>
                         </div>
                         <Target size={14} className="text-gray-700" />
                     </div>
                     <div className="h-[250px]">
                         {symbolData.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={symbolData}>
-                                    <XAxis dataKey="symbol" axisLine={false} tickLine={false} tick={{ fill: '#4b5563', fontSize: 8, fontWeight: 900 }} />
-                                    <YAxis hide />
+                                <BarChart data={symbolData} layout="vertical">
+                                    <XAxis type="number" hide />
+                                    <YAxis 
+                                        dataKey="symbol" 
+                                        type="category" 
+                                        axisLine={false} 
+                                        tickLine={false} 
+                                        tick={{ fill: '#9ca3af', fontSize: 10, fontWeight: 600 }} 
+                                        width={60}
+                                    />
                                     <Tooltip
                                         cursor={{ fill: 'rgba(255,255,255,0.03)' }}
                                         content={({ active, payload }) => {
@@ -126,7 +145,7 @@ export function AnalyticsContent() {
                                             );
                                         }}
                                     />
-                                    <Bar dataKey="profit" radius={[2, 2, 0, 0]}>
+                                    <Bar dataKey="profit" radius={[0, 2, 2, 0]}>
                                         {symbolData.map((entry, i) => (
                                             <Cell key={i} fill={entry.profit >= 0 ? '#4ade80' : '#f87171'} fillOpacity={0.6} />
                                         ))}
