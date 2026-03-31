@@ -81,8 +81,8 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {/* Two Column Metrics Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Three Column Metrics Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Key Metrics Widget */}
                 <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
                     <div className="mb-6">
@@ -119,12 +119,15 @@ export default function Dashboard() {
                         <MetricRow label="Loss Streak" value={stats.consecutiveLosses.toString()} variant="loss" />
                     </div>
                 </div>
+
+                {/* Pre-Trade Notes */}
+                <PreTradeNotesWidget />
             </div>
 
             {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Equity Curve */}
-                <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl">
+                <div className="lg:col-span-2 glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl">
                     <EquityChart 
                         data={stats.equity} 
                         className="h-[400px]" 
@@ -134,8 +137,11 @@ export default function Dashboard() {
                     />
                 </div>
 
-                {/* Prism Score */}
-                <PrismScoreWidget accountId={selectedAccountId} />
+                {/* Prism Score + Challenges */}
+                <div className="space-y-6">
+                    <PrismScoreWidget accountId={selectedAccountId} />
+                    <ChallengeProgressWidget />
+                </div>
             </div>
 
             {/* Calendar + Recent Trades */}
@@ -145,13 +151,9 @@ export default function Dashboard() {
                     <TradeCalendar data={stats.calendar} accountBalance={stats.accountBalance} />
                 </div>
 
-                {/* Recent Trades + Pre-Trade Notes + Challenges — 1/4 width */}
-                <div className="space-y-6">
-                    <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl overflow-hidden">
-                        <RecentTrades trades={stats.trades} />
-                    </div>
-                    <PreTradeNotesWidget />
-                    <ChallengeProgressWidget />
+                {/* Recent Trades — 1/4 width */}
+                <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl overflow-hidden">
+                    <RecentTrades trades={stats.trades} />
                 </div>
             </div>
         </div>
