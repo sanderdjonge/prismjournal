@@ -16,16 +16,6 @@ const COMPONENT_LABELS: Record<string, string> = {
     consistency:    'Consistency',
 };
 
-// Short labels for compact view
-const COMPONENT_SHORT_LABELS: Record<string, string> = {
-    profitFactor:   'PF',
-    winLossRatio:   'W/L',
-    maxDrawdown:    'DD',
-    winRate:        'WR',
-    recoveryFactor: 'Rec',
-    consistency:    'Con',
-};
-
 const COMPONENT_ORDER = ['profitFactor', 'winLossRatio', 'maxDrawdown', 'winRate', 'recoveryFactor', 'consistency'];
 
 function scoreColor(score: number): string {
@@ -103,31 +93,36 @@ function CompactScoreGauge({ score }: { score: number }) {
     );
 }
 
-/** Sparkline trend using pure CSS */
-function TrendSparkline({ data }: { data: Array<{ score: number; week: string }> }) {
+/** Trend bar chart at the bottom */
+function TrendBarChart({ data }: { data: Array<{ score: number; week: string }> }) {
     if (!data || data.length === 0) return null;
 
     return (
-        <div className="flex flex-col items-center justify-center h-full">
-            <p className="text-[7px] font-black uppercase tracking-widest text-white/20 mb-1">TREND</p>
-            <div className="flex items-end gap-0.5 h-14 w-full">
+        <div className="mt-3 pt-3 border-t border-white/5">
+            <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-2">12-Week Trend</p>
+            <div className="flex items-end gap-1 h-12">
                 {data.map((entry, i) => {
                     const isLast = i === data.length - 1;
-                    const height = Math.max(8, (entry.score / 100) * 100);
+                    const height = Math.max(4, (entry.score / 100) * 100);
                     const color = scoreColor(entry.score);
                     
                     return (
                         <div
                             key={entry.week}
-                            className="flex-1 rounded-sm transition-all hover:opacity-100"
+                            className="flex-1 rounded-sm transition-all hover:opacity-100 cursor-pointer group relative"
                             style={{
                                 height: `${height}%`,
                                 backgroundColor: color,
-                                opacity: isLast ? 0.8 : 0.6,
-                                boxShadow: isLast ? `0 0 4px ${color}40` : 'none',
+                                opacity: isLast ? 1 : 0.5,
+                                boxShadow: isLast ? `0 0 6px ${color}60` : 'none',
                             }}
                             title={`${entry.week}: ${entry.score}`}
-                        />
+                        >
+                            {/* Tooltip on hover */}
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 bg-gray-900 rounded text-[8px] text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                                {entry.week}: {entry.score}
+                            </div>
+                        </div>
                     );
                 })}
             </div>
@@ -174,7 +169,7 @@ export default function PrismScoreWidget({ accountId }: Props) {
                 </div>
             </div>
 
-            {/* Horizontal Layout: Gauge | Components | Sparkline */}
+            {/* Horizontal Layout: Gauge | Components */}
             <div className="flex items-stretch gap-3">
                 {/* Compact circular gauge */}
                 <div className="flex-shrink-0 flex items-center justify-center">
@@ -187,9 +182,11 @@ export default function PrismScoreWidget({ accountId }: Props) {
                         const val = components[key as keyof typeof components] ?? 0;
                         const barColor = scoreColor(val);
                         return (
-                            <div key={key} className="space-y-0.5">
+                            <div key={key} className="space-y-0.5 group relative">
                                 <div className="flex justify-between items-center">
-                                    <span className="text-[9px] text-gray-500">{COMPONENT_SHORT_LABELS[key]}</span>
+                                    <span className="text-[9px] text-gray-500 cursor-help" title={COMPONENT_LABELS[key]}>
+                                        {COMPONENT_LABELS[key]}
+                                    </span>
                                     <span className="text-[9px] font-bold" style={{ color: barColor }}>{val}</span>
                                 </div>
                                 <div className="h-1 bg-white/5 rounded-full overflow-hidden">
@@ -202,14 +199,12 @@ export default function PrismScoreWidget({ accountId }: Props) {
                         );
                     })}
                 </div>
-
-                {/* Trend sparkline */}
-                {weeklyHistory && weeklyHistory.length > 0 && (
-                    <div className="flex-shrink-0 w-12 flex items-stretch">
-                        <TrendSparkline data={weeklyHistory} />
-                    </div>
-                )}
             </div>
+
+            {/* Trend bar chart at bottom */}
+            {weeklyHistory && weeklyHistory.length > 0 && (
+                <TrendBarChart data={weeklyHistory} />
+            )}
         </div>
     );
 }
