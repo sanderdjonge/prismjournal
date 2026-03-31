@@ -81,7 +81,7 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {/* Three Column Metrics Grid */}
+            {/* Row 1: Three Column Metrics Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Key Metrics Widget */}
                 <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
@@ -120,13 +120,13 @@ export default function Dashboard() {
                     </div>
                 </div>
 
-                {/* Pre-Trade Notes */}
-                <PreTradeNotesWidget />
+                {/* Prism Score */}
+                <PrismScoreWidget accountId={selectedAccountId} />
             </div>
 
-            {/* Main Content Grid */}
+            {/* Row 2: Equity + Challenges/Pre-Trade */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Equity Curve */}
+                {/* Equity Curve - 2 columns */}
                 <div className="lg:col-span-2 glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl">
                     <EquityChart 
                         data={stats.equity} 
@@ -137,14 +137,14 @@ export default function Dashboard() {
                     />
                 </div>
 
-                {/* Prism Score + Challenges */}
+                {/* Challenges + Pre-Trade Notes - 1 column */}
                 <div className="space-y-6">
-                    <PrismScoreWidget accountId={selectedAccountId} />
                     <ChallengeProgressWidget />
+                    <PreTradeNotesWidget />
                 </div>
             </div>
 
-            {/* Calendar + Recent Trades */}
+            {/* Row 3: Calendar + Recent Trades */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 {/* Trade Calendar — 3/4 width */}
                 <div className="lg:col-span-3 glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl overflow-hidden min-h-[480px]">
