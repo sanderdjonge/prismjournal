@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Eye, TrendingUp, TrendingDown, Zap, Brain, FileText, CheckCircle2, XCircle, Meh, ImageOff } from 'lucide-react';
+import { X, Eye, TrendingUp, TrendingDown, Zap, Brain, FileText, CheckCircle2, XCircle, Meh, ImageOff, Share2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import type { JournalTrade } from '@/app/journal/page';
 import { MOOD_CONFIG } from '@/constants/tradeConfig';
 import { Lightbox } from './trade-analysis';
 import { CloseReasonBadge } from '@/components/ui/CloseReasonBadge';
 import { ExcursionBar } from '@/components/journal/ExcursionBar';
+import { ShareTradeModal } from '@/components/trades/ShareTradeModal';
 
 interface TradeViewModalProps {
     trade: JournalTrade | null;
@@ -29,6 +30,7 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
     const [media, setMedia] = useState<MediaItem[]>([]);
     const [loadingMedia, setLoadingMedia] = useState(false);
     const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+    const [shareModalOpen, setShareModalOpen] = useState(false);
 
     // Prevent body scroll when modal is open
     useEffect(() => {
@@ -67,6 +69,16 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
     return (
         <>
         {lightboxUrl && <Lightbox src={lightboxUrl} alt="Trade screenshot" onClose={() => setLightboxUrl(null)} />}
+        {trade && (
+            <ShareTradeModal
+                isOpen={shareModalOpen}
+                onClose={() => setShareModalOpen(false)}
+                tradeId={trade.id}
+                symbol={trade.symbol}
+                direction={trade.type}
+                pnl={trade.pnl}
+            />
+        )}
         <AnimatePresence>
             {isOpen && (
                 <>
@@ -93,7 +105,15 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
-                                <button 
+                                <button
+                                    onClick={() => setShareModalOpen(true)}
+                                    className="px-4 py-2 rounded-lg bg-white/5 text-gray-400 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all flex items-center gap-1.5"
+                                    title="Share trade"
+                                >
+                                    <Share2 size={12} />
+                                    Share
+                                </button>
+                                <button
                                     onClick={onEdit}
                                     className="px-4 py-2 rounded-lg bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest hover:bg-primary/20 transition-all"
                                 >

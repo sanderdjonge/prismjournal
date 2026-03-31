@@ -140,12 +140,14 @@ export async function generateWidget(profileId: string): Promise<Buffer> {
     const page = await browser.newPage();
 
     try {
+        await page.setViewportSize({ width: 300, height: 200 });
         await page.setContent(html, { waitUntil: 'networkidle' });
 
-        const pngBuffer = await page.screenshot({
-            type: 'png',
-            fullPage: false,
-        });
+        // Screenshot the widget element directly to avoid viewport clipping
+        const widgetEl = await page.$('.widget');
+        const pngBuffer = widgetEl
+            ? await widgetEl.screenshot({ type: 'png' })
+            : await page.screenshot({ type: 'png', fullPage: false, clip: { x: 0, y: 0, width: 300, height: 200 } });
 
         logger.info({ profileId, userId: user.id }, '[widget] Generated');
 

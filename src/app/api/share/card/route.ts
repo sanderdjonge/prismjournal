@@ -10,6 +10,7 @@ const generateCardSchema = z.object({
     showPrismScore: z.boolean().default(false),
     isPublic: z.boolean().default(false),
     platform: z.enum(['discord', 'twitter', 'reddit', 'general']).default('general'),
+    comment: z.string().max(200).optional(),
 });
 
 export const POST = withAuth(async (
@@ -28,6 +29,7 @@ export const POST = withAuth(async (
             showPrismScore: validated.showPrismScore,
             isPublic: validated.isPublic,
             platform: validated.platform,
+            comment: validated.comment,
         });
 
         return NextResponse.json(result);

@@ -50,6 +50,7 @@ export function ShareTradeModal({ isOpen, onClose, tradeId, symbol, direction, p
                     showPrismScore,
                     isPublic,
                     platform,
+                    comment: customMessage.trim() || undefined,
                 }),
             });
 
@@ -60,7 +61,8 @@ export function ShareTradeModal({ isOpen, onClose, tradeId, symbol, direction, p
 
             const data = await response.json();
             setCardId(data.cardId);
-            setCardImageUrl(data.imageUrl);
+            // Append timestamp to bust browser cache on regeneration
+            setCardImageUrl(`${data.imageUrl}?t=${Date.now()}`);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to generate card');
         } finally {
@@ -101,7 +103,9 @@ export function ShareTradeModal({ isOpen, onClose, tradeId, symbol, direction, p
 
     const handleCopyLink = async () => {
         if (cardImageUrl) {
-            const fullUrl = `${window.location.origin}${cardImageUrl}`;
+            // Strip the cache-busting timestamp before sharing
+            const canonicalUrl = cardImageUrl.split('?')[0];
+            const fullUrl = `${window.location.origin}${canonicalUrl}`;
             await navigator.clipboard.writeText(fullUrl);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
@@ -259,14 +263,14 @@ export function ShareTradeModal({ isOpen, onClose, tradeId, symbol, direction, p
                             {/* Custom Message */}
                             <div>
                                 <label className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 block">
-                                    Message (optional)
+                                    Comment on card (optional)
                                 </label>
                                 <textarea
                                     value={customMessage}
                                     onChange={e => setCustomMessage(e.target.value)}
-                                    placeholder="Add a message to accompany your share..."
+                                    placeholder="Appears on the card image (max 200 chars)..."
                                     rows={2}
-                                    maxLength={500}
+                                    maxLength={200}
                                     className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary/40 resize-none"
                                 />
                             </div>

@@ -15,6 +15,7 @@ export interface ShareCardOptions {
   showPrismScore: boolean;
   isPublic: boolean;
   platform: 'discord' | 'twitter' | 'reddit' | 'general';
+  comment?: string;
 }
 
 export interface ShareCardResult {
@@ -47,7 +48,7 @@ export async function closeShareCardBrowser(): Promise<void> {
 }
 
 export async function generateShareCard(options: ShareCardOptions): Promise<ShareCardResult> {
-  const { tradeId, userId, includeScreenshot, showPrismScore, isPublic, platform } = options;
+  const { tradeId, userId, includeScreenshot, showPrismScore, isPublic, platform, comment } = options;
 
   // Fetch trade data
   const trade = await prisma.trade.findUnique({
@@ -94,10 +95,17 @@ export async function generateShareCard(options: ShareCardOptions): Promise<Shar
       select: { pnl: true, exitTime: true, entryTime: true },
     });
 
-    const { score, components } = computePrismScore(userTrades);
+    const { score } = computePrismScore(userTrades);
     prismScore = Math.round(score);
-    winRate = Math.round(components.winRate);
-    profitFactor = components.profitFactor;
+
+    // Compute actual win rate % and profit factor from raw data
+    const closedTrades = userTrades.filter(t => t.exitTime !== null && t.pnl !== null) as { pnl: number; exitTime: Date }[];
+    const wins = closedTrades.filter(t => t.pnl > 0);
+    const losses = closedTrades.filter(t => t.pnl < 0);
+    winRate = closedTrades.length > 0 ? Math.round((wins.length / closedTrades.length) * 100) : 0;
+    const grossProfit = wins.reduce((s, t) => s + t.pnl, 0);
+    const grossLoss = losses.reduce((s, t) => s + Math.abs(t.pnl), 0);
+    profitFactor = grossLoss > 0 ? Math.round((grossProfit / grossLoss) * 100) / 100 : (grossProfit > 0 ? 10 : 1);
   }
 
   // Build screenshot URL if available
@@ -129,10 +137,11 @@ export async function generateShareCard(options: ShareCardOptions): Promise<Shar
       closedAt: trade.exitTime,
     },
     screenshotUrl,
-    showPrismScore, // Directly use the toggle value from ShareTradeModal
+    showPrismScore,
     prismScore,
     winRate,
     profitFactor,
+    comment: comment?.trim() || undefined,
   };
 
   // Generate HTML
@@ -145,16 +154,17 @@ export async function generateShareCard(options: ShareCardOptions): Promise<Shar
   try {
     await page.setViewportSize({ width: 600, height: 350 });
     await page.setContent(html, { waitUntil: 'networkidle' });
-    
+
     // Wait for any images to load
     if (screenshotUrl) {
       await page.waitForTimeout(500); // Brief wait for base64 image
     }
 
-    const pngBuffer = await page.screenshot({
-      type: 'png',
-      fullPage: false,
-    });
+    // Screenshot the card element directly to avoid any sub-pixel viewport clipping
+    const cardEl = await page.$('.card');
+    const pngBuffer = cardEl
+      ? await cardEl.screenshot({ type: 'png' })
+      : await page.screenshot({ type: 'png', fullPage: false, clip: { x: 0, y: 0, width: 600, height: 350 } });
 
     // Save to storage
     const filename = generateFilename('share-card.png');
@@ -247,13 +257,32 @@ export async function getShareCardImage(cardId: string): Promise<Buffer | null> 
 }
 
 export async function cleanupExpiredCards(): Promise<void> {
-  const result = await prisma.shareCard.deleteMany({
-    where: {
-      expiresAt: { lte: new Date() },
-    },
+  const expired = await prisma.shareCard.findMany({
+    where: { expiresAt: { lte: new Date() } },
+    include: { media: true },
   });
 
-  if (result.count > 0) {
-    logger.info({ count: result.count }, '[share-card] Cleaned up expired cards');
+  if (expired.length === 0) return;
+
+  // Delete physical files and Media DB records first, then ShareCard records
+  for (const card of expired) {
+    if (card.media) {
+      try {
+        await deleteFile(card.media.filename);
+      } catch {
+        // File may already be gone — not fatal
+      }
+      try {
+        await prisma.media.delete({ where: { id: card.media.id } });
+      } catch {
+        // Media may have already been deleted — not fatal
+      }
+    }
   }
+
+  const { count } = await prisma.shareCard.deleteMany({
+    where: { id: { in: expired.map(c => c.id) } },
+  });
+
+  logger.info({ count }, '[share-card] Cleaned up expired cards');
 }
