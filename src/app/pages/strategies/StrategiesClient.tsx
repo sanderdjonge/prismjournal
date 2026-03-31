@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Plus, X, Target, AlertTriangle } from 'lucide-react';
 import DashboardShell from '@/components/layout/DashboardShell';
+import ChecklistManager from '@/components/strategies/ChecklistManager';
 
 interface Strategy {
   id: string;
@@ -187,6 +188,11 @@ export default function StrategiesClient({ strategies: initialStrategies }: Prop
             ))}
           </div>
         )}
+
+        {/* Checklists section */}
+        <div className="glass-card p-6 border-white/5">
+          <ChecklistManager />
+        </div>
       </div>
 
       {/* Create Strategy Modal */}
