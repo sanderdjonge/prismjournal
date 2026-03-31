@@ -3,6 +3,7 @@ import { withAuth } from '@/lib/api/withAuth';
 import prisma from '@/lib/prisma';
 import type { Session } from 'next-auth';
 import { z } from 'zod';
+import { backfillChallengeEvaluations } from '@/lib/services/challenge-backfill.service';
 
 // Validation schema for challenge rules
 const ruleSchema = z.object({
@@ -98,6 +99,11 @@ export const POST = withAuth(async (
             endDate: data.endDate ? new Date(data.endDate) : null,
             isActive: true,
         },
+    });
+
+    // Backfill evaluations for existing trades (runs asynchronously)
+    backfillChallengeEvaluations(challenge.id).catch(err => {
+        console.error('[challenges] Backfill failed:', err);
     });
 
     return NextResponse.json(challenge, { status: 201 });
