@@ -9,10 +9,21 @@ import { MOOD_OPTIONS, COMPLIANCE_OPTIONS } from '@/constants/tradeConfig';
 import { SetupChecklist } from '@/components/pre-trade/SetupChecklist';
 import type { JournalTrade } from '@/app/journal/page';
 
+interface ChecklistItemWithRequired {
+    id: string;
+    label: string;
+    required: boolean;
+    order: number;
+}
+
 interface StrategyWithChecklist {
     id: string;
     name: string;
-    setupChecklist: Array<{ id: string; label: string; order: number }> | null;
+    checklist: {
+        id: string;
+        name: string;
+        items: ChecklistItemWithRequired[];
+    } | null;
 }
 
 interface TradeDetailPanelProps {
@@ -296,16 +307,18 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                 )}
 
                 {/* Setup Checklist - shown when trade has a strategy with checklist */}
-                {trade.strategyId && strategy?.setupChecklist && strategy.setupChecklist.length > 0 && (
+                {trade.strategyId && strategy?.checklist?.items && strategy.checklist.items.length > 0 && (
                     <div className="space-y-2">
                         <div className="text-[9px] font-black uppercase tracking-[0.18em] text-gray-500">
                             Setup Checklist
-                            {strategy.name && <span className="text-gray-600 ml-1">({strategy.name})</span>}
+                            {strategy.checklist.name && (
+                                <span className="text-gray-600 ml-1">({strategy.checklist.name})</span>
+                            )}
                         </div>
                         <SetupChecklist
                             tradeId={trade.id}
                             strategyId={trade.strategyId}
-                            initialChecklist={strategy.setupChecklist}
+                            initialChecklist={strategy.checklist.items}
                             initialChecked={checkedItems}
                             onSave={(checked) => setCheckedItems(checked)}
                         />

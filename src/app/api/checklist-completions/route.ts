@@ -39,7 +39,9 @@ export const GET = withAuth(async (
                 select: {
                     id: true,
                     name: true,
-                    setupChecklist: true,
+                    checklist: {
+                        include: { items: { orderBy: { order: 'asc' } } },
+                    },
                 },
             },
             checklistCompletion: true,
@@ -51,15 +53,15 @@ export const GET = withAuth(async (
     }
 
     if (!trade.strategy) {
-        return NextResponse.json({ 
+        return NextResponse.json({
             hasStrategy: false,
             checklist: null,
         });
     }
 
-    // Parse strategy checklist items
-    const checklistItems = trade.strategy.setupChecklist as Array<{ id: string; label: string; order: number }> | null;
-    
+    // Get checklist items from the linked Checklist relation
+    const checklistItems = trade.strategy?.checklist?.items ?? null;
+
     if (!checklistItems || checklistItems.length === 0) {
         return NextResponse.json({
             hasStrategy: true,

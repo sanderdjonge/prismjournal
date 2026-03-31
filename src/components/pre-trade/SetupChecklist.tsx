@@ -7,6 +7,7 @@ import { cn } from '@/lib/cn';
 interface ChecklistItem {
     id: string;
     label: string;
+    required?: boolean;
     order: number;
 }
 
@@ -152,12 +153,19 @@ export function SetupChecklist({
                         {/* Label */}
                         <span
                             className={cn(
-                                "text-xs transition-colors",
+                                "text-xs transition-colors flex-1",
                                 item.checked ? "text-gray-300" : "text-gray-400"
                             )}
                         >
                             {item.label}
                         </span>
+
+                        {/* Required badge */}
+                        {item.required && (
+                            <span className="text-[8px] font-black uppercase tracking-widest text-red-400/70 shrink-0">
+                                Req
+                            </span>
+                        )}
                     </button>
                 ))}
             </div>
