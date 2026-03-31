@@ -2,9 +2,9 @@
 
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Target, X, CheckCircle2, XCircle, AlertTriangle, Calendar, TrendingUp, Trash2, Edit2 } from 'lucide-react';
+import { Target, X, CheckCircle2, XCircle, AlertTriangle, Calendar, TrendingUp, Trash2, Edit2, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { useChallenge, useDeleteChallenge, useUpdateChallenge, type ChallengeRule, type ChallengeEvaluation } from '@/hooks/useChallenges';
+import { useChallenge, useDeleteChallenge, useUpdateChallenge, useBackfillChallenge, type ChallengeRule, type ChallengeEvaluation } from '@/hooks/useChallenges';
 import { useState } from 'react';
 
 const RULE_LABELS: Record<string, string> = {
@@ -96,6 +96,7 @@ export function ChallengeDetailModal({
 }) {
     const { data: challenge, isLoading, refetch } = useChallenge(isOpen ? challengeId : null);
     const deleteMutation = useDeleteChallenge(challengeId || '');
+    const backfillMutation = useBackfillChallenge(challengeId || '');
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     
     useEffect(() => {
@@ -109,6 +110,14 @@ export function ChallengeDetailModal({
             onSuccess: () => {
                 onClose();
                 onDelete?.();
+            }
+        });
+    };
+    
+    const handleBackfill = () => {
+        backfillMutation.mutate(undefined, {
+            onSuccess: () => {
+                refetch();
             }
         });
     };
@@ -180,12 +189,22 @@ export function ChallengeDetailModal({
                                                 </button>
                                             </div>
                                         ) : (
-                                            <button
-                                                onClick={() => setShowDeleteConfirm(true)}
-                                                className="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-loss transition-colors"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
+                                            <>
+                                                <button
+                                                    onClick={handleBackfill}
+                                                    disabled={backfillMutation.isPending}
+                                                    className="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-primary transition-colors"
+                                                    title="Backfill evaluations from historical trades"
+                                                >
+                                                    <RefreshCw size={16} className={backfillMutation.isPending ? 'animate-spin' : ''} />
+                                                </button>
+                                                <button
+                                                    onClick={() => setShowDeleteConfirm(true)}
+                                                    className="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-loss transition-colors"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </>
                                         )}
                                         <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/5 text-gray-400">
                                             <X size={18} />
