@@ -3,9 +3,13 @@ import { ZodError, ZodSchema } from 'zod';
 
 /**
  * Format Zod validation errors into a user-friendly format
+ * Compatible with both Zod 3 (error.errors) and Zod 4 (error.issues)
  */
 export function formatZodErrors(error: ZodError) {
-  return error.errors.map((err) => ({
+  // Zod 4 uses 'issues' property, Zod 3 uses 'errors'
+  // @ts-expect-error - Handle both Zod 3 and 4 API differences
+  const errorList = error.issues || error.errors;
+  return errorList.map((err: { path: PropertyKey[]; message: string; code: string }) => ({
     path: err.path.join('.'),
     message: err.message,
     code: err.code,
