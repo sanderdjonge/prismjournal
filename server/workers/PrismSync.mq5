@@ -11,7 +11,7 @@
 #property description "Get your Bridge Key and Sync URL from Settings > Connector Hub."
 
 //--- input parameters
-input string   SyncUrl     = "https://prism.we-share.nl/api/sync"; // Sync URL
+input string   SyncUrl     = "https://your-prismjournal-domain.com/api/sync"; // Sync URL (change to your domain)
 input string   BridgeKey   = "";                 // Bridge Key (from PrismJournal settings)
 input string   Strategy    = "Default";          // Current Strategy Name
 input uint     TimerPeriod = 60;                 // Seconds between equity snapshots
