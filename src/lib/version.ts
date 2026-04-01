@@ -15,7 +15,7 @@ export const BUILD_DATE = '2026-04-01';
  * Short summary of what changed in this build.
  * Update together with APP_VERSION and BUILD_DATE.
  */
-export const BUILD_NOTES = 'SL Management widget always visible with placeholder until first qualifying trade';
+export const BUILD_NOTES = 'Redis-backed rate limiter (ioredis, falls back to in-memory); CSP/HSTS confirmed clean';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {

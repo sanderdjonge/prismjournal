@@ -1,10 +1,8 @@
 import { auth } from '@/lib/auth';
-import { authLimiter, loginLimiter, apiLimiter, syncLimiter } from '@/lib/rate-limit';
+import { loginLimiter } from '@/lib/rate-limit';
 import { NextResponse } from 'next/server';
 
 const LOGIN_RATE_LIMIT = parseInt(process.env.RATE_LIMIT_LOGIN ?? '10');
-const API_RATE_LIMIT = parseInt(process.env.RATE_LIMIT_API ?? '100');
-const SYNC_RATE_LIMIT = parseInt(process.env.RATE_LIMIT_SYNC ?? '600');
 
 function warnAuditEvent(action: string, meta: Record<string, unknown>): void {
   console.warn(JSON.stringify({ audit: true, action, ...meta, ts: Date.now() }));
@@ -21,50 +19,23 @@ export default auth(async (req) => {
   const isTelegramWebhook = nextUrl.pathname === '/api/telegram/webhook';
   const isCronEndpoint = nextUrl.pathname.startsWith('/api/cron');
   const isHealthEndpoint = nextUrl.pathname === '/api/health';
-  const isRegisterEndpoint = nextUrl.pathname === '/api/auth/register';
   // Public share card images (for social media embeds)
   const isShareCardImage = nextUrl.pathname.match(/^\/api\/share\/card\/[^/]+\/image$/);
   // Public profile widgets
   const isPublicProfile = nextUrl.pathname.startsWith('/api/public/');
 
   // ====== RATE LIMITING ======
-
-  // Rate limit registration endpoint (very strict: 5 per minute)
-  if (isRegisterEndpoint) {
-    const rateLimitResponse = await authLimiter.check(req, 5);
-    if (rateLimitResponse) {
-      warnAuditEvent('RATE_LIMIT_HIT', { endpoint: '/api/auth/register', ip: req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown' });
-      return rateLimitResponse;
-    }
-  }
+  // Register, sync, and general API rate limiting is handled in Node.js route handlers
+  // via rate-limit-redis.ts (Redis-backed, persists across restarts, works under horizontal scale).
+  // Only login brute-force protection runs here in Edge middleware (in-memory is sufficient
+  // for this endpoint since it guards the NextAuth internal /api/auth/signin route).
 
   // Rate limit sign-in POST only — configurable via RATE_LIMIT_LOGIN env var (default: 10/min)
-  // We check /api/auth/signin (the NextAuth POST endpoint) rather than the /login page load,
-  // so legitimate page renders don't count against the limit.
   const isSignInPost = nextUrl.pathname === '/api/auth/signin' && req.method === 'POST';
   if (isSignInPost) {
     const rateLimitResponse = await loginLimiter.check(req, LOGIN_RATE_LIMIT);
     if (rateLimitResponse) {
       warnAuditEvent('RATE_LIMIT_HIT', { endpoint: '/login', ip: req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown' });
-      return rateLimitResponse;
-    }
-  }
-
-  // Rate limit sync endpoint — configurable via RATE_LIMIT_SYNC env var (default: 600/min, MT5 sends bursts on startup)
-  if (isSyncApi) {
-    const rateLimitResponse = await syncLimiter.check(req, SYNC_RATE_LIMIT);
-    if (rateLimitResponse) {
-      warnAuditEvent('RATE_LIMIT_HIT', { endpoint: '/api/sync', ip: req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown' });
-      return rateLimitResponse;
-    }
-  }
-
-  // General API rate limiting — configurable via RATE_LIMIT_API env var (default: 100/min)
-  // Skips webhooks, cron, health, and public endpoints
-  if (nextUrl.pathname.startsWith('/api/') && !isTelegramWebhook && !isCronEndpoint && !isHealthEndpoint && !isRegisterEndpoint && !isSyncApi && !isShareCardImage && !isPublicProfile) {
-    const rateLimitResponse = await apiLimiter.check(req, API_RATE_LIMIT);
-    if (rateLimitResponse) {
-      warnAuditEvent('RATE_LIMIT_HIT', { endpoint: nextUrl.pathname, ip: req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown' });
       return rateLimitResponse;
     }
   }
