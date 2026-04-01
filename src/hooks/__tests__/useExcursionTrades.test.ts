@@ -20,7 +20,7 @@ describe('mapToQuadrantTrade', () => {
         id: 'abc',
         ticket: 'T001',
         symbol: 'EURUSD',
-        direction: 'LONG',
+        direction: 'LONG' as const,
         entryPrice: 1.1000,
         exitPrice: 1.1050,
         stopLoss: 1.0950,
@@ -75,7 +75,7 @@ describe('mapToQuadrantTrade', () => {
     });
 
     it('maps a SHORT trade with correct exitDistFromEntry', () => {
-        const shortTrade = { ...rawTrade, direction: 'SHORT', entryPrice: 1.1050, exitPrice: 1.1000 };
+        const shortTrade = { ...rawTrade, direction: 'SHORT' as const, entryPrice: 1.1050, exitPrice: 1.1000 };
         const result = mapToQuadrantTrade(shortTrade);
         expect(result.exitDistFromEntry).toBeCloseTo(0.005, 5);
     });
