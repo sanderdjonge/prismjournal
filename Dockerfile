@@ -23,6 +23,8 @@ COPY . .
 
 # Generate Prisma client
 ENV NEXT_TELEMETRY_DISABLED=1
+# Set a dummy DATABASE_URL for build time (Prisma 7 requires this for client generation)
+ENV DATABASE_URL="postgresql://build:build@localhost:5432/build"
 
 RUN npx prisma generate
 
@@ -46,12 +48,14 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 # Install Prisma CLI for migrations at startup
-RUN npm install -g prisma@6
+RUN npm install -g prisma@7
 
 COPY --from=builder /app/public ./public
 
 # Prisma schema + migrations for runtime migrate deploy
 COPY --from=builder /app/prisma ./prisma
+# Prisma 7 config file (required at runtime)
+COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 
 # Automatically leverage output traces to reduce image size
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
