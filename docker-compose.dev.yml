@@ -26,6 +26,16 @@ services:
     networks:
       - prism-dev-network
 
+  redis:
+    image: redis:7-alpine
+    container_name: prism-dev-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - prism_dev_redis_data:/data
+    networks:
+      - prism-dev-network
+
   app:
     build:
       context: .
@@ -35,6 +45,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
     env_file: .env
     environment:
       NODE_ENV: development
@@ -49,6 +61,7 @@ services:
       BACKUP_KEEP_HOURLY: ${BACKUP_KEEP_HOURLY:-24}
       BACKUP_KEEP_DAILY: ${BACKUP_KEEP_DAILY:-30}
       BACKUP_KEEP_WEEKLY: ${BACKUP_KEEP_WEEKLY:-12}
+      REDIS_URL: redis://redis:6379
     ports:
       - "3002:3000"
     healthcheck:
@@ -124,3 +137,4 @@ networks:
 volumes:
   prism_dev_db_data:
   prism_dev_storage:
+  prism_dev_redis_data:

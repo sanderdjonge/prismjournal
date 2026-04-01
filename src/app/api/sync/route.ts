@@ -6,18 +6,22 @@ import { validateBody, syncPayloadSchema, type SyncTrade } from '@/lib/validatio
 import { upsertSyncTrade } from '@/lib/services/trade-sync.service';
 import { saveEquitySnapshot } from '@/lib/services/equity.service';
 import { cacheDelete } from '@/lib/api/cache';
+import { checkLimit, Limiters } from '@/lib/rate-limit-redis';
 
 /**
  * POST /api/sync
- * 
+ *
  * Sync endpoint for MT5/cTrader bridge.
- * 
+ *
  * With multi-account support:
  * - Bridge key authenticates the user (now on User model, not TradingAccount)
  * - platform + platformAccountId in payload routes to correct account
  * - If no platform info provided, uses first active account (backwards compatibility)
  */
 export async function POST(request: Request) {
+    const rateLimitResponse = await checkLimit(request, Limiters.sync);
+    if (rateLimitResponse) return rateLimitResponse;
+
     const bridgeKey = request.headers.get('X-Bridge-Key');
     if (!bridgeKey) {
         return NextResponse.json({ error: 'Missing X-Bridge-Key' }, { status: 400 });

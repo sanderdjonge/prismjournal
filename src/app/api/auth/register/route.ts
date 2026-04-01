@@ -4,8 +4,12 @@ import bcrypt from 'bcryptjs';
 import { validateBody, registerSchema } from '@/lib/validations';
 import { generateBridgeKey } from '@/lib/getAccount';
 import { logAuditEvent } from '@/lib/audit';
+import { checkLimit, Limiters } from '@/lib/rate-limit-redis';
 
 export async function POST(request: Request) {
+    const rateLimitResponse = await checkLimit(request, Limiters.register);
+    if (rateLimitResponse) return rateLimitResponse;
+
     try {
         const validation = await validateBody(request, registerSchema);
         if (!validation.success) {
