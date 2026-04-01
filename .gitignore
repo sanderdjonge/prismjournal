@@ -72,3 +72,24 @@ _material/
 # Python verification scripts (legacy, should not be committed)
 scripts/verify_prism_*.py
 .worktrees/
+
+# Internal docs, plans, roadmaps (private — not for public repo)
+docs/
+mockups/
+project_context.md
+
+# Claude Code skills
+skills/
+
+# Superpowers brainstorm artifacts
+.superpowers/
+
+# Backup directory stubs
+backups/
+
+# Old schema backups
+prisma/schema-phase19.prisma
+
+# One-off scripts (not needed for public)
+scripts/backfill-excursion.ts
+scripts/backup-env.sh
