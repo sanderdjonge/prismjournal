@@ -184,6 +184,7 @@ function SettingsContent() {
     const [dateFormat, setDateFormat] = useState('DD-MM-YYYY');
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
+    const [saveError, setSaveError] = useState<string | null>(null);
 
     // Bridge state
     const [bridgeKey, setBridgeKey] = useState('');
@@ -307,7 +308,7 @@ function SettingsContent() {
             .catch(() => {});
 
         fetch('/api/settings/notifications')
-            .then((r) => r.json())
+            .then((r) => { if (!r.ok) throw new Error('not ok'); return r.json(); })
             .then((data) => {
                 setNotifs((prev) => ({
                     ...prev,
@@ -316,12 +317,12 @@ function SettingsContent() {
                     volatilityWarnings: data.enableRisk ?? prev.volatilityWarnings,
                     telegramId: data.telegramId ?? '',
                     mddThreshold: data.mddThreshold?.toString() ?? '',
-                    // Email notification settings
                     email: data.email ?? '',
                     enableWeeklyDigestEmail: data.enableWeeklyDigest ?? false,
                     enableMddEmailAlerts: data.enableMddAlerts ?? false,
                     digestFrequency: (data.digestFrequency ?? 'WEEKLY') as 'DAILY' | 'WEEKLY',
                     digestSendHour: data.digestSendHour ?? 9,
+                    inAppToast: data.inAppToast ?? true,
                 }));
             })
             .catch(() => {});
@@ -487,6 +488,7 @@ function SettingsContent() {
 
     async function handleSave() {
         setSaving(true);
+        setSaveError(null);
         try {
             if (activeTab === 'preferences') {
                 await fetch('/api/settings', {
@@ -497,7 +499,7 @@ function SettingsContent() {
                 setCurrencyContext(currency);
                 queryClient.invalidateQueries({ queryKey: ['settings'] });
             } else if (activeTab === 'notifications') {
-                await fetch('/api/settings/notifications', {
+                const res = await fetch('/api/settings/notifications', {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -512,11 +514,19 @@ function SettingsContent() {
                         enableMddAlerts: notifs.enableMddEmailAlerts,
                         digestFrequency: notifs.digestFrequency,
                         digestSendHour: notifs.digestSendHour,
+                        inAppToast: notifs.inAppToast,
                     }),
                 });
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err?.error || `Failed to save notification settings (${res.status})`);
+                }
             }
             setSaved(true);
             setTimeout(() => setSaved(false), 2000);
+        } catch (err) {
+            setSaveError(err instanceof Error ? err.message : 'Failed to save settings');
+            setTimeout(() => setSaveError(null), 4000);
         } finally {
             setSaving(false);
         }
@@ -1545,6 +1555,9 @@ function SettingsContent() {
                             </button>
                             {saved && (
                                 <span className="text-primary text-[10px] font-black uppercase tracking-widest animate-fade-in">Saved!</span>
+                            )}
+                            {saveError && (
+                                <span className="text-red-400 text-[10px] font-black uppercase tracking-widest animate-fade-in">{saveError}</span>
                             )}
                         </div>
                     )}

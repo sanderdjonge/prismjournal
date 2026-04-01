@@ -25,7 +25,7 @@ export default auth(async (req) => {
   // Public share card images (for social media embeds)
   const isShareCardImage = nextUrl.pathname.match(/^\/api\/share\/card\/[^/]+\/image$/);
   // Public profile widgets
-  const isPublicProfile = nextUrl.pathname.match(/^\/api\/public\/[^/]+$/);
+  const isPublicProfile = nextUrl.pathname.startsWith('/api/public/');
 
   // ====== RATE LIMITING ======
 

@@ -86,6 +86,23 @@ services:
     networks:
       - prod-network
 
+  cron:
+    image: alpine:3.19
+    container_name: prod_cron
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      CRON_SECRET: ${CRON_SECRET}
+      APP_URL: "http://app:3000"
+    volumes:
+      - ./scripts/digest-cron-entrypoint.sh:/scripts/digest-cron-entrypoint.sh:ro
+    entrypoint: ["/bin/sh", "/scripts/digest-cron-entrypoint.sh"]
+    networks:
+      - prod-network
+
   tunnel:
     image: cloudflare/cloudflared:latest
     container_name: prod_tunnel
