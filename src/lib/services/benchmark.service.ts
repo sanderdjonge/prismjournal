@@ -6,21 +6,6 @@
 import prisma from '@/lib/prisma';
 import logger from '@/lib/logger';
 
-// Yahoo Finance API response types
-interface YahooChartResponse {
-  chart: {
-    result?: Array<{
-      meta?: { regularMarketPrice?: number };
-      timestamp?: number[];
-      indicators?: {
-        quote?: Array<{
-          close?: number[];
-        }>;
-      };
-    }>;
-    error?: { description?: string } | null;
-  };
-}
 
 interface BenchmarkPoint {
   date: Date;
@@ -69,45 +54,50 @@ async function fetchYahooPrices(
 ): Promise<Array<{ date: Date; close: number }>> {
   const period1 = Math.floor(startDate.getTime() / 1000);
   const period2 = Math.floor(endDate.getTime() / 1000);
-  
+
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&period1=${period1}&period2=${period2}`;
-  
+
   const res = await fetch(url, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; PrismJournal/1.0)',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      'Accept': 'application/json',
     },
   });
-  
+
   if (!res.ok) {
     throw new Error(`Yahoo Finance HTTP ${res.status} for ${symbol}`);
   }
-  
-  const data: YahooChartResponse = await res.json();
-  
+
+  const data = await res.json() as {
+    chart: {
+      result?: Array<{
+        timestamp?: number[];
+        indicators?: { quote?: Array<{ close?: (number | null)[] }> };
+      }>;
+      error?: { description?: string } | null;
+    };
+  };
+
   if (data.chart.error) {
     throw new Error(`Yahoo Finance error: ${data.chart.error.description}`);
   }
-  
+
   const result = data.chart.result?.[0];
   if (!result?.timestamp || !result.indicators?.quote?.[0]?.close) {
     throw new Error(`No data from Yahoo Finance for ${symbol}`);
   }
-  
+
   const timestamps = result.timestamp;
   const closes = result.indicators.quote[0].close;
-  
   const prices: Array<{ date: Date; close: number }> = [];
-  
+
   for (let i = 0; i < timestamps.length; i++) {
     const close = closes[i];
     if (close != null) {
-      prices.push({
-        date: new Date(timestamps[i] * 1000),
-        close,
-      });
+      prices.push({ date: new Date(timestamps[i] * 1000), close });
     }
   }
-  
+
   return prices;
 }
 
