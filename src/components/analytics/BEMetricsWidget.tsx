@@ -28,7 +28,23 @@ export default function BEMetricsWidget({ accountId }: Props) {
     }
 
     if (isError || !data || data.tradeCount === 0) {
-        return null;
+        return (
+            <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6 space-y-5">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h3 className="text-sm font-semibold text-gray-100">SL Management & Breakeven</h3>
+                        <p className="text-xs text-gray-500">No data yet</p>
+                    </div>
+                    <ShieldCheck size={14} className="text-gray-700" />
+                </div>
+                <div className="flex items-start gap-2 bg-white/[0.03] border border-white/5 rounded-xl p-4">
+                    <ShieldCheck size={12} className="text-gray-600 mt-0.5 shrink-0" />
+                    <p className="text-[10px] text-gray-500 leading-relaxed">
+                        Stats will appear once you have at least one closed trade with a stop loss set. This tracks breakeven moves, BE stop-outs, and R efficiency over time.
+                    </p>
+                </div>
+            </div>
+        );
     }
 
     const { beProtectionRate, beStopOutRate, avgRCaptured, avgRPotential, rEfficiency, tradeCount } = data;

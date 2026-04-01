@@ -15,7 +15,7 @@ export const BUILD_DATE = '2026-04-01';
  * Short summary of what changed in this build.
  * Update together with APP_VERSION and BUILD_DATE.
  */
-export const BUILD_NOTES = 'Fix public profile 401: middleware regex now covers /api/public/* (widget.png was blocked)';
+export const BUILD_NOTES = 'SL Management widget always visible with placeholder until first qualifying trade';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {
