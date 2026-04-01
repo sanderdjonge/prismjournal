@@ -6,9 +6,8 @@ import { ZodError, ZodSchema } from 'zod';
  * Compatible with both Zod 3 (error.errors) and Zod 4 (error.issues)
  */
 export function formatZodErrors(error: ZodError) {
-  // Zod 4 uses 'issues' property, Zod 3 uses 'errors'
-  // @ts-expect-error - Handle both Zod 3 and 4 API differences
-  const errorList = error.issues || error.errors;
+  // Zod 3.25+ and Zod 4 both use 'issues' property
+  const errorList = error.issues;
   return errorList.map((err: { path: PropertyKey[]; message: string; code: string }) => ({
     path: err.path.join('.'),
     message: err.message,
