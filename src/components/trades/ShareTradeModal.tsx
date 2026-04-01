@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Share2, Image, TrendingUp, Loader2, Check, Copy } from 'lucide-react';
 import { cn } from '@/lib/cn';
@@ -120,21 +121,24 @@ export function ShareTradeModal({ isOpen, onClose, tradeId, symbol, direction, p
         onClose();
     };
 
-    return (
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => { setMounted(true); }, []);
+
+    const modal = (
         <AnimatePresence>
             {isOpen && (
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+                    className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm"
                     onClick={handleClose}
                 >
                     <motion.div
                         initial={{ scale: 0.95, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.95, opacity: 0 }}
-                        className="bg-[#0d0d1a] border border-white/10 rounded-2xl w-full max-w-lg mx-4 overflow-hidden"
+                        className="bg-[#0d0d1a] border border-white/10 rounded-2xl w-full max-w-lg mx-4 overflow-hidden max-h-[90vh] overflow-y-auto"
                         onClick={e => e.stopPropagation()}
                     >
                         {/* Header */}
@@ -377,4 +381,7 @@ export function ShareTradeModal({ isOpen, onClose, tradeId, symbol, direction, p
             )}
         </AnimatePresence>
     );
+
+    if (!mounted) return null;
+    return createPortal(modal, document.body);
 }

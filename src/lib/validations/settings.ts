@@ -68,6 +68,7 @@ export const notificationSettingsSchema = z.object({
   enableMddAlerts: z.boolean().optional(),
   digestFrequency: z.enum(['DAILY', 'WEEKLY']).optional(),
   digestSendHour: z.number().int().min(0).max(23).optional(),
+  inAppToast: z.boolean().optional(),
 });
 
 export type NotificationSettingsInput = z.infer<typeof notificationSettingsSchema>;

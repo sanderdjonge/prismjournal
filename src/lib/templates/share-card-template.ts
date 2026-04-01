@@ -28,9 +28,9 @@ export type { ShareCardTemplateData };
 export function generateShareCardHtml(data: ShareCardTemplateData): string {
   const { trade, screenshotUrl, showPrismScore, prismScore, winRate, profitFactor, comment } = data;
   
-  const isProfit = trade.pnl >= 0;
-  const pnlColor = isProfit ? '#4ade80' : '#f87171';
-  const pnlSign = isProfit ? '+' : '';
+  const isProfit = trade.pnl > 0;
+  const pnlColor = trade.pnl === 0 ? '#9ca3af' : isProfit ? '#4ade80' : '#f87171';
+  const pnlSign = isProfit ? '+' : trade.pnl < 0 ? '-' : '';
   const directionColor = trade.direction === 'LONG' ? '#4ade80' : '#f87171';
   const directionBg = trade.direction === 'LONG' ? 'rgba(74, 222, 128, 0.2)' : 'rgba(248, 113, 113, 0.2)';
   

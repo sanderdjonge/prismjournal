@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-// eslint-disable-next-line no-restricted-imports
-import { auth } from '@/lib/auth';
 import { sendTestEmail } from '@/lib/email';
 import { validateBody, notificationSettingsSchema } from '@/lib/validations';
 import { withAuth } from '@/lib/api/withAuth';
@@ -10,23 +8,21 @@ const DEFAULTS = {
     enableSync: true,
     enableTrades: true,
     enableRisk: true,
-    telegramId: null as string | null,
-    mddThreshold: null as number | null,
-    // Email notification settings
-    email: null as string | null,
+    telegramId: null,
+    mddThreshold: null,
+    email: null,
     enableWeeklyDigest: false,
     enableMddAlerts: false,
-    digestFrequency: 'WEEKLY' as string,
+    digestFrequency: 'WEEKLY',
     digestSendHour: 9,
+    inAppToast: true,
 };
 
-export async function GET() {
-    const session = await auth();
-    if (!session?.user?.id) return NextResponse.json(DEFAULTS);
+export const GET = withAuth(async (_req, _ctx, session) => {
     const userId = session.user.id;
     const config = await prisma.alertConfig.findUnique({ where: { userId } });
     return NextResponse.json(config ?? DEFAULTS);
-}
+});
 
 export const PATCH = withAuth(async (req, _ctx, session) => {
     const userId = session.user.id;
@@ -66,4 +62,5 @@ export const POST = withAuth(async (_req, _ctx, session) => {
     }
 });
 
+export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

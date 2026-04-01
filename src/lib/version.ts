@@ -9,13 +9,13 @@ export const APP_VERSION = pkg.version; // e.g. "2.17.0"
  * Build date — update this whenever you bump the version.
  * Format: YYYY-MM-DD
  */
-export const BUILD_DATE = '2026-03-31';
+export const BUILD_DATE = '2026-04-01';
 
 /**
  * Short summary of what changed in this build.
  * Update together with APP_VERSION and BUILD_DATE.
  */
-export const BUILD_NOTES = 'Phase 25 complete: public profile widget with embeddable PNG, settings tab, widget.png API, profile toggle & stat visibility controls';
+export const BUILD_NOTES = 'Fix public profile 401: middleware regex now covers /api/public/* (widget.png was blocked)';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {

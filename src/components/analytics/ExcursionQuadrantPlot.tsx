@@ -289,10 +289,10 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
 
                         {/* Zone labels — centered in equal quadrants */}
                         {([
-                            ['SURVIVED',  ML + CW * 0.25, MT + CH * 0.25, 'rgba(251,146,60,0.5)',  'rough entry, made it work'],
-                            ['CLEAN',     ML + CW * 0.75, MT + CH * 0.25, 'rgba(74,222,128,0.5)',  'clean entry, good exit'],
-                            ['PAINFUL',   ML + CW * 0.25, MT + CH * 0.75, 'rgba(248,113,113,0.5)', 'rough entry + poor exit'],
-                            ['EARLY OUT', ML + CW * 0.75, MT + CH * 0.75, 'rgba(250,204,21,0.5)',  'left profit on the table'],
+                            ['CLEAN',     ML + CW * 0.25, MT + CH * 0.25, 'rgba(74,222,128,0.5)',  'clean entry, good exit'],
+                            ['SURVIVED',  ML + CW * 0.75, MT + CH * 0.25, 'rgba(251,146,60,0.5)',  'rough entry, made it work'],
+                            ['EARLY OUT', ML + CW * 0.25, MT + CH * 0.75, 'rgba(250,204,21,0.5)',  'left profit on the table'],
+                            ['PAINFUL',   ML + CW * 0.75, MT + CH * 0.75, 'rgba(248,113,113,0.5)', 'rough entry + poor exit'],
                         ] as const).map(([name, x, y, color, sub]) => (
                             <g key={name} style={{ pointerEvents: 'none' }}>
                                 <text x={x} y={y - 4} fill={color} fontSize={10} fontWeight={900} fontFamily="sans-serif" letterSpacing={2} textAnchor="middle">{name}</text>
@@ -338,9 +338,13 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                         const isWin = hovered.pnl >= 0;
                         const pnlSign = isWin ? '+' : '';
                         const slVal = hovered.stopLoss;
-                        const slMsg = slVal != null && hovered.mae != null
-                            ? hovered.mae > slVal
-                                ? `Price went ${(hovered.mae - slVal).toFixed(4)} past your stop`
+                        const entryPrice = hovered.entry;
+                        const stopDist = slVal != null && entryPrice != null
+                            ? hovered.type === 'LONG' ? entryPrice - slVal : slVal - entryPrice
+                            : null;
+                        const slMsg = stopDist != null && stopDist > 0 && hovered.mae != null
+                            ? hovered.mae >= stopDist
+                                ? `Stop hit — price moved ${((hovered.mae / stopDist) * 100).toFixed(0)}% of stop distance`
                                 : 'Stop never threatened'
                             : null;
                         const exitDate = hovered.exitTime
