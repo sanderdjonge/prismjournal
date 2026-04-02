@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { safeExternalCall, handlePartialResults, logPartialFailure } from '@/lib/services/what-if/error-handling';
 
 vi.mock('@/lib/logger', () => ({
-  logger: {
+  default: {
     error: vi.fn(),
     warn: vi.fn(),
     info: vi.fn(),

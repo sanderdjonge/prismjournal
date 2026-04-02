@@ -1,31 +1,12 @@
 import prisma from '@/lib/prisma';
+import {
+  WhatIfFilters,
+  TradeData,
+  normalizeFilters,
+} from './what-if/types';
 
-export interface WhatIfFilters {
-    /** Days to exclude (0=Sunday, 1=Monday, ..., 6=Saturday) */
-    excludeDays?: number[];
-    /** Hours to exclude (0-23) */
-    excludeHours?: number[];
-    /** Minimum R:R ratio filter */
-    minRR?: number;
-    /** Maximum R:R ratio filter */
-    maxRR?: number;
-    /** Minimum profit threshold */
-    minProfit?: number;
-    /** Maximum profit threshold */
-    maxProfit?: number;
-    /** Include only specific symbols */
-    symbols?: string[];
-    /** Multiply stop loss by N (simulator) */
-    stopLossMultiplier?: number;
-    /** Date range start */
-    startDate?: Date;
-    /** Date range end */
-    endDate?: Date;
-    /** Account IDs to include */
-    accountIds?: string[];
-    /** Direction filter */
-    direction?: 'LONG' | 'SHORT';
-}
+// Re-export types for backward compatibility
+export type { WhatIfFilters, TradeData } from './what-if/types';
 
 export interface EquityPoint {
     date: string;
@@ -57,21 +38,6 @@ export interface WhatIfResult {
         improvement: boolean;
     };
     filters: WhatIfFilters;
-}
-
-interface TradeData {
-    id: string;
-    symbol: string;
-    direction: string;
-    entryPrice: number;
-    exitPrice: number | null;
-    stopLoss: number | null;
-    takeProfit: number | null;
-    pnl: number | null;
-    rMultiple: number | null;
-    entryTime: Date;
-    exitTime: Date | null;
-    initialStopLoss: number | null;
 }
 
 /**
@@ -159,19 +125,21 @@ function calculateMetrics(trades: TradeData[]): SimulationResult {
  * Apply filters to trades and return filtered subset
  */
 function applyFilters(trades: TradeData[], filters: WhatIfFilters): TradeData[] {
+    // Normalize legacy flat filters to nested structure
+    const normalized = normalizeFilters(filters);
+    
     return trades.filter(trade => {
-        // Day filter
-        if (filters.excludeDays && filters.excludeDays.length > 0) {
+        // Time filters
+        if (normalized.time?.excludeDays?.length) {
             const dayOfWeek = new Date(trade.entryTime).getDay();
-            if (filters.excludeDays.includes(dayOfWeek)) {
+            if (normalized.time.excludeDays.includes(dayOfWeek)) {
                 return false;
             }
         }
 
-        // Hour filter
-        if (filters.excludeHours && filters.excludeHours.length > 0) {
+        if (normalized.time?.excludeHours?.length) {
             const hour = new Date(trade.entryTime).getHours();
-            if (filters.excludeHours.includes(hour)) {
+            if (normalized.time.excludeHours.includes(hour)) {
                 return false;
             }
         }
@@ -193,7 +161,7 @@ function applyFilters(trades: TradeData[], filters: WhatIfFilters): TradeData[] 
         }
 
         // Symbol filter
-        if (filters.symbols && filters.symbols.length > 0) {
+        if (filters.symbols?.length) {
             if (!filters.symbols.includes(trade.symbol)) {
                 return false;
             }
@@ -250,7 +218,7 @@ export async function runWhatIfSimulation(
     if (filters.endDate) {
         whereClause.exitTime = { ...whereClause.exitTime as object, lte: filters.endDate };
     }
-    if (filters.accountIds && filters.accountIds.length > 0) {
+    if (filters.accountIds?.length) {
         whereClause.accountId = { in: filters.accountIds };
     }
 
@@ -270,6 +238,9 @@ export async function runWhatIfSimulation(
             entryTime: true,
             exitTime: true,
             initialStopLoss: true,
+            mae: true,
+            mfe: true,
+            volume: true,
         },
     });
 
@@ -278,6 +249,9 @@ export async function runWhatIfSimulation(
         direction: t.direction as string,
         entryTime: new Date(t.entryTime),
         exitTime: t.exitTime ? new Date(t.exitTime) : null,
+        mae: t.mae,
+        mfe: t.mfe,
+        volume: t.volume ?? undefined,
     }));
 
     // Calculate actual metrics

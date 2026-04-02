@@ -2,7 +2,7 @@
  * Error Handling Utilities for What-If Simulator
  * Provides safe wrappers for external API calls and partial result handling
  */
-import { logger } from '@/lib/logger';
+import logger from '@/lib/logger';
 
 /** Result wrapper for operations that may fail */
 export interface Result<T> {

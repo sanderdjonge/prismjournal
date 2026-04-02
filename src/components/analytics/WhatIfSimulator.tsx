@@ -4,10 +4,24 @@ import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     FlaskConical, X, ChevronDown, TrendingUp, TrendingDown, 
-    Minus, Plus, RefreshCw, Calendar, Clock, Target, DollarSign
+    Minus, Plus, RefreshCw, Calendar, Clock, Target, DollarSign,
+    Settings2
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useWhatIf, useWhatIfMulti, WhatIfFilters, WhatIfResult, SimulationResult } from '@/hooks/useWhatIf';
+import {
+  WhatIfFilterChip,
+  WhatIfActiveFilter,
+  DurationFilterConfig,
+  MarketSessionConfig,
+  LossLimitConfig,
+  StreakBreakConfig,
+  BigLossCooldownConfig,
+  PositionSizingConfig,
+  TrailingStopConfig,
+  VolatilityConfig,
+  NewsEventConfig,
+} from '@/components/what-if/WhatIfFilterChips';
 
 const DAYS = [
     { value: 0, label: 'Sunday' },
@@ -89,39 +103,165 @@ function ComparisonSummary({ result }: { result: WhatIfResult }) {
     const { actual, simulated, difference } = result;
     
     return (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <MetricCard 
-                label="Total Trades" 
-                actual={actual.totalTrades} 
-                simulated={simulated.totalTrades}
-                format="number"
-            />
-            <MetricCard 
-                label="Total P&L" 
-                actual={actual.totalPnl} 
-                simulated={simulated.totalPnl}
-                format="currency"
-            />
-            <MetricCard 
-                label="Win Rate" 
-                actual={actual.winRate} 
-                simulated={simulated.winRate}
-                format="percent"
-            />
-            <MetricCard 
-                label="Profit Factor" 
-                actual={actual.profitFactor} 
-                simulated={simulated.profitFactor}
-                format="number"
-            />
+        <div className="space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <MetricCard 
+                    label="Total Trades" 
+                    actual={actual.totalTrades} 
+                    simulated={simulated.totalTrades}
+                    format="number"
+                />
+                <MetricCard 
+                    label="Total P&L" 
+                    actual={actual.totalPnl} 
+                    simulated={simulated.totalPnl}
+                    format="currency"
+                />
+                <MetricCard 
+                    label="Win Rate" 
+                    actual={actual.winRate} 
+                    simulated={simulated.winRate}
+                    format="percent"
+                />
+                <MetricCard 
+                    label="Profit Factor" 
+                    actual={actual.profitFactor} 
+                    simulated={simulated.profitFactor}
+                    format="number"
+                />
+            </div>
+            
+            {/* Improvement Summary */}
+            <div className={cn(
+                "p-3 rounded-lg text-sm",
+                difference.improvement 
+                    ? "bg-profit/10 border border-profit/20 text-profit" 
+                    : "bg-loss/10 border border-loss/20 text-loss"
+            )}>
+                <div className="flex items-center gap-2">
+                    {difference.improvement ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+                    <span className="font-bold">
+                        {difference.improvement ? 'Potential Improvement' : 'Simulation Result'}
+                    </span>
+                </div>
+                <p className="text-xs mt-1 opacity-80">
+                    {difference.tradesRemoved} trades removed • 
+                    P&L difference: {difference.pnlDifference >= 0 ? '+' : ''}{difference.pnlDifference.toFixed(2)}
+                </p>
+            </div>
         </div>
     );
+}
+
+// Advanced filter configuration popover
+interface AdvancedFilterPopoverProps {
+  type: 'duration' | 'marketSession' | 'dailyLoss' | 'weeklyLoss' | 'streakBreak' | 'bigLossCooldown' | 'positionSizing' | 'trailingStop' | 'volatility' | 'newsEvent';
+  filters: WhatIfFilters;
+  onChange: (filters: WhatIfFilters) => void;
+  onClose: () => void;
+}
+
+function AdvancedFilterPopover({ type, filters, onChange, onClose }: AdvancedFilterPopoverProps) {
+  const renderConfig = () => {
+    switch (type) {
+      case 'duration':
+        return (
+          <DurationFilterConfig
+            value={{ minHours: filters.time?.minDurationHours, maxHours: filters.time?.maxDurationHours }}
+            onChange={(v) => onChange({
+              ...filters,
+              time: { ...filters.time, minDurationHours: v.minHours, maxDurationHours: v.maxHours }
+            })}
+          />
+        );
+      case 'marketSession':
+        return (
+          <MarketSessionConfig
+            value={filters.time?.marketSession ?? []}
+            onChange={(v) => onChange({ ...filters, time: { ...filters.time, marketSession: v as ('LONDON' | 'NEW_YORK' | 'ASIA' | 'OVERLAP_LN' | 'OVERLAP_NA')[] } })}
+          />
+        );
+      case 'dailyLoss':
+        return (
+          <LossLimitConfig
+            value={filters.psychology?.dailyLossLimit}
+            onChange={(v) => onChange({ ...filters, psychology: { ...filters.psychology, dailyLossLimit: v } })}
+            label="Daily Loss Limit ($)"
+          />
+        );
+      case 'weeklyLoss':
+        return (
+          <LossLimitConfig
+            value={filters.psychology?.weeklyLossLimit}
+            onChange={(v) => onChange({ ...filters, psychology: { ...filters.psychology, weeklyLossLimit: v } })}
+            label="Weekly Loss Limit ($)"
+          />
+        );
+      case 'streakBreak':
+        return (
+          <StreakBreakConfig
+            value={filters.psychology?.stopAfterLosses}
+            onChange={(v) => onChange({ ...filters, psychology: { ...filters.psychology, stopAfterLosses: v } })}
+          />
+        );
+      case 'bigLossCooldown':
+        return (
+          <BigLossCooldownConfig
+            value={filters.psychology?.avoidAfterBigLoss}
+            onChange={(v) => onChange({ ...filters, psychology: { ...filters.psychology, avoidAfterBigLoss: v } })}
+          />
+        );
+      case 'positionSizing':
+        return (
+          <PositionSizingConfig
+            value={filters.risk?.riskPerTrade}
+            onChange={(v) => onChange({ ...filters, risk: { ...filters.risk, riskPerTrade: v } })}
+          />
+        );
+      case 'trailingStop':
+        return (
+          <TrailingStopConfig
+            value={filters.risk?.trailingPercent}
+            onChange={(v) => onChange({ ...filters, risk: { ...filters.risk, trailingPercent: v } })}
+          />
+        );
+      case 'volatility':
+        return (
+          <VolatilityConfig
+            value={filters.market ? { mode: 'avoid', threshold: filters.market.maxVolatility ?? 0.5 } : { mode: 'avoid', threshold: 0.5 }}
+            onChange={(v) => onChange({ ...filters, market: { ...filters.market, maxVolatility: v.threshold } })}
+          />
+        );
+      case 'newsEvent':
+        return (
+          <NewsEventConfig
+            value={{ avoidHighImpact: filters.market?.avoidNewsEvents ?? true, windowMinutes: filters.market?.newsBufferMinutes ?? 30 }}
+            onChange={(v) => onChange({ ...filters, market: { ...filters.market, avoidNewsEvents: v.avoidHighImpact, newsBufferMinutes: v.windowMinutes } })}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+  
+  return (
+    <div className="absolute z-50 top-full left-0 mt-1 p-3 bg-[#1a1a2e] border border-white/10 rounded-lg shadow-xl min-w-[280px]">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Configure Filter</span>
+        <button onClick={onClose} className="text-gray-500 hover:text-white">
+          <X size={14} />
+        </button>
+      </div>
+      {renderConfig()}
+    </div>
+  );
 }
 
 export function WhatIfSimulator() {
     const [isOpen, setIsOpen] = useState(false);
     const [filters, setFilters] = useState<WhatIfFilters>({});
     const [activeFilters, setActiveFilters] = useState<WhatIfFilters | null>(null);
+    const [advancedPopover, setAdvancedPopover] = useState<string | null>(null);
     
     const { data: result, isLoading, refetch } = useWhatIf(activeFilters);
     
@@ -134,11 +274,64 @@ export function WhatIfSimulator() {
         setActiveFilters(null);
     };
     
+    // Count both basic and nested filters
     const activeFilterCount = useMemo(() => {
-        return Object.values(filters).filter(v => 
-            v !== undefined && v !== null && (Array.isArray(v) ? v.length > 0 : true)
-        ).length;
+        let count = 0;
+        
+        // Basic flat filters
+        if (filters.excludeDays?.length) count++;
+        if (filters.excludeHours?.length) count++;
+        if (filters.minRR !== undefined) count++;
+        if (filters.maxRR !== undefined) count++;
+        if (filters.minProfit !== undefined) count++;
+        if (filters.maxProfit !== undefined) count++;
+        if (filters.symbols?.length) count++;
+        if (filters.direction) count++;
+        
+        // Time filters
+        if (filters.time?.minDurationHours !== undefined) count++;
+        if (filters.time?.maxDurationHours !== undefined) count++;
+        if (filters.time?.marketSession?.length) count++;
+        
+        // Psychology filters
+        if (filters.psychology?.dailyLossLimit !== undefined) count++;
+        if (filters.psychology?.weeklyLossLimit !== undefined) count++;
+        if (filters.psychology?.stopAfterLosses !== undefined) count++;
+        if (filters.psychology?.avoidAfterBigLoss) count++;
+        
+        // Risk filters
+        if (filters.risk?.riskPerTrade !== undefined) count++;
+        if (filters.risk?.trailingPercent !== undefined) count++;
+        if (filters.risk?.partialExitAt) count++;
+        
+        // Market filters
+        if (filters.market?.minVolatility !== undefined) count++;
+        if (filters.market?.maxVolatility !== undefined) count++;
+        if (filters.market?.avoidNewsEvents !== undefined) count++;
+        
+        return count;
     }, [filters]);
+    
+    // Available advanced filter options
+    const advancedFilterOptions = [
+        { id: 'duration', label: 'Duration', category: 'time' as const },
+        { id: 'marketSession', label: 'Market Session', category: 'time' as const },
+        { id: 'dailyLoss', label: 'Daily Loss Limit', category: 'psychology' as const },
+        { id: 'weeklyLoss', label: 'Weekly Loss Limit', category: 'psychology' as const },
+        { id: 'streakBreak', label: 'Streak Break', category: 'psychology' as const },
+        { id: 'bigLossCooldown', label: 'Big Loss Cooldown', category: 'psychology' as const },
+        { id: 'positionSizing', label: 'Position Sizing', category: 'risk' as const },
+        { id: 'trailingStop', label: 'Trailing Stop', category: 'risk' as const },
+        { id: 'volatility', label: 'Volatility Filter', category: 'market' as const },
+        { id: 'newsEvent', label: 'News Events', category: 'market' as const },
+    ];
+    
+    const categoryColors = {
+        time: 'bg-blue-500/20 border-blue-500/40 text-blue-400',
+        psychology: 'bg-purple-500/20 border-purple-500/40 text-purple-400',
+        risk: 'bg-orange-500/20 border-orange-500/40 text-orange-400',
+        market: 'bg-green-500/20 border-green-500/40 text-green-400',
+    };
     
     return (
         <div className="glass-card rounded-2xl p-4">
@@ -174,133 +367,145 @@ export function WhatIfSimulator() {
                         className="overflow-hidden"
                     >
                         <div className="p-4 rounded-lg bg-white/[0.02] border border-white/[0.05] mb-4 space-y-4">
-                            {/* Day Filter */}
+                            {/* Basic Filters Section */}
+                            <div className="pb-4 border-b border-white/5">
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-3">
+                                    Basic Filters
+                                </h4>
+                                
+                                {/* Day Filter */}
+                                <div className="mb-3">
+                                    <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2 block">
+                                        Exclude Days
+                                    </label>
+                                    <div className="flex flex-wrap gap-1">
+                                        {DAYS.map(day => (
+                                            <button
+                                                key={day.value}
+                                                onClick={() => {
+                                                    const current = filters.excludeDays || [];
+                                                    const updated = current.includes(day.value)
+                                                        ? current.filter(d => d !== day.value)
+                                                        : [...current, day.value];
+                                                    setFilters({ ...filters, excludeDays: updated.length > 0 ? updated : undefined });
+                                                }}
+                                                className={cn(
+                                                    "px-2 py-1 rounded text-xs font-medium transition-colors",
+                                                    filters.excludeDays?.includes(day.value)
+                                                        ? "bg-primary text-black"
+                                                        : "bg-white/5 text-gray-400 hover:bg-white/10"
+                                                )}
+                                            >
+                                                {day.label.slice(0, 3)}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                
+                                {/* Hour Filter */}
+                                <div className="mb-3">
+                                    <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2 block">
+                                        Exclude Hours
+                                    </label>
+                                    <div className="flex flex-wrap gap-1">
+                                        {HOURS.slice(6, 22).map(hour => (
+                                            <button
+                                                key={hour.value}
+                                                onClick={() => {
+                                                    const current = filters.excludeHours || [];
+                                                    const updated = current.includes(hour.value)
+                                                        ? current.filter(h => h !== hour.value)
+                                                        : [...current, hour.value];
+                                                    setFilters({ ...filters, excludeHours: updated.length > 0 ? updated : undefined });
+                                                }}
+                                                className={cn(
+                                                    "px-2 py-1 rounded text-xs font-medium transition-colors",
+                                                    filters.excludeHours?.includes(hour.value)
+                                                        ? "bg-primary text-black"
+                                                        : "bg-white/5 text-gray-400 hover:bg-white/10"
+                                                )}
+                                            >
+                                                {hour.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                
+                                {/* R:R & Profit Filters */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1.5 block">
+                                            Min R:R
+                                        </label>
+                                        <input
+                                            type="number"
+                                            step="0.1"
+                                            value={filters.minRR ?? ''}
+                                            onChange={e => setFilters({ 
+                                                ...filters, 
+                                                minRR: e.target.value ? parseFloat(e.target.value) : undefined 
+                                            })}
+                                            className="w-full bg-white/5 border border-white/10 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-primary/40"
+                                            placeholder="0.0"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1.5 block">
+                                            Max R:R
+                                        </label>
+                                        <input
+                                            type="number"
+                                            step="0.1"
+                                            value={filters.maxRR ?? ''}
+                                            onChange={e => setFilters({ 
+                                                ...filters, 
+                                                maxRR: e.target.value ? parseFloat(e.target.value) : undefined 
+                                            })}
+                                            className="w-full bg-white/5 border border-white/10 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-primary/40"
+                                            placeholder="10.0"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* Advanced Filters Section */}
                             <div>
-                                <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2 block">
-                                    Exclude Days
-                                </label>
-                                <div className="flex flex-wrap gap-1">
-                                    {DAYS.map(day => (
-                                        <button
-                                            key={day.value}
-                                            onClick={() => {
-                                                const current = filters.excludeDays || [];
-                                                const updated = current.includes(day.value)
-                                                    ? current.filter(d => d !== day.value)
-                                                    : [...current, day.value];
-                                                setFilters({ ...filters, excludeDays: updated.length > 0 ? updated : undefined });
-                                            }}
-                                            className={cn(
-                                                "px-2 py-1 rounded text-xs font-medium transition-colors",
-                                                filters.excludeDays?.includes(day.value)
-                                                    ? "bg-primary text-black"
-                                                    : "bg-white/5 text-gray-400 hover:bg-white/10"
-                                            )}
-                                        >
-                                            {day.label.slice(0, 3)}
-                                        </button>
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-3">
+                                    Advanced Filters
+                                </h4>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {advancedFilterOptions.map((option) => (
+                                        <div key={option.id} className="relative">
+                                            <button
+                                                onClick={() => setAdvancedPopover(advancedPopover === option.id ? null : option.id)}
+                                                className={cn(
+                                                    "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all",
+                                                    categoryColors[option.category],
+                                                    advancedPopover === option.id && "ring-2 ring-white/30"
+                                                )}
+                                            >
+                                                <Settings2 size={10} />
+                                                {option.label}
+                                            </button>
+                                            
+                                            <AnimatePresence>
+                                                {advancedPopover === option.id && (
+                                                    <motion.div
+                                                        initial={{ opacity: 0, y: -4 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        exit={{ opacity: 0, y: -4 }}
+                                                    >
+                                                        <AdvancedFilterPopover
+                                                            type={option.id as 'duration' | 'marketSession' | 'dailyLoss' | 'weeklyLoss' | 'streakBreak' | 'bigLossCooldown' | 'positionSizing' | 'trailingStop' | 'volatility' | 'newsEvent'}
+                                                            filters={filters}
+                                                            onChange={setFilters}
+                                                            onClose={() => setAdvancedPopover(null)}
+                                                        />
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+                                        </div>
                                     ))}
-                                </div>
-                            </div>
-                            
-                            {/* Hour Filter */}
-                            <div>
-                                <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2 block">
-                                    Exclude Hours
-                                </label>
-                                <div className="flex flex-wrap gap-1">
-                                    {HOURS.slice(6, 22).map(hour => (
-                                        <button
-                                            key={hour.value}
-                                            onClick={() => {
-                                                const current = filters.excludeHours || [];
-                                                const updated = current.includes(hour.value)
-                                                    ? current.filter(h => h !== hour.value)
-                                                    : [...current, hour.value];
-                                                setFilters({ ...filters, excludeHours: updated.length > 0 ? updated : undefined });
-                                            }}
-                                            className={cn(
-                                                "px-2 py-1 rounded text-xs font-medium transition-colors",
-                                                filters.excludeHours?.includes(hour.value)
-                                                    ? "bg-primary text-black"
-                                                    : "bg-white/5 text-gray-400 hover:bg-white/10"
-                                            )}
-                                        >
-                                            {hour.label}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                            
-                            {/* R:R Filter */}
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1.5 block">
-                                        Min R:R
-                                    </label>
-                                    <input
-                                        type="number"
-                                        step="0.1"
-                                        value={filters.minRR ?? ''}
-                                        onChange={e => setFilters({ 
-                                            ...filters, 
-                                            minRR: e.target.value ? parseFloat(e.target.value) : undefined 
-                                        })}
-                                        className="w-full bg-white/5 border border-white/10 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-primary/40"
-                                        placeholder="0.0"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1.5 block">
-                                        Max R:R
-                                    </label>
-                                    <input
-                                        type="number"
-                                        step="0.1"
-                                        value={filters.maxRR ?? ''}
-                                        onChange={e => setFilters({ 
-                                            ...filters, 
-                                            maxRR: e.target.value ? parseFloat(e.target.value) : undefined 
-                                        })}
-                                        className="w-full bg-white/5 border border-white/10 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-primary/40"
-                                        placeholder="10.0"
-                                    />
-                                </div>
-                            </div>
-                            
-                            {/* Profit Filter */}
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1.5 block">
-                                        Min Profit ($)
-                                    </label>
-                                    <input
-                                        type="number"
-                                        step="10"
-                                        value={filters.minProfit ?? ''}
-                                        onChange={e => setFilters({ 
-                                            ...filters, 
-                                            minProfit: e.target.value ? parseFloat(e.target.value) : undefined 
-                                        })}
-                                        className="w-full bg-white/5 border border-white/10 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-primary/40"
-                                        placeholder="-1000"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1.5 block">
-                                        Max Profit ($)
-                                    </label>
-                                    <input
-                                        type="number"
-                                        step="10"
-                                        value={filters.maxProfit ?? ''}
-                                        onChange={e => setFilters({ 
-                                            ...filters, 
-                                            maxProfit: e.target.value ? parseFloat(e.target.value) : undefined 
-                                        })}
-                                        className="w-full bg-white/5 border border-white/10 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-primary/40"
-                                        placeholder="1000"
-                                    />
                                 </div>
                             </div>
                             
@@ -353,6 +558,22 @@ export function WhatIfSimulator() {
                         <FilterChip 
                             label={`R:R ≤ ${filters.maxRR}`} 
                             onRemove={() => setFilters({ ...filters, maxRR: undefined })}
+                        />
+                    )}
+                    {filters.time?.marketSession?.map(s => (
+                        <FilterChip 
+                            key={`session-${s}`} 
+                            label={s.replace('_', ' ')} 
+                            onRemove={() => setFilters({
+                                ...filters,
+                                time: { ...filters.time, marketSession: filters.time?.marketSession?.filter(x => x !== s) }
+                            })}
+                        />
+                    ))}
+                    {filters.psychology?.dailyLossLimit !== undefined && (
+                        <FilterChip 
+                            label={`Daily Limit: $${filters.psychology.dailyLossLimit}`}
+                            onRemove={() => setFilters({ ...filters, psychology: { ...filters.psychology, dailyLossLimit: undefined } })}
                         />
                     )}
                 </div>
