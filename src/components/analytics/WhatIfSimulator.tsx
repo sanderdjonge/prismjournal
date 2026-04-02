@@ -630,7 +630,7 @@ export function WhatIfSimulator() {
                     )}
                     {filters.risk?.trailingPercent !== undefined && (
                         <FilterChip
-                            label={`Trail: ${filters.risk.trailingPercent}%`}
+                            label={`Trail: ${(filters.risk.trailingPercent * 100).toFixed(0)}% retrace`}
                             onRemove={() => setFilters({ ...filters, risk: { ...filters.risk, trailingPercent: undefined } })}
                         />
                     )}

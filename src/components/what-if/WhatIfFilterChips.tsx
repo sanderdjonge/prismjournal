@@ -348,22 +348,31 @@ interface TrailingStopConfigProps {
 }
 
 export function TrailingStopConfig({ value, onChange }: TrailingStopConfigProps) {
+  // trailPercent is stored as decimal (0.5 = 50%)
+  // Display as percentage for clarity
+  const displayValue = value !== undefined ? (value * 100).toFixed(0) : '';
+  
   return (
     <div className="space-y-2">
       <label className="text-[9px] font-black uppercase tracking-widest text-gray-500">
-        Trailing Stop (%)
+        Trailing Stop (% of peak profit)
       </label>
       <input
         type="number"
-        step="5"
+        step="10"
         min="10"
         max="90"
-        value={value ? value * 100 : ''}
-        onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) onChange(v / 100); }}
+        value={displayValue}
+        onChange={(e) => {
+          const v = parseFloat(e.target.value);
+          if (!isNaN(v)) {
+            onChange(v / 100);
+          }
+        }}
         className="w-full bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-bold text-white placeholder:text-gray-600 outline-none focus:border-primary/50"
         placeholder="50"
       />
-      <p className="text-[8px] text-gray-500">% to trail from peak price</p>
+      <p className="text-[8px] text-gray-500">Exit when price retraces X% from peak. E.g., 50% on a 2R peak trade exits at 1R.</p>
     </div>
   )
 }
