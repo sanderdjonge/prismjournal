@@ -33,25 +33,36 @@ export function applyDurationFilter(
   });
 }
 
-/** Apply market session filter */
+/** Apply market session filter
+ * @param trades - Trade data
+ * @param sessions - Market sessions to include
+ * @param timezoneOffset - User's timezone offset from UTC in hours (e.g., +2 for Amsterdam)
+ */
 export function applyMarketSessionFilter(
   trades: TradeData[],
-  sessions: string[]
+  sessions: string[],
+  timezoneOffset: number = 0
 ): TradeData[] {
   if (!sessions.length) return trades;
   
   return trades.filter(trade => {
-    const entryHour = new Date(trade.entryTime).getUTCHours();
+    // Convert UTC to user's local hour
+    const utcHour = new Date(trade.entryTime).getUTCHours();
+    const localHour = (utcHour + timezoneOffset + 24) % 24;
     
     return sessions.some(session => {
       const hours = SESSION_HOURS[session as keyof typeof SESSION_HOURS];
       if (!hours) return false;
       
-      // Handle overnight sessions (Asia: 23-7)
-      if (hours.start > hours.end) {
-        return entryHour >= hours.start || entryHour < hours.end;
+      // Adjust session hours to user's timezone
+      const localStart = (hours.start + timezoneOffset + 24) % 24;
+      const localEnd = (hours.end + timezoneOffset + 24) % 24;
+      
+      // Handle overnight sessions
+      if (localStart > localEnd) {
+        return localHour >= localStart || localHour < localEnd;
       }
-      return entryHour >= hours.start && entryHour < hours.end;
+      return localHour >= localStart && localHour < localEnd;
     });
   });
 }

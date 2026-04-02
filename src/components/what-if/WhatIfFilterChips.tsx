@@ -240,16 +240,19 @@ interface LossLimitConfigProps {
   value?: number
   onChange: (value: number) => void
   label: string
+  currency?: string
 }
 
-export function LossLimitConfig({ value, onChange, label }: LossLimitConfigProps) {
+export function LossLimitConfig({ value, onChange, label, currency = 'USD' }: LossLimitConfigProps) {
+  const symbol = currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : '$';
+  
   return (
     <div className="space-y-2">
       <label className="text-[9px] font-black uppercase tracking-widest text-gray-500">
         {label}
       </label>
       <div className="flex items-center gap-2">
-        <span className="text-[10px] text-gray-400">$</span>
+        <span className="text-[10px] text-gray-400">{symbol}</span>
         <input
           type="number"
           value={value ?? ''}
@@ -322,7 +325,15 @@ export function BigLossCooldownConfig({ value, onChange }: BigLossCooldownConfig
             step="0.5"
             placeholder="R threshold"
             value={value?.rThreshold ?? ''}
-            onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) onChange({ ...value, rThreshold: v, cooldownHours: value?.cooldownHours ?? 2 }); }}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === '') {
+                onChange({ rThreshold: undefined as unknown as number, cooldownHours: value?.cooldownHours ?? 2 });
+              } else {
+                const parsed = parseFloat(v);
+                if (!isNaN(parsed)) onChange({ ...value, rThreshold: parsed, cooldownHours: value?.cooldownHours ?? 2 });
+              }
+            }}
             className="w-full bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-bold text-white placeholder:text-gray-600 outline-none focus:border-primary/50"
           />
           <span className="text-[8px] text-gray-500">R threshold</span>
@@ -332,12 +343,21 @@ export function BigLossCooldownConfig({ value, onChange }: BigLossCooldownConfig
             type="number"
             placeholder="Cooldown"
             value={value?.cooldownHours ?? ''}
-            onChange={(e) => { const v = parseInt(e.target.value); if (!isNaN(v)) onChange({ ...value, rThreshold: value?.rThreshold ?? 2, cooldownHours: v }); }}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === '') {
+                onChange({ rThreshold: value?.rThreshold ?? 2, cooldownHours: undefined as unknown as number });
+              } else {
+                const parsed = parseInt(v, 10);
+                if (!isNaN(parsed)) onChange({ ...value, rThreshold: value?.rThreshold ?? 2, cooldownHours: parsed });
+              }
+            }}
             className="w-full bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-bold text-white placeholder:text-gray-600 outline-none focus:border-primary/50"
           />
           <span className="text-[8px] text-gray-500">Hours cooldown</span>
         </div>
       </div>
+      <p className="text-[8px] text-gray-500">Skip trading for X hours after a loss larger than Y R.</p>
     </div>
   )
 }

@@ -168,9 +168,10 @@ interface AdvancedFilterPopoverProps {
   filters: WhatIfFilters;
   onChange: (filters: WhatIfFilters) => void;
   onClose: () => void;
+  currency?: string;
 }
 
-function AdvancedFilterPopover({ type, filters, onChange, onClose }: AdvancedFilterPopoverProps) {
+function AdvancedFilterPopover({ type, filters, onChange, onClose, currency = 'USD' }: AdvancedFilterPopoverProps) {
   const renderConfig = () => {
     switch (type) {
       case 'duration':
@@ -195,7 +196,8 @@ function AdvancedFilterPopover({ type, filters, onChange, onClose }: AdvancedFil
           <LossLimitConfig
             value={filters.psychology?.dailyLossLimit}
             onChange={(v) => onChange({ ...filters, psychology: { ...filters.psychology, dailyLossLimit: v } })}
-            label="Daily Loss Limit ($)"
+            label="Daily Loss Limit"
+            currency={currency}
           />
         );
       case 'weeklyLoss':
@@ -203,7 +205,8 @@ function AdvancedFilterPopover({ type, filters, onChange, onClose }: AdvancedFil
           <LossLimitConfig
             value={filters.psychology?.weeklyLossLimit}
             onChange={(v) => onChange({ ...filters, psychology: { ...filters.psychology, weeklyLossLimit: v } })}
-            label="Weekly Loss Limit ($)"
+            label="Weekly Loss Limit"
+            currency={currency}
           />
         );
       case 'streakBreak':
@@ -335,8 +338,16 @@ export function WhatIfSimulator() {
         return count;
     }, [filters]);
     
+    // Currency symbol helper
+    const getCurrencySymbol = () => {
+        if (displayCurrency === 'EUR') return '€';
+        if (displayCurrency === 'GBP') return '£';
+        return '$';
+    };
+    
     // Helper to get display value for each filter type
     const getFilterDisplayValue = (id: string): string | null => {
+        const symbol = getCurrencySymbol();
         switch (id) {
             case 'duration':
                 const min = filters.time?.minDurationHours;
@@ -352,10 +363,10 @@ export function WhatIfSimulator() {
                 if (sessions?.length) return sessions.map(s => s.replace('_', ' ')).join(', ');
                 return null;
             case 'dailyLoss':
-                if (filters.psychology?.dailyLossLimit !== undefined) return `$${filters.psychology.dailyLossLimit}`;
+                if (filters.psychology?.dailyLossLimit !== undefined) return `${symbol}${filters.psychology.dailyLossLimit}`;
                 return null;
             case 'weeklyLoss':
-                if (filters.psychology?.weeklyLossLimit !== undefined) return `$${filters.psychology.weeklyLossLimit}`;
+                if (filters.psychology?.weeklyLossLimit !== undefined) return `${symbol}${filters.psychology.weeklyLossLimit}`;
                 return null;
             case 'streakBreak':
                 if (filters.psychology?.stopAfterLosses !== undefined) return `${filters.psychology.stopAfterLosses} loss`;
@@ -575,6 +586,7 @@ export function WhatIfSimulator() {
                                                             filters={filters}
                                                             onChange={setFilters}
                                                             onClose={() => setAdvancedPopover(null)}
+                                                            currency={displayCurrency}
                                                         />
                                                     </motion.div>
                                                 )}
@@ -675,13 +687,13 @@ export function WhatIfSimulator() {
                     {/* Psychology filters */}
                     {filters.psychology?.dailyLossLimit !== undefined && (
                         <FilterChip
-                            label={`Daily Limit: $${filters.psychology.dailyLossLimit}`}
+                            label={`Daily Limit: ${getCurrencySymbol()}${filters.psychology.dailyLossLimit}`}
                             onRemove={() => setFilters({ ...filters, psychology: { ...filters.psychology, dailyLossLimit: undefined } })}
                         />
                     )}
                     {filters.psychology?.weeklyLossLimit !== undefined && (
                         <FilterChip
-                            label={`Weekly Limit: $${filters.psychology.weeklyLossLimit}`}
+                            label={`Weekly Limit: ${getCurrencySymbol()}${filters.psychology.weeklyLossLimit}`}
                             onRemove={() => setFilters({ ...filters, psychology: { ...filters.psychology, weeklyLossLimit: undefined } })}
                         />
                     )}
