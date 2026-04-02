@@ -103,7 +103,7 @@ function ComparisonSummary({ result }: { result: WhatIfResult }) {
     const { actual, simulated, difference } = result;
     
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 relative z-30">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <MetricCard 
                     label="Total Trades" 
@@ -364,9 +364,9 @@ export function WhatIfSimulator() {
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden"
+                        className="overflow-visible"
                     >
-                        <div className="p-4 rounded-lg bg-white/[0.02] border border-white/[0.05] mb-4 space-y-4">
+                        <div className="p-4 rounded-lg bg-white/[0.02] border border-white/[0.05] mb-4 space-y-4 relative z-40">
                             {/* Basic Filters Section */}
                             <div className="pb-4 border-b border-white/5">
                                 <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-3">
