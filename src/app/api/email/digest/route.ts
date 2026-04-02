@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     const result = await sendWeeklyDigestEmail({
       ...digestData,
       email: alertConfig.email,
-      dashboardUrl: process.env.NEXTAUTH_URL || 'https://prism.we-share.nl',
+      dashboardUrl: process.env.NEXTAUTH_URL || 'http://localhost:3000',
     });
 
     return NextResponse.json(result);

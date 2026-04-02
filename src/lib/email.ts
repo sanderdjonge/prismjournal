@@ -347,7 +347,7 @@ export async function sendWeeklyDigestEmail(data: WeeklyDigestData): Promise<Ema
 
   try {
     const { data: result, error } = await resend.emails.send({
-      from: 'PrismJournal <noreply@we-share.nl>',
+      from: process.env.EMAIL_FROM || 'PrismJournal <noreply@example.com>',
       to: email,
       subject: `Weekly Digest: ${weekStartStr} – ${weekEndStr}`,
       html,
@@ -374,7 +374,7 @@ export async function sendTestEmail(toEmail: string): Promise<EmailResult> {
 
   try {
     const { data: result, error } = await resend.emails.send({
-      from: 'PrismJournal <noreply@we-share.nl>',
+      from: process.env.EMAIL_FROM || 'PrismJournal <noreply@example.com>',
       to: toEmail,
       subject: 'PrismJournal - Email Configuration Test',
       html: `
@@ -411,7 +411,7 @@ export async function sendMddAlertEmail(
 
   try {
     const { data: result, error } = await resend.emails.send({
-      from: 'PrismJournal <noreply@we-share.nl>',
+      from: process.env.EMAIL_FROM || 'PrismJournal <noreply@example.com>',
       to: email,
       subject: `⚠️ Max Drawdown Alert: ${currentDrawdown.toFixed(1)}%`,
       html: `
@@ -458,7 +458,7 @@ export async function sendBroadcastEmail(
 
   try {
     const { data: result, error } = await resend.emails.send({
-      from: process.env.EMAIL_FROM || 'PrismJournal <noreply@we-share.nl>',
+      from: process.env.EMAIL_FROM || 'PrismJournal <noreply@example.com>',
       to: email,
       subject: `PrismJournal: ${title}`,
       html: `
@@ -506,7 +506,7 @@ export async function sendPasswordResetEmail(
 
   try {
     const { data: result, error } = await resend.emails.send({
-      from: process.env.EMAIL_FROM || 'PrismJournal <noreply@we-share.nl>',
+      from: process.env.EMAIL_FROM || 'PrismJournal <noreply@example.com>',
       to: email,
       subject: 'Reset Your PrismJournal Password',
       html: `
