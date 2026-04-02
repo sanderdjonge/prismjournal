@@ -493,72 +493,190 @@ function PropFirmAccountContent() {
                             )}
                         </div>
 
-                        {/* Phase Timeline */}
-                        <div className="glass-card p-6 border-white/5">
-                            <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                                <BarChart3 size={20} className="text-primary" />
-                                Challenge Phases
-                            </h2>
-                            <div className="space-y-4">
-                                {phasesConfig.map((phase, index) => {
-                                    const dbPhase = account.challengePhases.find(p => p.phaseNumber === phase.phaseNumber);
-                                    const isActive = dbPhase?.status === 'IN_PROGRESS';
-                                    const isPassed = dbPhase?.status === 'PASSED';
-                                    const isFailed = dbPhase?.status === 'FAILED';
+                        {/* Challenge Phases & Analytics Side by Side */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {/* Phase Timeline */}
+                            <div className="glass-card p-6 border-white/5">
+                                <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                                    <BarChart3 size={20} className="text-primary" />
+                                    Challenge Phases
+                                </h2>
+                                <div className="space-y-3">
+                                    {phasesConfig.map((phase, index) => {
+                                        const dbPhase = account.challengePhases.find(p => p.phaseNumber === phase.phaseNumber);
+                                        const isActive = dbPhase?.status === 'IN_PROGRESS';
+                                        const isPassed = dbPhase?.status === 'PASSED';
+                                        const isFailed = dbPhase?.status === 'FAILED';
 
-                                    return (
-                                        <div
-                                            key={phase.phaseNumber}
-                                            className={cn(
-                                                "p-4 rounded-xl border transition-all",
-                                                isActive && "border-primary/50 bg-primary/5",
-                                                isPassed && "border-profit/30 bg-profit/5",
-                                                isFailed && "border-loss/30 bg-loss/5",
-                                                !isActive && !isPassed && !isFailed && "border-white/5 bg-black/20"
-                                            )}
-                                        >
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-3">
-                                                    <div className={cn(
-                                                        "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold",
-                                                        isActive && "bg-primary text-white",
-                                                        isPassed && "bg-profit text-white",
-                                                        isFailed && "bg-loss text-white",
-                                                        !isActive && !isPassed && !isFailed && "bg-gray-700 text-gray-400"
-                                                    )}>
-                                                        {phase.phaseNumber}
+                                        return (
+                                            <div
+                                                key={phase.phaseNumber}
+                                                className={cn(
+                                                    "p-3 rounded-xl border transition-all",
+                                                    isActive && "border-primary/50 bg-primary/5",
+                                                    isPassed && "border-profit/30 bg-profit/5",
+                                                    isFailed && "border-loss/30 bg-loss/5",
+                                                    !isActive && !isPassed && !isFailed && "border-white/5 bg-black/20"
+                                                )}
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className={cn(
+                                                            "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold",
+                                                            isActive && "bg-primary text-white",
+                                                            isPassed && "bg-profit text-white",
+                                                            isFailed && "bg-loss text-white",
+                                                            !isActive && !isPassed && !isFailed && "bg-gray-700 text-gray-400"
+                                                        )}>
+                                                            {phase.phaseNumber}
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-medium text-white text-sm">{phase.phaseName}</p>
+                                                            <p className="text-xs text-gray-400">
+                                                                {phase.profitTarget}% / {phase.maxDrawdown}%
+                                                            </p>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <p className="font-bold text-white">{phase.phaseName}</p>
-                                                        <p className="text-xs text-gray-400">
-                                                            Target: {phase.profitTarget}% • DD: {phase.maxDrawdown}%
-                                                        </p>
+                                                    <div className="flex items-center gap-1">
+                                                        {isPassed && (
+                                                            <span className="px-2 py-0.5 rounded text-xs font-bold bg-profit/20 text-profit">
+                                                                Passed
+                                                            </span>
+                                                        )}
+                                                        {isFailed && (
+                                                            <span className="px-2 py-0.5 rounded text-xs font-bold bg-loss/20 text-loss">
+                                                                Failed
+                                                            </span>
+                                                        )}
+                                                        {isActive && (
+                                                            <span className="px-2 py-0.5 rounded text-xs font-bold bg-blue-500/20 text-blue-400">
+                                                                Active
+                                                            </span>
+                                                        )}
                                                     </div>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    {isPassed && (
-                                                        <span className="px-2 py-1 rounded text-xs font-bold bg-profit/20 text-profit">
-                                                            Passed
-                                                        </span>
-                                                    )}
-                                                    {isFailed && (
-                                                        <span className="px-2 py-1 rounded text-xs font-bold bg-loss/20 text-loss">
-                                                            Failed
-                                                        </span>
-                                                    )}
-                                                    {isActive && (
-                                                        <span className="px-2 py-1 rounded text-xs font-bold bg-blue-500/20 text-blue-400">
-                                                            In Progress
-                                                        </span>
-                                                    )}
-                                                    {!isActive && !isPassed && !isFailed && dbPhase && (
-                                                        <ChevronRight size={16} className="text-gray-500" />
-                                                    )}
                                                 </div>
                                             </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Challenge Analytics */}
+                            <div className="glass-card p-6 border-white/5">
+                                <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                                    <PieChart size={20} className="text-primary" />
+                                    Challenge Analytics
+                                </h2>
+                                
+                                {analyticsLoading ? (
+                                    <div className="flex items-center justify-center py-8">
+                                        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                                    </div>
+                                ) : !analytics || analytics.symbolData.length === 0 ? (
+                                    <div className="text-center py-8 text-gray-400">
+                                        <PieChart size={32} className="mx-auto mb-2 opacity-50" />
+                                        <p className="text-sm">No trade data available</p>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Analytics will appear after trades are synced
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {/* Key Stats Row */}
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="text-center p-2 rounded-lg bg-black/20 border border-white/5">
+                                                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Profit Factor</p>
+                                                <p className={cn(
+                                                    "text-base font-bold",
+                                                    analytics.profitFactor >= 1.5 ? "text-profit" :
+                                                    analytics.profitFactor >= 1 ? "text-yellow-400" : "text-loss"
+                                                )}>
+                                                    {analytics.profitFactor.toFixed(2)}
+                                                </p>
+                                            </div>
+                                            <div className="text-center p-2 rounded-lg bg-black/20 border border-white/5">
+                                                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Expectancy</p>
+                                                <p className={cn(
+                                                    "text-base font-bold",
+                                                    analytics.expectancy >= 0 ? "text-profit" : "text-loss"
+                                                )}>
+                                                    {analytics.expectancy >= 0 ? '+' : ''}{formatCurrency(analytics.expectancy, account?.currency)}
+                                                </p>
+                                            </div>
+                                            <div className="text-center p-2 rounded-lg bg-black/20 border border-white/5">
+                                                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Avg R:R</p>
+                                                <p className={cn(
+                                                    "text-base font-bold",
+                                                    analytics.avgRR >= 1 ? "text-profit" :
+                                                    analytics.avgRR >= 0.5 ? "text-yellow-400" : "text-loss"
+                                                )}>
+                                                    {analytics.avgRR.toFixed(2)}
+                                                </p>
+                                            </div>
+                                            <div className="text-center p-2 rounded-lg bg-black/20 border border-white/5">
+                                                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Avg Loss</p>
+                                                <p className="text-base font-bold text-orange-400">
+                                                    {formatCurrency(analytics.meanDrawdown, account?.currency)}
+                                                </p>
+                                            </div>
                                         </div>
-                                    );
-                                })}
+
+                                        {/* Symbol Performance */}
+                                        <div>
+                                            <h3 className="text-xs font-bold text-gray-300 mb-2">Symbol Performance</h3>
+                                            <div className="space-y-1 max-h-32 overflow-y-auto">
+                                                {analytics.symbolData.slice(0, 6).map((symbol) => (
+                                                    <div
+                                                        key={symbol.symbol}
+                                                        className="flex items-center justify-between p-1.5 rounded bg-black/20 border border-white/5"
+                                                    >
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-xs font-bold text-white">{symbol.symbol}</span>
+                                                            <span className={cn(
+                                                                "text-[10px] px-1.5 py-0.5 rounded",
+                                                                symbol.winRate >= 60 ? "bg-profit/20 text-profit" :
+                                                                symbol.winRate >= 40 ? "bg-yellow-500/20 text-yellow-400" :
+                                                                "bg-loss/20 text-loss"
+                                                            )}>
+                                                                {symbol.winRate}%
+                                                            </span>
+                                                        </div>
+                                                        <span className={cn(
+                                                            "text-xs font-bold",
+                                                            symbol.profit >= 0 ? "text-profit" : "text-loss"
+                                                        )}>
+                                                            {symbol.profit >= 0 ? '+' : ''}{formatCurrency(symbol.profit, account?.currency)}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Session Distribution */}
+                                        <div>
+                                            <h3 className="text-xs font-bold text-gray-300 mb-2">Trading Hours</h3>
+                                            {(() => {
+                                                const maxCount = Math.max(...analytics.sessionData.map(s => s.count), 1);
+                                                return (
+                                                    <div className="flex items-end gap-px h-8 mb-1">
+                                                        {analytics.sessionData.map((s) => (
+                                                            <div
+                                                                key={s.hour}
+                                                                className="flex-1 rounded-t transition-all group/bar relative cursor-default"
+                                                                style={{ height: s.count > 0 ? `${Math.max((s.count / maxCount) * 100, 4)}%` : '4px' }}
+                                                            >
+                                                                <div className={`w-full h-full rounded-t ${s.count > 0 ? 'bg-primary/50 group-hover/bar:bg-primary/80' : 'bg-white/5'} transition-colors`} />
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                );
+                                            })()}
+                                            <div className="flex justify-between text-[8px] font-black text-gray-700 uppercase tracking-widest">
+                                                <span>00</span><span>06</span><span>12</span><span>18</span><span>23</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -615,21 +733,20 @@ function PropFirmAccountContent() {
                             })()}
                         </div>
 
-                        {/* Challenge Calendar */}
+                        {/* Challenge Calendar - Compact */}
                         <div className="glass-card p-6 border-white/5">
                             <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                                 <Calendar size={20} className="text-primary" />
                                 Challenge Calendar
                             </h2>
                             {snapshotsLoading ? (
-                                <div className="flex justify-center py-8">
+                                <div className="flex justify-center py-4">
                                     <Loader2 size={20} className="animate-spin text-primary" />
                                 </div>
                             ) : snapshots.length === 0 ? (
-                                <div className="text-center py-8 text-gray-400">
-                                    <Calendar size={32} className="mx-auto mb-2 opacity-50" />
+                                <div className="text-center py-4 text-gray-400">
+                                    <Calendar size={24} className="mx-auto mb-2 opacity-50" />
                                     <p className="text-sm">No daily data yet</p>
-                                    <p className="text-xs text-gray-500 mt-1">Calendar will populate with daily snapshots</p>
                                 </div>
                             ) : (
                                 <ChallengeCalendar
@@ -640,138 +757,14 @@ function PropFirmAccountContent() {
                                         dailyLossUsedPercent: s.dailyPnl < 0
                                             ? (Math.abs(s.dailyPnl) / (accountSize * dailyLossLimit / 100)) * 100
                                             : 0,
-                                        isLimitBreached: false, // Would need additional data from snapshot
-                                        tradeCount: 0, // Would need additional data
+                                        isLimitBreached: false,
+                                        tradeCount: 0,
                                         isApproachingLimit: s.dailyPnl < 0 &&
                                             (Math.abs(s.dailyPnl) / (accountSize * dailyLossLimit / 100)) * 100 >= 80,
                                     }))}
                                     dailyLossLimit={dailyLossLimit}
                                     accountSize={accountSize}
                                 />
-                            )}
-                        </div>
-
-                        {/* Challenge Analytics */}
-                        <div className="glass-card p-6 border-white/5">
-                            <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                                <PieChart size={20} className="text-primary" />
-                                Challenge Analytics
-                            </h2>
-                            
-                            {analyticsLoading ? (
-                                <div className="flex items-center justify-center py-8">
-                                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                                </div>
-                            ) : !analytics || analytics.symbolData.length === 0 ? (
-                                <div className="text-center py-8 text-gray-400">
-                                    <PieChart size={32} className="mx-auto mb-2 opacity-50" />
-                                    <p className="text-sm">No trade data available</p>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                        Analytics will appear after trades are synced
-                                    </p>
-                                </div>
-                            ) : (
-                                <div className="space-y-6">
-                                    {/* Key Stats Row */}
-                                    <div className="grid grid-cols-4 gap-4">
-                                        <div className="text-center p-3 rounded-lg bg-black/20 border border-white/5">
-                                            <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Profit Factor</p>
-                                            <p className={cn(
-                                                "text-lg font-bold",
-                                                analytics.profitFactor >= 1.5 ? "text-profit" :
-                                                analytics.profitFactor >= 1 ? "text-yellow-400" : "text-loss"
-                                            )}>
-                                                {analytics.profitFactor.toFixed(2)}
-                                            </p>
-                                        </div>
-                                        <div className="text-center p-3 rounded-lg bg-black/20 border border-white/5">
-                                            <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Expectancy</p>
-                                            <p className={cn(
-                                                "text-lg font-bold",
-                                                analytics.expectancy >= 0 ? "text-profit" : "text-loss"
-                                            )}>
-                                                {analytics.expectancy >= 0 ? '+' : ''}{formatCurrency(analytics.expectancy, account?.currency)}
-                                            </p>
-                                        </div>
-                                        <div className="text-center p-3 rounded-lg bg-black/20 border border-white/5">
-                                            <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Avg R:R</p>
-                                            <p className={cn(
-                                                "text-lg font-bold",
-                                                analytics.avgRR >= 1 ? "text-profit" :
-                                                analytics.avgRR >= 0.5 ? "text-yellow-400" : "text-loss"
-                                            )}>
-                                                {analytics.avgRR.toFixed(2)}
-                                            </p>
-                                        </div>
-                                        <div className="text-center p-3 rounded-lg bg-black/20 border border-white/5">
-                                            <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Avg Loss</p>
-                                            <p className="text-lg font-bold text-orange-400">
-                                                {formatCurrency(analytics.meanDrawdown, account?.currency)}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    {/* Symbol Performance */}
-                                    <div>
-                                        <h3 className="text-sm font-bold text-gray-300 mb-3">Symbol Performance</h3>
-                                        <div className="space-y-2 max-h-48 overflow-y-auto">
-                                            {analytics.symbolData.slice(0, 8).map((symbol) => (
-                                                <div
-                                                    key={symbol.symbol}
-                                                    className="flex items-center justify-between p-2 rounded-lg bg-black/20 border border-white/5"
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <span className="text-sm font-bold text-white">{symbol.symbol}</span>
-                                                        <span className={cn(
-                                                            "text-xs px-2 py-0.5 rounded",
-                                                            symbol.winRate >= 60 ? "bg-profit/20 text-profit" :
-                                                            symbol.winRate >= 40 ? "bg-yellow-500/20 text-yellow-400" :
-                                                            "bg-loss/20 text-loss"
-                                                        )}>
-                                                            {symbol.winRate}% WR
-                                                        </span>
-                                                    </div>
-                                                    <span className={cn(
-                                                        "text-sm font-bold",
-                                                        symbol.profit >= 0 ? "text-profit" : "text-loss"
-                                                    )}>
-                                                        {symbol.profit >= 0 ? '+' : ''}{formatCurrency(symbol.profit, account?.currency)}
-                                                    </span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Session Distribution */}
-                                    <div>
-                                        <h3 className="text-sm font-bold text-gray-300 mb-3">Trading Hours</h3>
-                                        {(() => {
-                                            const maxCount = Math.max(...analytics.sessionData.map(s => s.count), 1);
-                                            return (
-                                                <div className="flex items-end gap-px h-12 mb-1">
-                                                    {analytics.sessionData.map((s) => (
-                                                        <div
-                                                            key={s.hour}
-                                                            className="flex-1 rounded-t transition-all group/bar relative cursor-default"
-                                                            style={{ height: s.count > 0 ? `${Math.max((s.count / maxCount) * 100, 4)}%` : '4px' }}
-                                                        >
-                                                            <div className={`w-full h-full rounded-t ${s.count > 0 ? 'bg-primary/50 group-hover/bar:bg-primary/80' : 'bg-white/5'} transition-colors`} />
-                                                            {s.count > 0 && (
-                                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 rounded bg-black/90 border border-white/10 text-[9px] font-black text-white whitespace-nowrap opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none z-10">
-                                                                    {s.hour.toString().padStart(2, '0')}:00
-                                                                    <span className="block text-primary text-center">{s.count} trade{s.count !== 1 ? 's' : ''}</span>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            );
-                                        })()}
-                                        <div className="flex justify-between text-[8px] font-black text-gray-700 uppercase tracking-widest mt-1">
-                                            <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span>
-                                        </div>
-                                    </div>
-                                </div>
                             )}
                         </div>
                     </div>
