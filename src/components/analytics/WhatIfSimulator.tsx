@@ -393,6 +393,7 @@ export function WhatIfSimulator() {
     };
     
     // Available advanced filter options
+    // Note: Volatility and News Events removed - require external API integration (see ROADMAP.md)
     const advancedFilterOptions = [
         { id: 'duration', label: 'Duration', category: 'time' as const },
         { id: 'marketSession', label: 'Market Session', category: 'time' as const },
@@ -402,8 +403,9 @@ export function WhatIfSimulator() {
         { id: 'bigLossCooldown', label: 'Big Loss Cooldown', category: 'psychology' as const },
         { id: 'positionSizing', label: 'Position Sizing', category: 'risk' as const },
         { id: 'trailingStop', label: 'Trailing Stop', category: 'risk' as const },
-        { id: 'volatility', label: 'Volatility Filter', category: 'market' as const },
-        { id: 'newsEvent', label: 'News Events', category: 'market' as const },
+        // TODO: Re-enable when external API integration complete
+        // { id: 'volatility', label: 'Volatility Filter', category: 'market' as const },
+        // { id: 'newsEvent', label: 'News Events', category: 'market' as const },
     ];
     
     const categoryColors = {
