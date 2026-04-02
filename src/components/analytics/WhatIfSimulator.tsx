@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     FlaskConical, X, ChevronDown, TrendingUp, TrendingDown, 
@@ -262,8 +262,21 @@ export function WhatIfSimulator() {
     const [filters, setFilters] = useState<WhatIfFilters>({});
     const [activeFilters, setActiveFilters] = useState<WhatIfFilters | null>(null);
     const [advancedPopover, setAdvancedPopover] = useState<string | null>(null);
+    const popoverRef = useRef<HTMLDivElement>(null);
     
     const { data: result, isLoading, refetch } = useWhatIf(activeFilters);
+    
+    // Close popover when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (advancedPopover && popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
+                setAdvancedPopover(null);
+            }
+        };
+        
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [advancedPopover]);
     
     const handleRunSimulation = () => {
         setActiveFilters({ ...filters });
@@ -469,7 +482,7 @@ export function WhatIfSimulator() {
                             </div>
                             
                             {/* Advanced Filters Section */}
-                            <div>
+                            <div ref={popoverRef}>
                                 <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-3">
                                     Advanced Filters
                                 </h4>

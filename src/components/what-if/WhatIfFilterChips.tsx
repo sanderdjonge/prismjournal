@@ -162,18 +162,26 @@ export function DurationFilterConfig({ value, onChange }: DurationFilterConfigPr
         Duration Filter (hours)
       </label>
       <div className="flex gap-2">
-        <ValidatedNumberInput
+        <input
+          type="number"
           value={value?.minHours ?? ''}
-          onChange={(minHours) => onChange({ ...value, minHours })}
+          onChange={(e) => {
+            const v = e.target.value;
+            onChange({ ...value, minHours: v === '' ? undefined : parseFloat(v) || undefined });
+          }}
           min={0}
           max={168}
           step="0.5"
           placeholder="Min"
           className="w-full bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-bold text-white placeholder:text-gray-600 outline-none focus:border-primary/50"
         />
-        <ValidatedNumberInput
+        <input
+          type="number"
           value={value?.maxHours ?? ''}
-          onChange={(maxHours) => onChange({ ...value, maxHours })}
+          onChange={(e) => {
+            const v = e.target.value;
+            onChange({ ...value, maxHours: v === '' ? undefined : parseFloat(v) || undefined });
+          }}
           min={0}
           max={168}
           step="0.5"
@@ -181,6 +189,7 @@ export function DurationFilterConfig({ value, onChange }: DurationFilterConfigPr
           className="w-full bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-bold text-white placeholder:text-gray-600 outline-none focus:border-primary/50"
         />
       </div>
+      <p className="text-[8px] text-gray-500">Exclude trades shorter than Min or longer than Max hours.</p>
     </div>
   )
 }
@@ -244,11 +253,20 @@ export function LossLimitConfig({ value, onChange, label }: LossLimitConfigProps
         <input
           type="number"
           value={value ?? ''}
-          onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) onChange(v); }}
+          onChange={(e) => {
+            const v = e.target.value;
+            if (v === '') {
+              onChange(undefined as unknown as number);
+            } else {
+              const parsed = parseFloat(v);
+              if (!isNaN(parsed)) onChange(parsed);
+            }
+          }}
           className="w-full bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-bold text-white placeholder:text-gray-600 outline-none focus:border-primary/50"
           placeholder="Enter limit..."
         />
       </div>
+      <p className="text-[8px] text-gray-500">Stop trading for the day/week after losing this amount.</p>
     </div>
   )
 }
@@ -269,11 +287,19 @@ export function StreakBreakConfig({ value, onChange }: StreakBreakConfigProps) {
         min={1}
         max={10}
         value={value ?? ''}
-        onChange={(e) => { const v = parseInt(e.target.value); if (!isNaN(v)) onChange(v); }}
+        onChange={(e) => {
+          const v = e.target.value;
+          if (v === '') {
+            onChange(undefined as unknown as number);
+          } else {
+            const parsed = parseInt(v, 10);
+            if (!isNaN(parsed)) onChange(parsed);
+          }
+        }}
         className="w-full bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-bold text-white placeholder:text-gray-600 outline-none focus:border-primary/50"
         placeholder="Number of losses..."
       />
-      <p className="text-[8px] text-gray-500">Trading will stop after this many consecutive losses</p>
+      <p className="text-[8px] text-gray-500">Hard stop trading after X consecutive losing trades.</p>
     </div>
   )
 }
@@ -333,11 +359,19 @@ export function PositionSizingConfig({ value, onChange }: PositionSizingConfigPr
         min="0.1"
         max="10"
         value={value ?? ''}
-        onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) onChange(v); }}
+        onChange={(e) => {
+          const v = e.target.value;
+          if (v === '') {
+            onChange(undefined as unknown as number);
+          } else {
+            const parsed = parseFloat(v);
+            if (!isNaN(parsed)) onChange(parsed);
+          }
+        }}
         className="w-full bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-bold text-white placeholder:text-gray-600 outline-none focus:border-primary/50"
         placeholder="1.0"
       />
-      <p className="text-[8px] text-gray-500">Base risk is 1%. Enter new risk % to simulate.</p>
+      <p className="text-[8px] text-gray-500">Scale P&L by adjusting risk %. Higher % = larger gains/losses.</p>
     </div>
   )
 }
