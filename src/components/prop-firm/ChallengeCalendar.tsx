@@ -109,11 +109,13 @@ export function ChallengeCalendar({
                 </button>
                 <div className="text-center">
                     <h3 className="text-xs font-bold text-white">{monthStart.format('MMMM YYYY')}</h3>
-                    <div className="flex items-center justify-center gap-2 text-[10px]">
-                        <span className="text-green-400">{monthStats.winDays}W</span>
-                        <span className="text-red-400">{monthStats.lossDays}L</span>
+                    <div className="flex items-center justify-center gap-2 text-[10px] mt-0.5">
+                        <span className="text-green-400">{monthStats.winDays} win {monthStats.winDays === 1 ? 'day' : 'days'}</span>
+                        <span className="text-gray-600">·</span>
+                        <span className="text-red-400">{monthStats.lossDays} loss {monthStats.lossDays === 1 ? 'day' : 'days'}</span>
+                        <span className="text-gray-600">·</span>
                         <span className={monthStats.pnl >= 0 ? 'text-green-400' : 'text-red-400'}>
-                            ${monthStats.pnl.toFixed(0)}
+                            {monthStats.pnl >= 0 ? '+' : ''}${monthStats.pnl.toFixed(0)} profit
                         </span>
                     </div>
                 </div>
@@ -127,8 +129,8 @@ export function ChallengeCalendar({
 
             {/* Day Headers */}
             <div className="grid grid-cols-7 gap-0.5">
-                {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
-                    <div key={i} className="text-center text-xs text-gray-500 font-medium">
+                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
+                    <div key={day} className="text-center text-[10px] text-gray-500 font-medium py-0.5">
                         {day}
                     </div>
                 ))}
@@ -138,7 +140,7 @@ export function ChallengeCalendar({
             <div className="grid grid-cols-7 gap-0.5">
                 {calendarDays.map((cell, index) => {
                     if (cell.day === null) {
-                        return <div key={`empty-${index}`} className="aspect-square" />;
+                        return <div key={`empty-${index}`} className="h-9" />;
                     }
 
                     const isToday = cell.date === dayjs().format('YYYY-MM-DD');
@@ -148,20 +150,20 @@ export function ChallengeCalendar({
                     return (
                         <button
                             key={cell.date}
-                            onClick={() => cell.data && setSelectedDay(cell.data)}
+                            onClick={() => setSelectedDay(cell.data ?? { date: cell.date, pnl: 0, pnlPercent: 0, dailyLossUsedPercent: 0, isLimitBreached: false, tradeCount: 0 })}
                             className={`
-                                aspect-square flex flex-col items-center justify-center rounded border transition-all
+                                h-9 flex flex-col items-center justify-center rounded border transition-all
                                 ${style.bg} ${style.border} ${style.text}
                                 ${isToday ? 'ring-1 ring-indigo-500' : ''}
                                 ${isSelected ? 'ring-1 ring-white' : ''}
                                 hover:opacity-80 cursor-pointer
                             `}
-                            title={cell.data ? `$${cell.data.pnl.toFixed(2)} (${cell.data.pnlPercent.toFixed(1)}%)` : undefined}
+                            title={cell.data ? `$${cell.data.pnl.toFixed(2)} (${cell.data.pnlPercent.toFixed(1)}%)` : 'No trades'}
                         >
                             <span className="text-xs font-medium leading-none">{cell.day}</span>
                             {cell.data && (
                                 <span className="text-[10px] font-bold leading-none mt-0.5">
-                                    {cell.data.pnl >= 0 ? '+' : ''}{cell.data.pnlPercent.toFixed(0)}%
+                                    {cell.data.pnl >= 0 ? '+' : ''}{cell.data.pnlPercent.toFixed(1)}%
                                 </span>
                             )}
                         </button>
@@ -196,32 +198,44 @@ export function ChallengeCalendar({
                         <h4 className="text-xs font-bold text-white">
                             {dayjs(selectedDay.date).format('dddd, MMM D')}
                         </h4>
-                        <button 
+                        <button
                             onClick={() => setSelectedDay(null)}
                             className="text-gray-500 hover:text-white text-xs"
                         >
                             ✕
                         </button>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div>
-                            <span className="text-gray-500">P&L:</span>
-                            <span className={`ml-1 font-bold ${selectedDay.pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                ${selectedDay.pnl.toFixed(2)}
-                            </span>
-                        </div>
-                        <div>
-                            <span className="text-gray-500">Daily Used:</span>
-                            <span className={`ml-1 font-bold ${selectedDay.dailyLossUsedPercent > 80 ? 'text-yellow-400' : 'text-white'}`}>
-                                {selectedDay.dailyLossUsedPercent.toFixed(0)}%
-                            </span>
-                        </div>
-                    </div>
-                    {selectedDay.isApproachingLimit && !selectedDay.isLimitBreached && (
-                        <div className="flex items-center gap-1 text-yellow-400 text-xs mt-1">
-                            <AlertTriangle className="w-3 h-3" />
-                            <span>Approaching daily loss limit</span>
-                        </div>
+                    {selectedDay.tradeCount === 0 && selectedDay.pnl === 0 && !dailyData.find(d => d.date === selectedDay.date) ? (
+                        <p className="text-xs text-gray-500">No trades recorded on this day.</p>
+                    ) : (
+                        <>
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                                <div>
+                                    <span className="text-gray-500">Daily P&L:</span>
+                                    <span className={`ml-1 font-bold ${selectedDay.pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                        {selectedDay.pnl >= 0 ? '+' : ''}${selectedDay.pnl.toFixed(2)}
+                                    </span>
+                                </div>
+                                <div>
+                                    <span className="text-gray-500">Daily loss used:</span>
+                                    <span className={`ml-1 font-bold ${selectedDay.dailyLossUsedPercent > 80 ? 'text-yellow-400' : 'text-white'}`}>
+                                        {selectedDay.dailyLossUsedPercent.toFixed(0)}% of limit
+                                    </span>
+                                </div>
+                            </div>
+                            {selectedDay.isApproachingLimit && !selectedDay.isLimitBreached && (
+                                <div className="flex items-center gap-1 text-yellow-400 text-xs mt-1">
+                                    <AlertTriangle className="w-3 h-3" />
+                                    <span>Approaching daily loss limit</span>
+                                </div>
+                            )}
+                            {selectedDay.isLimitBreached && (
+                                <div className="flex items-center gap-1 text-red-400 text-xs mt-1">
+                                    <AlertTriangle className="w-3 h-3" />
+                                    <span>Daily loss limit breached</span>
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
             )}

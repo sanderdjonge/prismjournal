@@ -14,13 +14,35 @@ interface CreateNotificationParams {
   sendEmail?: boolean;
   email?: string | null;
   emailData?: Record<string, unknown>;
+  skipInAppCheck?: boolean; // If true, bypass inAppToast setting check (for system notifications)
 }
 
 /**
  * Create a notification and optionally send via Telegram/Email
+ *
+ * For TRADE_OPEN and TRADE_CLOSE types, checks the user's inAppToast setting
+ * before creating the in-app notification. Other types always create in-app notifications.
  */
 export async function createNotification(params: CreateNotificationParams) {
-  const { userId, type, title, message, sendTelegram, telegramId, sendEmail, email } = params;
+  const { userId, type, title, message, sendTelegram, telegramId, sendEmail, email, skipInAppCheck } = params;
+
+  // Check if in-app notifications are disabled for trade execution toasts
+  if (!skipInAppCheck && (type === 'TRADE_OPEN' || type === 'TRADE_CLOSE')) {
+    const alertConfig = await prisma.alertConfig.findUnique({
+      where: { userId },
+      select: { inAppToast: true },
+    });
+    
+    // If inAppToast is explicitly false, skip creating the in-app notification
+    if (alertConfig && alertConfig.inAppToast === false) {
+      // Still send Telegram if requested (for trade alerts)
+      if (sendTelegram && telegramId) {
+        const telegramMessage = `<b>${title}</b>\n\n${message}`;
+        await sendTelegramMessage(telegramId, telegramMessage);
+      }
+      return null; // No in-app notification created
+    }
+  }
 
   // Store notification in database
   const notification = await prisma.notification.create({

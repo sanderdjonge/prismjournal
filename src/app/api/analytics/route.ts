@@ -4,6 +4,7 @@ import { getAllUserAccounts } from '@/lib/getAccount';
 import { calculateProfitFactor } from '@/lib/analytics';
 import { withAuth } from '@/lib/api/withAuth';
 import { cacheGet, cacheSet } from '@/lib/api/cache';
+import { normaliseBrokerSymbol } from '@/lib/symbol-normaliser';
 import type { Session } from 'next-auth';
 
 export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, unknown>, session: Session & { user: { id: string } }) => {
@@ -62,22 +63,20 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
         });
     }
 
-    // --- Symbol aggregation (case-insensitive) ---
-    const symbolMap = new Map<string, { profit: number; wins: number; total: number; originalSymbol: string }>();
+    // --- Symbol aggregation (normalised: strips .cash/.pro/etc suffixes, uppercase) ---
+    const symbolMap = new Map<string, { profit: number; wins: number; total: number }>();
     for (const t of trades) {
         const pnl = t.pnl ?? 0;
-        const normalizedSymbol = t.symbol.toUpperCase();
-        const existing = symbolMap.get(normalizedSymbol) ?? { profit: 0, wins: 0, total: 0, originalSymbol: t.symbol };
+        const normalizedSymbol = normaliseBrokerSymbol(t.symbol);
+        const existing = symbolMap.get(normalizedSymbol) ?? { profit: 0, wins: 0, total: 0 };
         symbolMap.set(normalizedSymbol, {
             profit: existing.profit + pnl,
             wins: existing.wins + (pnl > 0 ? 1 : 0),
             total: existing.total + 1,
-            // Keep the most recent original symbol presentation
-            originalSymbol: t.symbol,
         });
     }
-    const symbolData = Array.from(symbolMap.entries()).map(([normalizedSymbol, d]) => ({
-        symbol: d.originalSymbol,
+    const symbolData = Array.from(symbolMap.entries()).map(([symbol, d]) => ({
+        symbol,
         profit: Math.round(d.profit),
         winRate: Math.round((d.wins / d.total) * 100),
     })).sort((a, b) => b.profit - a.profit);

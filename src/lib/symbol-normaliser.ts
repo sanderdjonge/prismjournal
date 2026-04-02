@@ -54,6 +54,16 @@ function stripSuffix(symbol: string): string {
     return symbol.replace(/\.(pro|raw|micro|step|ecn|stp|standard|plus|mini|cash|spot|m|c|s)$/i, '');
 }
 
+/**
+ * Normalise a broker symbol for grouping/display purposes.
+ * Strips broker-specific suffixes (.cash, .pro, etc.) and uppercases.
+ * Does NOT remap to Twelve Data or Yahoo Finance symbols.
+ * Use normaliseSymbol() only when talking to external chart APIs.
+ */
+export function normaliseBrokerSymbol(raw: string): string {
+    return stripSuffix(raw).toUpperCase();
+}
+
 export function normaliseSymbol(raw: string): string {
     const base = stripSuffix(raw).toUpperCase();
 

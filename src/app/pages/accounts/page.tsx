@@ -179,24 +179,25 @@ function AccountCard({ account, onClick, onEdit, onArchive }: { account: Account
                 </div>
             </div>
 
-            {account.propFirm && account.accountSize && account.currentBalance && (
-                <div className="mt-4">
-                    <div className="flex justify-between text-[10px] text-gray-500 mb-1">
-                        <span>Drawdown</span>
-                        <span>
-                            {(((account.accountSize - account.currentBalance) / account.accountSize) * 100).toFixed(2)}% / {account.propFirm.maxDrawdown}%
-                        </span>
+            {account.propFirm && account.accountSize && account.currentBalance && (() => {
+                const drawdownPct = Math.max(0, ((account.accountSize - account.currentBalance) / account.accountSize) * 100);
+                const barPct = Math.min(100, (drawdownPct / account.propFirm.maxDrawdown) * 100);
+                const barColor = drawdownPct === 0 ? 'bg-profit' : barPct >= 80 ? 'bg-red-500' : 'bg-orange-500';
+                return (
+                    <div className="mt-4">
+                        <div className="flex justify-between text-[10px] text-gray-500 mb-1">
+                            <span>Drawdown</span>
+                            <span>{drawdownPct.toFixed(2)}% / {account.propFirm.maxDrawdown}%</span>
+                        </div>
+                        <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                            <div
+                                className={`h-full ${barColor} rounded-full transition-all`}
+                                style={{ width: `${barPct}%` }}
+                            />
+                        </div>
                     </div>
-                    <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                        <div
-                            className="h-full bg-orange-500 rounded-full transition-all"
-                            style={{
-                                width: `${Math.min(100, ((account.accountSize - account.currentBalance) / account.accountSize / (account.propFirm.maxDrawdown / 100)) * 100)}%`
-                            }}
-                        />
-                    </div>
-                </div>
-            )}
+                );
+            })()}
 
             <div className="mt-4 pt-3 border-t border-white/5 flex justify-end gap-4">
                 <button

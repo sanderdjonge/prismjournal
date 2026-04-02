@@ -139,7 +139,7 @@ function PropFirmAccountContent() {
     const [showAllViolations, setShowAllViolations] = useState(false);
     const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
     const [analyticsLoading, setAnalyticsLoading] = useState(false);
-    const [snapshots, setSnapshots] = useState<Array<{ snapshotDate: string; dailyPnl: number; currentDrawdown: number }>>([]);
+    const [snapshots, setSnapshots] = useState<Array<{ snapshotDate: string; dailyPnl: number; currentDrawdown: number; dailyLossUsed: number; isDailyLimitBreached: boolean }>>([]);
     const [snapshotsLoading, setSnapshotsLoading] = useState(false);
 
     useEffect(() => {
@@ -751,16 +751,13 @@ function PropFirmAccountContent() {
                             ) : (
                                 <ChallengeCalendar
                                     dailyData={snapshots.map(s => ({
-                                        date: s.snapshotDate,
+                                        date: new Date(s.snapshotDate).toISOString().split('T')[0],
                                         pnl: s.dailyPnl,
                                         pnlPercent: (s.dailyPnl / (accountSize || 10000)) * 100,
-                                        dailyLossUsedPercent: s.dailyPnl < 0
-                                            ? (Math.abs(s.dailyPnl) / (accountSize * dailyLossLimit / 100)) * 100
-                                            : 0,
-                                        isLimitBreached: false,
+                                        dailyLossUsedPercent: s.dailyLossUsed ?? 0,
+                                        isLimitBreached: s.isDailyLimitBreached ?? false,
                                         tradeCount: 0,
-                                        isApproachingLimit: s.dailyPnl < 0 &&
-                                            (Math.abs(s.dailyPnl) / (accountSize * dailyLossLimit / 100)) * 100 >= 80,
+                                        isApproachingLimit: !s.isDailyLimitBreached && (s.dailyLossUsed ?? 0) >= 80,
                                     }))}
                                     dailyLossLimit={dailyLossLimit}
                                     accountSize={accountSize}
