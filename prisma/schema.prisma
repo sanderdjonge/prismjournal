@@ -108,6 +108,10 @@ model TradingAccount {
   scalingPlan      String? // Notes about scaling rules
   lastDailyReset   DateTime? // Last time daily loss was reset
 
+  // Daily Loss Alert Configuration
+  dailyLossAlertThreshold Float? // Alert when daily loss reaches this % of limit (e.g., 80 = alert at 80%)
+  dailyLossAlertSentAt    DateTime? // When the last daily loss alert was sent (to avoid spam)
+
   // Status
   isActive  Boolean @default(true)
   isDefault Boolean @default(false)

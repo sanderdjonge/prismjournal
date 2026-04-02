@@ -4,6 +4,8 @@ import { createNotification } from '@/lib/notifications';
 import { sendTelegramMessage } from '@/lib/telegram';
 import type { SyncTrade } from '@/lib/validations';
 import { captureAutoScreenshots } from './auto-screenshot.service';
+import { autoAdvancePhaseIfNeeded } from '@/lib/prop-firm/challenge-service';
+import { sendDailyLossAlertIfNeeded } from './daily-loss-alert.service';
 
 type ChallengeRule = {
     type: 'MAX_DAILY_LOSS' | 'MAX_TRADES_PER_DAY' | 'MIN_RR' | 'TIME_WINDOW' | 'MAX_DRAWDOWN' | 'WIN_RATE_TARGET';
@@ -538,6 +540,41 @@ export async function upsertSyncTrade(
                 exitTime ?? entryTime,
                 trade.pnl ?? null,
             ).catch(() => {});
+        }
+
+        // Check for prop firm phase auto-advancement on closed trades
+        if (isClosed && accountId) {
+            autoAdvancePhaseIfNeeded(accountId)
+                .then(async (result) => {
+                    if (result.advanced) {
+                        logger.info({ accountId, newPhase: result.newPhase }, '[trade-sync] phase auto-advanced');
+                        // Get alert config for Telegram notification
+                        const alertConfig = await prisma.alertConfig.findUnique({ where: { userId } });
+                        // Send notification about phase advancement
+                        createNotification({
+                            userId,
+                            type: 'SYSTEM',
+                            title: '🎉 Challenge Phase Advanced!',
+                            message: result.message,
+                            sendTelegram: alertConfig?.enableTrades ?? false,
+                            telegramId: alertConfig?.telegramId,
+                        }).catch(() => {});
+                    }
+                })
+                .catch((err) => {
+                    logger.error({ err, accountId }, '[trade-sync] failed to check phase advancement');
+                });
+
+            // Check for daily loss alert on closed trades (prop firm accounts)
+            sendDailyLossAlertIfNeeded(accountId, userId)
+                .then((result) => {
+                    if (result.sent) {
+                        logger.info({ accountId, usagePercent: result.status?.usagePercent }, '[trade-sync] daily loss alert sent');
+                    }
+                })
+                .catch((err) => {
+                    logger.error({ err, accountId }, '[trade-sync] failed to check daily loss alert');
+                });
         }
     }
 }

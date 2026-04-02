@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import prisma from '@/lib/prisma';
 import { sendWeeklyDigestEmail, type WeeklyDigestData } from '@/lib/email';
+import { sendTelegramMessage } from '@/lib/telegram';
 
 /**
  * Cron endpoint to send weekly digest emails to all eligible users
@@ -42,7 +43,7 @@ export async function POST() {
       },
     });
 
-    const results: { email: string; success: boolean; error?: string }[] = [];
+    const results: { email: string; success: boolean; telegramSent?: boolean; error?: string }[] = [];
 
     // Filter: WEEKLY only sends on Monday, DAILY sends every day
     const eligible = alertConfigs.filter(c =>
@@ -61,13 +62,26 @@ export async function POST() {
       try {
         const digestData = await computeWeeklyDigestData(account.id, config.userId);
         
-        const result = await sendWeeklyDigestEmail({
+        // Send email digest
+        const emailResult = await sendWeeklyDigestEmail({
           ...digestData,
           email,
           dashboardUrl: process.env.NEXTAUTH_URL || 'http://localhost:3000',
         });
 
-        results.push({ email, success: result.success, error: result.error });
+        // Send Telegram digest if configured
+        let telegramSent = false;
+        if (config.telegramId && config.enableTrades) {
+          const telegramMessage = formatTelegramDigest(digestData);
+          telegramSent = await sendTelegramMessage(config.telegramId, telegramMessage);
+        }
+
+        results.push({
+          email,
+          success: emailResult.success,
+          telegramSent,
+          error: emailResult.error
+        });
       } catch (error) {
         results.push({ email, success: false, error: String(error) });
       }
@@ -304,6 +318,39 @@ function calculateMaxDrawdown(pnlValues: number[]): number {
   }
 
   return maxDD;
+}
+
+/**
+ * Format digest data for Telegram message
+ */
+function formatTelegramDigest(data: Omit<WeeklyDigestData, 'email' | 'dashboardUrl'>): string {
+  const pnlEmoji = data.netPnl >= 0 ? '🟢' : '🔴';
+  const pnlSign = data.netPnl >= 0 ? '+' : '';
+  
+  let message = `<b>📊 Weekly Digest</b>\n\n`;
+  
+  // P&L Summary
+  message += `${pnlEmoji} <b>Net P&L: ${pnlSign}$${data.netPnl.toFixed(2)}</b>\n`;
+  message += `📈 Return: ${data.returnOnEquity.toFixed(2)}%\n\n`;
+  
+  // Trade Stats
+  message += `<b>Trade Stats</b>\n`;
+  message += `• Total Trades: ${data.totalTrades}\n`;
+  message += `• Win Rate: ${data.winRate.toFixed(1)}%`;
+  if (data.winRateChange !== null) {
+    const changeEmoji = data.winRateChange >= 0 ? '📈' : '📉';
+    message += ` ${changeEmoji} ${data.winRateChange >= 0 ? '+' : ''}${data.winRateChange.toFixed(1)}%`;
+  }
+  message += `\n`;
+  message += `• Profit Factor: ${data.profitFactor.toFixed(2)}\n`;
+  message += `• Avg R:R: ${data.avgRR.toFixed(2)}R\n\n`;
+  
+  // Best/Worst
+  message += `<b>Best & Worst</b>\n`;
+  message += `• Largest Win: $${data.largestWin.toFixed(2)}\n`;
+  message += `• Largest Loss: $${data.largestLoss.toFixed(2)}\n`;
+  
+  return message;
 }
 
 export const runtime = 'nodejs';
