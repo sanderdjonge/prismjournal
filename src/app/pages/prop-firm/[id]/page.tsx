@@ -21,6 +21,7 @@ import {
     PieChart,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { ChallengeCalendar } from '@/components/prop-firm/ChallengeCalendar';
 
 interface PhaseConfig {
     phaseNumber: number;
@@ -612,6 +613,42 @@ function PropFirmAccountContent() {
                                     </div>
                                 );
                             })()}
+                        </div>
+
+                        {/* Challenge Calendar */}
+                        <div className="glass-card p-6 border-white/5">
+                            <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                                <Calendar size={20} className="text-primary" />
+                                Challenge Calendar
+                            </h2>
+                            {snapshotsLoading ? (
+                                <div className="flex justify-center py-8">
+                                    <Loader2 size={20} className="animate-spin text-primary" />
+                                </div>
+                            ) : snapshots.length === 0 ? (
+                                <div className="text-center py-8 text-gray-400">
+                                    <Calendar size={32} className="mx-auto mb-2 opacity-50" />
+                                    <p className="text-sm">No daily data yet</p>
+                                    <p className="text-xs text-gray-500 mt-1">Calendar will populate with daily snapshots</p>
+                                </div>
+                            ) : (
+                                <ChallengeCalendar
+                                    dailyData={snapshots.map(s => ({
+                                        date: s.snapshotDate,
+                                        pnl: s.dailyPnl,
+                                        pnlPercent: (s.dailyPnl / (accountSize || 10000)) * 100,
+                                        dailyLossUsedPercent: s.dailyPnl < 0
+                                            ? (Math.abs(s.dailyPnl) / (accountSize * dailyLossLimit / 100)) * 100
+                                            : 0,
+                                        isLimitBreached: false, // Would need additional data from snapshot
+                                        tradeCount: 0, // Would need additional data
+                                        isApproachingLimit: s.dailyPnl < 0 &&
+                                            (Math.abs(s.dailyPnl) / (accountSize * dailyLossLimit / 100)) * 100 >= 80,
+                                    }))}
+                                    dailyLossLimit={dailyLossLimit}
+                                    accountSize={accountSize}
+                                />
+                            )}
                         </div>
 
                         {/* Challenge Analytics */}
