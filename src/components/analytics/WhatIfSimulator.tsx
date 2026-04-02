@@ -538,42 +538,119 @@ export function WhatIfSimulator() {
             {/* Active Filter Chips */}
             {activeFilterCount > 0 && !isOpen && (
                 <div className="flex flex-wrap gap-1 mb-4">
+                    {/* Day filters */}
                     {filters.excludeDays?.map(d => (
-                        <FilterChip 
-                            key={`day-${d}`} 
-                            label={`No ${DAYS.find(day => day.value === d)?.label}`} 
+                        <FilterChip
+                            key={`day-${d}`}
+                            label={`No ${DAYS.find(day => day.value === d)?.label?.slice(0, 3)}`}
                             onRemove={() => setFilters({
                                 ...filters,
                                 excludeDays: filters.excludeDays?.filter(x => x !== d)
                             })}
                         />
                     ))}
+                    {/* Hour filters */}
+                    {filters.excludeHours?.map(h => (
+                        <FilterChip
+                            key={`hour-${h}`}
+                            label={`No ${h.toString().padStart(2, '0')}:00`}
+                            onRemove={() => setFilters({
+                                ...filters,
+                                excludeHours: filters.excludeHours?.filter(x => x !== h)
+                            })}
+                        />
+                    ))}
+                    {/* R:R filters */}
                     {filters.minRR !== undefined && (
-                        <FilterChip 
-                            label={`R:R ≥ ${filters.minRR}`} 
+                        <FilterChip
+                            label={`R:R ≥ ${filters.minRR}`}
                             onRemove={() => setFilters({ ...filters, minRR: undefined })}
                         />
                     )}
                     {filters.maxRR !== undefined && (
-                        <FilterChip 
-                            label={`R:R ≤ ${filters.maxRR}`} 
+                        <FilterChip
+                            label={`R:R ≤ ${filters.maxRR}`}
                             onRemove={() => setFilters({ ...filters, maxRR: undefined })}
                         />
                     )}
+                    {/* Time filters */}
+                    {filters.time?.minDurationHours !== undefined && (
+                        <FilterChip
+                            label={`Min ${filters.time.minDurationHours}h`}
+                            onRemove={() => setFilters({ ...filters, time: { ...filters.time, minDurationHours: undefined } })}
+                        />
+                    )}
+                    {filters.time?.maxDurationHours !== undefined && (
+                        <FilterChip
+                            label={`Max ${filters.time.maxDurationHours}h`}
+                            onRemove={() => setFilters({ ...filters, time: { ...filters.time, maxDurationHours: undefined } })}
+                        />
+                    )}
                     {filters.time?.marketSession?.map(s => (
-                        <FilterChip 
-                            key={`session-${s}`} 
-                            label={s.replace('_', ' ')} 
+                        <FilterChip
+                            key={`session-${s}`}
+                            label={s.replace('_', ' ')}
                             onRemove={() => setFilters({
                                 ...filters,
                                 time: { ...filters.time, marketSession: filters.time?.marketSession?.filter(x => x !== s) }
                             })}
                         />
                     ))}
+                    {/* Psychology filters */}
                     {filters.psychology?.dailyLossLimit !== undefined && (
-                        <FilterChip 
+                        <FilterChip
                             label={`Daily Limit: $${filters.psychology.dailyLossLimit}`}
                             onRemove={() => setFilters({ ...filters, psychology: { ...filters.psychology, dailyLossLimit: undefined } })}
+                        />
+                    )}
+                    {filters.psychology?.weeklyLossLimit !== undefined && (
+                        <FilterChip
+                            label={`Weekly Limit: $${filters.psychology.weeklyLossLimit}`}
+                            onRemove={() => setFilters({ ...filters, psychology: { ...filters.psychology, weeklyLossLimit: undefined } })}
+                        />
+                    )}
+                    {filters.psychology?.stopAfterLosses !== undefined && (
+                        <FilterChip
+                            label={`Stop after ${filters.psychology.stopAfterLosses} losses`}
+                            onRemove={() => setFilters({ ...filters, psychology: { ...filters.psychology, stopAfterLosses: undefined } })}
+                        />
+                    )}
+                    {filters.psychology?.avoidAfterBigLoss && (
+                        <FilterChip
+                            label={`Cooldown after ${filters.psychology.avoidAfterBigLoss.rThreshold}R loss`}
+                            onRemove={() => setFilters({ ...filters, psychology: { ...filters.psychology, avoidAfterBigLoss: undefined } })}
+                        />
+                    )}
+                    {/* Risk filters */}
+                    {filters.risk?.riskPerTrade !== undefined && (
+                        <FilterChip
+                            label={`Risk: ${filters.risk.riskPerTrade}%`}
+                            onRemove={() => setFilters({ ...filters, risk: { ...filters.risk, riskPerTrade: undefined } })}
+                        />
+                    )}
+                    {filters.risk?.trailingPercent !== undefined && (
+                        <FilterChip
+                            label={`Trail: ${filters.risk.trailingPercent}%`}
+                            onRemove={() => setFilters({ ...filters, risk: { ...filters.risk, trailingPercent: undefined } })}
+                        />
+                    )}
+                    {filters.risk?.partialExitAt && (
+                        <FilterChip
+                            label={`Exit ${filters.risk.partialExitAt.percent}% at ${filters.risk.partialExitAt.rLevel}R`}
+                            onRemove={() => setFilters({ ...filters, risk: { ...filters.risk, partialExitAt: undefined } })}
+                        />
+                    )}
+                    {/* Market filters */}
+                    {filters.market?.maxVolatility !== undefined && (
+                        <FilterChip
+                            label={`Volatility ≤ ${filters.market.maxVolatility}`}
+                            onRemove={() => setFilters({ ...filters, market: { ...filters.market, maxVolatility: undefined } })}
+                        />
+                    )}
+                    {filters.market?.avoidNewsEvents && (
+                        <FilterChip
+                            label={`No News (${filters.market.newsBufferMinutes ?? 30}m buffer)`}
+                            onRemove={() => setFilters({ ...filters, market: { ...filters.market, avoidNewsEvents: undefined, newsBufferMinutes: undefined } })}
                         />
                     )}
                 </div>
