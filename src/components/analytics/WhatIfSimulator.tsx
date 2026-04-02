@@ -9,9 +9,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useWhatIf, useWhatIfMulti, WhatIfFilters, WhatIfResult, SimulationResult } from '@/hooks/useWhatIf';
+import { useSettings } from '@/hooks/useSettings';
 import {
-  WhatIfFilterChip,
-  WhatIfActiveFilter,
   DurationFilterConfig,
   MarketSessionConfig,
   LossLimitConfig,
@@ -40,36 +39,45 @@ const HOURS = Array.from({ length: 24 }, (_, i) => ({
 
 function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
     return (
-        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary/20 text-primary text-xs font-medium">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-primary/20 border border-primary/40 text-primary transition-all">
             {label}
-            <button onClick={onRemove} className="hover:text-white">
-                <X size={12} />
+            <button
+                onClick={onRemove}
+                className="opacity-60 hover:opacity-100 transition-opacity ml-0.5 hover:text-white"
+                aria-label={`Remove ${label} filter`}
+            >
+                <X size={10} />
             </button>
         </span>
     );
 }
 
-function MetricCard({ 
-    label, 
-    actual, 
-    simulated, 
+function MetricCard({
+    label,
+    actual,
+    simulated,
     format = 'number',
     prefix = '',
-    suffix = ''
-}: { 
-    label: string; 
-    actual: number; 
+    suffix = '',
+    currency = 'USD'
+}: {
+    label: string;
+    actual: number;
     simulated: number;
     format?: 'number' | 'percent' | 'currency';
     prefix?: string;
     suffix?: string;
+    currency?: string;
 }) {
     const diff = simulated - actual;
     const improved = diff > 0;
     
     const formatValue = (val: number) => {
         if (format === 'percent') return val.toFixed(1) + '%';
-        if (format === 'currency') return '$' + val.toFixed(2);
+        if (format === 'currency') {
+            const symbol = currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : '$';
+            return symbol + val.toFixed(2);
+        }
         return val.toFixed(2);
     };
     
@@ -99,23 +107,24 @@ function MetricCard({
     );
 }
 
-function ComparisonSummary({ result }: { result: WhatIfResult }) {
+function ComparisonSummary({ result, currency }: { result: WhatIfResult; currency: string }) {
     const { actual, simulated, difference } = result;
     
     return (
         <div className="space-y-4 relative z-30">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <MetricCard 
-                    label="Total Trades" 
-                    actual={actual.totalTrades} 
+                <MetricCard
+                    label="Total Trades"
+                    actual={actual.totalTrades}
                     simulated={simulated.totalTrades}
                     format="number"
                 />
-                <MetricCard 
-                    label="Total P&L" 
-                    actual={actual.totalPnl} 
+                <MetricCard
+                    label="Total P&L"
+                    actual={actual.totalPnl}
                     simulated={simulated.totalPnl}
                     format="currency"
+                    currency={currency}
                 />
                 <MetricCard 
                     label="Win Rate" 
@@ -264,6 +273,7 @@ export function WhatIfSimulator() {
     const [advancedPopover, setAdvancedPopover] = useState<string | null>(null);
     const popoverRef = useRef<HTMLDivElement>(null);
     
+    const { displayCurrency } = useSettings();
     const { data: result, isLoading, refetch } = useWhatIf(activeFilters);
     
     // Close popover when clicking outside
@@ -685,7 +695,7 @@ export function WhatIfSimulator() {
             )}
             
             {!isLoading && result && (
-                <ComparisonSummary result={result} />
+                <ComparisonSummary result={result} currency={displayCurrency} />
             )}
         </div>
     );

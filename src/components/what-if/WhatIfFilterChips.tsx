@@ -398,9 +398,14 @@ export function TrailingStopConfig({ value, onChange }: TrailingStopConfigProps)
         max="90"
         value={displayValue}
         onChange={(e) => {
-          const v = parseFloat(e.target.value);
-          if (!isNaN(v)) {
-            onChange(v / 100);
+          const v = e.target.value;
+          if (v === '') {
+            onChange(undefined as unknown as number);
+          } else {
+            const parsed = parseFloat(v);
+            if (!isNaN(parsed)) {
+              onChange(parsed / 100);
+            }
           }
         }}
         className="w-full bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-bold text-white placeholder:text-gray-600 outline-none focus:border-primary/50"
