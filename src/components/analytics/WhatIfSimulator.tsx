@@ -335,6 +335,52 @@ export function WhatIfSimulator() {
         return count;
     }, [filters]);
     
+    // Helper to get display value for each filter type
+    const getFilterDisplayValue = (id: string): string | null => {
+        switch (id) {
+            case 'duration':
+                const min = filters.time?.minDurationHours;
+                const max = filters.time?.maxDurationHours;
+                if (min !== undefined || max !== undefined) {
+                    if (min !== undefined && max !== undefined) return `${min}-${max}h`;
+                    if (min !== undefined) return `Min ${min}h`;
+                    return `Max ${max}h`;
+                }
+                return null;
+            case 'marketSession':
+                const sessions = filters.time?.marketSession;
+                if (sessions?.length) return sessions.map(s => s.replace('_', ' ')).join(', ');
+                return null;
+            case 'dailyLoss':
+                if (filters.psychology?.dailyLossLimit !== undefined) return `$${filters.psychology.dailyLossLimit}`;
+                return null;
+            case 'weeklyLoss':
+                if (filters.psychology?.weeklyLossLimit !== undefined) return `$${filters.psychology.weeklyLossLimit}`;
+                return null;
+            case 'streakBreak':
+                if (filters.psychology?.stopAfterLosses !== undefined) return `${filters.psychology.stopAfterLosses} loss`;
+                return null;
+            case 'bigLossCooldown':
+                const cd = filters.psychology?.avoidAfterBigLoss;
+                if (cd) return `${cd.rThreshold}R, ${cd.cooldownHours}h`;
+                return null;
+            case 'positionSizing':
+                if (filters.risk?.riskPerTrade !== undefined) return `${filters.risk.riskPerTrade}%`;
+                return null;
+            case 'trailingStop':
+                if (filters.risk?.trailingPercent !== undefined) return `${(filters.risk.trailingPercent * 100).toFixed(0)}%`;
+                return null;
+            case 'volatility':
+                if (filters.market?.maxVolatility !== undefined) return `≤${filters.market.maxVolatility}`;
+                return null;
+            case 'newsEvent':
+                if (filters.market?.avoidNewsEvents) return `${filters.market.newsBufferMinutes ?? 30}m`;
+                return null;
+            default:
+                return null;
+        }
+    };
+    
     // Available advanced filter options
     const advancedFilterOptions = [
         { id: 'duration', label: 'Duration', category: 'time' as const },
@@ -497,18 +543,24 @@ export function WhatIfSimulator() {
                                     Advanced Filters
                                 </h4>
                                 <div className="flex flex-wrap gap-1.5">
-                                    {advancedFilterOptions.map((option) => (
+                                    {advancedFilterOptions.map((option) => {
+                                        const displayValue = getFilterDisplayValue(option.id);
+                                        const hasValue = displayValue !== null;
+                                        
+                                        return (
                                         <div key={option.id} className="relative">
                                             <button
                                                 onClick={() => setAdvancedPopover(advancedPopover === option.id ? null : option.id)}
                                                 className={cn(
                                                     "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all",
-                                                    categoryColors[option.category],
+                                                    hasValue
+                                                        ? "bg-primary/30 border-primary/60 text-white"
+                                                        : categoryColors[option.category],
                                                     advancedPopover === option.id && "ring-2 ring-white/30"
                                                 )}
                                             >
                                                 <Settings2 size={10} />
-                                                {option.label}
+                                                <span>{option.label}{hasValue && `: ${displayValue}`}</span>
                                             </button>
                                             
                                             <AnimatePresence>
@@ -528,7 +580,8 @@ export function WhatIfSimulator() {
                                                 )}
                                             </AnimatePresence>
                                         </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
                             
