@@ -91,6 +91,9 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
     const [showTagInput, setShowTagInput] = useState(false);
     const [newTagName, setNewTagName] = useState('');
     const [showStrategyDropdown, setShowStrategyDropdown] = useState(false);
+    const [entryRating, setEntryRating] = useState<number | null>(trade.entryRating ?? null);
+    const [exitRating, setExitRating] = useState<number | null>(trade.exitRating ?? null);
+    const [managementRating, setManagementRating] = useState<number | null>(trade.managementRating ?? null);
 
     useEffect(() => {
         setNotes(trade.notes ?? '');
@@ -102,6 +105,9 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
         setSelectedTagIds(trade.tags?.map(t => t.id) ?? []);
         setShowTagInput(false);
         setNewTagName('');
+        setEntryRating(trade.entryRating ?? null);
+        setExitRating(trade.exitRating ?? null);
+        setManagementRating(trade.managementRating ?? null);
     }, [trade.id]);
 
     useEffect(() => {
@@ -133,9 +139,17 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
     }, [selectedStrategyId, trade.id]);
 
     const handleRating = (field: 'entryRating' | 'exitRating' | 'managementRating', val: number) => {
+        // Update local state immediately for responsive UI
+        if (field === 'entryRating') setEntryRating(val);
+        else if (field === 'exitRating') setExitRating(val);
+        else if (field === 'managementRating') setManagementRating(val);
+        
         update.mutate(
             { id: trade.id, body: { [field]: val } },
-            { onError: () => toast.error('Failed to save rating') },
+            { 
+                onSuccess: () => toast.success('Rating saved'),
+                onError: () => toast.error('Failed to save rating'),
+            },
         );
     };
 
@@ -332,9 +346,9 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                     <div className="text-[9px] font-black uppercase tracking-[0.18em] text-gray-500">Ratings</div>
                     <div className="grid grid-cols-3 gap-2">
                         {[
-                            { label: 'Entry', field: 'entryRating' as const, value: trade.entryRating },
-                            { label: 'Exit', field: 'exitRating' as const, value: trade.exitRating },
-                            { label: 'Mgmt', field: 'managementRating' as const, value: trade.managementRating },
+                            { label: 'Entry', field: 'entryRating' as const, value: entryRating },
+                            { label: 'Exit', field: 'exitRating' as const, value: exitRating },
+                            { label: 'Mgmt', field: 'managementRating' as const, value: managementRating },
                         ].map(({ label, field, value }) => (
                             <div key={field} className="flex flex-col items-center gap-1">
                                 <span className="text-[8px] font-black uppercase tracking-[0.12em] text-gray-600">{label}</span>
