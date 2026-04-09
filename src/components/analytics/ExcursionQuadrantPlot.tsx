@@ -12,16 +12,21 @@ import TradeViewModal from '@/components/journal/TradeViewModal';
 // ---------------------------------------------------------------------------
 
 /** Exit efficiency %: where along the MAE→MFE range did the trade exit?
- *  0% = exited at max adverse point, 100% = exited at max favorable point. */
+ *  0% = exited at max adverse point, 100% = exited at max favorable point.
+ *  If MAE is null, treats as 0 (assumes no adverse excursion for profitable trades). */
 export function calcExitEfficiency(
     mae: number | null,
     mfe: number | null,
     exitDistFromEntry: number | null,
 ): number | null {
-    if (mae == null || mfe == null || exitDistFromEntry == null) return null;
-    const totalRange = mae + mfe;
+    if (mfe == null || exitDistFromEntry == null) return null;
+    
+    // Treat NULL MAE as 0 for profitable trades (no adverse excursion recorded)
+    const effectiveMae = mae ?? 0;
+    
+    const totalRange = effectiveMae + mfe;
     if (totalRange === 0) return null;
-    const raw = ((mae + exitDistFromEntry) / totalRange) * 100;
+    const raw = ((effectiveMae + exitDistFromEntry) / totalRange) * 100;
     return Math.min(100, Math.max(0, Math.round(raw * 10) / 10));
 }
 
@@ -93,13 +98,20 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
         return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name));
     }, [trades]);
 
-    // Only include trades with both MAE and MFE, computable efficiency, and not tag-excluded
-    const plotTrades = useMemo(() => trades.filter(t =>
-        t.mae != null && t.mae > 0 &&
-        t.mfe != null && t.mfe > 0 &&
-        t.exitDistFromEntry != null &&
-        !(t.tags ?? []).some(tag => excludedTagIds.includes(tag.id))
-    ), [trades, excludedTagIds]);
+    // Only include trades with computable efficiency
+    // Treat NULL MAE as 0 for profitable trades (assume no adverse excursion)
+    const plotTrades = useMemo(() => trades.filter(t => {
+        if ((t.tags ?? []).some(tag => excludedTagIds.includes(tag.id))) return false;
+        if (t.mfe == null || t.mfe <= 0) return false;
+        if (t.exitDistFromEntry == null) return false;
+        
+        // If MAE is null, treat as 0 for profitable trades
+        if (t.mae == null) {
+            return t.exitDistFromEntry > 0; // profitable trade with no recorded MAE
+        }
+        
+        return t.mae >= 0;
+    }), [trades, excludedTagIds]);
 
     if (plotTrades.length < 2) {
         const allFiltered = trades.some(t =>
@@ -158,7 +170,8 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
     }
 
     // Derived axis values
-    const maxMae = Math.max(...plotTrades.map(t => t.mae!)) * 1.15;
+    // Treat NULL MAE as 0 for calculations
+    const maxMae = Math.max(...plotTrades.map(t => t.mae ?? 0)) * 1.15;
 
     const scaleX = (mae: number) => ML + (mae / maxMae) * CW;
     const scaleY = (eff: number) => MT + CH - (eff / 100) * CH;
@@ -170,8 +183,9 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
     // Enrich trades with zone + efficiency
     type PlotTrade = QuadrantTrade & { eff: number; zone: ZoneKey };
     const enriched: PlotTrade[] = plotTrades.map(t => {
-        const eff = calcExitEfficiency(t.mae!, t.mfe!, t.exitDistFromEntry!)!;
-        const zone = assignZone(t.mae!, eff, maeThreshold);
+        const effectiveMae = t.mae ?? 0;
+        const eff = calcExitEfficiency(t.mae ?? null, t.mfe ?? null, t.exitDistFromEntry ?? null)!;
+        const zone = assignZone(effectiveMae, eff, maeThreshold);
         return { ...t, eff, zone };
     });
 
@@ -339,12 +353,13 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                         const pnlSign = isWin ? '+' : '';
                         const initialSlVal = hovered.initialStopLoss;
                         const entryPrice = hovered.entry;
+                        const effectiveMae = hovered.mae ?? 0;
                         const initialStopDist = initialSlVal != null && entryPrice != null
                             ? hovered.type === 'LONG' ? entryPrice - initialSlVal : initialSlVal - entryPrice
                             : null;
-                        const slMsg = initialStopDist != null && initialStopDist > 0 && hovered.mae != null
-                            ? hovered.mae >= initialStopDist
-                                ? `Stop hit — price moved ${((hovered.mae / initialStopDist) * 100).toFixed(0)}% of stop distance`
+                        const slMsg = initialStopDist != null && initialStopDist > 0
+                            ? effectiveMae >= initialStopDist
+                                ? `Stop hit — price moved ${((effectiveMae / initialStopDist) * 100).toFixed(0)}% of stop distance`
                                 : 'Stop never threatened'
                             : hovered.closeReason === 'SL'
                                 ? 'Stopped out (SL hit)'
@@ -369,7 +384,7 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                                     <Row label="Left on table" value={`${(hovered.mfe - hovered.exitDistFromEntry).toFixed(4)} pts`} color="text-yellow-400" />
                                 )}
                                 <div className="my-2 h-px bg-white/5" />
-                                <Row label="Max against you (MAE)" value={`-${hovered.mae?.toFixed(4) ?? '—'} pts`} color="text-red-400" />
+                                <Row label="Max against you (MAE)" value={`-${(hovered.mae ?? 0).toFixed(4)} pts`} color="text-red-400" />
                                 {slMsg && <Row label="Your stop" value={slMsg} />}
                                 <Row label="Exit efficiency" value={`${hovered.eff.toFixed(1)}%`} />
                                 <Row label="P&L" value={`${pnlSign}${hovered.pnl.toFixed(2)}`} color={isWin ? 'text-green-400' : 'text-red-400'} />
