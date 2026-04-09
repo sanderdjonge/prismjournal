@@ -9,6 +9,7 @@ import type { Session } from 'next-auth';
 
 const emptyResponse = {
     equity: [],
+    allTimeEquity: [],
     trades: [],
     calendar: [],
     winRate: 0,
@@ -48,7 +49,7 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
     const cached = cacheGet(cacheKey);
     if (cached) return NextResponse.json(cached);
 
-    const [trades, allClosedTrades] = await Promise.all([
+    const [trades, allClosedTrades, allTimeClosedTrades] = await Promise.all([
         prisma.trade.findMany({
             where: {
                 accountId: { in: filteredIds },
@@ -56,11 +57,19 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
             },
             orderBy: { entryTime: 'desc' },
         }),
-        // Get closed trades from startDate for equity curve
         prisma.trade.findMany({
             where: {
                 accountId: { in: filteredIds },
                 exitTime: { gte: startDate, not: null },
+                pnl: { not: null },
+            },
+            orderBy: { exitTime: 'asc' },
+            select: { exitTime: true, pnl: true, commission: true, swap: true },
+        }),
+        prisma.trade.findMany({
+            where: {
+                accountId: { in: filteredIds },
+                exitTime: { not: null },
                 pnl: { not: null },
             },
             orderBy: { exitTime: 'asc' },
@@ -73,7 +82,6 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
     let equityData: { time: string; value: number }[] = [];
 
     if (allClosedTrades.length > 0) {
-        // Build equity curve from cumulative P&L by day
         const byDay = new Map<string, number>();
         let running = 0;
         for (const t of allClosedTrades) {
@@ -84,10 +92,29 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
         equityData = Array.from(byDay.entries())
             .map(([time, value]) => ({ time, value }))
             .sort((a, b) => a.time.localeCompare(b.time));
-        // Prepend a zero-value anchor at period start so curve visually starts at 0
         const startKey = startDate.toISOString().split('T')[0];
         if (equityData[0]?.time !== startKey) {
             equityData.unshift({ time: startKey, value: 0 });
+        }
+    }
+
+    // --- All-time equity curve ---
+    let allTimeEquityData: { time: string; value: number }[] = [];
+
+    if (allTimeClosedTrades.length > 0) {
+        const byDay = new Map<string, number>();
+        let running = 0;
+        for (const t of allTimeClosedTrades) {
+            running += (t.pnl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
+            const key = t.exitTime!.toISOString().split('T')[0];
+            byDay.set(key, running);
+        }
+        allTimeEquityData = Array.from(byDay.entries())
+            .map(([time, value]) => ({ time, value }))
+            .sort((a, b) => a.time.localeCompare(b.time));
+        const firstDate = allTimeClosedTrades[0]?.exitTime?.toISOString().split('T')[0];
+        if (firstDate && allTimeEquityData[0]?.time !== firstDate) {
+            allTimeEquityData.unshift({ time: firstDate, value: 0 });
         }
     }
 
@@ -222,6 +249,7 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
 
     const responseData = {
         equity: equityData,
+        allTimeEquity: allTimeEquityData,
         trades: recentTrades,
         calendar: calendarData,
         winRate,

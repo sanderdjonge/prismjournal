@@ -52,6 +52,7 @@ interface ApiTrade {
     entry: number;
     exit: number;
     stopLoss: number | null;
+    initialStopLoss: number | null;
     takeProfit: number | null;
     commission: number;
     swap: number;
@@ -91,6 +92,7 @@ export function mapToQuadrantTrade(t: RawTrade): QuadrantTrade {
         entry: t.entryPrice,
         exit: t.exitPrice ?? 0,
         stopLoss: t.stopLoss,
+        initialStopLoss: t.initialStopLoss,
         takeProfit: t.takeProfit,
         commission: t.commission ?? 0,
         swap: t.swap ?? 0,
@@ -120,9 +122,9 @@ function apiTradeToRaw(t: ApiTrade): RawTrade {
         symbol: t.symbol,
         direction: t.type,
         entryPrice: t.entry,
-        // API represents open trades as exit=0 (not null); coerce to null so filter logic works correctly
         exitPrice: t.exit === 0 ? null : t.exit,
         stopLoss: t.stopLoss,
+        initialStopLoss: t.initialStopLoss,
         takeProfit: t.takeProfit,
         commission: t.commission,
         swap: t.swap,
@@ -144,7 +146,6 @@ function apiTradeToRaw(t: ApiTrade): RawTrade {
         exitRating: null,
         managementRating: null,
         rMultiple: null,
-        initialStopLoss: null,
         beTriggered: false,
         volume: t.volume,
     };

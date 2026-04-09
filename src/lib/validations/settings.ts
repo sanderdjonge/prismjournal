@@ -31,16 +31,13 @@ const currencies = ['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF', 'NZD'] as c
  */
 const dateFormats = ['DD-MM-YYYY', 'MM-DD-YYYY', 'YYYY-MM-DD'] as const;
 
-/**
- * Schema for user settings update (PATCH /api/settings)
- */
+const dashboardPeriods = ['7', '30', '90', '365'] as const;
+
 export const settingsUpdateSchema = z.object({
   displayCurrency: z.enum(currencies).optional(),
   timezone: z.string().refine(
     (tz) => {
-      // Allow any IANA timezone format, but validate it's not empty
       try {
-        // Basic validation - timezone should contain / or be UTC
         return tz.length > 0 && (tz === 'UTC' || tz.includes('/'));
       } catch {
         return false;
@@ -50,6 +47,7 @@ export const settingsUpdateSchema = z.object({
   ).optional(),
   dateFormat: z.enum(dateFormats).optional(),
   brokerTimezoneOffset: z.number().int().min(-12).max(14).optional(),
+  dashboardPeriod: z.enum(dashboardPeriods).optional(),
 });
 
 export type SettingsUpdateInput = z.infer<typeof settingsUpdateSchema>;

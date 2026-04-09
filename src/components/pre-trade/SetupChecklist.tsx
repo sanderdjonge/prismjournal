@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Check, Square, Save, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
@@ -24,42 +24,27 @@ interface SetupChecklistProps {
     readOnly?: boolean;
 }
 
-export function SetupChecklist({
-    tradeId,
-    strategyId,
-    initialChecklist = [],
-    initialChecked = {},
-    onSave,
-    readOnly = false,
-}: SetupChecklistProps) {
+export interface SetupChecklistRef {
+    save: () => Promise<void>;
+}
+
+export const SetupChecklist = forwardRef<SetupChecklistRef, SetupChecklistProps>(function SetupChecklist(
+    {
+        tradeId,
+        strategyId,
+        initialChecklist = [],
+        initialChecked = {},
+        onSave,
+        readOnly = false,
+    },
+    ref
+) {
     const [items, setItems] = useState<ChecklistState[]>([]);
     const [isSaving, setIsSaving] = useState(false);
     const [hasChanges, setHasChanges] = useState(false);
 
-    useEffect(() => {
-        // Initialize items with checked state
-        const state: ChecklistState[] = initialChecklist.map((item) => ({
-            ...item,
-            checked: initialChecked[item.id] ?? false,
-        }));
-        // Sort by order
-        state.sort((a, b) => a.order - b.order);
-        setItems(state);
-    }, [initialChecklist, initialChecked]);
-
-    const handleToggle = (id: string) => {
-        if (readOnly) return;
-        
-        setItems((prev) =>
-            prev.map((item) =>
-                item.id === id ? { ...item, checked: !item.checked } : item
-            )
-        );
-        setHasChanges(true);
-    };
-
     const handleSave = async () => {
-        if (!hasChanges || readOnly) return;
+        if (readOnly) return;
 
         setIsSaving(true);
         try {
@@ -91,6 +76,30 @@ export function SetupChecklist({
         } finally {
             setIsSaving(false);
         }
+    };
+
+    useImperativeHandle(ref, () => ({
+        save: handleSave,
+    }));
+
+    useEffect(() => {
+        const state: ChecklistState[] = initialChecklist.map((item) => ({
+            ...item,
+            checked: initialChecked[item.id] ?? false,
+        }));
+        state.sort((a, b) => a.order - b.order);
+        setItems(state);
+    }, [initialChecklist, initialChecked]);
+
+    const handleToggle = (id: string) => {
+        if (readOnly) return;
+        
+        setItems((prev) =>
+            prev.map((item) =>
+                item.id === id ? { ...item, checked: !item.checked } : item
+            )
+        );
+        setHasChanges(true);
     };
 
     const checkedCount = items.filter((i) => i.checked).length;
@@ -170,7 +179,6 @@ export function SetupChecklist({
                 ))}
             </div>
 
-            {/* Save Button */}
             {hasChanges && !readOnly && (
                 <div className="flex justify-end pt-2">
                     <button
@@ -194,4 +202,4 @@ export function SetupChecklist({
             )}
         </div>
     );
-}
+});

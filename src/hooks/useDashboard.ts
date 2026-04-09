@@ -3,6 +3,7 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 
 export type DashboardData = {
     equity: { time: string; value: number }[];
+    allTimeEquity: { time: string; value: number }[];
     trades: Array<{
         id: string;
         symbol: string;

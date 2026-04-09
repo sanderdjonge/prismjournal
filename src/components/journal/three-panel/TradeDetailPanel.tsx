@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import { Share2 } from 'lucide-react';
+import { Share2, Plus, X, ChevronDown } from 'lucide-react';
 import { useUpdateTrade } from '@/hooks/useTrades';
+import { useTags, useCreateTag } from '@/hooks/useTags';
+import { useStrategies } from '@/hooks/useStrategies';
 import { ExcursionBar } from '@/components/journal/ExcursionBar';
 import { computeDuration, deriveListZone } from './TradeListPanel';
 import { MOOD_OPTIONS, COMPLIANCE_OPTIONS } from '@/constants/tradeConfig';
-import { SetupChecklist } from '@/components/pre-trade/SetupChecklist';
+import { SetupChecklist, SetupChecklistRef } from '@/components/pre-trade/SetupChecklist';
 import { ShareTradeModal } from '@/components/trades/ShareTradeModal';
 import type { JournalTrade } from '@/app/journal/page';
 
@@ -42,16 +44,16 @@ function Stars({
     const [hovered, setHovered] = useState<number | null>(null);
     const active = hovered ?? value ?? 0;
     return (
-        <div className="flex gap-1">
+        <div className="flex gap-0.5">
             {[1, 2, 3, 4, 5].map(n => (
                 <button
                     key={n}
+                    type="button"
                     onClick={() => onChange(n)}
                     onMouseEnter={() => setHovered(n)}
                     onMouseLeave={() => setHovered(null)}
-                    className={`text-[14px] leading-none transition-colors ${
-                        n <= active ? 'text-yellow-400' : 'text-gray-700 hover:text-gray-500'
-                    }`}
+                    className="p-1 text-[16px] leading-none transition-colors cursor-pointer hover:scale-110"
+                    style={{ color: n <= active ? '#facc15' : '#374151' }}
                 >
                     ★
                 </button>
@@ -71,30 +73,44 @@ function Cell({ label, children }: { label: string; children: React.ReactNode })
 
 export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
     const update = useUpdateTrade();
+    const { data: tagsData } = useTags();
+    const createTag = useCreateTag();
+    const allTags = tagsData?.tags ?? [];
+    const { data: strategiesData } = useStrategies();
+    const allStrategies = strategiesData?.strategies ?? [];
+    const checklistRef = useRef<SetupChecklistRef>(null);
 
     const [notes, setNotes] = useState(trade.notes ?? '');
     const [mood, setMood] = useState(trade.mood ?? '');
     const [compliance, setCompliance] = useState(trade.planCompliance ?? '');
+    const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(trade.strategyId ?? null);
     const [strategy, setStrategy] = useState<StrategyWithChecklist | null>(null);
     const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
     const [shareModalOpen, setShareModalOpen] = useState(false);
+    const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+    const [showTagInput, setShowTagInput] = useState(false);
+    const [newTagName, setNewTagName] = useState('');
+    const [showStrategyDropdown, setShowStrategyDropdown] = useState(false);
 
-    // Reset local editable state when the selected trade changes
     useEffect(() => {
         setNotes(trade.notes ?? '');
         setMood(trade.mood ?? '');
         setCompliance(trade.planCompliance ?? '');
+        setSelectedStrategyId(trade.strategyId ?? null);
         setStrategy(null);
         setCheckedItems({});
-    }, [trade.id]); // eslint-disable-line react-hooks/exhaustive-deps
+        setSelectedTagIds(trade.tags?.map(t => t.id) ?? []);
+        setShowTagInput(false);
+        setNewTagName('');
+    }, [trade.id]);
 
-    // Fetch strategy with checklist when trade has a strategyId
     useEffect(() => {
-        if (trade.strategyId) {
-            fetch(`/api/strategies/${trade.strategyId}`)
+        if (selectedStrategyId) {
+            fetch(`/api/strategies/${selectedStrategyId}`)
                 .then(res => res.json())
                 .then(data => {
                     setStrategy(data);
+                    setCheckedItems({});
                 })
                 .catch(err => {
                     console.error('Failed to fetch strategy:', err);
@@ -102,8 +118,9 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                 });
         } else {
             setStrategy(null);
+            setCheckedItems({});
         }
-    }, [trade.strategyId]);
+    }, [selectedStrategyId]);
 
     const handleRating = (field: 'entryRating' | 'exitRating' | 'managementRating', val: number) => {
         update.mutate(
@@ -112,14 +129,76 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
         );
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
+        const updates: Record<string, unknown> = {
+            notes: notes || null,
+            mood: mood || null,
+            planCompliance: compliance || null,
+        };
+        
+        if (selectedStrategyId !== trade.strategyId) {
+            updates.strategyId = selectedStrategyId;
+        }
+        
+        if (checklistRef.current) {
+            await checklistRef.current.save();
+        }
+        
         update.mutate(
-            { id: trade.id, body: { notes: notes || null, mood: mood || null, planCompliance: compliance || null } },
+            { id: trade.id, body: updates },
             {
                 onSuccess: () => toast.success('Saved'),
                 onError: () => toast.error('Save failed'),
             },
         );
+    };
+
+    const handleStrategyChange = (strategyId: string | null) => {
+        setSelectedStrategyId(strategyId);
+        setShowStrategyDropdown(false);
+        update.mutate(
+            { id: trade.id, body: { strategyId } },
+            {
+                onSuccess: () => toast.success('Strategy updated'),
+                onError: () => toast.error('Failed to update strategy'),
+            },
+        );
+    };
+
+    const handleSaveTags = async (tagIds: string[]) => {
+        try {
+            const res = await fetch(`/api/trades/${trade.id}/tags`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tagIds }),
+            });
+            if (!res.ok) throw new Error('Failed to update tags');
+            toast.success('Tags updated');
+        } catch (err) {
+            toast.error('Failed to update tags');
+        }
+    };
+
+    const handleToggleTag = (tagId: string) => {
+        const newTagIds = selectedTagIds.includes(tagId)
+            ? selectedTagIds.filter(id => id !== tagId)
+            : [...selectedTagIds, tagId];
+        setSelectedTagIds(newTagIds);
+        handleSaveTags(newTagIds);
+    };
+
+    const handleCreateTag = async () => {
+        if (!newTagName.trim()) return;
+        try {
+            const tag = await createTag.mutateAsync({ name: newTagName.trim() });
+            const newTagIds = [...selectedTagIds, tag.id];
+            setSelectedTagIds(newTagIds);
+            await handleSaveTags(newTagIds);
+            setNewTagName('');
+            setShowTagInput(false);
+        } catch (err) {
+            toast.error('Failed to create tag');
+        }
     };
 
     const isForex = /USD|EUR|GBP|JPY|CHF|AUD|CAD|NZD/i.test(trade.symbol);
@@ -301,25 +380,44 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                     </div>
                 </div>
 
-                {trade.tags && trade.tags.length > 0 && (
-                    <div className="space-y-2">
-                        <div className="text-[9px] font-black uppercase tracking-[0.18em] text-gray-500">Tags</div>
-                        <div className="flex flex-wrap gap-1">
-                            {trade.tags.map(tag => (
-                                <span
-                                    key={tag.id}
-                                    className="px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-[0.08em] bg-white/[0.05] border border-white/[0.08]"
-                                    style={{ color: tag.color || '#00f2ff' }}
+                <div className="space-y-2">
+                    <div className="text-[9px] font-black uppercase tracking-[0.18em] text-gray-500">Strategy</div>
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowStrategyDropdown(!showStrategyDropdown)}
+                            className="w-full flex items-center justify-between px-3 py-2 bg-white/[0.03] border border-white/[0.08] rounded-lg text-[11px] text-gray-200 hover:border-white/20 transition-colors"
+                        >
+                            <span className={selectedStrategyId ? 'text-white' : 'text-gray-500'}>
+                                {selectedStrategyId
+                                    ? allStrategies.find(s => s.id === selectedStrategyId)?.name ?? 'Unknown'
+                                    : 'Select strategy...'}
+                            </span>
+                            <ChevronDown size={12} className={`transition-transform ${showStrategyDropdown ? 'rotate-180' : ''}`} />
+                        </button>
+                        {showStrategyDropdown && (
+                            <div className="absolute z-20 w-full mt-1 bg-[#0d0d1a] border border-white/[0.08] rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                                <button
+                                    onClick={() => handleStrategyChange(null)}
+                                    className={`w-full text-left px-3 py-2 text-[11px] hover:bg-white/[0.05] transition-colors ${!selectedStrategyId ? 'text-primary' : 'text-gray-400'}`}
                                 >
-                                    {tag.name}
-                                </span>
-                            ))}
-                        </div>
+                                    No strategy
+                                </button>
+                                {allStrategies.map(s => (
+                                    <button
+                                        key={s.id}
+                                        onClick={() => handleStrategyChange(s.id)}
+                                        className={`w-full text-left px-3 py-2 text-[11px] hover:bg-white/[0.05] transition-colors ${selectedStrategyId === s.id ? 'text-primary' : 'text-gray-300'}`}
+                                    >
+                                        {s.name}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
-                )}
+                </div>
 
-                {/* Setup Checklist - shown when trade has a strategy with checklist */}
-                {trade.strategyId && strategy?.checklist?.items && strategy.checklist.items.length > 0 && (
+                {/* Setup Checklist - shown when a strategy with checklist is selected */}
+                {selectedStrategyId && strategy?.checklist?.items && strategy.checklist.items.length > 0 && (
                     <div className="space-y-2">
                         <div className="text-[9px] font-black uppercase tracking-[0.18em] text-gray-500">
                             Setup Checklist
@@ -328,8 +426,9 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                             )}
                         </div>
                         <SetupChecklist
+                            ref={checklistRef}
                             tradeId={trade.id}
-                            strategyId={trade.strategyId}
+                            strategyId={selectedStrategyId}
                             initialChecklist={strategy.checklist.items}
                             initialChecked={checkedItems}
                             onSave={(checked) => setCheckedItems(checked)}
@@ -337,20 +436,80 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                     </div>
                 )}
 
-                <div className="space-y-2 flex-1 min-h-0 flex flex-col">
+                <div className="space-y-2">
+                    <div className="text-[9px] font-black uppercase tracking-[0.18em] text-gray-500">Tags</div>
+                    <div className="flex flex-wrap gap-1">
+                        {allTags.map(tag => {
+                            const isSelected = selectedTagIds.includes(tag.id);
+                            return (
+                                <button
+                                    key={tag.id}
+                                    onClick={() => handleToggleTag(tag.id)}
+                                    className={`px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-[0.08em] border transition-all ${
+                                        isSelected
+                                            ? 'bg-white/[0.08] border-white/20'
+                                            : 'bg-white/[0.02] border-white/[0.06] text-gray-600 hover:text-white hover:border-white/10'
+                                    }`}
+                                    style={isSelected && tag.color ? { color: tag.color, borderColor: tag.color + '40' } : {}}
+                                >
+                                    {tag.name}
+                                </button>
+                            );
+                        })}
+                        <button
+                            onClick={() => setShowTagInput(!showTagInput)}
+                            className="px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-[0.08em] border border-white/[0.06] text-gray-600 hover:text-white hover:border-white/10 transition-all flex items-center gap-1"
+                        >
+                            <Plus size={9} /> New
+                        </button>
+                    </div>
+                    {showTagInput && (
+                        <div className="flex items-center gap-2 mt-2">
+                            <input
+                                type="text"
+                                value={newTagName}
+                                onChange={e => setNewTagName(e.target.value)}
+                                onKeyDown={e => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        handleCreateTag();
+                                    }
+                                }}
+                                placeholder="Tag name..."
+                                className="flex-1 px-2 py-1 bg-white/[0.03] border border-white/[0.08] rounded-lg text-[11px] text-white placeholder-gray-600 focus:border-primary/40 focus:outline-none"
+                                autoFocus
+                            />
+                            <button
+                                onClick={handleCreateTag}
+                                disabled={!newTagName.trim()}
+                                className="px-2 py-1 bg-primary/20 border border-primary/30 rounded-lg text-primary text-[10px] font-bold hover:bg-primary/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Add
+                            </button>
+                            <button
+                                onClick={() => { setShowTagInput(false); setNewTagName(''); }}
+                                className="p-1 text-gray-500 hover:text-white transition-colors"
+                            >
+                                <X size={12} />
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                <div className="space-y-2">
                     <div className="text-[9px] font-black uppercase tracking-[0.18em] text-gray-500">Notes</div>
                     <textarea
                         value={notes}
                         onChange={e => setNotes(e.target.value)}
                         placeholder="Add notes about this trade..."
-                        className="flex-1 min-h-[80px] bg-white/[0.03] border border-white/[0.08] rounded-lg px-3 py-2 text-[12px] text-gray-200 placeholder-gray-600 resize-none focus:outline-none focus:border-primary/40 transition-colors"
+                        className="w-full h-24 bg-white/[0.03] border border-white/[0.08] rounded-lg px-3 py-2 text-[12px] text-gray-200 placeholder-gray-600 resize-none focus:outline-none focus:border-primary/40 transition-colors"
                     />
                 </div>
 
                 <button
                     onClick={handleSave}
                     disabled={update.isPending}
-                    className="w-full h-10 rounded-xl bg-primary text-black font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 hover:brightness-110 shadow-[0_0_20px_rgba(0,242,255,0.3)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full h-10 rounded-xl bg-primary text-black font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 hover:brightness-110 shadow-[0_0_20px_rgba(0,242,255,0.3)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                 >
                     {update.isPending ? 'Saving...' : 'Save Changes'}
                 </button>

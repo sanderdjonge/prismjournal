@@ -689,6 +689,7 @@ model UserSettings {
   timezone             String @default("Europe/Amsterdam")
   dateFormat           String @default("DD-MM-YYYY") // DD-MM-YYYY, MM-DD-YYYY, or YYYY-MM-DD
   brokerTimezoneOffset Int    @default(0) // UTC offset of MT5 broker server, e.g. 3 for UTC+3
+  dashboardPeriod      String @default("30") // 7, 30, 90, or 365 days
 }
 
 // ============================================

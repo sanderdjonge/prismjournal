@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import EquityChart from './EquityChart';
 import TradeCalendar from './TradeCalendar';
 import RecentTrades from './RecentTrades';
@@ -29,6 +29,7 @@ type CalendarDay = { date: string; pnl: number; trades: number; wins: number; lo
 
 type DashboardData = {
     equity: EquityPoint[];
+    allTimeEquity: EquityPoint[];
     trades: RecentTrade[];
     calendar: CalendarDay[];
     winRate: number;
@@ -47,6 +48,7 @@ type DashboardData = {
 };
 
 export default function Dashboard() {
+    const { dashboardPeriod: savedPeriod, updateSettings } = useSettings();
     const [period, setPeriod] = useState<'7' | '30' | '90' | '365'>('30');
     const { formatAmount, formatPnl, symbol } = useCurrency();
     const { selectedAccountId } = useAccounts();
@@ -54,6 +56,17 @@ export default function Dashboard() {
     const { dateFormat } = useSettings();
 
     const stats = data as DashboardData;
+
+    useEffect(() => {
+        if (savedPeriod) {
+            setPeriod(savedPeriod);
+        }
+    }, [savedPeriod]);
+
+    const handlePeriodChange = (newPeriod: '7' | '30' | '90' | '365') => {
+        setPeriod(newPeriod);
+        updateSettings({ dashboardPeriod: newPeriod });
+    };
 
     return (
         <div className="space-y-6">
@@ -67,7 +80,7 @@ export default function Dashboard() {
                     {(['7', '30', '90', '365'] as const).map((d) => (
                         <button
                             key={d}
-                            onClick={() => setPeriod(d)}
+                            onClick={() => handlePeriodChange(d)}
                             className={cn(
                                 "px-4 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all duration-300",
                                 period === d
@@ -129,7 +142,7 @@ export default function Dashboard() {
                 {/* Equity Curve - 2 columns */}
                 <div className="lg:col-span-2 glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl">
                     <EquityChart 
-                        data={stats.equity} 
+                        data={stats.allTimeEquity} 
                         className="h-[400px]" 
                         dateFormat={dateFormat}
                         showTiltmeter={true}

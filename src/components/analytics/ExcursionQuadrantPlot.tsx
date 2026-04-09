@@ -337,16 +337,18 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                         const zone = ZONE_CONFIG[hovered.zone];
                         const isWin = hovered.pnl >= 0;
                         const pnlSign = isWin ? '+' : '';
-                        const slVal = hovered.stopLoss;
+                        const initialSlVal = hovered.initialStopLoss;
                         const entryPrice = hovered.entry;
-                        const stopDist = slVal != null && entryPrice != null
-                            ? hovered.type === 'LONG' ? entryPrice - slVal : slVal - entryPrice
+                        const initialStopDist = initialSlVal != null && entryPrice != null
+                            ? hovered.type === 'LONG' ? entryPrice - initialSlVal : initialSlVal - entryPrice
                             : null;
-                        const slMsg = stopDist != null && stopDist > 0 && hovered.mae != null
-                            ? hovered.mae >= stopDist
-                                ? `Stop hit — price moved ${((hovered.mae / stopDist) * 100).toFixed(0)}% of stop distance`
+                        const slMsg = initialStopDist != null && initialStopDist > 0 && hovered.mae != null
+                            ? hovered.mae >= initialStopDist
+                                ? `Stop hit — price moved ${((hovered.mae / initialStopDist) * 100).toFixed(0)}% of stop distance`
                                 : 'Stop never threatened'
-                            : null;
+                            : hovered.closeReason === 'SL'
+                                ? 'Stopped out (SL hit)'
+                                : null;
                         const exitDate = hovered.exitTime
                             ? new Date(hovered.exitTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
                             : null;
