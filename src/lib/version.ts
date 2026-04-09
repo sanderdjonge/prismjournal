@@ -11,7 +11,7 @@ export const APP_VERSION = pkg.version; // e.g. "2.17.0"
  */
 export const BUILD_DATE = '2026-04-09';
 
-export const BUILD_NOTES = 'Exit Quality Analysis & ExcursionBar now include trades with missing MAE (treats NULL MAE as 0 for profitable trades); fixes ~44% of trades missing efficiency scores';
+export const BUILD_NOTES = 'Fix 404 error on journal pagination; Exit Quality & ExcursionBar now include trades with missing MAE (treats NULL as 0)';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {
