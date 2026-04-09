@@ -181,7 +181,7 @@ function JournalContent() {
         const newSearchParams = new URLSearchParams(searchParams.toString());
         newSearchParams.set('page', newPage.toString());
         const newUrl = newSearchParams.toString()
-            ? `${'$'}{window.location.pathname}?${'$'}{newSearchParams.toString()}`
+            ? `${window.location.pathname}?${newSearchParams.toString()}`
             : window.location.pathname;
         router.replace(newUrl, { scroll: false });
     };
@@ -193,7 +193,7 @@ function JournalContent() {
         const newSearchParams = new URLSearchParams(searchParams.toString());
         newSearchParams.set('page', '1');
         const newUrl = newSearchParams.toString()
-            ? `${'$'}{window.location.pathname}?${'$'}{newSearchParams.toString()}`
+            ? `${window.location.pathname}?${newSearchParams.toString()}`
             : window.location.pathname;
         router.replace(newUrl, { scroll: false });
     };
@@ -259,14 +259,14 @@ function JournalContent() {
             const tagValue = activeFilters.find(f => f.id === 'tag')?.removeValue
             if (tagValue) params.set('tag', tagValue)
             if (getParam('account')) params.set('account', getParam('account')!)
-            const res = await fetch(`/api/trades/export?${'$'}{params.toString()}`);
+            const res = await fetch(`/api/trades/export?${params.toString()}`);
             if (!res.ok) throw new Error('Export failed');
 
             const blob = await res.blob();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `trades_${'$'}{new Date().toISOString().split('T')[0]}.csv`;
+            a.download = `trades_${new Date().toISOString().split('T')[0]}.csv`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
@@ -306,7 +306,7 @@ function JournalContent() {
             if (getParam('to')) params.set('to', getParam('to')!)
             if (getParam('account')) params.set('account', getParam('account')!)
             params.set('idsOnly', 'true');
-            const res = await fetch(`/api/trades?${'$'}{params.toString()}`);
+            const res = await fetch(`/api/trades?${params.toString()}`);
             if (!res.ok) throw new Error();
             const data = await res.json();
             setSelectedIds(new Set(data.ids));
@@ -631,7 +631,7 @@ function JournalContent() {
                                 <button
                                     key={n}
                                     onClick={() => handleLimitChange(n)}
-                                    className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest transition-all ${'$'}{limit === n ? 'bg-white/15 text-white' : 'hover:bg-white/10 text-gray-500'}`}
+                                    className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest transition-all ${limit === n ? 'bg-white/15 text-white' : 'hover:bg-white/10 text-gray-500'}`}
                                 >
                                     {n}
                                 </button>
@@ -679,7 +679,7 @@ function JournalContent() {
                 onClose={() => setIsDeleteModalOpen(false)}
                 onConfirm={handleBulkDelete}
                 title="Delete Selected Trades"
-                message={`Are you sure you want to delete ${'$'}{selectedIds.size} trade${'$'}{selectedIds.size !== 1 ? 's' : ''}? This action cannot be undone.`}
+                message={`Are you sure you want to delete ${selectedIds.size} trade${selectedIds.size !== 1 ? 's' : ''}? This action cannot be undone.`}
                 confirmLabel="Delete"
                 variant="danger"
             />
