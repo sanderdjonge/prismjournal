@@ -11,7 +11,7 @@ export const APP_VERSION = pkg.version; // e.g. "2.17.0"
  */
 export const BUILD_DATE = '2026-04-09';
 
-export const BUILD_NOTES = '3-panel view: Strategy selector with instant checklist display, checklist saves with main Save button, star ratings fixed, tags add/edit; Dashboard: Period saved, all-time equity, exit quality uses initial SL';
+export const BUILD_NOTES = 'Fix: Checklist completions now persist and load correctly in 3-panel view; Strategy selector fetches saved completions on trade load';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {

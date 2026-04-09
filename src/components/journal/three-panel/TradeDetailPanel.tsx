@@ -110,7 +110,17 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                 .then(res => res.json())
                 .then(data => {
                     setStrategy(data);
-                    setCheckedItems({});
+                    // Fetch existing completions for this trade+strategy
+                    fetch(`/api/checklist-completions?tradeId=${trade.id}`)
+                        .then(res => res.json())
+                        .then(compData => {
+                            if (compData.hasStrategy && compData.checkedState) {
+                                setCheckedItems(compData.checkedState);
+                            } else {
+                                setCheckedItems({});
+                            }
+                        })
+                        .catch(() => setCheckedItems({}));
                 })
                 .catch(err => {
                     console.error('Failed to fetch strategy:', err);
@@ -120,7 +130,7 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
             setStrategy(null);
             setCheckedItems({});
         }
-    }, [selectedStrategyId]);
+    }, [selectedStrategyId, trade.id]);
 
     const handleRating = (field: 'entryRating' | 'exitRating' | 'managementRating', val: number) => {
         update.mutate(
