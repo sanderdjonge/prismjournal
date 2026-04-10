@@ -12,6 +12,7 @@ import {
 import { cn } from '@/lib/cn';
 import { useCurrency } from '@/lib/currency';
 import { autoScreenshotConfigSchema } from '@/lib/validations/screenshot-config';
+import { calculateDrawdown } from '@/lib/drawdown';
 
 interface AccountSummary {
     id: string;
@@ -24,11 +25,13 @@ interface AccountSummary {
     tradeCount: number;
     closedTradeCount: number;
     totalPnl: number;
+    highWaterMark?: number;
     propFirm: {
         id: string;
         name: string;
         dailyLossLimit: number;
         maxDrawdown: number;
+        drawdownType: 'STATIC' | 'TRAILING';
     } | null;
     broker: string | null;
     platform: string;
@@ -180,13 +183,24 @@ function AccountCard({ account, onClick, onEdit, onArchive }: { account: Account
             </div>
 
             {account.propFirm && account.accountSize && account.currentBalance && (() => {
-                const drawdownPct = Math.max(0, ((account.accountSize - account.currentBalance) / account.accountSize) * 100);
+                const drawdownPct = calculateDrawdown({
+                    drawdownType: account.propFirm.drawdownType,
+                    accountSize: account.accountSize,
+                    currentBalance: account.currentBalance,
+                    highWaterMark: account.highWaterMark ?? null,
+                });
                 const barPct = Math.min(100, (drawdownPct / account.propFirm.maxDrawdown) * 100);
                 const barColor = drawdownPct === 0 ? 'bg-profit' : barPct >= 80 ? 'bg-red-500' : 'bg-orange-500';
+                
                 return (
                     <div className="mt-4">
                         <div className="flex justify-between text-[10px] text-gray-500 mb-1">
-                            <span>Drawdown</span>
+                            <span className="flex items-center gap-1.5">
+                                Drawdown
+                                <span className="text-[8px] font-black uppercase tracking-widest text-gray-600">
+                                    {account.propFirm.drawdownType === 'TRAILING' ? '(Trail)' : '(Static)'}
+                                </span>
+                            </span>
                             <span>{drawdownPct.toFixed(2)}% / {account.propFirm.maxDrawdown}%</span>
                         </div>
                         <div className="h-1 bg-white/5 rounded-full overflow-hidden">

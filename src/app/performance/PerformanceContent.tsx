@@ -7,9 +7,11 @@ import { useCurrency } from '@/lib/currency';
 import { useAccounts } from '@/hooks/useAccounts';
 import { usePerformance } from '@/hooks/usePerformance';
 import { useAnalytics } from '@/hooks/useAnalytics';
+import { useHeatmap } from '@/hooks/useHeatmap';
 import { useFilters, FilterConfig } from '@/hooks/useFilters';
 import { FilterChipBar } from '@/components/filters/FilterChipBar';
 import { TradingHoursWidget } from '@/components/analytics/TradingHoursWidget';
+import { TradingHeatmapWidget } from '@/components/analytics/TradingHeatmapWidget';
 import {
     ResponsiveContainer, ComposedChart, Line, XAxis, YAxis, Tooltip,
 } from 'recharts';
@@ -42,6 +44,11 @@ export function PerformanceContent() {
     });
     const expectancyData = analyticsData.expectancyData;
     const sessionData = analyticsData.sessionData;
+
+    // Get heatmap data
+    const { data: heatmapData } = useHeatmap({
+        accountId: getParam('account') || undefined,
+    });
 
     const STATS = [
         { id: 'stat_pnl', label: 'Net P&L', val: formatPnl(data.netPnl), status: data.netPnl >= 0 ? 'text-profit' : 'text-loss', icon: TrendingUp },
@@ -169,6 +176,11 @@ export function PerformanceContent() {
 
                 {/* Trading Hours Widget */}
                 <TradingHoursWidget data={sessionData} />
+
+                {/* Trading Heatmap */}
+                {heatmapData && heatmapData.cells.length > 0 && (
+                    <TradingHeatmapWidget cells={heatmapData.cells} />
+                )}
             </div>
 
             {/* Monthly Return Matrix */}

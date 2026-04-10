@@ -34,6 +34,11 @@ export const GET = withAuth(async (req, _ctx, session) => {
                     phasesConfig: true,
                 },
             },
+            dailySnapshots: {
+                orderBy: { snapshotDate: 'desc' as const },
+                take: 1,
+                select: { highWaterMark: true },
+            },
         },
     });
 
@@ -57,6 +62,7 @@ export const GET = withAuth(async (req, _ctx, session) => {
             tradeCount: account._count.trades,
             closedTradeCount: summary?._count?.id ?? 0,
             totalPnl: summary?._sum?.pnl ?? 0,
+            highWaterMark: account.dailySnapshots[0]?.highWaterMark ?? account.accountSize,
         };
     });
 
