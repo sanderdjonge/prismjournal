@@ -1,14 +1,20 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import DashboardShell from '@/components/layout/DashboardShell';
-import StrategyRulesEditor from '@/components/strategies/StrategyRulesEditor';
-import ComplianceWidget from '@/components/dashboard/ComplianceWidget';
-import TiltmeterWidget from '@/components/dashboard/TiltmeterWidget';
-import { useChecklists } from '@/hooks/useChecklists';
-import { ArrowLeft, Edit2, Trash2, Check, Loader2, RefreshCw, ChevronDown } from 'lucide-react';
+import { useState, useEffect } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
+import DashboardShell from '@/components/layout/DashboardShell'
+import StrategyRulesEditor from '@/components/strategies/StrategyRulesEditor'
+import ComplianceWidget from '@/components/dashboard/ComplianceWidget'
+import TiltmeterWidget from '@/components/dashboard/TiltmeterWidget'
+import { useChecklists } from '@/hooks/useChecklists'
+import { useStrategyAnalytics } from '@/hooks/useStrategyAnalytics'
+import { StrategyMetricsPanel } from '@/components/strategies/StrategyMetricsPanel'
+import { StrategyEquityChart } from '@/components/strategies/StrategyEquityChart'
+import { StrategyMonthlyReturns } from '@/components/strategies/StrategyMonthlyReturns'
+import { StrategyRuleBreakdown } from '@/components/strategies/StrategyRuleBreakdown'
+import { StrategyBreakdowns } from '@/components/strategies/StrategyBreakdowns'
+import { ArrowLeft, Edit2, Trash2, Check, Loader2, RefreshCw, ChevronDown } from 'lucide-react'
 
 interface ChecklistItemData {
   id: string;
@@ -55,7 +61,8 @@ export default function StrategyDetailClient() {
   const [reevaluateResult, setReevaluateResult] = useState<{ evaluated: number; violations: number } | null>(null);
   const [isSavingChecklist, setIsSavingChecklist] = useState(false);
 
-  const { data: checklistsData } = useChecklists();
+  const { data: checklistsData } = useChecklists()
+  const { data: analytics, isLoading: analyticsLoading } = useStrategyAnalytics(strategy?.id ?? '')
 
   useEffect(() => {
     if (params.id) {
@@ -264,6 +271,48 @@ export default function StrategyDetailClient() {
             </div>
           )}
         </div>
+
+        {/* Analytics Section */}
+        {analytics && !analyticsLoading && analytics.tradeCount > 0 && (
+          <div className="space-y-6">
+            <StrategyMetricsPanel
+              winRate={analytics.winRate}
+              avgR={analytics.avgR}
+              profitFactor={analytics.profitFactor}
+              maxDrawdown={analytics.maxDrawdown}
+              bestTrade={analytics.bestTrade}
+              worstTrade={analytics.worstTrade}
+              totalPnl={analytics.totalPnl}
+              tradeCount={analytics.tradeCount}
+              expectancy={analytics.expectancy}
+            />
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <StrategyEquityChart data={analytics.equityCurve} />
+              </div>
+              <div>
+                <StrategyMonthlyReturns data={analytics.monthlyReturns} />
+              </div>
+            </div>
+            
+            <StrategyRuleBreakdown data={analytics.ruleBreakdown} />
+            
+            <StrategyBreakdowns
+              bySymbol={analytics.bySymbol}
+              byDirection={analytics.byDirection}
+              byTimeOfDay={analytics.byTimeOfDay}
+              byDayOfWeek={analytics.byDayOfWeek}
+            />
+          </div>
+        )}
+
+        {analyticsLoading && (
+          <div className="animate-pulse space-y-4">
+            <div className="h-32 bg-white/5 rounded-2xl" />
+            <div className="h-64 bg-white/5 rounded-2xl" />
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Column - Rules + Checklist */}
