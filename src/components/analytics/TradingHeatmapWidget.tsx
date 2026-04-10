@@ -47,14 +47,49 @@ function getCellColor(cell: HeatmapCell | undefined, mode: ViewMode): string {
     }
 
     if (mode === 'count') {
-        const intensity = Math.min(cell.count / 10, 1);
-        return `bg-blue-500/` + Math.round(intensity * 60);
+        // Use intensity based on count
+        if (cell.count >= 10) return 'bg-blue-500/60';
+        if (cell.count >= 5) return 'bg-blue-500/40';
+        return 'bg-blue-500/20';
     }
 
     // expectedValue
     if (cell.avgPnl > 0) return 'bg-green-500/60';
     if (cell.avgPnl < 0) return 'bg-red-500/60';
     return 'bg-white/10';
+}
+
+function getLegendColors(mode: ViewMode): { color: string; label: string }[] {
+    if (mode === 'pnl') {
+        return [
+            { color: 'bg-red-500/60', label: 'Losing' },
+            { color: 'bg-white/10', label: 'Neutral' },
+            { color: 'bg-green-500/60', label: 'Profitable' },
+        ];
+    }
+
+    if (mode === 'winRate') {
+        return [
+            { color: 'bg-red-500/60', label: '<40%' },
+            { color: 'bg-yellow-500/60', label: '40-60%' },
+            { color: 'bg-green-500/60', label: '>60%' },
+        ];
+    }
+
+    if (mode === 'count') {
+        return [
+            { color: 'bg-blue-500/20', label: 'Few' },
+            { color: 'bg-blue-500/40', label: 'Medium' },
+            { color: 'bg-blue-500/60', label: 'Many' },
+        ];
+    }
+
+    // expectedValue
+    return [
+        { color: 'bg-red-500/60', label: 'Negative' },
+        { color: 'bg-white/10', label: 'Neutral' },
+        { color: 'bg-green-500/60', label: 'Positive' },
+    ];
 }
 
 export function TradingHeatmapWidget({ cells, currency = 'USD' }: TradingHeatmapWidgetProps) {
@@ -146,7 +181,7 @@ export function TradingHeatmapWidget({ cells, currency = 'USD' }: TradingHeatmap
                                                 getCellColor(cell, viewMode),
                                                 hasData && 'hover:ring-1 hover:ring-white/30'
                                             )}
-                                            onMouseEnter={() => hasData && setHoveredCell(cell)}
+                                            onMouseEnter={() => cell && setHoveredCell(cell)}
                                             onMouseLeave={() => setHoveredCell(null)}
                                         />
                                     );
@@ -197,18 +232,12 @@ export function TradingHeatmapWidget({ cells, currency = 'USD' }: TradingHeatmap
 
             {/* Legend */}
             <div className="flex items-center justify-center gap-6 mt-3 text-[9px] font-medium text-gray-400">
-                <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded-sm bg-red-500/60" />
-                    <span>Losing</span>
-                </div>
-                <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded-sm bg-white/10" />
-                    <span>Neutral</span>
-                </div>
-                <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded-sm bg-green-500/60" />
-                    <span>Profitable</span>
-                </div>
+                {getLegendColors(viewMode).map(({ color, label }) => (
+                    <div key={label} className="flex items-center gap-1">
+                        <div className={cn('w-3 h-3 rounded-sm', color)} />
+                        <span>{label}</span>
+                    </div>
+                ))}
             </div>
         </div>
     );
