@@ -11,7 +11,7 @@ export const APP_VERSION = pkg.version; // e.g. "2.17.0"
  */
 export const BUILD_DATE = '2026-04-10';
 
-export const BUILD_NOTES = 'Trailing drawdown (Apex/Topstart/The5ers); Trading heatmap with dynamic legends (P&L/Win Rate/Count/Expected Value)';
+export const BUILD_NOTES = 'Trading heatmap with automated insights (best/worst times, day patterns); Trailing drawdown (Apex/Topstep/The5ers)';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {
