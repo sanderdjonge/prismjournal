@@ -307,6 +307,12 @@ export default function StrategyDetailClient() {
           </div>
         )}
 
+        {analytics && !analyticsLoading && analytics.tradeCount === 0 && (
+          <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
+            <p className="text-gray-400 text-sm">No closed trades assigned to this strategy yet. Assign trades from the Journal page to see analytics.</p>
+          </div>
+        )}
+
         {analyticsLoading && (
           <div className="animate-pulse space-y-4">
             <div className="h-32 bg-white/5 rounded-2xl" />
