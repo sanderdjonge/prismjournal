@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
+import { timingSafeEqual } from 'crypto';
 import { fetchEconomicEvents } from '@/lib/cron/fetch-economic-events';
 
 /**
@@ -16,7 +17,12 @@ export async function POST() {
   const authHeader = headersList.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
 
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+  if (!cronSecret || !authHeader) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const expected = `Bearer ${cronSecret}`;
+  if (authHeader.length !== expected.length || !timingSafeEqual(Buffer.from(authHeader), Buffer.from(expected))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

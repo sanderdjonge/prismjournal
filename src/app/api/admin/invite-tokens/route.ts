@@ -4,6 +4,13 @@ import { randomBytes } from 'crypto';
 import { withAdmin } from '@/lib/api/withAdmin';
 import { ok, badRequest, internalError } from '@/lib/api/responses';
 import type { AdminSession } from '@/lib/api/withAdmin';
+import { z } from 'zod';
+
+const generateTokensSchema = z.object({
+  count: z.number().int().min(1).max(100).default(1),
+  expiresDays: z.number().int().positive().optional(),
+  email: z.string().email().optional(),
+});
 
 async function generateTokens(userId: string, count: number = 1, expiresDays?: number, email?: string) {
   const tokens: string[] = [];
@@ -26,11 +33,11 @@ async function generateTokens(userId: string, count: number = 1, expiresDays?: n
 export const POST = withAdmin(async (req: NextRequest, _ctx: Record<string, unknown>, session: AdminSession) => {
   try {
     const body = await req.json();
-    const { count = 1, expiresDays, email } = body;
-
-    if (count < 1 || count > 100) {
-      return badRequest('Count must be between 1 and 100');
+    const parsed = generateTokensSchema.safeParse(body);
+    if (!parsed.success) {
+      return badRequest('Invalid input: ' + parsed.error.issues.map(i => i.message).join(', '));
     }
+    const { count, expiresDays, email } = parsed.data;
 
     const userId = session.user.id;
     const { tokens, records } = await generateTokens(userId, count, expiresDays, email);
@@ -89,9 +96,13 @@ export const DELETE = withAdmin(async (req: NextRequest, _ctx: Record<string, un
       return badRequest('Token ID is required');
     }
 
-    await prisma.inviteToken.delete({
+    const deleted = await prisma.inviteToken.delete({
       where: { id: tokenId },
-    });
+    }).catch(() => null);
+
+    if (!deleted) {
+      return badRequest('Token not found');
+    }
 
     return ok({ deleted: true });
   } catch (error) {

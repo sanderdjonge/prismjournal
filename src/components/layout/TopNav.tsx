@@ -15,7 +15,7 @@ import {
     Bell,
     Tag
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { cn } from '@/lib/cn';
 import NotificationCenter from './NotificationCenter';
@@ -47,6 +47,19 @@ export default function TopNav() {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
+    const profileRef = useRef<HTMLDivElement>(null);
+
+    // Close profile dropdown on outside click
+    useEffect(() => {
+        if (!isProfileOpen) return;
+        const handleClickOutside = (e: MouseEvent) => {
+            if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+                setIsProfileOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isProfileOpen]);
 
     useEffect(() => {
         // Check if user is admin
@@ -109,7 +122,7 @@ export default function TopNav() {
                     <NotificationCenter />
 
                     {/* Profile */}
-                    <div className="flex items-center gap-2 md:gap-3 pl-4 md:pl-6 border-l border-white/5 relative">
+                    <div className="flex items-center gap-2 md:gap-3 pl-4 md:pl-6 border-l border-white/5 relative" ref={profileRef}>
                         <div className="hidden sm:flex flex-col items-end">
                             <span className="text-sm font-bold text-white tracking-tight">{session?.user?.name ?? 'User'}</span>
                             <div className="flex items-center gap-1">

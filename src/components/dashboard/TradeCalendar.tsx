@@ -185,12 +185,18 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
         return '';
     }, [metric, symbol]);
 
+    const dataByDate = useMemo(() => {
+        const map = new Map<string, TradeDay>();
+        data.forEach(d => map.set(d.date, d));
+        return map;
+    }, [data]);
+
     // Build flat array of cells (nulls for padding + day objects)
     const flatCells: DayCell[] = [];
     for (let i = 0; i < startDay; i++) flatCells.push(null);
     for (let i = 1; i <= daysInMonth; i++) {
         const dateStr = viewDate.date(i).format('YYYY-MM-DD');
-        const dayData = data.find(d => d.date === dateStr);
+        const dayData = dataByDate.get(dateStr);
         const dayEvents = monthEventsByDate.get(dateStr) || [];
         flatCells.push({
             date: i,
@@ -226,7 +232,6 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
             border: "border-white/5",
             text: "text-gray-500",
         };
-        // For R:R: green if >= 1.0, red if < 1.0
         const isPositive = metric === 'rr' ? metricVal >= 1.0 : metricVal > 0;
         const isNegative = metric === 'rr' ? metricVal < 1.0 : metricVal < 0;
         if (isPositive) return { bg: "bg-profit/15 hover:bg-profit/25", border: "border-profit/30", text: "text-profit" };
@@ -236,13 +241,6 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
 
     const pnlColor = (pnl: number) =>
         pnl > 0 ? 'text-profit' : pnl < 0 ? 'text-loss' : 'text-gray-400';
-
-    // Year view helpers
-    const dataByDate = useMemo(() => {
-        const map = new Map<string, TradeDay>();
-        data.forEach(d => map.set(d.date, d));
-        return map;
-    }, [data]);
 
     // 95th-percentile of absolute metric values for the viewed year (for colour intensity scaling)
     const p95 = useMemo(() => {

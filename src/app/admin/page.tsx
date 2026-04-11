@@ -287,26 +287,28 @@ export default function AdminPage() {
     async function bulkDeleteUsers() {
         setBulkDeleting(true);
         try {
+            const selectedArr = Array.from(selectedUsers);
             const results = await Promise.allSettled(
-                Array.from(selectedUsers).map(userId =>
+                selectedArr.map(userId =>
                     fetch(`/api/admin/users?userId=${userId}&mode=hard`, { method: 'DELETE' })
+                        .then(res => ({ userId, ok: res.ok }))
                 )
             );
-            const failed = results.filter(r => r.status === 'rejected').length;
+            const succeeded = new Set<string>();
+            let failCount = 0;
+            results.forEach((r, i) => {
+                if (r.status === 'fulfilled' && r.value.ok) {
+                    succeeded.add(r.value.userId);
+                } else {
+                    failCount++;
+                }
+            });
+            setUsers(prev => prev.filter(u => !succeeded.has(u.id)));
             const newSelected = new Set(selectedUsers);
-            Array.from(selectedUsers).forEach((userId, i) => {
-                if (results[i].status === 'fulfilled') newSelected.delete(userId);
-            });
-            setUsers(prev => {
-                const deletedIds = new Set<string>();
-                Array.from(selectedUsers).forEach((userId, i) => {
-                    if (results[i].status === 'fulfilled') deletedIds.add(userId);
-                });
-                return prev.filter(u => !deletedIds.has(u.id));
-            });
-            setSelectedUsers(new Set);
+            succeeded.forEach(id => newSelected.delete(id));
+            setSelectedUsers(newSelected);
             setConfirmBulkDelete(false);
-            if (failed > 0) alert(`${failed} user(s) failed to delete`);
+            if (failCount > 0) alert(`${failCount} user(s) failed to delete`);
         } catch (e: any) {
             alert(e.message || 'Bulk delete failed');
         } finally {

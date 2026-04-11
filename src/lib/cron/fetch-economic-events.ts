@@ -57,10 +57,8 @@ export async function fetchEconomicEvents() {
 
     const data = (await response.json()) as TradingEconomicsEvent[];
 
-    let upserted = 0;
-
-    // Upsert events
-    for (const event of data) {
+    // Batch upsert events
+    const upserts = data.map(event => {
       const currency = CURRENCY_MAP[event.Country.toLowerCase()] || 'USD';
       const eventDate = new Date(event.Date);
       const timeStr = eventDate.toLocaleTimeString('en-US', {
@@ -69,7 +67,7 @@ export async function fetchEconomicEvents() {
         timeZoneName: 'short'
       });
 
-      await prisma.economicEvent.upsert({
+      return prisma.economicEvent.upsert({
         where: { externalId: event.CalendarId },
         create: {
           externalId: event.CalendarId,
@@ -89,9 +87,10 @@ export async function fetchEconomicEvents() {
           previous: event.Previous || null,
         },
       });
+    });
 
-      upserted++;
-    }
+    const results = await Promise.all(upserts);
+    const upserted = results.length;
 
     // Delete old events (older than 7 days)
     const cutoffDate = new Date();

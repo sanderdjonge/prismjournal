@@ -3,6 +3,11 @@ import prisma from '@/lib/prisma';
 import { withAdmin } from '@/lib/api/withAdmin';
 import { ok, badRequest, internalError } from '@/lib/api/responses';
 import type { AdminSession } from '@/lib/api/withAdmin';
+import { z } from 'zod';
+
+const updateSettingsSchema = z.object({
+    inviteOnlyMode: z.boolean(),
+});
 
 export const GET = withAdmin(async () => {
     try {
@@ -24,11 +29,11 @@ export const GET = withAdmin(async () => {
 export const PATCH = withAdmin(async (req: NextRequest, _ctx: Record<string, unknown>, _session: AdminSession) => {
     try {
         const body = await req.json();
-        const { inviteOnlyMode } = body;
-
-        if (typeof inviteOnlyMode !== 'boolean') {
-            return badRequest('inviteOnlyMode must be a boolean');
+        const parsed = updateSettingsSchema.safeParse(body);
+        if (!parsed.success) {
+            return badRequest('Invalid input: inviteOnlyMode must be a boolean');
         }
+        const { inviteOnlyMode } = parsed.data;
 
         const settings = await prisma.systemSettings.upsert({
             where: { id: 'system' },
