@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api/withAuth';
+import { withAdmin } from '@/lib/api/withAdmin';
 import prisma from '@/lib/prisma';
 import type { Session } from 'next-auth';
 import { z } from 'zod';
@@ -46,7 +47,12 @@ export const GET = withAuth(async (
     }
 
     if (impact) {
-        where.impact = impact.toUpperCase();
+        const validImpacts = ['LOW', 'MEDIUM', 'HIGH'];
+        const upperImpact = impact.toUpperCase();
+        if (!validImpacts.includes(upperImpact)) {
+            return NextResponse.json({ error: 'Invalid impact value' }, { status: 400 });
+        }
+        where.impact = upperImpact;
     }
 
     const events = await prisma.economicEvent.findMany({        where,
@@ -57,11 +63,11 @@ export const GET = withAuth(async (
     return NextResponse.json({ events });
 });
 
-// POST /api/economic-events - Create event (admin only for now)
-export const POST = withAuth(async (
+// POST /api/economic-events - Create event (admin only)
+export const POST = withAdmin(async (
     request: NextRequest,
     _ctx: Record<string, unknown>,
-    session: Session & { user: { id: string } }
+    session: Session & { user: { id: string; isSuperuser: boolean } }
 ) => {
     const body = await request.json();
     const validated = eventSchema.safeParse(body);

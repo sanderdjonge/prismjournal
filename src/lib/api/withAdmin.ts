@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { checkLimit, Limiters } from '@/lib/rate-limit-redis';
 import type { Session } from 'next-auth';
 
 export type AdminSession = Session & { user: { id: string; isSuperuser: boolean } };
@@ -14,6 +15,9 @@ type AdminHandler = (
 
 export function withAdmin(handler: AdminHandler) {
   return async (req: NextRequest, ctx: Record<string, unknown>): Promise<Response> => {
+    const rateLimitResponse = await checkLimit(req, Limiters.api);
+    if (rateLimitResponse) return rateLimitResponse;
+
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

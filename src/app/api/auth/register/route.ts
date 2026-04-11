@@ -36,32 +36,39 @@ export async function POST(request: Request) {
                 // Use atomic conditional update to prevent double-spend race condition.
                 // updateMany returns { count } — if another tx already consumed the token,
                 // count will be 0 and we reject.
+                // Handle NULL expiresAt (non-expiring tokens) via OR clause.
                 const { count: consumed } = await tx.inviteToken.updateMany({
                     where: {
                         token: body.invite,
                         usedAt: null,
-                        expiresAt: body.invite ? { gt: new Date() } : undefined,
+                        OR: [
+                            { expiresAt: null },
+                            { expiresAt: { gt: new Date() } },
+                        ],
                     },
                     data: { usedAt: new Date() },
                 });
 
                 if (consumed === 0) {
+                    // Token validation failed — return generic message to prevent state enumeration.
+                    // Log the specific reason server-side for debugging.
                     const inviteToken = await tx.inviteToken.findUnique({
                         where: { token: body.invite },
                     });
+
+                    let reason = 'invalid'
                     if (!inviteToken) {
-                        throw Object.assign(new Error('Invalid invite token'), { status: 400 });
+                        reason = 'not_found'
+                    } else if (inviteToken.usedAt) {
+                        reason = 'already_used'
+                    } else if (inviteToken.expiresAt && new Date() > inviteToken.expiresAt) {
+                        reason = 'expired'
+                    } else if (inviteToken.email && inviteToken.email !== body.email) {
+                        reason = 'email_mismatch'
                     }
-                    if (inviteToken.usedAt) {
-                        throw Object.assign(new Error('Invite token already used'), { status: 400 });
-                    }
-                    if (inviteToken.expiresAt && new Date() > inviteToken.expiresAt) {
-                        throw Object.assign(new Error('Invite token expired'), { status: 400 });
-                    }
-                    if (inviteToken.email && inviteToken.email !== body.email) {
-                        throw Object.assign(new Error('Email does not match invite'), { status: 400 });
-                    }
-                    throw Object.assign(new Error('Invite token is no longer valid'), { status: 400 });
+
+                    console.warn(`[register] Invite token validation failed: ${reason}`)
+                    throw Object.assign(new Error('Invalid or expired invite token'), { status: 400 });
                 }
 
                 // Check email match BEFORE creating user (avoid wasting the token on wrong email)
@@ -69,7 +76,8 @@ export async function POST(request: Request) {
                     where: { token: body.invite },
                 });
                 if (inviteRecord?.email && inviteRecord.email !== body.email) {
-                    throw Object.assign(new Error('Email does not match invite'), { status: 400 });
+                    console.warn('[register] Invite token email mismatch')
+                    throw Object.assign(new Error('Invalid or expired invite token'), { status: 400 });
                 }
             }
 
