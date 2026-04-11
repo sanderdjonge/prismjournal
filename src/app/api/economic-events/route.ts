@@ -49,8 +49,7 @@ export const GET = withAuth(async (
         where.impact = impact.toUpperCase();
     }
 
-    const events = await prisma.economicEvent.findMany({
-        where,
+    const events = await prisma.economicEvent.findMany({        where,
         orderBy: { date: 'asc' },
         take: 100,
     });

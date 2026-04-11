@@ -140,17 +140,13 @@ function formatUptime(seconds: number): string {
 
 // Format date relative
 function formatRelative(dateStr: string): string {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
+    const diffMs = Date.now() - new Date(dateStr).getTime();
     const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-    
     if (diffMins < 1) return 'Just now';
     if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMs / 3600000);
     if (diffHours < 24) return `${diffHours}h ago`;
-    return `${diffDays}d ago`;
+    return `${Math.floor(diffMs / 86400000)}d ago`;
 }
 
 export default function AdminPage() {
@@ -465,7 +461,9 @@ export default function AdminPage() {
     });
 
     const activeCount = users.filter(u => u.isActive).length;
-    const inactiveCount = users.filter(u => !u.isActive).length;
+    const inactiveCount = users.length - activeCount;
+    const adminCount = users.filter(u => u.isSuperuser).length;
+    const twoFACount = users.filter(u => u.totpEnabled).length;
     
     // Loading state
     if (usersLoading) {
@@ -596,7 +594,7 @@ export default function AdminPage() {
                                     <Users size={20} className="text-primary" />
                                     <div>
                                         <p className="text-lg font-black text-white">
-                                            <span className="text-accent">{users.filter(u => u.isActive).length}</span>
+                                            <span className="text-accent">{activeCount}</span>
                                             <span className="text-gray-500 mx-1">/</span>
                                             <span>{users.length}</span>
                                         </p>
@@ -608,7 +606,7 @@ export default function AdminPage() {
                                 <div className="flex items-center gap-3">
                                     <UserX size={20} className="text-danger" />
                                     <div>
-                                        <p className="text-2xl font-black text-white">{users.filter(u => !u.isActive).length}</p>
+                                        <p className="text-2xl font-black text-white">{inactiveCount}</p>
                                         <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">Inactive</p>
                                     </div>
                                 </div>
@@ -617,7 +615,7 @@ export default function AdminPage() {
                                 <div className="flex items-center gap-3">
                                     <Crown size={20} className="text-yellow-500" />
                                     <div>
-                                        <p className="text-2xl font-black text-white">{users.filter(u => u.isSuperuser).length}</p>
+                                        <p className="text-2xl font-black text-white">{adminCount}</p>
                                         <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">Admins</p>
                                     </div>
                                 </div>
@@ -626,7 +624,7 @@ export default function AdminPage() {
                                 <div className="flex items-center gap-3">
                                     <Key size={20} className="text-primary" />
                                     <div>
-                                        <p className="text-2xl font-black text-white">{users.filter(u => u.totpEnabled).length}</p>
+                                        <p className="text-2xl font-black text-white">{twoFACount}</p>
                                         <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">2FA Enabled</p>
                                     </div>
                                 </div>

@@ -12,11 +12,10 @@ async function generateTokens(userId: string, count: number = 1, expiresDays?: n
   for (let i = 0; i < count; i++) {
     const token = randomBytes(16).toString('hex');
     tokens.push(token);
-    const expiresAt = expiresDays ? new Date(Date.now() + expiresDays * 24 * 60 * 60 * 1000) : null;
     records.push({
       token,
       email: email || null,
-      expiresAt,
+      expiresAt: expiresDays ? new Date(Date.now() + expiresDays * 24 * 60 * 60 * 1000) : null,
       createdBy: userId,
     });
   }

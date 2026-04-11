@@ -58,14 +58,13 @@ export async function fetchEconomicEvents() {
     const data = (await response.json()) as TradingEconomicsEvent[];
 
     let upserted = 0;
-    let deleted = 0;
 
     // Upsert events
     for (const event of data) {
       const currency = CURRENCY_MAP[event.Country.toLowerCase()] || 'USD';
       const eventDate = new Date(event.Date);
-      const timeStr = eventDate.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
+      const timeStr = eventDate.toLocaleTimeString('en-US', {
+        hour: '2-digit',
         minute: '2-digit',
         timeZoneName: 'short'
       });
@@ -98,13 +97,11 @@ export async function fetchEconomicEvents() {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - 7);
 
-    const deleteResult = await prisma.economicEvent.deleteMany({
+    const { count: deleted } = await prisma.economicEvent.deleteMany({
       where: {
         date: { lt: cutoffDate },
       },
     });
-
-    deleted = deleteResult.count;
 
     logger.info(`Economic events sync complete: ${upserted} upserted, ${deleted} deleted`);
 

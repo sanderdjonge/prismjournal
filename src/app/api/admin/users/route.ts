@@ -30,17 +30,16 @@ async function createAuditLog(
 ) {
   try {
     const session = await auth();
-    const ip = request.headers.get('x-forwarded-for') || 
-               request.headers.get('x-real-ip') || 
+    const ip = request.headers.get('x-forwarded-for') ||
+               request.headers.get('x-real-ip') ||
                'unknown';
-    const userAgent = request.headers.get('user-agent') || 'unknown';
 
     await prisma.auditLog.create({
       data: {
         action,
         details: JSON.stringify(details),
-        ipAddress: Array.isArray(ip) ? ip[0] : ip,
-        userAgent,
+        ipAddress: typeof ip === 'string' ? ip.split(',')[0].trim() : ip,
+        userAgent: request.headers.get('user-agent') || 'unknown',
         userId: session?.user?.id || null,
       },
     });
@@ -52,37 +51,28 @@ async function createAuditLog(
 // Rate limiting - simple in-memory store (use Redis in production)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 
-function checkRateLimit(
-  key: string,
-  maxRequests: number = 10,
-  windowMs: number = 60000
-): { allowed: boolean; remaining: number; resetTime: number } {
-  const now = Date.now();
-  const record = rateLimitStore.get(key);
-  
-  if (!record || now > record.resetTime) {
-    const resetTime = now + windowMs;
-    rateLimitStore.set(key, { count: 1, resetTime });
-    return { allowed: true, remaining: maxRequests - 1, resetTime };
-  }
-  
-  if (record.count >= maxRequests) {
-    return { allowed: false, remaining: 0, resetTime: record.resetTime };
-  }
-  
-  record.count++;
-  return { allowed: true, remaining: maxRequests - record.count, resetTime: record.resetTime };
-}
+  // Rates: admin-users-${id} (30/min), admin-modify-${id} (10/min), admin-delete-${id} (5/min), admin-reset-${id} (5/min)
+  const getRateLimit = (key: string, maxRequests: number, windowMs: number) => {
+    const now = Date.now();
+    const record = rateLimitStore.get(key);
+
+    if (!record || now > record.resetTime) {
+      rateLimitStore.set(key, { count: 1, resetTime: now + windowMs });
+      return { allowed: true, remaining: maxRequests - 1, resetTime: now + windowMs };
+    }
+
+    if (record.count >= maxRequests) {
+      return { allowed: false, remaining: 0, resetTime: record.resetTime };
+    }
+
+    record.count++;
+    return { allowed: true, remaining: maxRequests - record.count, resetTime: record.resetTime };
+  };
 
 // GET - List all users with pagination
 export const GET = withAdmin(async (request: NextRequest, _ctx: Record<string, unknown>, session: AdminSession) => {
-  // Rate limiting
-  const rateLimit = checkRateLimit(`admin-users-${session.user.id}`, 30, 60000);
-  if (!rateLimit.allowed) {
-    return NextResponse.json(
-      { error: 'Too many requests', resetTime: rateLimit.resetTime },
-      { status: 429 }
-    );
+  if (!getRateLimit(`admin-users-${session.user.id}`, 30, 60000).allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
   }
 
   await createAuditLog(AuditAction.ADMIN_ACCESS, {
@@ -156,13 +146,8 @@ const updateUserSchema = z.object({
 });
 
 export const PATCH = withAdmin(async (request: NextRequest, _ctx: Record<string, unknown>, session: AdminSession) => {
-  // Stricter rate limiting for modifications
-  const rateLimit = checkRateLimit(`admin-modify-${session.user.id}`, 10, 60000);
-  if (!rateLimit.allowed) {
-    return NextResponse.json(
-      { error: 'Too many requests', resetTime: rateLimit.resetTime },
-      { status: 429 }
-    );
+  if (!getRateLimit(`admin-modify-${session.user.id}`, 10, 60000).allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
   }
 
   try {
@@ -190,71 +175,26 @@ export const PATCH = withAdmin(async (request: NextRequest, _ctx: Record<string,
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    let updateData: Record<string, boolean> = {};
-    let auditAction: AuditAction;
-    let auditDetails: Record<string, unknown> = {
-      targetUserId: userId,
-      targetEmail: user.email,
-    };
+    const isRoleAction = action === 'makeAdmin' || action === 'removeAdmin';
+    const field = isRoleAction ? 'isSuperuser' : 'isActive';
+    const newValue = action === 'makeAdmin' || action === 'activate';
+    const currentValue = user[field];
 
-    switch (action) {
-      case 'makeAdmin':
-        if (user.isSuperuser) {
-          return NextResponse.json({ error: 'User is already an admin' }, { status: 400 });
-        }
-        updateData = { isSuperuser: true };
-        auditAction = AuditAction.USER_ROLE_CHANGE;
-        auditDetails.previousValue = false;
-        auditDetails.newValue = true;
-        break;
-
-      case 'removeAdmin':
-        if (!user.isSuperuser) {
-          return NextResponse.json({ error: 'User is not an admin' }, { status: 400 });
-        }
-        updateData = { isSuperuser: false };
-        auditAction = AuditAction.USER_ROLE_CHANGE;
-        auditDetails.previousValue = true;
-        auditDetails.newValue = false;
-        break;
-
-      case 'activate':
-        if (user.isActive) {
-          return NextResponse.json({ error: 'User is already active' }, { status: 400 });
-        }
-        updateData = { isActive: true };
-        auditAction = AuditAction.USER_STATUS_CHANGE;
-        auditDetails.previousValue = false;
-        auditDetails.newValue = true;
-        break;
-
-      case 'deactivate':
-        if (!user.isActive) {
-          return NextResponse.json({ error: 'User is already inactive' }, { status: 400 });
-        }
-        updateData = { isActive: false };
-        auditAction = AuditAction.USER_STATUS_CHANGE;
-        auditDetails.previousValue = true;
-        auditDetails.newValue = false;
-        break;
-
-      default:
-        return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+    if (currentValue === newValue) {
+      return NextResponse.json({ error: `User is already ${newValue ? (isRoleAction ? 'an admin' : 'active') : (isRoleAction ? 'not an admin' : 'inactive')}` }, { status: 400 });
     }
 
     const updatedUser = await prisma.user.update({
       where: { id: userId },
-      data: updateData,
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        isSuperuser: true,
-        isActive: true,
-      },
+      data: { [field]: newValue },
+      select: { id: true, email: true, name: true, isSuperuser: true, isActive: true },
     });
 
-    await createAuditLog(auditAction, auditDetails, request);
+    await createAuditLog(
+      isRoleAction ? AuditAction.USER_ROLE_CHANGE : AuditAction.USER_STATUS_CHANGE,
+      { targetUserId: userId, targetEmail: user.email, previousValue: currentValue, newValue },
+      request
+    );
 
     return NextResponse.json({
       success: true,
@@ -275,8 +215,7 @@ const sendResetSchema = z.object({
 });
 
 export const POST = withAdmin(async (request: NextRequest, _ctx: Record<string, unknown>, session: AdminSession) => {
-  const rateLimit = checkRateLimit(`admin-reset-${session.user.id}`, 5, 60000);
-  if (!rateLimit.allowed) {
+  if (!getRateLimit(`admin-reset-${session.user.id}`, 5, 60000).allowed) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
   }
 
@@ -342,13 +281,8 @@ export const POST = withAdmin(async (request: NextRequest, _ctx: Record<string, 
 
 // DELETE - Soft delete (default) or hard delete (?mode=hard) user
 export const DELETE = withAdmin(async (request: NextRequest, _ctx: Record<string, unknown>, session: AdminSession) => {
-  // Very strict rate limiting for deletions
-  const rateLimit = checkRateLimit(`admin-delete-${session.user.id}`, 5, 60000);
-  if (!rateLimit.allowed) {
-    return NextResponse.json(
-      { error: 'Too many requests', resetTime: rateLimit.resetTime },
-      { status: 429 }
-    );
+  if (!getRateLimit(`admin-delete-${session.user.id}`, 5, 60000).allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
   }
 
   try {
