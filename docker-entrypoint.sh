@@ -2,7 +2,7 @@
 set -e
 
 echo "Running Prisma migrations..."
-npx prisma migrate deploy --schema=./prisma/schema.prisma || echo "WARNING: Prisma migration failed, continuing startup..."
+./node_modules/.bin/prisma migrate deploy --schema=./prisma/schema.prisma
 
 echo "Starting PrismJournal..."
 export HOSTNAME=0.0.0.0

@@ -136,6 +136,9 @@ export const GET = withAdmin(async (request: NextRequest, _ctx: Record<string, u
     prisma.user.count({ where }),
   ]);
 
+  // Audit log user enumeration
+  await createAuditLog(AuditAction.ADMIN_ACCESS, { action: 'VIEW_USERS_LIST', page, limit, search }, request).catch(console.error);
+
   return NextResponse.json({
     users,
     pagination: {

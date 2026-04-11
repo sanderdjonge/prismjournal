@@ -11,7 +11,7 @@ export const APP_VERSION = pkg.version; // e.g. "2.17.0"
  */
 export const BUILD_DATE = '2026-04-11';
 
-export const BUILD_NOTES = 'v2.39.0: Invite-only registration system, consolidated profit/loss theming, user hard delete with full cascade, multi-select bulk user management, strategy overwrite bugfix, dark/light theme toggle, onboarding flow, economic calendar overlay, mobile responsive layout, notification popup light theme fix';
+export const BUILD_NOTES = 'v2.39.1: Security fixes — non-expiring invite tokens, admin rate limiting, admin page guard, migration fail-closed, economic events admin-only, error message normalization, impact enum validation, audit logging restored';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {
