@@ -277,15 +277,22 @@ async function applyPlatformTag(userId: string, tradeId: string, tagName: string
  * Find or create a strategy by name for the given user.
  */
 async function resolveStrategy(name: string, userId: string): Promise<string> {
-    let strat = await prisma.strategy.findFirst({
+    const existing = await prisma.strategy.findFirst({
         where: { name, userId },
     });
-    if (!strat) {
-        strat = await prisma.strategy.create({
+    if (existing) return existing.id;
+    try {
+        const created = await prisma.strategy.create({
             data: { name, userId },
         });
+        return created.id;
+    } catch {
+        const fallback = await prisma.strategy.findFirst({
+            where: { name, userId },
+        });
+        if (!fallback) throw new Error(`Failed to resolve strategy "${name}" for user ${userId}`);
+        return fallback.id;
     }
-    return strat.id;
 }
 
 function formatDateTime(date: Date | string | null | undefined): string {
@@ -334,15 +341,20 @@ async function sendTradeAlert(
  * Used only for history syncs — live trades use server time instead.
  */
 function parseBrokerTime(timeStr: string): Date {
-    // MT5 sends "YYYY.MM.DD HH:MM:SS" — normalise dots to dashes
-    const normalised = timeStr.replace(/^(\d{4})\.(\d{2})\.(\d{2})/, '$1-$2-$3');
-    // If the string already has timezone info, parse directly
-    if (/Z$|[+-]\d{2}:?\d{2}$/.test(normalised)) {
-        return new Date(normalised);
+    if (!timeStr || typeof timeStr !== 'string') {
+        return new Date();
     }
-    // Otherwise treat as UTC
+    const normalised = timeStr.replace(/^(\d{4})\.(\d{2})\.(\d{2})/, '$1-$2-$3');
+    if (/Z$|[+-]\d{2}:?\d{2}$/.test(normalised)) {
+        const d = new Date(normalised);
+        if (!isNaN(d.getTime())) return d;
+    }
     const d = new Date(normalised.replace(' ', 'T') + 'Z');
-    return isNaN(d.getTime()) ? new Date(normalised) : d;
+    if (!isNaN(d.getTime())) return d;
+    const fallback = new Date(normalised);
+    if (!isNaN(fallback.getTime())) return fallback;
+    logger.warn({ timeStr }, '[trade-sync] unparseable broker time, using server time');
+    return new Date();
 }
 
 /**

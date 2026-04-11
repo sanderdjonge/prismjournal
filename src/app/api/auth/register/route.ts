@@ -33,31 +33,44 @@ export async function POST(request: Request) {
                     throw Object.assign(new Error('Invite token required'), { status: 400 });
                 }
 
-                const inviteToken = await tx.inviteToken.findUnique({
-                    where: { token: body.invite },
-                });
-
-                if (!inviteToken) {
-                    throw Object.assign(new Error('Invalid invite token'), { status: 400 });
-                }
-
-                if (inviteToken.usedAt) {
-                    throw Object.assign(new Error('Invite token already used'), { status: 400 });
-                }
-
-                if (inviteToken.expiresAt && new Date() > inviteToken.expiresAt) {
-                    throw Object.assign(new Error('Invite token expired'), { status: 400 });
-                }
-
-                if (inviteToken.email && inviteToken.email !== body.email) {
-                    throw Object.assign(new Error('Email does not match invite'), { status: 400 });
-                }
-
-                // Mark token as used immediately within the transaction to prevent double-use
-                await tx.inviteToken.update({
-                    where: { token: body.invite! },
+                // Use atomic conditional update to prevent double-spend race condition.
+                // updateMany returns { count } — if another tx already consumed the token,
+                // count will be 0 and we reject.
+                const { count: consumed } = await tx.inviteToken.updateMany({
+                    where: {
+                        token: body.invite,
+                        usedAt: null,
+                        expiresAt: body.invite ? { gt: new Date() } : undefined,
+                    },
                     data: { usedAt: new Date() },
                 });
+
+                if (consumed === 0) {
+                    const inviteToken = await tx.inviteToken.findUnique({
+                        where: { token: body.invite },
+                    });
+                    if (!inviteToken) {
+                        throw Object.assign(new Error('Invalid invite token'), { status: 400 });
+                    }
+                    if (inviteToken.usedAt) {
+                        throw Object.assign(new Error('Invite token already used'), { status: 400 });
+                    }
+                    if (inviteToken.expiresAt && new Date() > inviteToken.expiresAt) {
+                        throw Object.assign(new Error('Invite token expired'), { status: 400 });
+                    }
+                    if (inviteToken.email && inviteToken.email !== body.email) {
+                        throw Object.assign(new Error('Email does not match invite'), { status: 400 });
+                    }
+                    throw Object.assign(new Error('Invite token is no longer valid'), { status: 400 });
+                }
+
+                // Check email match BEFORE creating user (avoid wasting the token on wrong email)
+                const inviteRecord = await tx.inviteToken.findUnique({
+                    where: { token: body.invite },
+                });
+                if (inviteRecord?.email && inviteRecord.email !== body.email) {
+                    throw Object.assign(new Error('Email does not match invite'), { status: 400 });
+                }
             }
 
             const existing = await tx.user.findUnique({ where: { email: body.email } });
@@ -65,7 +78,7 @@ export async function POST(request: Request) {
                 throw Object.assign(new Error('Email already registered'), { status: 409 });
             }
 
-            return tx.user.create({
+            const newUser = await tx.user.create({
                 data: {
                     email: body.email,
                     password: hashedPassword,
@@ -74,31 +87,31 @@ export async function POST(request: Request) {
                     bridgeKeyHash: keyHash,
                 },
             });
-        });
 
-        // Update invite token with user ID outside the critical path
-        if (systemSettings?.inviteOnlyMode && body.invite) {
-            await prisma.inviteToken.update({
-                where: { token: body.invite },
+            // Create default trading account INSIDE the transaction to guarantee atomicity.
+            // If this fails the entire registration rolls back — no orphaned users.
+            await tx.tradingAccount.create({
                 data: {
-                    usedBy: user.id,
+                    userId: newUser.id,
+                    name: 'Default Account',
+                    broker: 'Manual',
+                    accountNumber: `MANUAL-${newUser.id.slice(-8).toUpperCase()}`,
+                    currency: 'USD',
+                    leverage: 100,
+                    platform: 'METATRADER5',
+                    platformAccountId: `MANUAL-${newUser.id.slice(-8).toUpperCase()}`,
                 },
             });
-        }
 
-        // Create a default trading account for the new user
-        // Use user ID in account number to ensure uniqueness
-        await prisma.tradingAccount.create({
-            data: {
-                userId: user.id,
-                name: 'Default Account',
-                broker: 'Manual',
-                accountNumber: `MANUAL-${user.id.slice(-8).toUpperCase()}`,
-                currency: 'USD',
-                leverage: 100,
-                platform: 'METATRADER5',
-                platformAccountId: `MANUAL-${user.id.slice(-8).toUpperCase()}`,
-            },
+            // Update invite token with user ID inside the transaction
+            if (systemSettings?.inviteOnlyMode && body.invite) {
+                await tx.inviteToken.update({
+                    where: { token: body.invite },
+                    data: { usedBy: newUser.id },
+                });
+            }
+
+            return newUser;
         });
 
         return NextResponse.json({ 

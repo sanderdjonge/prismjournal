@@ -49,7 +49,17 @@ export async function fetchEconomicEvents() {
       c: apiKey,
     });
 
-    const response = await fetch(`${TRADING_ECONOMICS_API}?${params}`);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15_000);
+
+    let response: Response;
+    try {
+      response = await fetch(`${TRADING_ECONOMICS_API}?${params}`, {
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
 
     if (!response.ok) {
       throw new Error(`API returned ${response.status}`);
@@ -57,40 +67,51 @@ export async function fetchEconomicEvents() {
 
     const data = (await response.json()) as TradingEconomicsEvent[];
 
-    // Batch upsert events
-    const upserts = data.map(event => {
-      const currency = CURRENCY_MAP[event.Country.toLowerCase()] || 'USD';
-      const eventDate = new Date(event.Date);
-      const timeStr = eventDate.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZoneName: 'short'
+    if (!Array.isArray(data)) {
+      throw new Error('API returned non-array response');
+    }
+
+    // Validate and batch upsert events — use allSettled so one bad record
+    // doesn't abort the entire sync
+    const upserts = data
+      .filter(event => event.CalendarId && event.Date && !isNaN(new Date(event.Date).getTime()))
+      .map(event => {
+        const currency = CURRENCY_MAP[event.Country?.toLowerCase()] || 'USD';
+        const eventDate = new Date(event.Date);
+        const timeStr = eventDate.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          timeZoneName: 'short'
+        });
+
+        return prisma.economicEvent.upsert({
+          where: { externalId: event.CalendarId },
+          create: {
+            externalId: event.CalendarId,
+            name: event.Event,
+            currency,
+            date: eventDate,
+            time: timeStr,
+            impact: 'HIGH',
+            actual: event.Actual || null,
+            forecast: event.Forecast || null,
+            previous: event.Previous || null,
+            source: 'TradingEconomics',
+          },
+          update: {
+            actual: event.Actual || null,
+            forecast: event.Forecast || null,
+            previous: event.Previous || null,
+          },
+        });
       });
 
-      return prisma.economicEvent.upsert({
-        where: { externalId: event.CalendarId },
-        create: {
-          externalId: event.CalendarId,
-          name: event.Event,
-          currency,
-          date: eventDate,
-          time: timeStr,
-          impact: 'HIGH',
-          actual: event.Actual || null,
-          forecast: event.Forecast || null,
-          previous: event.Previous || null,
-          source: 'TradingEconomics',
-        },
-        update: {
-          actual: event.Actual || null,
-          forecast: event.Forecast || null,
-          previous: event.Previous || null,
-        },
-      });
-    });
-
-    const results = await Promise.all(upserts);
-    const upserted = results.length;
+    const results = await Promise.allSettled(upserts);
+    const upserted = results.filter(r => r.status === 'fulfilled').length;
+    const failed = results.filter(r => r.status === 'rejected').length;
+    if (failed > 0) {
+      logger.warn(`${failed} event(s) failed to upsert`);
+    }
 
     // Delete old events (older than 7 days)
     const cutoffDate = new Date();
