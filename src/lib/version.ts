@@ -11,7 +11,7 @@ export const APP_VERSION = pkg.version; // e.g. "2.17.0"
  */
 export const BUILD_DATE = '2026-04-11';
 
-export const BUILD_NOTES = 'Consolidated profit/loss color classes across all widgets; fixed strategy overwrite bug in MT5 sync';
+export const BUILD_NOTES = 'v2.39.0: Invite-only registration system, consolidated profit/loss theming, user hard delete with full cascade, multi-select bulk user management, strategy overwrite bugfix, dark/light theme toggle, onboarding flow, economic calendar overlay, mobile responsive layout, notification popup light theme fix';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {
