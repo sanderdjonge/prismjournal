@@ -29,13 +29,6 @@ export const GET = withAuth(async (_req, ctx, session) => {
         select: { id: true, filename: true, timeframe: true, event: true },
     });
 
-    const mediaWithUrls = media.map(m => ({
-        id: m.id,
-        url: `/api/media/${m.id}/file`,
-        timeframe: m.timeframe,
-        event: m.event,
-    }));
-
     return NextResponse.json({
         id: trade.id,
         symbol: trade.symbol,
@@ -62,7 +55,12 @@ export const GET = withAuth(async (_req, ctx, session) => {
         strategy: trade.strategy?.name ?? null,
         accountName: trade.account?.name ?? null,
         tags: trade.tags,
-        media: mediaWithUrls,
+        media: media.map(m => ({
+            id: m.id,
+            url: `/api/media/${m.id}/file`,
+            timeframe: m.timeframe,
+            event: m.event,
+        })),
     });
 });
 

@@ -15,7 +15,5 @@ export const BUILD_NOTES = 'v2.39.0: Invite-only registration system, consolidat
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {
-    const parts = version.split('.');
-    const phase = parseInt(parts[1] ?? '0', 10);
-    return `Phase ${phase}`;
+    return `Phase ${parseInt(version.split('.')[1] ?? '0', 10)}`;
 }

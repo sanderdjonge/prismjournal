@@ -13,8 +13,7 @@ import {
     Shield,
     Globe,
     Bell,
-    Tag,
-    Settings
+    Tag
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';

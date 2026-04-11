@@ -406,6 +406,15 @@ export async function upsertSyncTrade(
     // BUY/SELL → LONG/SHORT
     const direction = trade.type === 'BUY' ? 'LONG' : 'SHORT';
 
+    const calcRMultiple = (exitPrice: number, entryPrice: number, stopLoss: number): number | null => {
+        const risk = Math.abs(entryPrice - stopLoss);
+        if (risk <= 0) return null;
+        const rawR = direction === 'LONG'
+            ? (exitPrice - entryPrice) / risk
+            : (entryPrice - exitPrice) / risk;
+        return Math.round(rawR * 100) / 100;
+    };
+
     // On update: detect breakeven — never overwrite initialStopLoss
     if (!isNew && trade.stopLoss != null && existing!.initialStopLoss != null && existing!.entryPrice != null) {
         const initialRisk = Math.abs(existing!.initialStopLoss - existing!.entryPrice);
@@ -417,17 +426,11 @@ export async function upsertSyncTrade(
 
     // On update: recalculate rMultiple using initialStopLoss when available
     if (!isNew && trade.exitPrice != null) {
-        const exitPriceVal = trade.exitPrice;
         const entryPriceVal = existing!.entryPrice ?? trade.entryPrice ?? null;
         const initialSL = existing!.initialStopLoss;
         if (entryPriceVal != null && initialSL != null) {
-            const risk = Math.abs(entryPriceVal - initialSL);
-            if (risk > 0) {
-                const rawR = direction === 'LONG'
-                    ? (exitPriceVal - entryPriceVal) / risk
-                    : (entryPriceVal - exitPriceVal) / risk;
-                updateData.rMultiple = Math.round(rawR * 100) / 100;
-            }
+            const r = calcRMultiple(trade.exitPrice, entryPriceVal, initialSL);
+            if (r != null) updateData.rMultiple = r;
         }
     }
 
@@ -435,13 +438,7 @@ export async function upsertSyncTrade(
     const createInitialSL = trade.initialStopLoss ?? trade.stopLoss ?? null;
     let createRMultiple: number | null = null;
     if (trade.exitPrice != null && trade.entryPrice != null && createInitialSL != null) {
-        const risk = Math.abs(trade.entryPrice - createInitialSL);
-        if (risk > 0) {
-            const rawR = direction === 'LONG'
-                ? (trade.exitPrice - trade.entryPrice) / risk
-                : (trade.entryPrice - trade.exitPrice) / risk;
-            createRMultiple = Math.round(rawR * 100) / 100;
-        }
+        createRMultiple = calcRMultiple(trade.exitPrice, trade.entryPrice, createInitialSL);
     }
 
     const upsertedTrade = await prisma.trade.upsert({

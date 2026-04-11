@@ -64,15 +64,16 @@ export function EventBadge({ event }: { event: EconomicEvent }) {
   );
 }
 
-export function EventDot({ currency }: { currency: string }) {
-  const colorClass = 
-    currency === 'USD' ? 'bg-blue-400' :
-    currency === 'EUR' ? 'bg-purple-400' :
-    currency === 'GBP' ? 'bg-cyan-400' : 'bg-orange-400';
+const DOT_COLORS: Record<string, string> = {
+  USD: 'bg-blue-400',
+  EUR: 'bg-purple-400',
+  GBP: 'bg-cyan-400',
+};
 
+export function EventDot({ currency }: { currency: string }) {
   return (
     <span
-      className={cn('w-1 h-1 rounded-full', colorClass)}
+      className={cn('w-1 h-1 rounded-full', DOT_COLORS[currency] || 'bg-orange-400')}
       title={`${currency} event`}
     />
   );

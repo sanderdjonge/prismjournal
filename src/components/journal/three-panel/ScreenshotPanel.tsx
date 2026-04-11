@@ -81,10 +81,7 @@ export function ScreenshotPanel({ trade }: ScreenshotPanelProps) {
         : null;
 
     const eff = (trade?.mae && trade?.mfe && trade.mae > 0 && trade.mfe > 0 && trade.exit && trade.exit > 0)
-        ? (() => {
-            const exitDist = trade.type === 'LONG' ? trade.exit - trade.entry : trade.entry - trade.exit;
-            return Math.min(100, Math.max(0, ((trade.mae + exitDist) / (trade.mae + trade.mfe)) * 100));
-        })()
+        ? Math.min(100, Math.max(0, ((trade.mae + (trade.type === 'LONG' ? trade.exit - trade.entry : trade.entry - trade.exit)) / (trade.mae + trade.mfe)) * 100))
         : null;
 
     return (

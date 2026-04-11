@@ -46,16 +46,14 @@ export function useEconomicEvents(params: EconomicEventsParams = {}) {
 }
 
 export function useEventsByDate(events: EconomicEvent[] | undefined): Map<string, EconomicEvent[]> {
+    if (!events) return new Map();
+
     const byDate = new Map<string, EconomicEvent[]>();
-    
-    if (!events) return byDate;
-    
     for (const event of events) {
-        const date = event.date.split('T')[0]; // Handle ISO date strings
-        const existing = byDate.get(date) || [];
-        existing.push(event);
-        byDate.set(date, existing);
+        const date = event.date.split('T')[0];
+        const existing = byDate.get(date);
+        if (existing) existing.push(event);
+        else byDate.set(date, [event]);
     }
-    
     return byDate;
 }

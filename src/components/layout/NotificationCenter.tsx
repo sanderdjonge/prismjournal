@@ -127,18 +127,14 @@ export default function NotificationCenter({ className }: NotificationCenterProp
 
   // Format relative time
   const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / 60000);
+    const diff = Date.now() - new Date(dateString).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
     const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
-
-    if (minutes < 1) return 'Just now';
-    if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;
-    if (days < 7) return `${days}d ago`;
-    return date.toLocaleDateString();
+    const days = Math.floor(diff / 86400000);
+    return days < 7 ? `${days}d ago` : new Date(dateString).toLocaleDateString();
   };
 
   // Get icon for notification type

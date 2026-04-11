@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Eye, TrendingUp, TrendingDown, Zap, Brain, FileText, CheckCircle2, XCircle, Meh, ImageOff, Share2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
