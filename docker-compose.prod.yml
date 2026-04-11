@@ -25,6 +25,16 @@ services:
     networks:
       - prod-network
 
+  redis:
+    image: redis:7-alpine
+    container_name: prod_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - prod_redis_data:/data
+    networks:
+      - prod-network
+
   app:
     build:
       context: .
@@ -35,6 +45,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
     env_file: .env
     environment:
       NODE_ENV: production
@@ -49,6 +61,7 @@ services:
       BACKUP_KEEP_HOURLY: ${BACKUP_KEEP_HOURLY:-24}
       BACKUP_KEEP_DAILY: ${BACKUP_KEEP_DAILY:-30}
       BACKUP_KEEP_WEEKLY: ${BACKUP_KEEP_WEEKLY:-12}
+      REDIS_URL: redis://redis:6379
     volumes:
       - prod_storage:/app/storage
       - prod_backups:/app/backups
@@ -123,3 +136,4 @@ volumes:
   prod_db_data:
   prod_storage:
   prod_backups:
+  prod_redis_data:
