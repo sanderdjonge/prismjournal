@@ -7,12 +7,14 @@ import RecentTrades from './RecentTrades';
 import PrismScoreWidget from './PrismScoreWidget';
 import { PreTradeNotesWidget } from '@/components/pre-trade';
 import { ChallengeProgressWidget } from '@/components/challenges/ChallengeProgressWidget';
+import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
 import { cn } from '@/lib/cn';
 import { useCurrency } from '@/lib/currency';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useSettings } from '@/hooks/useSettings';
 import { MetricRow } from '@/components/ui';
+import { GraduationCap } from 'lucide-react';
 
 type RecentTrade = {
     id: string;
@@ -54,6 +56,7 @@ export default function Dashboard() {
     const { selectedAccountId } = useAccounts();
     const { data } = useDashboard(period, selectedAccountId);
     const { dateFormat } = useSettings();
+    const [showOnboarding, setShowOnboarding] = useState(false);
 
     const stats = data as DashboardData;
 
@@ -62,6 +65,27 @@ export default function Dashboard() {
             setPeriod(savedPeriod);
         }
     }, [savedPeriod]);
+
+    // Show onboarding for new users with no trades
+    useEffect(() => {
+        if (stats && stats.totalTrades === 0) {
+            const hasSeenOnboarding = localStorage.getItem('prism-onboarding-seen');
+            if (!hasSeenOnboarding) {
+                setShowOnboarding(true);
+            }
+        }
+    }, [stats]);
+
+    const handleCloseOnboarding = (dontShowAgain?: boolean) => {
+        setShowOnboarding(false);
+        if (dontShowAgain) {
+            localStorage.setItem('prism-onboarding-seen', 'true');
+        }
+    };
+
+    const handleTestOnboarding = () => {
+        setShowOnboarding(true);
+    };
 
     const handlePeriodChange = (newPeriod: '7' | '30' | '90' | '365') => {
         setPeriod(newPeriod);
@@ -76,7 +100,15 @@ export default function Dashboard() {
                     <h1 className="text-2xl font-black tracking-tight text-white">Dashboard</h1>
                     <p className="text-sm text-gray-500 mt-1">Your trading performance at a glance</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
+                    <button
+                        onClick={handleTestOnboarding}
+                        className="px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all duration-300 bg-accent/20 text-accent border border-accent/30 hover:bg-accent/30 flex items-center gap-1.5"
+                        title="Test onboarding flow"
+                    >
+                        <GraduationCap size={12} />
+                        Onboarding
+                    </button>
                     {(['7', '30', '90', '365'] as const).map((d) => (
                         <button
                             key={d}
@@ -169,6 +201,9 @@ export default function Dashboard() {
                     <RecentTrades trades={stats.trades} />
                 </div>
             </div>
+
+            {/* Onboarding Modal for New Users */}
+            <OnboardingModal isOpen={showOnboarding} onClose={handleCloseOnboarding} />
         </div>
     );
 }

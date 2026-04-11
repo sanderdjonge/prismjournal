@@ -53,10 +53,10 @@ const ZONE_CONFIG: Record<ZoneKey, {
     bgFill: string;
     textColor: string;
 }> = {
-    clean:    { label: 'Clean',     desc: 'Good entry + good exit',         color: '#4ade80', bgFill: 'rgba(74,222,128,0.06)',   textColor: 'text-green-400' },
-    earlyOut: { label: 'Early Out', desc: 'Good entry, left profit behind',  color: '#facc15', bgFill: 'rgba(250,204,21,0.05)',   textColor: 'text-yellow-400' },
-    survived: { label: 'Survived',  desc: 'Rough entry, recovered well',     color: '#fb923c', bgFill: 'rgba(251,146,60,0.06)',   textColor: 'text-orange-400' },
-    painful:  { label: 'Painful',   desc: 'Rough entry + poor exit',         color: '#f87171', bgFill: 'rgba(248,113,113,0.07)', textColor: 'text-red-400' },
+    clean:    { label: 'Clean',     desc: 'Good entry + good exit',         color: '#4ade80', bgFill: 'var(--profit-bg)',   textColor: 'text-profit' },
+    earlyOut: { label: 'Early Out', desc: 'Good entry, left profit behind',  color: '#facc15', bgFill: 'rgba(250,204,21,0.08)',   textColor: 'text-yellow-400' },
+    survived: { label: 'Survived',  desc: 'Rough entry, recovered well',     color: '#fb923c', bgFill: 'rgba(251,146,60,0.08)',   textColor: 'text-orange-400' },
+    painful:  { label: 'Painful',   desc: 'Rough entry + poor exit',         color: '#f87171', bgFill: 'var(--loss-bg)', textColor: 'text-loss' },
 };
 
 // ---------------------------------------------------------------------------
@@ -220,11 +220,11 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                     </div>
                     <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest">
                         <span className="flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-green-400 inline-block" />
+                            <span className="w-2 h-2 rounded-full bg-profit inline-block" />
                             <span className="text-gray-500">Profitable</span>
                         </span>
                         <span className="flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-red-400 inline-block" />
+                            <span className="w-2 h-2 rounded-full bg-loss inline-block" />
                             <span className="text-gray-500">Loss</span>
                         </span>
                     </div>
@@ -325,9 +325,9 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                                     key={t.id}
                                     cx={cx} cy={cy}
                                     r={isHovered ? 5 : 3}
-                                    fill={isWin ? '#4ade80' : '#f87171'}
+                                    fill={isWin ? 'var(--profit)' : 'var(--loss)'}
                                     fillOpacity={isHovered ? 1 : 0.8}
-                                    stroke={isWin ? '#86efac' : '#fca5a5'}
+                                    stroke={isWin ? 'var(--profit)' : 'var(--loss)'}
                                     strokeWidth={1}
                                     style={{ cursor: 'pointer', transition: 'r 0.1s' }}
                                     onMouseEnter={() => setHoveredId(t.id)}
@@ -378,16 +378,16 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                             >
                                 <p className="text-xs font-black text-white uppercase tracking-wide mb-0.5">{hovered.symbol}</p>
                                 {exitDate && <p className="text-[10px] font-black uppercase tracking-widest text-gray-600 mb-2.5">{exitDate}</p>}
-                                <Row label="Captured" value={`${hovered.exitDistFromEntry != null && hovered.exitDistFromEntry >= 0 ? '+' : ''}${hovered.exitDistFromEntry?.toFixed(4) ?? '—'} pts`} color={isWin ? 'text-green-400' : 'text-red-400'} />
+                                <Row label="Captured" value={`${hovered.exitDistFromEntry != null && hovered.exitDistFromEntry >= 0 ? '+' : ''}${hovered.exitDistFromEntry?.toFixed(4) ?? '—'} pts`} color={isWin ? 'text-profit' : 'text-loss'} />
                                 <Row label="Best available (MFE)" value={`+${hovered.mfe?.toFixed(4) ?? '—'} pts`} />
                                 {hovered.mfe != null && hovered.exitDistFromEntry != null && (
                                     <Row label="Left on table" value={`${(hovered.mfe - hovered.exitDistFromEntry).toFixed(4)} pts`} color="text-yellow-400" />
                                 )}
                                 <div className="my-2 h-px bg-white/5" />
-                                <Row label="Max against you (MAE)" value={`-${(hovered.mae ?? 0).toFixed(4)} pts`} color="text-red-400" />
+                                <Row label="Max against you (MAE)" value={`-${(hovered.mae ?? 0).toFixed(4)} pts`} color="text-loss" />
                                 {slMsg && <Row label="Your stop" value={slMsg} />}
                                 <Row label="Exit efficiency" value={`${hovered.eff.toFixed(1)}%`} />
-                                <Row label="P&L" value={`${pnlSign}${hovered.pnl.toFixed(2)}`} color={isWin ? 'text-green-400' : 'text-red-400'} />
+                                <Row label="P&L" value={`${pnlSign}${hovered.pnl.toFixed(2)}`} color={isWin ? 'text-profit' : 'text-loss'} />
                                 <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest" style={{ background: zone.color + '22', color: zone.color, border: `1px solid ${zone.color}44` }}>
                                     {zone.label}
                                 </div>
@@ -404,11 +404,11 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                         <div
                             key={key}
                             className="rounded-xl p-3 border"
-                            style={{ background: z.bgFill, borderColor: z.color + '33' }}
+                            style={{ background: z.bgFill, borderColor: z.color + '40' }}
                         >
                             <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: z.color }}>{z.label}</p>
                             <p className="text-base font-black" style={{ color: z.color }}>{zoneCounts[key]}</p>
-                            <p className="text-[10px] text-white/30 font-medium mt-0.5 leading-tight">{z.desc}</p>
+                            <p className="text-[10px] text-gray-500 font-medium mt-0.5 leading-tight">{z.desc}</p>
                         </div>
                     ))}
                 </div>

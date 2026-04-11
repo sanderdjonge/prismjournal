@@ -31,7 +31,7 @@ export function StrategyRuleBreakdown({ data }: RuleBreakdownProps) {
     return (
       <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
         <h3 className="text-sm font-semibold text-gray-100 mb-4">Rule Compliance</h3>
-        <div className="flex items-center gap-2 text-green-400">
+        <div className="flex items-center gap-2 text-profit">
           <CheckCircle size={16} />
           <span className="text-sm">Perfect compliance - no violations</span>
         </div>
@@ -40,9 +40,9 @@ export function StrategyRuleBreakdown({ data }: RuleBreakdownProps) {
   }
 
   const getStatus = (percent: number) => {
-    if (percent < 10) return { icon: CheckCircle, color: 'text-green-400', label: 'OK' }
+    if (percent < 10) return { icon: CheckCircle, color: 'text-profit', label: 'OK' }
     if (percent < 20) return { icon: AlertCircle, color: 'text-yellow-400', label: 'Warning' }
-    return { icon: AlertTriangle, color: 'text-red-400', label: 'Alert' }
+    return { icon: AlertTriangle, color: 'text-loss', label: 'Alert' }
   }
 
   return (
@@ -73,7 +73,7 @@ export function StrategyRuleBreakdown({ data }: RuleBreakdownProps) {
                   </td>
                   <td className={cn(
                     'py-3 text-right font-mono',
-                    (rule.pnlImpact ?? 0) >= 0 ? 'text-gray-400' : 'text-red-400'
+                    (rule.pnlImpact ?? 0) >= 0 ? 'text-gray-400' : 'text-loss'
                   )}>
                     {rule.pnlImpact !== null ? formatAmount(rule.pnlImpact) : '—'}
                   </td>

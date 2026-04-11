@@ -9,10 +9,13 @@ import { evaluateAndRecordCompliance, TradeContext } from '@/lib/services/strate
 export const GET = withAuth(async (_req, ctx, session) => {
     const { id } = await (ctx as { params: Promise<{ id: string }> }).params;
 
-    // Verify ownership before returning media
     const trade = await prisma.trade.findFirst({
         where: { id, account: { userId: session.user.id } },
-        select: { id: true },
+        include: {
+            account: { select: { id: true, name: true } },
+            strategy: { select: { id: true, name: true } },
+            tags: { select: { id: true, name: true, color: true } },
+        },
     });
     if (!trade) {
         return NextResponse.json({ error: 'Trade not found' }, { status: 404 });
@@ -21,7 +24,7 @@ export const GET = withAuth(async (_req, ctx, session) => {
     const media = await prisma.media.findMany({
         where: {
             tradeId: id,
-            type: { not: 'SHARE_CARD' }, // Exclude share cards from screenshot view
+            type: { not: 'SHARE_CARD' },
         },
         select: { id: true, filename: true, timeframe: true, event: true },
     });
@@ -33,7 +36,34 @@ export const GET = withAuth(async (_req, ctx, session) => {
         event: m.event,
     }));
 
-    return NextResponse.json({ media: mediaWithUrls });
+    return NextResponse.json({
+        id: trade.id,
+        symbol: trade.symbol,
+        direction: trade.direction,
+        type: trade.direction,
+        volume: trade.volume,
+        entry: trade.entryPrice,
+        exit: trade.exitPrice,
+        entryTime: trade.entryTime?.toISOString() ?? null,
+        exitTime: trade.exitTime?.toISOString() ?? null,
+        takeProfit: trade.takeProfit,
+        stopLoss: trade.stopLoss,
+        pnl: trade.pnl,
+        rMultiple: trade.rMultiple,
+        mae: trade.mae,
+        mfe: trade.mfe,
+        notes: trade.notes,
+        mood: trade.mood,
+        planCompliance: trade.planCompliance,
+        entryRating: trade.entryRating,
+        exitRating: trade.exitRating,
+        managementRating: trade.managementRating,
+        closeReason: trade.closeReason,
+        strategy: trade.strategy?.name ?? null,
+        accountName: trade.account?.name ?? null,
+        tags: trade.tags,
+        media: mediaWithUrls,
+    });
 });
 
 export const PATCH = withAuth(async (req, ctx, session) => {

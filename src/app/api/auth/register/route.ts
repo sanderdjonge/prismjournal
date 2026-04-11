@@ -18,6 +18,37 @@ export async function POST(request: Request) {
 
         const body = validation.data;
 
+        // Check if invite-only mode is enabled
+        const systemSettings = await prisma.systemSettings.findUnique({
+            where: { id: 'system' },
+        });
+
+        if (systemSettings?.inviteOnlyMode) {
+            if (!body.invite) {
+                return NextResponse.json({ error: 'Invite token required' }, { status: 400 });
+            }
+
+            const inviteToken = await prisma.inviteToken.findUnique({
+                where: { token: body.invite },
+            });
+
+            if (!inviteToken) {
+                return NextResponse.json({ error: 'Invalid invite token' }, { status: 400 });
+            }
+
+            if (inviteToken.usedAt) {
+                return NextResponse.json({ error: 'Invite token already used' }, { status: 400 });
+            }
+
+            if (inviteToken.expiresAt && new Date() > inviteToken.expiresAt) {
+                return NextResponse.json({ error: 'Invite token expired' }, { status: 400 });
+            }
+
+            if (inviteToken.email && inviteToken.email !== body.email) {
+                return NextResponse.json({ error: 'Email does not match invite' }, { status: 400 });
+            }
+        }
+
         const existing = await prisma.user.findUnique({ where: { email: body.email } });
         if (existing) {
             logAuditEvent('REGISTRATION_FAILED', null, { email: body.email, reason: 'email_already_registered' }).catch(console.error);
@@ -38,6 +69,17 @@ export async function POST(request: Request) {
                 bridgeKeyHash: keyHash,
             },
         });
+
+        // Mark invite token as used if it was validated in invite-only mode
+        if (systemSettings?.inviteOnlyMode && body.invite) {
+            await prisma.inviteToken.update({
+                where: { token: body.invite },
+                data: {
+                    usedBy: user.id,
+                    usedAt: new Date(),
+                },
+            });
+        }
 
         // Create a default trading account for the new user
         // Use user ID in account number to ensure uniqueness

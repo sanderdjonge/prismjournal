@@ -88,7 +88,7 @@ export function ScreenshotPanel({ trade }: ScreenshotPanelProps) {
         : null;
 
     return (
-        <div className="flex-1 min-w-0 flex flex-col min-h-0 bg-[#080b10]">
+        <div className="flex-1 min-w-0 flex flex-col min-h-0 bg-black/40">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] flex-shrink-0">
                 <span className="text-[9px] font-black uppercase tracking-[0.22em] text-gray-500">Chart</span>

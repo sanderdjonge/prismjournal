@@ -42,15 +42,15 @@ function getCellColor(cell: HeatmapCell | undefined, mode: ViewMode): string {
     if (!cell || cell.count === 0) return 'bg-white/5';
 
     if (mode === 'pnl') {
-        if (cell.totalPnl > 0) return 'bg-green-500/60';
-        if (cell.totalPnl < 0) return 'bg-red-500/60';
+        if (cell.totalPnl > 0) return 'bg-profit';
+        if (cell.totalPnl < 0) return 'bg-loss';
         return 'bg-white/10';
     }
 
     if (mode === 'winRate') {
-        if (cell.winRate >= 60) return 'bg-green-500/60';
-        if (cell.winRate >= 40) return 'bg-yellow-500/60';
-        return 'bg-red-500/60';
+        if (cell.winRate >= 60) return 'bg-profit';
+        if (cell.winRate >= 40) return 'bg-yellow-500';
+        return 'bg-loss';
     }
 
     if (mode === 'count') {
@@ -61,25 +61,25 @@ function getCellColor(cell: HeatmapCell | undefined, mode: ViewMode): string {
     }
 
     // expectedValue
-    if (cell.avgPnl > 0) return 'bg-green-500/60';
-    if (cell.avgPnl < 0) return 'bg-red-500/60';
+    if (cell.avgPnl > 0) return 'bg-profit';
+    if (cell.avgPnl < 0) return 'bg-loss';
     return 'bg-white/10';
 }
 
 function getLegendColors(mode: ViewMode): { color: string; label: string }[] {
     if (mode === 'pnl') {
         return [
-            { color: 'bg-red-500/60', label: 'Losing' },
+            { color: 'bg-loss', label: 'Losing' },
             { color: 'bg-white/10', label: 'Neutral' },
-            { color: 'bg-green-500/60', label: 'Profitable' },
+            { color: 'bg-profit', label: 'Profitable' },
         ];
     }
 
     if (mode === 'winRate') {
         return [
-            { color: 'bg-red-500/60', label: '<40%' },
-            { color: 'bg-yellow-500/60', label: '40-60%' },
-            { color: 'bg-green-500/60', label: '>60%' },
+            { color: 'bg-loss', label: '<40%' },
+            { color: 'bg-yellow-500', label: '40-60%' },
+            { color: 'bg-profit', label: '>60%' },
         ];
     }
 
@@ -93,9 +93,9 @@ function getLegendColors(mode: ViewMode): { color: string; label: string }[] {
 
     // expectedValue
     return [
-        { color: 'bg-red-500/60', label: 'Negative' },
+        { color: 'bg-loss', label: 'Negative' },
         { color: 'bg-white/10', label: 'Neutral' },
-        { color: 'bg-green-500/60', label: 'Positive' },
+        { color: 'bg-profit', label: 'Positive' },
     ];
 }
 
@@ -347,9 +347,9 @@ export function TradingHeatmapWidget({ cells, currency = 'USD' }: TradingHeatmap
                                 : insight.type === 'danger' ? TrendingDown 
                                 : AlertTriangle;
                             const colorClass = insight.type === 'success' 
-                                ? 'text-green-400 bg-green-500/10 border-green-500/20' 
+                                ? 'text-profit bg-profit/10 border-profit/20' 
                                 : insight.type === 'danger' 
-                                    ? 'text-red-400 bg-red-500/10 border-red-500/20'
+                                    ? 'text-loss bg-loss/10 border-loss/20'
                                     : 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20';
                             
                             return (

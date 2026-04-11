@@ -37,9 +37,11 @@ export function useEconomicEvents(params: EconomicEventsParams = {}) {
         queryFn: async () => {
             const res = await fetch(url);
             if (!res.ok) throw new Error('Failed to fetch economic events');
-            return res.json() as Promise<EconomicEvent[]>;
+            const data = await res.json();
+            // Handle both array and { events: [...] } response formats
+            return (Array.isArray(data) ? data : data.events) as EconomicEvent[];
         },
-        staleTime: 5 * 60 * 1000, // 5 minutes
+        staleTime: 24 * 60 * 60 * 1000, // 24 hours - events don't change frequently
     });
 }
 

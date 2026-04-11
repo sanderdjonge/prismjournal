@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/cn';
 import { APP_VERSION, BUILD_DATE } from '@/lib/version';
 
@@ -10,14 +10,29 @@ type Tab = 'signin' | 'register';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [tab, setTab] = useState<Tab>('signin');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [inviteToken, setInviteToken] = useState('');
+  const [inviteOnlyMode, setInviteOnlyMode] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [show2FA, setShow2FA] = useState(false);
   const [totpCode, setTotpCode] = useState('');
+
+  useEffect(() => {
+    const invite = searchParams.get('invite');
+    if (invite) {
+      setInviteToken(invite);
+      setTab('register');
+    }
+    fetch('/api/auth/registration-mode')
+      .then(r => r.json())
+      .then(data => setInviteOnlyMode(data.inviteOnlyMode ?? false))
+      .catch(() => {});
+  }, [searchParams]);
 
   const resetForm = () => {
     setName('');
@@ -71,18 +86,28 @@ export default function LoginPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (inviteOnlyMode && !inviteToken.trim()) {
+      setError('Invite token is required for registration.');
+      return;
+    }
+
     setLoading(true);
 
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, invite: inviteToken || undefined }),
       });
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.error || 'Registration failed. Please try again.');
+        if (data.details && Array.isArray(data.details) && data.details.length > 0) {
+          setError(data.details.map((d: { message: string }) => d.message).join('. '));
+        } else {
+          setError(data.error || 'Registration failed. Please try again.');
+        }
         return;
       }
 
@@ -280,6 +305,23 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   className={inputClass}
                   autoComplete="new-password"
+                />
+                <p className="text-[9px] text-gray-600 mt-1.5">Min 8 chars, with uppercase, lowercase & number</p>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-600 mb-2">
+                  Invite Token{' '}
+                  {inviteOnlyMode
+                    ? <span className="text-danger">*required</span>
+                    : <span className="text-gray-700">(optional)</span>
+                  }
+                </label>
+                <input
+                  type="text"
+                  value={inviteToken}
+                  onChange={(e) => setInviteToken(e.target.value)}
+                  placeholder={inviteOnlyMode ? 'Enter your invite token' : 'Enter invite token if you have one'}
+                  className={inputClass}
                 />
               </div>
 

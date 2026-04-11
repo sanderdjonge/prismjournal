@@ -107,7 +107,7 @@ export default function Gauge({
                         {value}{max === 100 ? '%' : ''}
                     </span>
                     {subLabel && (
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500 mt-0.5 opacity-60">
+                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500 mt-0.5">
                             {subLabel}
                         </span>
                     )}
@@ -116,7 +116,7 @@ export default function Gauge({
 
             {/* Title Below Gauge */}
             <div className="mt-1 text-center">
-                <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 group-hover/gauge:text-primary transition-colors">
+                <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 group-hover/gauge:text-primary transition-colors">
                     {label}
                 </h4>
             </div>

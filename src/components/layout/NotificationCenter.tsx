@@ -175,7 +175,7 @@ export default function NotificationCenter({ className }: NotificationCenterProp
 
       {/* Notification Panel */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-[#1a1a2e] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden">
+        <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-[var(--card-bg)] border border-[var(--glass-border)] rounded-xl shadow-2xl z-50 overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
             <h3 className="text-sm font-bold text-white uppercase tracking-wide">

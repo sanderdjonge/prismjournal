@@ -21,6 +21,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { cn } from '@/lib/cn';
 import NotificationCenter from './NotificationCenter';
 import AccountSwitcher from './AccountSwitcher';
+import { ThemeToggle } from './ThemeToggle';
 import { APP_VERSION, BUILD_DATE, BUILD_NOTES } from '@/lib/version';
 
 const MENU_ITEMS = [
@@ -70,12 +71,12 @@ export default function TopNav() {
                             <span className="font-black text-black text-[10px]">P</span>
                         </div>
                         <span className="font-black tracking-tighter text-lg md:text-xl neon-text group-hover:brightness-125 transition-all uppercase">
-                            PRISM<span className="text-white/20">JOURNAL</span>
+                                PRISM<span className="text-gray-500">JOURNAL</span>
                         </span>
                     </Link>
 
                     {/* Desktop Menu - Hidden on mobile */}
-                    <div className="hidden xl:flex items-center gap-1">
+                    <div className="hidden lg:flex items-center gap-1">
                         {MENU_ITEMS.map((item) => {
                             const isActive = pathname === item.href;
                             return (
@@ -101,6 +102,9 @@ export default function TopNav() {
                 <div className="flex items-center gap-4 md:gap-6">
                     {/* Account Switcher */}
                     <AccountSwitcher />
+
+                    {/* Theme Toggle */}
+                    <ThemeToggle />
 
                     {/* Notification Center */}
                     <NotificationCenter />
@@ -164,7 +168,7 @@ export default function TopNav() {
                     {/* Mobile Menu Button */}
                     <button
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                        className="xl:hidden w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all"
+                        className="lg:hidden w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all"
                     >
                         {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
                     </button>
@@ -173,7 +177,7 @@ export default function TopNav() {
 
             {/* Mobile Menu Overlay */}
             {isMobileMenuOpen && (
-                <div className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm xl:hidden" onClick={() => setIsMobileMenuOpen(false)}>
+                <div className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm lg:hidden" onClick={() => setIsMobileMenuOpen(false)}>
                     <div 
                         className="fixed top-20 left-0 right-0 glass-card bg-black/90 border-b border-white/10 p-4 space-y-2"
                         onClick={(e) => e.stopPropagation()}

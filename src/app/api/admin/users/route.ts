@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import { z } from 'zod';
 import { withAdmin } from '@/lib/api/withAdmin';
 import type { AdminSession } from '@/lib/api/withAdmin';
+import { deleteFile } from '@/lib/storage';
 
 // Audit log action types
 export enum AuditAction {
@@ -339,7 +340,7 @@ export const POST = withAdmin(async (request: NextRequest, _ctx: Record<string, 
   }
 });
 
-// DELETE - Soft delete user (set isActive to false)
+// DELETE - Soft delete (default) or hard delete (?mode=hard) user
 export const DELETE = withAdmin(async (request: NextRequest, _ctx: Record<string, unknown>, session: AdminSession) => {
   // Very strict rate limiting for deletions
   const rateLimit = checkRateLimit(`admin-delete-${session.user.id}`, 5, 60000);
@@ -353,6 +354,7 @@ export const DELETE = withAdmin(async (request: NextRequest, _ctx: Record<string
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
+    const mode = searchParams.get('mode') || 'soft';
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID required' }, { status: 400 });
@@ -378,6 +380,127 @@ export const DELETE = withAdmin(async (request: NextRequest, _ctx: Record<string
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    if (mode === 'hard') {
+      // Hard delete - remove user and all related data in correct FK order
+      await prisma.$transaction(async (tx) => {
+        const accounts = await tx.tradingAccount.findMany({
+          where: { userId },
+          select: { id: true },
+        });
+        const accountIds = accounts.map(a => a.id);
+
+        // Layer 1: Trade-level data (references Trade RESTRICT)
+        if (accountIds.length > 0) {
+          const trades = await tx.trade.findMany({
+            where: { accountId: { in: accountIds } },
+            select: { id: true },
+          });
+          const tradeIds = trades.map(t => t.id);
+
+          if (tradeIds.length > 0) {
+            // Clean up screenshot files from disk before deleting Media records
+            const mediaFiles = await tx.media.findMany({
+              where: { tradeId: { in: tradeIds } },
+              select: { filename: true },
+            });
+            for (const m of mediaFiles) {
+              try { await deleteFile(m.filename); } catch {}
+            }
+
+            await tx.shareCard.deleteMany({ where: { tradeId: { in: tradeIds } } });
+            await tx.media.deleteMany({ where: { tradeId: { in: tradeIds } } });
+            await tx.pendingScreenshot.deleteMany({ where: { tradeId: { in: tradeIds } } });
+            await tx.tradeTag.deleteMany({ where: { tradeId: { in: tradeIds } } });
+            await tx.checklistCompletion.deleteMany({ where: { tradeId: { in: tradeIds } } });
+          }
+          await tx.trade.deleteMany({ where: { accountId: { in: accountIds } } });
+        }
+
+        // Layer 2: Strategy data (references Strategy CASCADE)
+        const strategies = await tx.strategy.findMany({
+          where: { userId },
+          select: { id: true },
+        });
+        const strategyIds = strategies.map(s => s.id);
+        if (strategyIds.length > 0) {
+          await tx.strategyViolation.deleteMany({ where: { strategyId: { in: strategyIds } } });
+        }
+        await tx.strategy.deleteMany({ where: { userId } });
+
+        // Layer 3: Account-level data (references TradingAccount RESTRICT)
+        if (accountIds.length > 0) {
+          await tx.equitySnapshot.deleteMany({ where: { accountId: { in: accountIds } } });
+          await tx.dailyAccountSnapshot.deleteMany({ where: { accountId: { in: accountIds } } });
+
+          // ChallengePhase -> RuleViolation (SET NULL on phaseId, but delete explicitly)
+          const phases = await tx.challengePhase.findMany({
+            where: { accountId: { in: accountIds } },
+            select: { id: true },
+          });
+          const phaseIds = phases.map(p => p.id);
+          if (phaseIds.length > 0) {
+            await tx.ruleViolation.deleteMany({ where: { phaseId: { in: phaseIds } } });
+          }
+          await tx.challengePhase.deleteMany({ where: { accountId: { in: accountIds } } });
+
+          // TradingChallenge -> ChallengeEvaluation (CASCADE, but delete explicitly)
+          const challenges = await tx.tradingChallenge.findMany({
+            where: { accountId: { in: accountIds } },
+            select: { id: true },
+          });
+          const challengeIds = challenges.map(c => c.id);
+          if (challengeIds.length > 0) {
+            await tx.challengeEvaluation.deleteMany({ where: { challengeId: { in: challengeIds } } });
+          }
+          await tx.tradingChallenge.deleteMany({ where: { accountId: { in: accountIds } } });
+
+          await tx.tradingAccount.deleteMany({ where: { id: { in: accountIds } } });
+        }
+
+        // Layer 4: User-level data (references User RESTRICT)
+        await tx.alertConfig.deleteMany({ where: { userId } });
+        await tx.customStat.deleteMany({ where: { userId } });
+        await tx.notification.deleteMany({ where: { userId } });
+        await tx.userSettings.deleteMany({ where: { userId } });
+        await tx.passwordResetToken.deleteMany({ where: { userId } });
+        await tx.tiltmeterSnapshot.deleteMany({ where: { userId } });
+
+        // Checklist -> ChecklistItem has CASCADE, Checklist -> User has CASCADE
+        // But delete explicitly for safety
+        const checklists = await tx.checklist.findMany({
+          where: { userId },
+          select: { id: true },
+        });
+        const checklistIds = checklists.map(c => c.id);
+        if (checklistIds.length > 0) {
+          await tx.checklistItem.deleteMany({ where: { checklistId: { in: checklistIds } } });
+          await tx.checklist.deleteMany({ where: { id: { in: checklistIds } } });
+        }
+
+        // Tags auto-cascade but delete explicitly
+        await tx.tag.deleteMany({ where: { userId } });
+        // ShareCard remaining (userId-linked, not tradeId-linked)
+        await tx.shareCard.deleteMany({ where: { userId } });
+        // PreTradeNote references Trade (SET NULL) and TradingAccount (SET NULL)
+        await tx.preTradeNote.deleteMany({ where: { userId } });
+
+        // AuditLog has no FK to User in schema, but we store userId
+        await tx.auditLog.deleteMany({ where: { userId } });
+
+        // Finally delete the user
+        await tx.user.delete({ where: { id: userId } });
+      });
+
+      await createAuditLog(AuditAction.USER_DELETE, {
+        targetUserId: userId,
+        targetEmail: user.email,
+        targetName: user.name,
+        deletionType: 'hard',
+      }, request);
+
+      return NextResponse.json({ success: true, deleted: true });
+    }
+
     // Soft delete - deactivate user
     await prisma.user.update({
       where: { id: userId },
@@ -391,7 +514,7 @@ export const DELETE = withAdmin(async (request: NextRequest, _ctx: Record<string
       deletionType: 'soft',
     }, request);
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, deactivated: true });
   } catch (error) {
     console.error('Admin user delete error:', error);
     return NextResponse.json(

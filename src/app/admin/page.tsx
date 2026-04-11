@@ -108,7 +108,7 @@ interface BackupData {
     };
 }
 
-type TabType = 'users' | 'infrastructure' | 'backups' | 'broadcast' | 'auditlog';
+type TabType = 'users' | 'infrastructure' | 'backups' | 'broadcast' | 'auditlog' | 'invites';
 
 interface AuditEntry {
     id: string;
@@ -164,8 +164,12 @@ export default function AdminPage() {
     const [usersLoading, setUsersLoading] = useState(true);
     const [usersError, setUsersError] = useState<string | null>(null);
     const [updating, setUpdating] = useState<string | null>(null);
+    const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+    const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+    const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+    const [bulkDeleting, setBulkDeleting] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+    const [showInactive, setShowInactive] = useState(false);
     const [resetLoading, setResetLoading] = useState<string | null>(null);
     const [resetSuccess, setResetSuccess] = useState<string | null>(null);
 
@@ -227,7 +231,7 @@ export default function AdminPage() {
     async function loadUsers() {
         setUsersLoading(true);
         try {
-            const res = await fetch('/api/admin/users');
+            const res = await fetch(`/api/admin/users?includeInactive=true`);
             if (res.status === 403) {
                 setUsersError('Access denied. Admin privileges required.');
                 return;
@@ -265,14 +269,9 @@ export default function AdminPage() {
     }
     
     async function deleteUser(userId: string) {
-        if (!confirm('Are you sure you want to delete this user? This will deactivate their account.')) {
-            setDeleteConfirm(null);
-            return;
-        }
-        
         setUpdating(userId);
         try {
-            const res = await fetch(`/api/admin/users?userId=${userId}`, {
+            const res = await fetch(`/api/admin/users?userId=${userId}&mode=hard`, {
                 method: 'DELETE',
             });
             if (!res.ok) {
@@ -280,12 +279,59 @@ export default function AdminPage() {
                 throw new Error(error.error || 'Failed to delete user');
             }
             setUsers(prev => prev.filter(u => u.id !== userId));
-            setDeleteConfirm(null);
+            setConfirmDelete(null);
         } catch (e: any) {
             console.error('Failed to delete user:', e);
             alert(e.message || 'Failed to delete user');
         } finally {
             setUpdating(null);
+        }
+    }
+
+    async function bulkDeleteUsers() {
+        setBulkDeleting(true);
+        try {
+            const results = await Promise.allSettled(
+                Array.from(selectedUsers).map(userId =>
+                    fetch(`/api/admin/users?userId=${userId}&mode=hard`, { method: 'DELETE' })
+                )
+            );
+            const failed = results.filter(r => r.status === 'rejected').length;
+            const newSelected = new Set(selectedUsers);
+            Array.from(selectedUsers).forEach((userId, i) => {
+                if (results[i].status === 'fulfilled') newSelected.delete(userId);
+            });
+            setUsers(prev => {
+                const deletedIds = new Set<string>();
+                Array.from(selectedUsers).forEach((userId, i) => {
+                    if (results[i].status === 'fulfilled') deletedIds.add(userId);
+                });
+                return prev.filter(u => !deletedIds.has(u.id));
+            });
+            setSelectedUsers(new Set);
+            setConfirmBulkDelete(false);
+            if (failed > 0) alert(`${failed} user(s) failed to delete`);
+        } catch (e: any) {
+            alert(e.message || 'Bulk delete failed');
+        } finally {
+            setBulkDeleting(false);
+        }
+    }
+
+    function toggleUserSelect(userId: string) {
+        setSelectedUsers(prev => {
+            const next = new Set(prev);
+            if (next.has(userId)) next.delete(userId);
+            else next.add(userId);
+            return next;
+        });
+    }
+
+    function toggleSelectAll() {
+        if (selectedUsers.size === filteredUsers.length) {
+            setSelectedUsers(new Set());
+        } else {
+            setSelectedUsers(new Set(filteredUsers.map(u => u.id)));
         }
     }
     
@@ -408,6 +454,7 @@ export default function AdminPage() {
 
     // Filter users by search
     const filteredUsers = users.filter(user => {
+        if (!showInactive && !user.isActive) return false;
         if (!searchQuery) return true;
         const query = searchQuery.toLowerCase();
         return (
@@ -416,6 +463,9 @@ export default function AdminPage() {
             user.username?.toLowerCase().includes(query)
         );
     });
+
+    const activeCount = users.filter(u => u.isActive).length;
+    const inactiveCount = users.filter(u => !u.isActive).length;
     
     // Loading state
     if (usersLoading) {
@@ -522,6 +572,18 @@ export default function AdminPage() {
                         <ScrollText size={16} />
                         Audit Log
                     </button>
+                    <button
+                        onClick={() => setActiveTab('invites')}
+                        className={cn(
+                            "flex items-center gap-2 px-4 py-2 rounded-t-lg text-sm font-bold transition-all",
+                            activeTab === 'invites'
+                                ? "bg-white/10 text-white border-b-2 border-primary"
+                                : "text-gray-500 hover:text-white hover:bg-white/5"
+                        )}
+                    >
+                        <Mail size={16} />
+                        Invites
+                    </button>
                 </div>
                 
                 {/* Users Tab */}
@@ -571,16 +633,38 @@ export default function AdminPage() {
                             </div>
                         </div>
                         
-                        {/* Search */}
-                        <div className="relative">
-                            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-                            <input
-                                type="text"
-                                placeholder="Search users by name, email, or username..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder:text-gray-500 focus:outline-none focus:border-primary/50"
-                            />
+                        {/* Search & Filter */}
+                        <div className="flex gap-3 items-center">
+                            <div className="relative flex-1">
+                                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                                <input
+                                    type="text"
+                                    placeholder="Search users by name, email, or username..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder:text-gray-500 focus:outline-none focus:border-primary/50"
+                                />
+                            </div>
+                            <div className="flex bg-white/5 rounded-xl p-1 shrink-0">
+                                <button
+                                    onClick={() => setShowInactive(false)}
+                                    className={cn(
+                                        "px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                                        !showInactive ? "bg-accent/20 text-accent" : "text-gray-500 hover:text-gray-300"
+                                    )}
+                                >
+                                    Active ({activeCount})
+                                </button>
+                                <button
+                                    onClick={() => setShowInactive(true)}
+                                    className={cn(
+                                        "px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                                        showInactive ? "bg-white/10 text-white" : "text-gray-500 hover:text-gray-300"
+                                    )}
+                                >
+                                    All ({users.length})
+                                </button>
+                            </div>
                         </div>
 
                         {resetSuccess && (
@@ -593,13 +677,62 @@ export default function AdminPage() {
                         {/* Users Table */}
                         <div className="glass-card border-white/5 bg-black/40 overflow-hidden">
                             <div className="p-5 border-b border-white/5 flex items-center justify-between">
-                                <h2 className="text-lg font-black text-white uppercase tracking-tight">User Registry</h2>
-                                <span className="text-xs text-gray-500">{filteredUsers.length} users</span>
+                                <div className="flex items-center gap-3">
+                                    <h2 className="text-lg font-black text-white uppercase tracking-tight">User Registry</h2>
+                                    {selectedUsers.size > 0 && (
+                                        <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-1 rounded-full">
+                                            {selectedUsers.size} selected
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    {selectedUsers.size > 0 && (
+                                        <button
+                                            onClick={() => setConfirmBulkDelete(true)}
+                                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-danger/10 border border-danger/30 text-danger text-[10px] font-black uppercase tracking-widest hover:bg-danger/20 transition-all"
+                                        >
+                                            <Trash2 size={12} />
+                                            Delete ({selectedUsers.size})
+                                        </button>
+                                    )}
+                                    <span className="text-xs text-gray-500">{filteredUsers.length} of {users.length} users</span>
+                                </div>
                             </div>
+
+                            {/* Bulk Delete Confirmation */}
+                            {confirmBulkDelete && (
+                                <div className="p-4 bg-danger/10 border-b border-danger/20 flex items-center justify-between">
+                                    <p className="text-sm text-danger font-bold">Permanently delete {selectedUsers.size} user(s)? This cannot be undone.</p>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={bulkDeleteUsers}
+                                            disabled={bulkDeleting}
+                                            className="px-4 py-1.5 rounded-lg bg-danger text-white text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition-all disabled:opacity-50"
+                                        >
+                                            {bulkDeleting ? <Loader2 size={12} className="animate-spin inline" /> : 'Confirm'}
+                                        </button>
+                                        <button
+                                            onClick={() => setConfirmBulkDelete(false)}
+                                            className="px-4 py-1.5 rounded-lg bg-white/5 text-gray-400 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="overflow-x-auto">
                                 <table className="w-full">
                                     <thead>
                                         <tr className="border-b border-white/5 bg-white/[0.02]">
+                                            <th className="p-4 w-10">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedUsers.size === filteredUsers.length && filteredUsers.length > 0}
+                                                    onChange={toggleSelectAll}
+                                                    className="rounded border-white/20 bg-white/5"
+                                                />
+                                            </th>
                                             <th className="text-left p-4 text-[9px] font-black uppercase tracking-widest text-gray-500">User</th>
                                             <th className="text-left p-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Status</th>
                                             <th className="text-left p-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Role</th>
@@ -612,7 +745,18 @@ export default function AdminPage() {
                                     </thead>
                                     <tbody>
                                         {filteredUsers.map((user) => (
-                                            <tr key={user.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-all">
+                                            <tr key={user.id} className={cn(
+                                                "border-b border-white/5 hover:bg-white/[0.02] transition-all",
+                                                selectedUsers.has(user.id) && "bg-primary/5"
+                                            )}>
+                                                <td className="p-4">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedUsers.has(user.id)}
+                                                        onChange={() => toggleUserSelect(user.id)}
+                                                        className="rounded border-white/20 bg-white/5"
+                                                    />
+                                                </td>
                                                 <td className="p-4">
                                                     <div className="flex items-center gap-3">
                                                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
@@ -672,68 +816,83 @@ export default function AdminPage() {
                                                     </span>
                                                 </td>
                                                 <td className="p-4 text-right">
-                                                    <div className="flex items-center justify-end gap-2">
-                                                        <button
-                                                            onClick={() => sendResetEmail(user.id, user.email)}
-                                                            disabled={resetLoading === user.id}
-                                                            className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-all disabled:opacity-50"
-                                                            title="Send password reset email"
-                                                        >
-                                                            {resetLoading === user.id ? (
-                                                                <Loader2 size={14} className="animate-spin" />
-                                                            ) : (
-                                                                <Mail size={14} />
-                                                            )}
-                                                        </button>
-                                                        <button
-                                                            onClick={() => updateUser(user.id, user.isSuperuser ? 'removeAdmin' : 'makeAdmin')}
-                                                            disabled={updating === user.id}
-                                                            className={cn(
-                                                                "p-2 rounded-lg transition-all disabled:opacity-50",
-                                                                user.isSuperuser
-                                                                    ? "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20"
-                                                                    : "bg-white/5 text-gray-500 hover:bg-white/10"
-                                                            )}
-                                                            title={user.isSuperuser ? 'Remove admin' : 'Make admin'}
-                                                        >
-                                                            {updating === user.id ? (
-                                                                <Loader2 size={14} className="animate-spin" />
-                                                            ) : (
-                                                                <Crown size={14} />
-                                                            )}
-                                                        </button>
-                                                        <button
-                                                            onClick={() => updateUser(user.id, user.isActive ? 'deactivate' : 'activate')}
-                                                            disabled={updating === user.id}
-                                                            className={cn(
-                                                                "p-2 rounded-lg transition-all disabled:opacity-50",
-                                                                user.isActive
-                                                                    ? "bg-danger/10 text-danger hover:bg-danger/20"
-                                                                    : "bg-accent/10 text-accent hover:bg-accent/20"
-                                                            )}
-                                                            title={user.isActive ? 'Deactivate user' : 'Activate user'}
-                                                        >
-                                                            {updating === user.id ? (
-                                                                <Loader2 size={14} className="animate-spin" />
-                                                            ) : user.isActive ? (
-                                                                <UserX size={14} />
-                                                            ) : (
-                                                                <UserCheck size={14} />
-                                                            )}
-                                                        </button>
-                                                        <button
-                                                            onClick={() => setDeleteConfirm(user.id)}
-                                                            disabled={updating === user.id}
-                                                            className="p-2 rounded-lg bg-danger/10 text-danger hover:bg-danger/20 transition-all disabled:opacity-50"
-                                                            title="Delete user"
-                                                        >
-                                                            {updating === user.id ? (
-                                                                <Loader2 size={14} className="animate-spin" />
-                                                            ) : (
+                                                    {confirmDelete === user.id ? (
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            <span className="text-[10px] text-danger font-bold">Delete?</span>
+                                                            <button
+                                                                onClick={() => deleteUser(user.id)}
+                                                                disabled={updating === user.id}
+                                                                className="px-2 py-1 rounded-lg bg-danger text-white text-[9px] font-black uppercase hover:brightness-110 transition-all disabled:opacity-50"
+                                                            >
+                                                                {updating === user.id ? <Loader2 size={10} className="animate-spin" /> : 'Yes'}
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setConfirmDelete(null)}
+                                                                className="px-2 py-1 rounded-lg bg-white/5 text-gray-400 text-[9px] font-black uppercase hover:bg-white/10 transition-all"
+                                                            >
+                                                                No
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            <button
+                                                                onClick={() => sendResetEmail(user.id, user.email)}
+                                                                disabled={resetLoading === user.id}
+                                                                className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-all disabled:opacity-50"
+                                                                title="Send password reset email"
+                                                            >
+                                                                {resetLoading === user.id ? (
+                                                                    <Loader2 size={14} className="animate-spin" />
+                                                                ) : (
+                                                                    <Mail size={14} />
+                                                                )}
+                                                            </button>
+                                                            <button
+                                                                onClick={() => updateUser(user.id, user.isSuperuser ? 'removeAdmin' : 'makeAdmin')}
+                                                                disabled={updating === user.id}
+                                                                className={cn(
+                                                                    "p-2 rounded-lg transition-all disabled:opacity-50",
+                                                                    user.isSuperuser
+                                                                        ? "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20"
+                                                                        : "bg-white/5 text-gray-500 hover:bg-white/10"
+                                                                )}
+                                                                title={user.isSuperuser ? 'Remove admin' : 'Make admin'}
+                                                            >
+                                                                {updating === user.id ? (
+                                                                    <Loader2 size={14} className="animate-spin" />
+                                                                ) : (
+                                                                    <Crown size={14} />
+                                                                )}
+                                                            </button>
+                                                            <button
+                                                                onClick={() => updateUser(user.id, user.isActive ? 'deactivate' : 'activate')}
+                                                                disabled={updating === user.id}
+                                                                className={cn(
+                                                                    "p-2 rounded-lg transition-all disabled:opacity-50",
+                                                                    user.isActive
+                                                                        ? "bg-danger/10 text-danger hover:bg-danger/20"
+                                                                        : "bg-accent/10 text-accent hover:bg-accent/20"
+                                                                )}
+                                                                title={user.isActive ? 'Deactivate user' : 'Activate user'}
+                                                            >
+                                                                {updating === user.id ? (
+                                                                    <Loader2 size={14} className="animate-spin" />
+                                                                ) : user.isActive ? (
+                                                                    <UserX size={14} />
+                                                                ) : (
+                                                                    <UserCheck size={14} />
+                                                                )}
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setConfirmDelete(user.id)}
+                                                                disabled={updating === user.id}
+                                                                className="p-2 rounded-lg bg-danger/10 text-danger hover:bg-danger/20 transition-all disabled:opacity-50"
+                                                                title="Deactivate user"
+                                                            >
                                                                 <Trash2 size={14} />
-                                                            )}
-                                                        </button>
-                                                    </div>
+                                                            </button>
+                                                        </div>
+                                                    )}
                                                 </td>
                                             </tr>
                                         ))}
@@ -1328,7 +1487,270 @@ export default function AdminPage() {
                         )}
                     </div>
                 )}
+
+                {/* Invites Tab */}
+                {activeTab === 'invites' && (
+                    <InvitesTab />
+                )}
             </div>
         </DashboardShell>
+    );
+}
+
+// Invites Tab Component
+function InvitesTab() {
+    const [tokens, setTokens] = useState<Array<{
+        id: string;
+        token: string;
+        email: string | null;
+        createdBy: string;
+        creator: { id: string; name: string | null; email: string | null } | null;
+        usedBy: string | null;
+        user: { id: string; name: string | null; email: string | null } | null;
+        usedAt: string | null;
+        expiresAt: string | null;
+        createdAt: string;
+    }>>([]);
+    const [loading, setLoading] = useState(true);
+    const [generating, setGenerating] = useState(false);
+    const [newTokenCount, setNewTokenCount] = useState(1);
+    const [expiresDays, setExpiresDays] = useState(7);
+    const [newTokens, setNewTokens] = useState<string[]>([]);
+    const [inviteOnlyMode, setInviteOnlyMode] = useState(false);
+    const [toggleLoading, setToggleLoading] = useState(false);
+
+    const loadTokens = async () => {
+        setLoading(true);
+        try {
+            const res = await fetch('/api/admin/invite-tokens');
+            const data = await res.json();
+            setTokens(data.tokens || []);
+        } catch (e) {
+            console.error(e);
+        }
+        setLoading(false);
+    };
+
+    useEffect(() => {
+        loadTokens();
+        loadInviteOnlyMode();
+    }, []);
+
+    const loadInviteOnlyMode = async () => {
+        try {
+            const res = await fetch('/api/admin/system-settings');
+            const data = await res.json();
+            setInviteOnlyMode(data.inviteOnlyMode ?? false);
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const toggleInviteOnlyMode = async () => {
+        setToggleLoading(true);
+        try {
+            const res = await fetch('/api/admin/system-settings', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ inviteOnlyMode: !inviteOnlyMode }),
+            });
+            const data = await res.json();
+            setInviteOnlyMode(data.inviteOnlyMode ?? false);
+        } catch (e) {
+            console.error(e);
+        }
+        setToggleLoading(false);
+    };
+
+    const generateTokens = async () => {
+        setGenerating(true);
+        setNewTokens([]);
+        try {
+            const res = await fetch('/api/admin/invite-tokens', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ count: newTokenCount, expiresDays }),
+            });
+            const data = await res.json();
+            setNewTokens(data.tokens || []);
+            loadTokens();
+        } catch (e) {
+            console.error(e);
+        }
+        setGenerating(false);
+    };
+
+    const deleteToken = async (id: string) => {
+        if (!confirm('Delete this token?')) return;
+        try {
+            await fetch(`/api/admin/invite-tokens?id=${id}`, { method: 'DELETE' });
+            loadTokens();
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const copyToken = (token: string) => {
+        const url = `${window.location.origin}/login?invite=${token}`;
+        navigator.clipboard.writeText(url);
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-lg font-black text-white uppercase tracking-tight">Invite Tokens</h2>
+                    <p className="text-xs text-gray-500 mt-1">Generate and manage registration invite tokens</p>
+                </div>
+            </div>
+
+            {/* Invite-Only Mode Toggle */}
+            <div className="glass-card border-white/5 bg-white/5 p-5 flex items-center justify-between">
+                <div>
+                    <h3 className="text-sm font-bold text-white">Invite-Only Registration</h3>
+                    <p className="text-xs text-gray-500 mt-1">
+                        When enabled, new users must provide a valid invite token to register.
+                        When disabled, anyone can register freely.
+                    </p>
+                </div>
+                <button
+                    onClick={toggleInviteOnlyMode}
+                    disabled={toggleLoading}
+                    className={cn(
+                        "relative inline-flex h-7 w-12 items-center rounded-full transition-colors shrink-0 ml-4",
+                        inviteOnlyMode ? "bg-primary" : "bg-gray-600"
+                    )}
+                >
+                    {toggleLoading ? (
+                        <Loader2 size={14} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 animate-spin text-white" />
+                    ) : (
+                        <span className={cn(
+                            "inline-block h-5 w-5 transform rounded-full bg-white transition-transform",
+                            inviteOnlyMode ? "translate-x-6" : "translate-x-1"
+                        )} />
+                    )}
+                </button>
+            </div>
+
+            {/* Generate Form */}
+            <div className="glass-card border-white/5 bg-white/5 p-5 space-y-4">
+                <h3 className="text-sm font-bold text-white">Generate New Tokens</h3>
+                <div className="flex flex-wrap gap-4 items-end">
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Count</label>
+                        <input
+                            type="number"
+                            min={1}
+                            max={100}
+                            value={newTokenCount}
+                            onChange={e => setNewTokenCount(parseInt(e.target.value) || 1)}
+                            className="w-20 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+                        />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Expires (days)</label>
+                        <input
+                            type="number"
+                            min={1}
+                            max={365}
+                            value={expiresDays}
+                            onChange={e => setExpiresDays(parseInt(e.target.value) || 7)}
+                            className="w-24 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+                        />
+                    </div>
+                    <button
+                        onClick={generateTokens}
+                        disabled={generating}
+                        className="px-4 py-2 rounded-lg bg-primary/10 border border-primary/30 text-primary text-xs font-black uppercase tracking-widest hover:bg-primary/20 transition-all flex items-center gap-2"
+                    >
+                        {generating ? <Loader2 size={12} className="animate-spin" /> : <Key size={12} />}
+                        Generate
+                    </button>
+                </div>
+
+                {/* New Tokens */}
+                {newTokens.length > 0 && (
+                    <div className="mt-4 p-4 bg-accent/10 border border-accent/20 rounded-lg space-y-2">
+                        <p className="text-xs font-bold text-accent">Generated {newTokens.length} token(s):</p>
+                        <div className="space-y-1">
+                            {newTokens.map((token, i) => (
+                                <div key={i} className="flex items-center gap-2">
+                                    <code className="text-xs text-white font-mono flex-1 bg-black/20 px-2 py-1 rounded">
+                                        {window.location.origin}/login?invite={token}
+                                    </code>
+                                    <button
+                                        onClick={() => copyToken(token)}
+                                        className="text-xs text-accent hover:underline"
+                                    >
+                                        Copy
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Tokens List */}
+            <div className="glass-card border-white/5 bg-white/5 overflow-hidden">
+                {loading ? (
+                    <div className="flex items-center justify-center py-16">
+                        <Loader2 size={24} className="text-primary animate-spin" />
+                    </div>
+                ) : tokens.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500 text-xs">No invite tokens yet.</div>
+                ) : (
+                    <table className="w-full text-xs">
+                        <thead>
+                            <tr className="border-b border-white/10">
+                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">Token</th>
+                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">Created By</th>
+                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">Used By</th>
+                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">Expires</th>
+                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                            {tokens.map(token => (
+                                <tr key={token.id} className="hover:bg-white/5 transition-colors">
+                                    <td className="px-4 py-2.5">
+                                        <code className="text-gray-300 font-mono">{token.token}</code>
+                                    </td>
+                                    <td className="px-4 py-2.5 text-gray-400">
+                                        {token.creator?.name || token.creator?.email || '—'}
+                                    </td>
+                                    <td className="px-4 py-2.5">
+                                        {token.user ? (
+                                            <span className="text-accent">{token.user.name || token.user.email}</span>
+                                        ) : (
+                                            <span className="text-gray-600">Unused</span>
+                                        )}
+                                    </td>
+                                    <td className="px-4 py-2.5 text-gray-500">
+                                        {token.expiresAt ? new Date(token.expiresAt).toLocaleDateString() : 'Never'}
+                                    </td>
+                                    <td className="px-4 py-2.5">
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => copyToken(token.token)}
+                                                className="text-primary hover:underline"
+                                            >
+                                                Copy
+                                            </button>
+                                            <button
+                                                onClick={() => deleteToken(token.id)}
+                                                className="text-danger hover:underline"
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+            </div>
+        </div>
     );
 }

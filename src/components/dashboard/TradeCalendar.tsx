@@ -4,6 +4,8 @@ import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import dayjs from 'dayjs';
 import { useCurrency } from '@/lib/currency';
 import { cn } from '@/lib/cn';
+import { useEconomicEvents, useEventsByDate, type EconomicEvent } from '@/hooks/useEconomicEvents';
+import { EventBadge, EventDot } from './EventBadge';
 
 type TradeDay = {
     date: string;
@@ -12,6 +14,7 @@ type TradeDay = {
     wins: number;
     losses: number;
     avgRR?: number | null;
+    events?: EconomicEvent[];
 };
 
 type TradeCalendarProps = {
@@ -26,6 +29,7 @@ type DayCell = {
     wins: number;
     losses: number;
     avgRR?: number | null;
+    events: EconomicEvent[];
 } | null;
 
 type Week = DayCell[];
@@ -34,6 +38,7 @@ type MiniMonthProps = {
     year: number;
     month: number; // 0-indexed
     dataByDate: Map<string, TradeDay>;
+    eventsByDate: Map<string, EconomicEvent[]>;
     getMetricValue: (day: TradeDay) => number | null;
     formatMetricValue: (val: number | null) => string;
     getYearDayBg: (val: number | null) => React.CSSProperties;
@@ -41,7 +46,7 @@ type MiniMonthProps = {
 };
 
 // React.memo prevents all 12 instances re-rendering on unrelated TradeCalendar state changes
-const MiniMonth = React.memo(function MiniMonth({ year, month, dataByDate, getMetricValue, formatMetricValue, getYearDayBg, onDayClick }: MiniMonthProps) {
+const MiniMonth = React.memo(function MiniMonth({ year, month, dataByDate, eventsByDate, getMetricValue, formatMetricValue, getYearDayBg, onDayClick }: MiniMonthProps) {
     const d = dayjs().year(year).month(month).startOf('month');
     const daysInMonth = d.daysInMonth();
     const startDay = d.day(); // 0=Sun
@@ -66,21 +71,32 @@ const MiniMonth = React.memo(function MiniMonth({ year, month, dataByDate, getMe
                     if (day === null) return <div key={i} className="aspect-square" />;
                     const dateStr = d.date(day).format('YYYY-MM-DD');
                     const tradeDay = dataByDate.get(dateStr);
+                    const dayEvents = eventsByDate.get(dateStr) || [];
                     const metricVal = tradeDay ? getMetricValue(tradeDay) : null;
                     const hasData = tradeDay && tradeDay.trades > 0;
+                    const hasEvents = dayEvents.length > 0;
                     const tooltipText = hasData
                         ? `${tradeDay!.trades} trade${tradeDay!.trades > 1 ? 's' : ''} · ${formatMetricValue(metricVal)}`
-                        : undefined;
+                        : hasEvents
+                            ? `${dayEvents.length} event${dayEvents.length > 1 ? 's' : ''}`
+                            : undefined;
 
                     return (
                         <div
                             key={i}
                             onClick={() => onDayClick(year, month)}
-                            className="aspect-square rounded-sm flex items-center justify-center cursor-pointer hover:opacity-75 transition-opacity"
+                            className="aspect-square rounded-sm flex items-center justify-center cursor-pointer hover:opacity-75 transition-opacity relative"
                             style={hasData ? getYearDayBg(metricVal) : { backgroundColor: 'rgba(255,255,255,0.03)' }}
                             title={tooltipText}
                         >
                             <span className="text-[9px] font-bold text-gray-400 leading-none">{day}</span>
+                            {hasEvents && !hasData && (
+                                <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 flex gap-0.5">
+                                    {dayEvents.slice(0, 3).map((e, idx) => (
+                                        <EventDot key={idx} currency={e.currency} />
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     );
                 })}
@@ -99,10 +115,31 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
     const [metricOpen, setMetricOpen] = useState(false);
     const metricDropdownRef = useRef<HTMLDivElement>(null);
 
-    // The dayjs object representing the first day of the currently viewed month
+    // Fetch economic events for current view period
     const viewDate = dayjs().year(viewYear).month(viewMonth).startOf('month');
     const daysInMonth = viewDate.daysInMonth();
-    const startDay = viewDate.day(); // 0 (Sun) to 6 (Sat)
+    const startDay = viewDate.day();
+
+    // Get date range for events fetching
+    const eventsStartDate = viewDate.startOf('month').format('YYYY-MM-DD');
+    const eventsEndDate = viewDate.endOf('month').format('YYYY-MM-DD');
+    const yearEventsStartDate = dayjs().year(viewYear).month(0).date(1).format('YYYY-MM-DD');
+    const yearEventsEndDate = dayjs().year(viewYear).month(11).date(31).format('YYYY-MM-DD');
+
+    const { data: monthEvents } = useEconomicEvents({
+        startDate: eventsStartDate,
+        endDate: eventsEndDate,
+        impact: 'HIGH',
+    });
+
+    const { data: yearEvents } = useEconomicEvents({
+        startDate: yearEventsStartDate,
+        endDate: yearEventsEndDate,
+        impact: 'HIGH',
+    });
+
+    const monthEventsByDate = useEventsByDate(monthEvents);
+    const yearEventsByDate = useEventsByDate(yearEvents);
 
     // Navigation helpers
     const prevMonth = () => {
@@ -154,6 +191,7 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
     for (let i = 1; i <= daysInMonth; i++) {
         const dateStr = viewDate.date(i).format('YYYY-MM-DD');
         const dayData = data.find(d => d.date === dateStr);
+        const dayEvents = monthEventsByDate.get(dateStr) || [];
         flatCells.push({
             date: i,
             pnl: dayData?.pnl ?? 0,
@@ -161,6 +199,7 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
             wins: dayData?.wins ?? 0,
             losses: dayData?.losses ?? 0,
             avgRR: dayData?.avgRR ?? null,
+            events: dayEvents,
         });
     }
 
@@ -306,8 +345,8 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
             {viewMode === 'month' ? (
                 /* Month view — existing grid logic */
                 <div className="flex-1 min-h-0 flex flex-col gap-1">
-                    {/* Column headers — 9 cols: 7 days + spacer + weekly */}
-                    <div className="grid grid-cols-[repeat(7,minmax(0,1fr))_12px_minmax(0,1.3fr)] gap-1 shrink-0">
+                    {/* Column headers — 7 days on mobile, 9 cols on desktop (7 days + spacer + weekly) */}
+                    <div className="hidden md:grid grid-cols-[repeat(7,minmax(0,1fr))_12px_minmax(0,1.3fr)] gap-1 shrink-0">
                         {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((d) => (
                             <div key={d} className="text-center text-[10px] font-black text-gray-600 pb-1 tracking-tighter">
                                 {d}
@@ -318,6 +357,14 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
                         <div className="text-center text-[10px] font-black text-gray-500 pb-1 tracking-tighter">
                             WEEK
                         </div>
+                    </div>
+                    {/* Mobile column headers - just 7 days */}
+                    <div className="grid grid-cols-7 gap-1 shrink-0 md:hidden">
+                        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d) => (
+                            <div key={d} className="text-center text-[10px] font-black text-gray-600 pb-1 tracking-tighter">
+                                {d}
+                            </div>
+                        ))}
                     </div>
 
                     {/* Week rows */}
@@ -331,7 +378,7 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
                             const weekWinRate = weekTrades > 0 ? Math.round((weekWins / weekTrades) * 100) : null;
 
                             return (
-                                <div key={wi} className="grid grid-cols-[repeat(7,minmax(0,1fr))_12px_minmax(0,1.3fr)] gap-1 flex-1 min-h-[64px]">
+                                <div key={wi} className="grid grid-cols-7 md:grid-cols-[repeat(7,minmax(0,1fr))_12px_minmax(0,1.3fr)] gap-1 flex-1 min-h-[64px]">
                                     {/* 7 day cells */}
                                     {week.map((day, di) => {
                                         if (!day) return <div key={`empty-${wi}-${di}`} />;
@@ -368,6 +415,16 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
                                                         </div>
                                                     </>
                                                 )}
+                                                {day.events.length > 0 && (
+                                                    <div className="flex flex-wrap gap-0.5 mt-0.5 justify-center max-w-full px-0.5">
+                                                        {day.events.slice(0, 3).map((event, idx) => (
+                                                            <EventBadge key={idx} event={event} />
+                                                        ))}
+                                                        {day.events.length > 3 && (
+                                                            <span className="text-[7px] text-gray-500 font-bold">+{day.events.length - 3}</span>
+                                                        )}
+                                                    </div>
+                                                )}
 
                                                 {/* Hover Tooltip */}
                                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover/day:opacity-100 pointer-events-none transition-opacity duration-200 z-50">
@@ -382,6 +439,16 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
                                                                 {day.wins === 0 && day.losses === 0 && ' • Breakeven'}
                                                             </p>
                                                         )}
+                                                        {day.events.length > 0 && (
+                                                            <div className="mt-1 pt-1 border-t border-white/10">
+                                                                <p className="text-[8px] font-bold text-gray-500 uppercase tracking-wide mb-0.5">Economic Events</p>
+                                                                {day.events.map((event, idx) => (
+                                                                    <p key={idx} className="text-[9px] text-gray-300">
+                                                                        {event.name} ({event.currency}){event.time ? ` - ${event.time}` : ''}
+                                                                    </p>
+                                                                ))}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                     <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1">
                                                         <div className="w-2 h-2 bg-black/95 border-r border-b border-white/20 transform rotate-45 -translate-y-1/2" />
@@ -391,12 +458,12 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
                                         );
                                     })}
 
-                                    {/* Spacer column */}
-                                    <div />
+                                    {/* Spacer column - desktop only */}
+                                    <div className="hidden md:block" />
 
-                                    {/* Weekly summary cell */}
+                                    {/* Weekly summary cell - desktop only */}
                                     <div className={cn(
-                                        "rounded-lg flex flex-col items-center justify-center border min-h-0 px-1",
+                                        "hidden md:flex rounded-lg flex-col items-center justify-center border min-h-0 px-1",
                                         weekTrades > 0
                                             ? weekPnl > 0
                                                 ? "bg-profit/10 border-profit/20"
@@ -433,8 +500,8 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
                         })}
                     </div>
 
-                    {/* Monthly summary footer */}
-                    <div className="shrink-0 mt-1 grid grid-cols-[repeat(7,minmax(0,1fr))_12px_minmax(0,1.3fr)] gap-1">
+                    {/* Monthly summary footer - desktop only */}
+                    <div className="shrink-0 mt-1 hidden md:grid grid-cols-[repeat(7,minmax(0,1fr))_12px_minmax(0,1.3fr)] gap-1">
                         {/* Spacer for 7 day columns + separator */}
                         <div className="col-span-7" />
                         <div />
@@ -476,13 +543,14 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
             ) : (
                 /* Year view — 12-mini-month grid */
                 <div className="flex-1 min-h-0 overflow-auto pt-1">
-                    <div className="grid grid-cols-4 gap-5">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
                         {Array.from({ length: 12 }, (_, monthIndex) => (
                             <MiniMonth
                                 key={monthIndex}
                                 year={viewYear}
                                 month={monthIndex}
                                 dataByDate={dataByDate}
+                                eventsByDate={yearEventsByDate}
                                 getMetricValue={getMetricValue}
                                 formatMetricValue={formatMetricValue}
                                 getYearDayBg={getYearDayBg}

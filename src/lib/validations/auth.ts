@@ -32,6 +32,7 @@ export const registerSchema = z.object({
     .max(255, 'Email too long'),
   password: passwordSchema,
   name: z.string().max(100, 'Name too long').optional(),
+  invite: z.string().optional(),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;

@@ -51,6 +51,8 @@ model User {
   preTradeNotes       PreTradeNote[]
   challenges          TradingChallenge[]
   checklists          Checklist[]
+  createdInviteTokens InviteToken[]  @relation("CreatedInvites")
+  usedInviteToken     InviteToken?   @relation("UsedInvite")
 
   // Social Sharing Settings
   showPrismScoreOnShare Boolean @default(false)
@@ -795,6 +797,38 @@ model PasswordResetToken {
   @@index([token])
   @@index([tokenId])
   @@index([expiresAt])
+}
+
+// ============================================
+// Invite Tokens (for invite-only registration)
+// ============================================
+
+model InviteToken {
+  id        String    @id @default(cuid())
+  token     String    @unique // Random token string
+  email     String?   // Optional: pre-assigned email
+  createdBy String
+  creator   User      @relation("CreatedInvites", fields: [createdBy], references: [id], onDelete: Cascade)
+  usedBy    String?   @unique
+  user      User?     @relation("UsedInvite", fields: [usedBy], references: [id], onDelete: SetNull)
+  usedAt    DateTime?
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([token])
+  @@index([createdBy])
+  @@index([usedBy])
+  @@index([createdAt])
+}
+
+// ============================================
+// System Settings
+// ============================================
+
+model SystemSettings {
+  id              String  @id @default("system")
+  inviteOnlyMode  Boolean @default(false)
+  updatedAt       DateTime @updatedAt
 }
 
 // ============================================

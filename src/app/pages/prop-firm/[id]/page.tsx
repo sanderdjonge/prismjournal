@@ -708,12 +708,12 @@ function PropFirmAccountContent() {
                                                 return (
                                                     <div key={i} className="flex-1 flex flex-col items-center justify-end h-full group relative">
                                                         <div
-                                                            className={cn("w-full rounded-sm transition-opacity group-hover:opacity-80", isPos ? "bg-profit/60" : "bg-loss/60")}
+                                                            className={cn("w-full rounded-sm transition-opacity group-hover:opacity-80", isPos ? "bg-profit" : "bg-loss")}
                                                             style={{ height: `${Math.max(pct, 2)}%` }}
                                                         />
                                                         <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 pointer-events-none z-10 whitespace-nowrap">
-                                                            <div className="bg-black/90 border border-white/20 rounded px-2 py-1 text-[9px]">
-                                                                <p className="text-gray-400">{new Date(s.snapshotDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
+                                                            <div className="bg-white/95 dark:bg-black/90 border border-gray-200 dark:border-white/20 rounded px-2 py-1 text-[9px]">
+                                                                <p className="text-gray-600 dark:text-gray-400">{new Date(s.snapshotDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
                                                                 <p className={cn("font-bold", isPos ? "text-profit" : "text-loss")}>
                                                                     {isPos ? '+' : ''}{formatCurrency(s.dailyPnl, account?.currency)}
                                                                 </p>

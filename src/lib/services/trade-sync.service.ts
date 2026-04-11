@@ -365,7 +365,7 @@ export async function upsertSyncTrade(
 
     const existing = await prisma.trade.findUnique({
         where: { ticket: trade.ticket },
-        select: { id: true, entryTime: true, initialStopLoss: true, entryPrice: true },
+        select: { id: true, entryTime: true, initialStopLoss: true, entryPrice: true, strategyId: true },
     });
     const isNew = !existing;
     const isClosed = !!trade.exitTime && !!trade.exitPrice;
@@ -396,7 +396,7 @@ export async function upsertSyncTrade(
     if (trade.swap != null) updateData.swap = trade.swap;
     if (trade.stopLoss != null) updateData.stopLoss = trade.stopLoss;
     if (trade.takeProfit != null) updateData.takeProfit = trade.takeProfit;
-    if (strategyId) updateData.strategyId = strategyId;
+    if (strategyId && (isNew || !existing?.strategyId)) updateData.strategyId = strategyId;
     if (trade.mood) updateData.mood = trade.mood;
     if (trade.planCompliance) updateData.planCompliance = trade.planCompliance;
     if (trade.closeReason != null) updateData.closeReason = trade.closeReason;

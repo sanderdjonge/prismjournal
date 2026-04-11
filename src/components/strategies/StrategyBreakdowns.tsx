@@ -30,7 +30,7 @@ export function StrategyBreakdowns({ bySymbol, byDirection, byTimeOfDay, byDayOf
               <div key={s.symbol} className="flex items-center justify-between text-xs">
                 <span className="text-gray-300 font-mono">{s.symbol}</span>
                 <div className="text-right">
-                  <span className={cn('font-bold', s.winRate >= 50 ? 'text-green-400' : 'text-red-400')}>
+                  <span className={cn('font-bold', s.winRate >= 50 ? 'text-profit' : 'text-loss')}>
                     {s.winRate.toFixed(0)}%
                   </span>
                   <span className="text-gray-600 ml-2">{formatAmount(s.pnl)}</span>
@@ -51,7 +51,7 @@ export function StrategyBreakdowns({ bySymbol, byDirection, byTimeOfDay, byDayOf
             <div key={label} className="flex items-center justify-between text-xs">
               <span className="text-gray-300">{label}</span>
               <div className="text-right">
-                <span className={cn('font-bold', data.winRate >= 50 ? 'text-green-400' : 'text-red-400')}>
+                <span className={cn('font-bold', data.winRate >= 50 ? 'text-profit' : 'text-loss')}>
                   {data.winRate.toFixed(0)}%
                 </span>
                 <span className="text-gray-600 ml-2">{formatAmount(data.pnl)}</span>
@@ -69,7 +69,7 @@ export function StrategyBreakdowns({ bySymbol, byDirection, byTimeOfDay, byDayOf
             <div key={t.period} className="flex items-center justify-between text-xs">
               <span className="text-gray-300">{t.period}</span>
               <div className="text-right">
-                <span className={cn('font-bold', t.winRate >= 50 ? 'text-green-400' : 'text-red-400')}>
+                <span className={cn('font-bold', t.winRate >= 50 ? 'text-profit' : 'text-loss')}>
                   {t.winRate.toFixed(0)}%
                 </span>
                 <span className="text-gray-600 ml-2">{formatAmount(t.pnl)}</span>
@@ -86,7 +86,7 @@ export function StrategyBreakdowns({ bySymbol, byDirection, byTimeOfDay, byDayOf
             <div key={d.day} className="flex items-center justify-between text-xs">
               <span className="text-gray-300">{DAY_LABELS[d.day]}</span>
               <div className="text-right">
-                <span className={cn('font-bold', d.winRate >= 50 ? 'text-green-400' : 'text-red-400')}>
+                <span className={cn('font-bold', d.winRate >= 50 ? 'text-profit' : 'text-loss')}>
                   {d.winRate.toFixed(0)}%
                 </span>
                 <span className="text-gray-600 ml-2">{formatAmount(d.pnl)}</span>

@@ -9,9 +9,9 @@ export const APP_VERSION = pkg.version; // e.g. "2.17.0"
  * Build date — update this whenever you bump the version.
  * Format: YYYY-MM-DD
  */
-export const BUILD_DATE = '2026-04-10';
+export const BUILD_DATE = '2026-04-11';
 
-export const BUILD_NOTES = 'Strategy deep dive: Performance metrics, equity curve, rule breakdown, and dimension analytics; Trading heatmap with automated insights; Trailing drawdown support';
+export const BUILD_NOTES = 'Consolidated profit/loss color classes across all widgets; fixed strategy overwrite bug in MT5 sync';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {

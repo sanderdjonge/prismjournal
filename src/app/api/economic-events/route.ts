@@ -28,6 +28,7 @@ export const GET = withAuth(async (
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
     const currency = searchParams.get('currency');
+    const currencies = searchParams.get('currencies')?.split(',') || null;
     const impact = searchParams.get('impact');
 
     const where: Record<string, unknown> = {};
@@ -38,7 +39,9 @@ export const GET = withAuth(async (
         if (endDate) (where.date as Record<string, unknown>).lte = new Date(endDate);
     }
 
-    if (currency) {
+    if (currencies) {
+        where.currency = { in: currencies.map(c => c.toUpperCase()) };
+    } else if (currency) {
         where.currency = currency.toUpperCase();
     }
 
@@ -52,7 +55,7 @@ export const GET = withAuth(async (
         take: 100,
     });
 
-    return NextResponse.json(events);
+    return NextResponse.json({ events });
 });
 
 // POST /api/economic-events - Create event (admin only for now)

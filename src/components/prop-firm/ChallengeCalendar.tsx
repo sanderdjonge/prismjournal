@@ -89,10 +89,10 @@ export function ChallengeCalendar({
             return { bg: 'bg-yellow-500/20', border: 'border-yellow-500/50', text: 'text-yellow-300' };
         }
         if (data.pnl > 0) {
-            return { bg: 'bg-green-500/20', border: 'border-green-500/40', text: 'text-green-400' };
+            return { bg: 'bg-profit/10', border: 'border-profit/20', text: 'text-profit' };
         }
         if (data.pnl < 0) {
-            return { bg: 'bg-red-500/15', border: 'border-red-500/40', text: 'text-red-400' };
+            return { bg: 'bg-loss/10', border: 'border-loss/20', text: 'text-loss' };
         }
         return { bg: 'bg-white/5', border: 'border-white/10', text: 'text-gray-400' };
     };
@@ -110,11 +110,11 @@ export function ChallengeCalendar({
                 <div className="text-center">
                     <h3 className="text-xs font-bold text-white">{monthStart.format('MMMM YYYY')}</h3>
                     <div className="flex items-center justify-center gap-2 text-[10px] mt-0.5">
-                        <span className="text-green-400">{monthStats.winDays} win {monthStats.winDays === 1 ? 'day' : 'days'}</span>
+                        <span className="text-profit">{monthStats.winDays} win {monthStats.winDays === 1 ? 'day' : 'days'}</span>
                         <span className="text-gray-600">·</span>
-                        <span className="text-red-400">{monthStats.lossDays} loss {monthStats.lossDays === 1 ? 'day' : 'days'}</span>
+                        <span className="text-loss">{monthStats.lossDays} loss {monthStats.lossDays === 1 ? 'day' : 'days'}</span>
                         <span className="text-gray-600">·</span>
-                        <span className={monthStats.pnl >= 0 ? 'text-green-400' : 'text-red-400'}>
+                        <span className={monthStats.pnl >= 0 ? 'text-profit' : 'text-loss'}>
                             {monthStats.pnl >= 0 ? '+' : ''}${monthStats.pnl.toFixed(0)} profit
                         </span>
                     </div>
@@ -174,11 +174,11 @@ export function ChallengeCalendar({
             {/* Legend */}
             <div className="flex items-center justify-center gap-3 text-xs text-gray-500">
                 <div className="flex items-center gap-1">
-                    <div className="w-2.5 h-2.5 rounded-sm bg-green-500/20 border border-green-500/40" />
+                    <div className="w-2.5 h-2.5 rounded-sm bg-profit/10 border border-profit/20" />
                     <span>Profit</span>
                 </div>
                 <div className="flex items-center gap-1">
-                    <div className="w-2.5 h-2.5 rounded-sm bg-red-500/15 border border-red-500/40" />
+                    <div className="w-2.5 h-2.5 rounded-sm bg-loss/10 border border-loss/20" />
                     <span>Loss</span>
                 </div>
                 <div className="flex items-center gap-1">
@@ -212,7 +212,7 @@ export function ChallengeCalendar({
                             <div className="grid grid-cols-2 gap-2 text-xs">
                                 <div>
                                     <span className="text-gray-500">Daily P&L:</span>
-                                    <span className={`ml-1 font-bold ${selectedDay.pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                    <span className={`ml-1 font-bold ${selectedDay.pnl >= 0 ? 'text-profit' : 'text-loss'}`}>
                                         {selectedDay.pnl >= 0 ? '+' : ''}${selectedDay.pnl.toFixed(2)}
                                     </span>
                                 </div>

@@ -692,7 +692,7 @@ function SettingsContent() {
                 </aside>
 
                 {/* Content Area */}
-                <main className="flex-1 glass-card bg-black/40 backdrop-blur-md p-10 border-white/5 min-h-[600px] flex flex-col">
+                <main className="flex-1 glass-card bg-black/40 backdrop-blur-md p-4 md:p-6 lg:p-10 border-white/5 min-h-[600px] flex flex-col">
 
                     {activeTab === 'preferences' && (
                         <div className="space-y-10 animate-fade-in">

@@ -147,7 +147,7 @@ export function AnalyticsContent() {
                                     />
                                     <Bar dataKey="profit" radius={[0, 2, 2, 0]}>
                                         {symbolData.map((entry, i) => (
-                                            <Cell key={i} fill={entry.profit >= 0 ? '#4ade80' : '#f87171'} fillOpacity={0.6} />
+                                            <Cell key={i} fill={entry.profit >= 0 ? 'var(--profit)' : 'var(--loss)'} fillOpacity={0.8} />
                                         ))}
                                     </Bar>
                                 </BarChart>

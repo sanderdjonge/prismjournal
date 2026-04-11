@@ -51,8 +51,8 @@ export function StrategyMonthlyReturns({ data }: MonthlyReturnsProps) {
                       className={cn(
                         'aspect-square rounded text-center flex flex-col items-center justify-center text-[8px] font-bold border',
                         !hasData && 'bg-white/5 border-white/5 text-gray-700',
-                        hasData && isPositive && 'bg-green-500/20 border-green-500/30 text-green-400',
-                        hasData && !isPositive && 'bg-red-500/20 border-red-500/30 text-red-400'
+                        hasData && isPositive && 'bg-profit/10 border-profit/20 text-profit',
+                        hasData && !isPositive && 'bg-loss/10 border-loss/20 text-loss'
                       )}
                       title={hasData ? `${formatAmount(pnl)}` : undefined}
                     >
