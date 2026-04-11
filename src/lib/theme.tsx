@@ -19,11 +19,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     const saved = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
     if (saved === 'light' || saved === 'dark') {
       setThemeState(saved);
     }
+    setMounted(true);
   }, []);
 
   useEffect(() => {

@@ -51,8 +51,20 @@ async function createAuditLog(
 // Rate limiting - simple in-memory store (use Redis in production)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 
-  // Rates: admin-users-${id} (30/min), admin-modify-${id} (10/min), admin-delete-${id} (5/min), admin-reset-${id} (5/min)
+let lastCleanup = Date.now();
+const CLEANUP_INTERVAL = 5 * 60 * 1000;
+
+function cleanupExpired() {
+  const now = Date.now();
+  if (now - lastCleanup < CLEANUP_INTERVAL) return;
+  lastCleanup = now;
+  for (const [key, record] of rateLimitStore) {
+    if (now > record.resetTime) rateLimitStore.delete(key);
+  }
+}
+
   const getRateLimit = (key: string, maxRequests: number, windowMs: number) => {
+    cleanupExpired();
     const now = Date.now();
     const record = rateLimitStore.get(key);
 

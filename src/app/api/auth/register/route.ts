@@ -23,60 +23,65 @@ export async function POST(request: Request) {
             where: { id: 'system' },
         });
 
-        if (systemSettings?.inviteOnlyMode) {
-            if (!body.invite) {
-                return NextResponse.json({ error: 'Invite token required' }, { status: 400 });
-            }
-
-            const inviteToken = await prisma.inviteToken.findUnique({
-                where: { token: body.invite },
-            });
-
-            if (!inviteToken) {
-                return NextResponse.json({ error: 'Invalid invite token' }, { status: 400 });
-            }
-
-            if (inviteToken.usedAt) {
-                return NextResponse.json({ error: 'Invite token already used' }, { status: 400 });
-            }
-
-            if (inviteToken.expiresAt && new Date() > inviteToken.expiresAt) {
-                return NextResponse.json({ error: 'Invite token expired' }, { status: 400 });
-            }
-
-            if (inviteToken.email && inviteToken.email !== body.email) {
-                return NextResponse.json({ error: 'Email does not match invite' }, { status: 400 });
-            }
-        }
-
-        const existing = await prisma.user.findUnique({ where: { email: body.email } });
-        if (existing) {
-            logAuditEvent('REGISTRATION_FAILED', null, { email: body.email, reason: 'email_already_registered' }).catch(console.error);
-            return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
-        }
-
         const hashedPassword = await bcrypt.hash(body.password, 12);
         
-        // Generate bridge key for the new user
         const { key, keyId, keyHash } = generateBridgeKey();
 
-        const user = await prisma.user.create({
-            data: {
-                email: body.email,
-                password: hashedPassword,
-                name: body.name ?? body.email.split('@')[0],
-                bridgeKeyId: keyId,
-                bridgeKeyHash: keyHash,
-            },
+        const user = await prisma.$transaction(async (tx) => {
+            if (systemSettings?.inviteOnlyMode) {
+                if (!body.invite) {
+                    throw Object.assign(new Error('Invite token required'), { status: 400 });
+                }
+
+                const inviteToken = await tx.inviteToken.findUnique({
+                    where: { token: body.invite },
+                });
+
+                if (!inviteToken) {
+                    throw Object.assign(new Error('Invalid invite token'), { status: 400 });
+                }
+
+                if (inviteToken.usedAt) {
+                    throw Object.assign(new Error('Invite token already used'), { status: 400 });
+                }
+
+                if (inviteToken.expiresAt && new Date() > inviteToken.expiresAt) {
+                    throw Object.assign(new Error('Invite token expired'), { status: 400 });
+                }
+
+                if (inviteToken.email && inviteToken.email !== body.email) {
+                    throw Object.assign(new Error('Email does not match invite'), { status: 400 });
+                }
+
+                // Mark token as used immediately within the transaction to prevent double-use
+                await tx.inviteToken.update({
+                    where: { token: body.invite! },
+                    data: { usedAt: new Date() },
+                });
+            }
+
+            const existing = await tx.user.findUnique({ where: { email: body.email } });
+            if (existing) {
+                throw Object.assign(new Error('Email already registered'), { status: 409 });
+            }
+
+            return tx.user.create({
+                data: {
+                    email: body.email,
+                    password: hashedPassword,
+                    name: body.name ?? body.email.split('@')[0],
+                    bridgeKeyId: keyId,
+                    bridgeKeyHash: keyHash,
+                },
+            });
         });
 
-        // Mark invite token as used if it was validated in invite-only mode
+        // Update invite token with user ID outside the critical path
         if (systemSettings?.inviteOnlyMode && body.invite) {
             await prisma.inviteToken.update({
                 where: { token: body.invite },
                 data: {
                     usedBy: user.id,
-                    usedAt: new Date(),
                 },
             });
         }
@@ -102,7 +107,13 @@ export async function POST(request: Request) {
             name: user.name,
             bridgeKey: key, // Return the bridge key once during registration
         });
-    } catch (error) {
+    } catch (error: unknown) {
+        const err = error as { status?: number; message?: string };
+        const status = err?.status ?? 500;
+        const message = err?.message ?? 'Registration failed. Please try again.';
+        if (status >= 400 && status < 500) {
+            return NextResponse.json({ error: message }, { status });
+        }
         console.error('[register]', error);
         logAuditEvent('REGISTRATION_FAILED', null, { reason: 'internal_error' }).catch(console.error);
         return NextResponse.json({ error: 'Registration failed. Please try again.' }, { status: 500 });
