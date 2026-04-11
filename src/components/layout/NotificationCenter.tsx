@@ -45,6 +45,7 @@ export default function NotificationCenter({ className }: NotificationCenterProp
 
   // Close on outside click
   useEffect(() => {
+    if (!isOpen) return;
     const handleClickOutside = (event: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
         setIsOpen(false);
@@ -52,7 +53,7 @@ export default function NotificationCenter({ className }: NotificationCenterProp
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [isOpen]);
 
   // Mark all as read
   const handleMarkAllRead = async () => {

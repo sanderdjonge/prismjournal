@@ -57,8 +57,8 @@ export const POST = withAdmin(async (req: NextRequest, _ctx: Record<string, unkn
 export const GET = withAdmin(async (req: NextRequest, _ctx: Record<string, unknown>, _session: AdminSession) => {
   try {
     const { searchParams } = new URL(req.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '50');
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50') || 50));
     const skip = (page - 1) * limit;
 
     const [tokens, total] = await Promise.all([
@@ -96,9 +96,18 @@ export const DELETE = withAdmin(async (req: NextRequest, _ctx: Record<string, un
       return badRequest('Token ID is required');
     }
 
-    const deleted = await prisma.inviteToken.delete({
-      where: { id: tokenId },
-    }).catch(() => null);
+    let deleted;
+    try {
+      deleted = await prisma.inviteToken.delete({
+        where: { id: tokenId },
+      });
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'code' in error && (error as { code: string }).code === 'P2025') {
+        return badRequest('Token not found');
+      }
+      console.error('Error deleting invite token:', error);
+      return internalError();
+    }
 
     if (!deleted) {
       return badRequest('Token not found');

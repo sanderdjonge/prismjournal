@@ -219,7 +219,7 @@ export default function AdminPage() {
         } else if (activeTab === 'backups' && !backupData) {
             loadBackups();
         } else if (activeTab === 'auditlog') {
-            loadAuditLog(auditPage, auditActionFilter, auditSearch);
+            loadAuditLog(1, auditActionFilter, auditSearch);
         }
     }, [activeTab]);
     

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import EquityChart from './EquityChart';
 import TradeCalendar from './TradeCalendar';
 import RecentTrades from './RecentTrades';
@@ -58,7 +58,26 @@ export default function Dashboard() {
     const { dateFormat } = useSettings();
     const [showOnboarding, setShowOnboarding] = useState(false);
 
-    const stats = data as DashboardData;
+    const defaultStats: DashboardData = useMemo(() => ({
+        equity: [],
+        allTimeEquity: [],
+        trades: [],
+        calendar: [],
+        winRate: 0,
+        profitFactor: 0,
+        totalTrades: 0,
+        totalPnl: 0,
+        expectancy: 0,
+        maxDrawdown: 0,
+        avgRMultiple: 0,
+        bestTrade: 0,
+        worstTrade: 0,
+        consecutiveWins: 0,
+        consecutiveLosses: 0,
+        accountBalance: 0,
+    }), []);
+
+    const stats = (data ?? defaultStats) as DashboardData;
 
     useEffect(() => {
         if (savedPeriod) {

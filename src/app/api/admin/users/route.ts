@@ -63,33 +63,29 @@ function cleanupExpired() {
   }
 }
 
-  const getRateLimit = (key: string, maxRequests: number, windowMs: number) => {
-    cleanupExpired();
-    const now = Date.now();
-    const record = rateLimitStore.get(key);
+const getRateLimit = (key: string, maxRequests: number, windowMs: number) => {
+  cleanupExpired();
+  const now = Date.now();
+  const record = rateLimitStore.get(key);
 
-    if (!record || now > record.resetTime) {
-      rateLimitStore.set(key, { count: 1, resetTime: now + windowMs });
-      return { allowed: true, remaining: maxRequests - 1, resetTime: now + windowMs };
-    }
+  if (!record || now > record.resetTime) {
+    rateLimitStore.set(key, { count: 1, resetTime: now + windowMs });
+    return { allowed: true, remaining: maxRequests - 1, resetTime: now + windowMs };
+  }
 
-    if (record.count >= maxRequests) {
-      return { allowed: false, remaining: 0, resetTime: record.resetTime };
-    }
+  if (record.count >= maxRequests) {
+    return { allowed: false, remaining: 0, resetTime: record.resetTime };
+  }
 
-    record.count++;
-    return { allowed: true, remaining: maxRequests - record.count, resetTime: record.resetTime };
-  };
+  record.count++;
+  return { allowed: true, remaining: maxRequests - record.count, resetTime: record.resetTime };
+};
 
 // GET - List all users with pagination
 export const GET = withAdmin(async (request: NextRequest, _ctx: Record<string, unknown>, session: AdminSession) => {
   if (!getRateLimit(`admin-users-${session.user.id}`, 30, 60000).allowed) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
   }
-
-  await createAuditLog(AuditAction.ADMIN_ACCESS, {
-    action: 'VIEW_USERS_LIST',
-  }, request);
 
   const { searchParams } = new URL(request.url);
   const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1);
