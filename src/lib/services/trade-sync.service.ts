@@ -7,6 +7,21 @@ import { captureAutoScreenshots } from './auto-screenshot.service';
 import { autoAdvancePhaseIfNeeded } from '@/lib/prop-firm/challenge-service';
 import { sendDailyLossAlertIfNeeded } from './daily-loss-alert.service';
 
+const syncInFlight = new Map<string, number>();
+const SYNC_LOCK_TTL_MS = 10_000;
+
+function acquireSyncLock(ticket: string): boolean {
+    const now = Date.now();
+    const existing = syncInFlight.get(ticket);
+    if (existing && now - existing < SYNC_LOCK_TTL_MS) return false;
+    syncInFlight.set(ticket, now);
+    return true;
+}
+
+function releaseSyncLock(ticket: string): void {
+    syncInFlight.delete(ticket);
+}
+
 type ChallengeRule = {
     type: 'MAX_DAILY_LOSS' | 'MAX_TRADES_PER_DAY' | 'MIN_RR' | 'TIME_WINDOW' | 'MAX_DRAWDOWN' | 'WIN_RATE_TARGET';
     value: number | string;
@@ -371,6 +386,12 @@ export async function upsertSyncTrade(
     trade: SyncTrade,
     isHistorySync = false,
 ): Promise<void> {
+    if (!acquireSyncLock(trade.ticket)) {
+        logger.info({ ticket: trade.ticket }, '[trade-sync] duplicate in-flight sync, skipping');
+        return;
+    }
+
+    try {
     const strategyId = trade.strategy
         ? await resolveStrategy(trade.strategy, userId)
         : null;
@@ -585,6 +606,9 @@ export async function upsertSyncTrade(
                     logger.error({ err, accountId }, '[trade-sync] failed to check daily loss alert');
                 });
         }
+    }
+    } finally {
+        releaseSyncLock(trade.ticket);
     }
 }
 

@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { withAdmin } from '@/lib/api/withAdmin';
 import type { AdminSession } from '@/lib/api/withAdmin';
 import { deleteFile } from '@/lib/storage';
+import { checkLimit, Limiters } from '@/lib/rate-limit-redis';
 
 // Audit log action types
 export enum AuditAction {
@@ -48,44 +49,10 @@ async function createAuditLog(
   }
 }
 
-// Rate limiting - simple in-memory store (use Redis in production)
-const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
-
-let lastCleanup = Date.now();
-const CLEANUP_INTERVAL = 5 * 60 * 1000;
-
-function cleanupExpired() {
-  const now = Date.now();
-  if (now - lastCleanup < CLEANUP_INTERVAL) return;
-  lastCleanup = now;
-  for (const [key, record] of rateLimitStore) {
-    if (now > record.resetTime) rateLimitStore.delete(key);
-  }
-}
-
-const getRateLimit = (key: string, maxRequests: number, windowMs: number) => {
-  cleanupExpired();
-  const now = Date.now();
-  const record = rateLimitStore.get(key);
-
-  if (!record || now > record.resetTime) {
-    rateLimitStore.set(key, { count: 1, resetTime: now + windowMs });
-    return { allowed: true, remaining: maxRequests - 1, resetTime: now + windowMs };
-  }
-
-  if (record.count >= maxRequests) {
-    return { allowed: false, remaining: 0, resetTime: record.resetTime };
-  }
-
-  record.count++;
-  return { allowed: true, remaining: maxRequests - record.count, resetTime: record.resetTime };
-};
-
 // GET - List all users with pagination
 export const GET = withAdmin(async (request: NextRequest, _ctx: Record<string, unknown>, session: AdminSession) => {
-  if (!getRateLimit(`admin-users-${session.user.id}`, 30, 60000).allowed) {
-    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
-  }
+  const rateLimitResponse = await checkLimit(request, Limiters.admin);
+  if (rateLimitResponse) return rateLimitResponse;
 
   const { searchParams } = new URL(request.url);
   const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1);
@@ -157,9 +124,8 @@ const updateUserSchema = z.object({
 });
 
 export const PATCH = withAdmin(async (request: NextRequest, _ctx: Record<string, unknown>, session: AdminSession) => {
-  if (!getRateLimit(`admin-modify-${session.user.id}`, 10, 60000).allowed) {
-    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
-  }
+  const rateLimitResponse = await checkLimit(request, Limiters.admin);
+  if (rateLimitResponse) return rateLimitResponse;
 
   try {
     const body = await request.json();
@@ -226,9 +192,8 @@ const sendResetSchema = z.object({
 });
 
 export const POST = withAdmin(async (request: NextRequest, _ctx: Record<string, unknown>, session: AdminSession) => {
-  if (!getRateLimit(`admin-reset-${session.user.id}`, 5, 60000).allowed) {
-    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
-  }
+  const rateLimitResponse = await checkLimit(request, Limiters.admin);
+  if (rateLimitResponse) return rateLimitResponse;
 
   try {
     const body = await request.json();
@@ -292,9 +257,8 @@ export const POST = withAdmin(async (request: NextRequest, _ctx: Record<string, 
 
 // DELETE - Soft delete (default) or hard delete (?mode=hard) user
 export const DELETE = withAdmin(async (request: NextRequest, _ctx: Record<string, unknown>, session: AdminSession) => {
-  if (!getRateLimit(`admin-delete-${session.user.id}`, 5, 60000).allowed) {
-    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
-  }
+  const rateLimitResponse = await checkLimit(request, Limiters.admin);
+  if (rateLimitResponse) return rateLimitResponse;
 
   try {
     const { searchParams } = new URL(request.url);

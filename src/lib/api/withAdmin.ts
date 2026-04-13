@@ -15,7 +15,7 @@ type AdminHandler = (
 
 export function withAdmin(handler: AdminHandler) {
   return async (req: NextRequest, ctx: Record<string, unknown>): Promise<Response> => {
-    const rateLimitResponse = await checkLimit(req, Limiters.api);
+    const rateLimitResponse = await checkLimit(req, Limiters.admin);
     if (rateLimitResponse) return rateLimitResponse;
 
     const session = await auth();

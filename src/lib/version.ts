@@ -9,9 +9,9 @@ export const APP_VERSION = pkg.version; // e.g. "2.17.0"
  * Build date — update this whenever you bump the version.
  * Format: YYYY-MM-DD
  */
-export const BUILD_DATE = '2026-04-11';
+export const BUILD_DATE = '2026-04-13';
 
-export const BUILD_NOTES = 'v2.40.0: Design system token consolidation — centralized CSS custom properties for all semantic colors/surfaces/borders/typography, Tailwind @theme mapping, composite component classes (glass-card, form-input, badge-*), chart-colors.ts utility, eliminated hardcoded hex and :root.light override hacks across 30+ components';
+export const BUILD_NOTES = 'v2.40.1: Security fixes — admin rate limiter (dedicated Limiters.admin), docker entrypoint fail-closed on migration errors, trade-sync dedup lock for concurrent requests, Redis-backed rate limiting for admin/users endpoints';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {
