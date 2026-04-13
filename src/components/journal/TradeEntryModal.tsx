@@ -182,10 +182,10 @@ export default function TradeEntryModal({ isOpen, onClose, onSaved }: TradeEntry
                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                        className="fixed inset-0 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 w-full md:max-w-4xl max-h-[90vh] glass-card bg-[#0a0a0a] border-white/5 z-[101] shadow-2xl flex flex-col overflow-hidden md:rounded-2xl"
+                        className="fixed inset-0 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 w-full md:max-w-4xl max-h-[90vh] glass-card bg-surface border-border-subtle z-[101] shadow-2xl flex flex-col overflow-hidden md:rounded-2xl"
                     >
                         {/* Header */}
-                        <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                        <div className="p-6 border-b border-border-subtle flex items-center justify-between bg-white/[0.02]">
                             <div className="flex items-center gap-4">
                                 <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                                     <Target size={20} />

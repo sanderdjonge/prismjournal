@@ -50,7 +50,7 @@ export function StrategyEquityChart({ data }: EquityChartProps) {
                   return (
                     <div className="glass-card p-3 border-white/10 bg-black/80 backdrop-blur-md">
                       <p className="text-[10px] text-gray-500 mb-1">{label}</p>
-                      <p className="text-sm font-bold text-[#00f2ff]">
+                      <p className="text-sm font-bold text-primary">
                         {formatAmount(numValue)}
                       </p>
                     </div>

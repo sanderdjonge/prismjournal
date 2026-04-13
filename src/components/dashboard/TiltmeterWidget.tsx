@@ -39,7 +39,7 @@ export default function TiltmeterWidget({ periodDays = 30, strategyId, accountId
         params.set('periodDays', String(periodDays));
         if (strategyId) params.set('strategyId', strategyId);
         if (accountId) params.set('accountId', accountId);
-        
+
         const res = await fetch(`/api/analytics/tiltmeter?${params}`);
         if (res.ok) {
           const score = await res.json();
@@ -56,9 +56,9 @@ export default function TiltmeterWidget({ periodDays = 30, strategyId, accountId
 
   if (loading) {
     return (
-      <div className="bg-gray-800 rounded-lg p-6 animate-pulse">
-        <div className="h-4 bg-gray-700 rounded w-1/2 mb-4"></div>
-        <div className="h-20 bg-gray-700 rounded"></div>
+      <div className="glass-card rounded-lg p-6 animate-pulse">
+        <div className="h-4 bg-surface-elevated rounded w-1/2 mb-4"></div>
+        <div className="h-20 bg-surface-elevated rounded"></div>
       </div>
     );
   }
@@ -66,11 +66,11 @@ export default function TiltmeterWidget({ periodDays = 30, strategyId, accountId
   if (!data) return null;
 
   const getTiltLabel = (score: number) => {
-    if (score <= 20) return { text: 'Zen', emoji: '🧘', color: 'text-green-400', bg: 'bg-green-400', advice: 'Excellent discipline! Keep following your rules.' };
-    if (score <= 40) return { text: 'Calm', emoji: '😌', color: 'text-green-300', bg: 'bg-green-300', advice: 'Minor slip-ups. Stay focused on your process.' };
-    if (score <= 60) return { text: 'Edgy', emoji: '😐', color: 'text-yellow-400', bg: 'bg-yellow-400', advice: 'Some concerning patterns. Review your recent trades.' };
-    if (score <= 80) return { text: 'Stressed', emoji: '😤', color: 'text-orange-400', bg: 'bg-orange-400', advice: 'Significant violations. Consider taking a break.' };
-    return { text: 'Tilt', emoji: '🤯', color: 'text-red-400', bg: 'bg-red-400', advice: 'STOP TRADING. Step away and reset your mindset.' };
+    if (score <= 20) return { text: 'Zen', emoji: '🧘', color: 'text-profit', bg: 'bg-profit', advice: 'Excellent discipline! Keep following your rules.' };
+    if (score <= 40) return { text: 'Calm', emoji: '😌', color: 'text-profit', bg: 'bg-profit', advice: 'Minor slip-ups. Stay focused on your process.' };
+    if (score <= 60) return { text: 'Edgy', emoji: '😐', color: 'text-warning', bg: 'bg-warning', advice: 'Some concerning patterns. Review your recent trades.' };
+    if (score <= 80) return { text: 'Stressed', emoji: '😤', color: 'text-warning', bg: 'bg-warning', advice: 'Significant violations. Consider taking a break.' };
+    return { text: 'Tilt', emoji: '🤯', color: 'text-loss', bg: 'bg-loss', advice: 'STOP TRADING. Step away and reset your mindset.' };
   };
 
   const tilt = getTiltLabel(data.score);
@@ -78,18 +78,16 @@ export default function TiltmeterWidget({ periodDays = 30, strategyId, accountId
     .sort((a, b) => b[1].weightedScore - a[1].weightedScore);
 
   return (
-    <div className="bg-gray-800 rounded-lg p-6">
-      {/* Header */}
+    <div className="glass-card rounded-lg p-6">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-sm font-semibold text-gray-100">
+          <h3 className="text-sm font-semibold text-text-primary">
             Tiltmeter
           </h3>
-          <p className="text-xs text-gray-500">Last {periodDays} days</p>
+          <p className="text-xs text-text-muted">Last {periodDays} days</p>
         </div>
       </div>
 
-      {/* Main Score Display */}
       <div className="flex items-center gap-4 mb-4">
         <div className="text-5xl">{tilt.emoji}</div>
         <div className="flex-1">
@@ -97,105 +95,100 @@ export default function TiltmeterWidget({ periodDays = 30, strategyId, accountId
             <span className={`text-2xl font-bold ${tilt.color}`}>
               {tilt.text}
             </span>
-            <span className="text-sm text-gray-400">
+            <span className="text-sm text-text-secondary">
               {data.score}/100
             </span>
           </div>
-          <div className="text-xs text-gray-500 mt-1">
+          <div className="text-xs text-text-muted mt-1">
             Based on {data.totalViolations} violation{data.totalViolations !== 1 ? 's' : ''}
           </div>
         </div>
       </div>
 
-      {/* Visual meter bar */}
-      <div className="relative h-3 bg-gray-700 rounded-full overflow-hidden mb-4">
+      <div className="relative h-3 bg-surface-elevated rounded-full overflow-hidden mb-4">
         <div
           className="absolute left-0 top-0 h-full rounded-full transition-all duration-500"
           style={{
             width: `${data.score}%`,
-            background: `linear-gradient(90deg, 
-              #22c55e 0%, 
-              #84cc16 20%, 
-              #eab308 40%, 
-              #f97316 60%, 
-              #ef4444 80%, 
+            background: `linear-gradient(90deg,
+              #22c55e 0%,
+              #84cc16 20%,
+              #eab308 40%,
+              #f97316 60%,
+              #ef4444 80%,
               #dc2626 100%
             )`,
           }}
         />
-        {/* Score markers */}
         <div className="absolute inset-0 flex justify-between px-1">
           {[20, 40, 60, 80].map(marker => (
-            <div key={marker} className="w-px h-full bg-gray-600/50" />
+            <div key={marker} className="w-px h-full bg-border-subtle" />
           ))}
         </div>
       </div>
 
-      {/* Advice */}
       <div className={`text-xs p-2 rounded mb-4 ${
-        data.score <= 40 ? 'bg-green-400/10 text-green-300' :
-        data.score <= 60 ? 'bg-yellow-400/10 text-yellow-300' :
-        'bg-red-400/10 text-red-300'
+        data.score <= 40 ? 'bg-profit-bg text-profit' :
+        data.score <= 60 ? 'bg-warning-bg text-warning' :
+        'bg-loss-bg text-loss'
       }`}>
         💡 {tilt.advice}
       </div>
 
-      {/* Violation Breakdown */}
       {sortedComponents.length > 0 && (
         <div className="space-y-2">
-          <button 
+          <button
             onClick={() => setExpanded(!expanded)}
-            className="flex items-center justify-between w-full text-sm text-gray-400 hover:text-gray-300 transition-colors"
+            className="flex items-center justify-between w-full text-sm text-text-secondary hover:text-text-primary transition-colors"
           >
             <span>Violation Breakdown</span>
             <span className="text-xs">{expanded ? '▲' : '▼'}</span>
           </button>
-          
+
           {sortedComponents.map(([type, info]) => {
             const ruleInfo = RULE_DESCRIPTIONS[type] || { label: formatRuleType(type), description: '', severity: 'medium' as const };
             const severityColors = {
-              high: 'text-red-400',
-              medium: 'text-yellow-400',
-              low: 'text-gray-400',
+              high: 'text-loss',
+              medium: 'text-warning',
+              low: 'text-text-secondary',
             };
-            
+
             return (
-              <div key={type} className={`p-2 rounded bg-gray-700/50 ${expanded ? '' : 'hidden'}`}>
+              <div key={type} className={`p-2 rounded bg-surface-elevated ${expanded ? '' : 'hidden'}`}>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-200 font-medium">
+                  <span className="text-sm text-text-primary font-medium">
                     {ruleInfo.label}
                   </span>
                   <span className={`text-xs font-bold ${severityColors[ruleInfo.severity]}`}>
                     {info.count}x
                   </span>
                 </div>
-                <div className="text-xs text-gray-500 mt-1">
+                <div className="text-xs text-text-muted mt-1">
                   {ruleInfo.description}
                 </div>
                 <div className="flex items-center gap-2 mt-1">
-                  <div className="flex-1 h-1 bg-gray-600 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full rounded-full ${ruleInfo.severity === 'high' ? 'bg-red-400' : ruleInfo.severity === 'medium' ? 'bg-yellow-400' : 'bg-gray-400'}`}
+                  <div className="flex-1 h-1 bg-surface-hover rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${ruleInfo.severity === 'high' ? 'bg-loss' : ruleInfo.severity === 'medium' ? 'bg-warning' : 'bg-text-secondary'}`}
                       style={{ width: `${Math.min(100, info.weightedScore * 10)}%` }}
                     />
                   </div>
-                  <span className="text-[10px] text-gray-500">
+                  <span className="text-[10px] text-text-muted">
                     impact: {info.weightedScore.toFixed(1)}
                   </span>
                 </div>
               </div>
             );
           })}
-          
-          {/* Summary when collapsed */}
+
           {!expanded && (
             <div className="flex flex-wrap gap-2">
               {sortedComponents.slice(0, 3).map(([type, info]) => {
                 const ruleInfo = RULE_DESCRIPTIONS[type] || { label: formatRuleType(type), severity: 'medium' as const };
                 const severityColors = {
-                  high: 'bg-red-400/20 text-red-400',
-                  medium: 'bg-yellow-400/20 text-yellow-400',
-                  low: 'bg-gray-600 text-gray-400',
+                  high: 'bg-loss-bg text-loss',
+                  medium: 'bg-warning-bg text-warning',
+                  low: 'bg-surface-elevated text-text-secondary',
                 };
                 return (
                   <span key={type} className={`px-2 py-1 rounded text-[10px] font-bold ${severityColors[ruleInfo.severity]}`}>
@@ -204,7 +197,7 @@ export default function TiltmeterWidget({ periodDays = 30, strategyId, accountId
                 );
               })}
               {sortedComponents.length > 3 && (
-                <span className="px-2 py-1 rounded text-[10px] text-gray-500 bg-gray-700">
+                <span className="px-2 py-1 rounded text-[10px] text-text-muted bg-surface-elevated">
                   +{sortedComponents.length - 3} more
                 </span>
               )}
@@ -213,9 +206,8 @@ export default function TiltmeterWidget({ periodDays = 30, strategyId, accountId
         </div>
       )}
 
-      {/* No violations state */}
       {sortedComponents.length === 0 && (
-        <div className="text-center py-4 text-gray-500">
+        <div className="text-center py-4 text-text-muted">
           <div className="text-2xl mb-1">✨</div>
           <div className="text-sm">No violations in the last {periodDays} days!</div>
         </div>

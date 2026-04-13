@@ -37,7 +37,7 @@ export function CorrelationMatrixView({ matrix, onCellClick }: CorrelationMatrix
   }), [variables.length])
   
   return (
-    <div className="rounded-xl bg-[#1e2130] border border-[#2a2d3a] overflow-hidden">
+    <div className="rounded-xl bg-surface-card border border-border-color overflow-hidden">
       {/* Header */}
       <div className="px-4 py-3 border-b border-white/5">
         <div className="flex items-center justify-between">

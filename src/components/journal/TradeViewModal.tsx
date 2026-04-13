@@ -91,10 +91,10 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                        className="fixed inset-0 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 w-full md:max-w-4xl md:max-h-[90vh] glass-card bg-[#0a0a0a] border-white/5 z-[101] shadow-2xl flex flex-col overflow-hidden md:rounded-2xl"
+                        className="fixed inset-0 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 w-full md:max-w-4xl md:max-h-[90vh] glass-card bg-surface border-border-subtle z-[101] shadow-2xl flex flex-col overflow-hidden md:rounded-2xl"
                     >
                         {/* Header */}
-                        <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                        <div className="p-6 border-b border-border-subtle flex items-center justify-between bg-white/[0.02]">
                             <div className="flex items-center gap-4">
                                 <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary">
                                     <Eye size={20} />
@@ -177,7 +177,7 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                             </div>
 
                             {/* Trade Status */}
-                            <div className="flex items-center gap-3 p-3 bg-white/[0.02] rounded-xl border border-white/5">
+                            <div className="flex items-center gap-3 p-3 bg-white/[0.02] rounded-xl border border-border-subtle">
                                 <div className={cn(
                                     "w-6 h-6 rounded-lg flex items-center justify-center",
                                     isClosed ? "bg-profit text-black" : "bg-secondary/20 text-secondary"
@@ -233,7 +233,7 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                             {isClosed && (
                                 <div className="space-y-1.5">
                                     <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1">Exit Efficiency</label>
-                                    <div className="bg-white/[0.03] border border-white/5 rounded-xl p-3">
+                                    <div className="bg-white/[0.03] border border-border-subtle rounded-xl p-3">
                                         <ExcursionBar
                                             mae={trade.mae}
                                             mfe={trade.mfe}
@@ -250,7 +250,7 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                             )}
 
                             {/* Strategy, Compliance, Mood, Notes */}
-                            <div className="pt-4 border-t border-white/5 grid grid-cols-2 gap-6">
+                            <div className="pt-4 border-t border-border-subtle grid grid-cols-2 gap-6">
                                 <div className="space-y-4">
                                     <div className="space-y-1.5">
                                         <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1 flex items-center gap-1.5">
@@ -348,7 +348,7 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                             )}
                         </div>
 
-                        <div className="p-4 border-t border-white/5 flex justify-end gap-3 bg-white/[0.02]">
+                        <div className="p-4 border-t border-border-subtle flex justify-end gap-3 bg-white/[0.02]">
                             <button
                                 onClick={onClose}
                                 className="px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white font-black uppercase tracking-widest text-[10px] hover:bg-white/10 transition-all"

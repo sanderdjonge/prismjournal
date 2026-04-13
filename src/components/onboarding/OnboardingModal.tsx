@@ -179,7 +179,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="w-full max-w-md glass-card bg-[#0a0a0a] border border-white/10 rounded-2xl overflow-hidden"
+          className="w-full max-w-md glass-card bg-surface border border-border-color rounded-2xl overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}

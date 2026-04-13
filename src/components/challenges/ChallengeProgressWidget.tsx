@@ -151,9 +151,9 @@ function CreateChallengeModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                        className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg glass-card bg-[#0a0a0a] border-white/5 z-[101] shadow-2xl flex flex-col overflow-hidden"
+                        className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg glass-card bg-surface border-border-subtle z-[101] shadow-2xl flex flex-col overflow-hidden"
                     >
-                        <div className="p-4 border-b border-white/5 flex items-center justify-between">
+                        <div className="p-4 border-b border-border-subtle flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
                                     <Target size={16} />
@@ -243,7 +243,7 @@ function CreateChallengeModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
                             </div>
                         </div>
                         
-                        <div className="p-4 border-t border-white/5 flex justify-end gap-2">
+                        <div className="p-4 border-t border-border-subtle flex justify-end gap-2">
                             <button
                                 onClick={onClose}
                                 className="px-4 py-2 text-xs font-medium text-gray-400 hover:text-white transition-colors"

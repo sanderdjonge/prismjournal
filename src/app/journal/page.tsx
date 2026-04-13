@@ -572,7 +572,7 @@ function JournalContent() {
 
                 {/* Main Content - Table or Panel View */}
                 {viewMode === 'panel' ? (
-                    <div className="glass-card border-white/5 bg-black/40 backdrop-blur-md overflow-hidden">
+                    <div className="glass-card border-white/5 bg-surface-card backdrop-blur-md overflow-hidden">
                         {isFetching && !data ? (
                             <div className="flex items-center justify-center h-[400px]">
                                 <div className="text-[10px] font-black uppercase tracking-widest text-gray-500 animate-pulse">Loading...</div>
@@ -592,7 +592,7 @@ function JournalContent() {
                         )}
                     </div>
                 ) : (
-                    <div className="glass-card border-white/5 bg-black/40 backdrop-blur-md overflow-hidden">
+                    <div className="glass-card border-white/5 bg-surface-card backdrop-blur-md overflow-hidden">
                         {isFetching && !data ? (
                             <div className="divide-y divide-white/5">
                                 {Array.from({ length: 8 }).map((_, i) => (

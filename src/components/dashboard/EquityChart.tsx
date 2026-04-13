@@ -13,6 +13,7 @@ import {
 } from 'recharts';
 import { useCurrency } from '@/lib/currency';
 import { useTiltmeterHistory } from '@/hooks/useTiltmeter';
+import { getChartColor } from '@/lib/chart-colors';
 
 type DataPoint = {
     time: string;
@@ -35,11 +36,6 @@ type TooltipProps = {
     symbol: string;
     dateFormat?: 'DD-MM-YYYY' | 'MM-DD-YYYY' | 'YYYY-MM-DD';
     showTiltmeter?: boolean;
-};
-
-const COLORS = {
-    positive: '#4ade80', // green-400
-    negative: '#f87171', // red-400
 };
 
 // Format date according to preference
@@ -105,6 +101,13 @@ const CustomTooltip = ({ active, payload, label, symbol, dateFormat = 'DD-MM-YYY
 
 export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-YYYY', showTiltmeter = false, accountId = null, showHeader = true }: EquityChartProps) {
     const { formatAmount, formatPnl, symbol } = useCurrency();
+    const chartColors = {
+        profit: getChartColor('profit'),
+        loss: getChartColor('loss'),
+        textSecondary: getChartColor('text-secondary'),
+        textMuted: getChartColor('text-muted'),
+        warning: getChartColor('warning'),
+    };
     
     // Calculate date range from sorted data to ensure correct range for tiltmeter fetch
     const dateRange = useMemo(() => {
@@ -319,19 +322,17 @@ export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-
                 <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={chartData} margin={{ top: 10, right: showTiltmeter ? 50 : 10, left: 0, bottom: 5 }}>
                         <defs>
-                            {/* Fill gradient: green above zero, red below zero, split at the zero line */}
                             <linearGradient id="equityFillGradient" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor={COLORS.positive} stopOpacity={0.18} />
-                                <stop offset={`${zeroGradientOffset * 100}%`} stopColor={COLORS.positive} stopOpacity={0.04} />
-                                <stop offset={`${zeroGradientOffset * 100}%`} stopColor={COLORS.negative} stopOpacity={0.04} />
-                                <stop offset="100%" stopColor={COLORS.negative} stopOpacity={0.18} />
+                                <stop offset="0%" stopColor={chartColors.profit} stopOpacity={0.18} />
+                                <stop offset={`${zeroGradientOffset * 100}%`} stopColor={chartColors.profit} stopOpacity={0.04} />
+                                <stop offset={`${zeroGradientOffset * 100}%`} stopColor={chartColors.loss} stopOpacity={0.04} />
+                                <stop offset="100%" stopColor={chartColors.loss} stopOpacity={0.18} />
                             </linearGradient>
-                            {/* Stroke gradient: same split */}
                             <linearGradient id="equityStrokeGradient" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor={COLORS.positive} stopOpacity={1} />
-                                <stop offset={`${zeroGradientOffset * 100}%`} stopColor={COLORS.positive} stopOpacity={1} />
-                                <stop offset={`${zeroGradientOffset * 100}%`} stopColor={COLORS.negative} stopOpacity={1} />
-                                <stop offset="100%" stopColor={COLORS.negative} stopOpacity={1} />
+                                <stop offset="0%" stopColor={chartColors.profit} stopOpacity={1} />
+                                <stop offset={`${zeroGradientOffset * 100}%`} stopColor={chartColors.profit} stopOpacity={1} />
+                                <stop offset={`${zeroGradientOffset * 100}%`} stopColor={chartColors.loss} stopOpacity={1} />
+                                <stop offset="100%" stopColor={chartColors.loss} stopOpacity={1} />
                             </linearGradient>
                         </defs>
                         <CartesianGrid
@@ -343,7 +344,7 @@ export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-
                             dataKey="time"
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: '#4b5563', fontSize: 8, fontWeight: 900 }}
+                            tick={{ fill: chartColors.textMuted, fontSize: 8, fontWeight: 900 }}
                             tickFormatter={formatXAxisTick}
                             dy={5}
                             // Ensure even spacing by using index-based ticks
@@ -355,7 +356,7 @@ export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-
                             dataKey="value"
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: '#6b7280', fontSize: 9, fontWeight: 600, fontFamily: 'monospace' }}
+                            tick={{ fill: chartColors.textSecondary, fontSize: 9, fontWeight: 600, fontFamily: 'monospace' }}
                             tickFormatter={formatYAxisValue}
                             width={58}
                             domain={yAxisDomain}
@@ -367,7 +368,7 @@ export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-
                                 domain={[0, 100]}
                                 axisLine={false}
                                 tickLine={false}
-                                tick={{ fill: '#f59e0b', fontSize: 9, fontWeight: 600, fontFamily: 'monospace' }}
+                                tick={{ fill: chartColors.warning, fontSize: 9, fontWeight: 600, fontFamily: 'monospace' }}
                                 tickFormatter={(v) => `${v}`}
                                 width={40}
                             />
@@ -388,7 +389,7 @@ export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-
                                 yAxisId="tiltmeter"
                                 type="monotone"
                                 dataKey="tiltmeter"
-                                stroke="#f59e0b"
+                                stroke={chartColors.warning}
                                 strokeWidth={2}
                                 strokeDasharray="4 2"
                                 dot={false}

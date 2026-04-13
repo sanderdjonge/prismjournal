@@ -54,10 +54,10 @@ export default function Gauge({
     const progressPath = `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${progressEnd.x} ${progressEnd.y}`;
 
     const colors = {
-        primary: 'stroke-[#00f2ff] drop-shadow-[0_0_12px_rgba(0,242,255,0.5)]',
-        accent: 'stroke-[#00ff88] drop-shadow-[0_0_12px_rgba(0,255,136,0.5)]',
-        secondary: 'stroke-[#7000ff] drop-shadow-[0_0_12px_rgba(112,0,255,0.5)]',
-        danger: 'stroke-[#f87171] drop-shadow-[0_0_12px_rgba(248,113,113,0.5)]',
+        primary: 'stroke-[var(--primary)] drop-shadow-[0_0_12px_rgba(0,242,255,0.5)]',
+        accent: 'stroke-[var(--profit)] drop-shadow-[0_0_12px_rgba(74,222,128,0.5)]',
+        secondary: 'stroke-[var(--secondary)] drop-shadow-[0_0_12px_rgba(112,0,255,0.5)]',
+        danger: 'stroke-[var(--loss)] drop-shadow-[0_0_12px_rgba(248,113,113,0.5)]',
     };
 
     return (

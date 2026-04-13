@@ -39,7 +39,7 @@ function DeltaIndicator({ delta }: { delta: number | null }) {
     if (delta === null) return <Minus className="w-4 h-4 text-gray-500" />;
     
     const isPositive = delta > 0;
-    const color = isPositive ? 'text-green-400' : 'text-red-400';
+    const color = isPositive ? 'text-profit' : 'text-loss';
     const Icon = isPositive ? TrendingUp : TrendingDown;
     
     return (
@@ -80,7 +80,7 @@ export default function PeriodComparisonWidget({ accountId }: PeriodComparisonWi
                                 className="fixed inset-0 z-40"
                                 onClick={() => setShowDropdown(false)}
                             />
-                            <div className="absolute right-0 top-full mt-1 z-50 bg-[#1a1a2e] border border-white/10 rounded-lg shadow-xl overflow-hidden min-w-[200px]">
+                            <div className="absolute right-0 top-full mt-1 z-50 bg-surface-card border border-white/10 rounded-lg shadow-xl overflow-hidden min-w-[200px]">
                                 {PRESETS.map((p) => (
                                     <button
                                         key={p.value}
@@ -206,8 +206,8 @@ function MetricRow({
             <div className="text-center">
                 <span className={`text-lg font-semibold ${
                     value1 === null ? 'text-gray-500' :
-                    value1 > 0 ? 'text-green-400' : 
-                    value1 < 0 ? 'text-red-400' : 'text-gray-300'
+                    value1 > 0 ? 'text-profit' : 
+                    value1 < 0 ? 'text-loss' : 'text-gray-300'
                 }`}>
                     {formatMetric(value1, format)}
                 </span>
@@ -222,8 +222,8 @@ function MetricRow({
             <div className="text-center">
                 <span className={`text-lg font-semibold ${
                     value2 === null ? 'text-gray-500' :
-                    value2 > 0 ? 'text-green-400' : 
-                    value2 < 0 ? 'text-red-400' : 'text-gray-300'
+                    value2 > 0 ? 'text-profit' : 
+                    value2 < 0 ? 'text-loss' : 'text-gray-300'
                 }`}>
                     {formatMetric(value2, format)}
                 </span>
