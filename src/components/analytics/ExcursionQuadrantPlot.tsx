@@ -53,10 +53,10 @@ const ZONE_CONFIG: Record<ZoneKey, {
     bgFill: string;
     textColor: string;
 }> = {
-    clean:    { label: 'Clean',     desc: 'Good entry + good exit',         color: '#4ade80', bgFill: 'var(--profit-bg)',   textColor: 'text-profit' },
-    earlyOut: { label: 'Early Out', desc: 'Good entry, left profit behind',  color: '#facc15', bgFill: 'rgba(250,204,21,0.08)',   textColor: 'text-yellow-400' },
-    survived: { label: 'Survived',  desc: 'Rough entry, recovered well',     color: '#fb923c', bgFill: 'rgba(251,146,60,0.08)',   textColor: 'text-orange-400' },
-    painful:  { label: 'Painful',   desc: 'Rough entry + poor exit',         color: '#f87171', bgFill: 'var(--loss-bg)', textColor: 'text-loss' },
+    clean:    { label: 'Clean',     desc: 'Good entry + good exit',         color: 'var(--profit)', bgFill: 'var(--profit-bg)',   textColor: 'text-profit' },
+    earlyOut: { label: 'Early Out', desc: 'Good entry, left profit behind',  color: 'var(--warning)', bgFill: 'var(--warning-bg)',       textColor: 'text-yellow-400' },
+    survived: { label: 'Survived',  desc: 'Rough entry, recovered well',     color: 'var(--warning)', bgFill: 'rgba(251,146,60,0.08)',   textColor: 'text-orange-400' },
+    painful:  { label: 'Painful',   desc: 'Rough entry + poor exit',         color: 'var(--loss)', bgFill: 'var(--loss-bg)', textColor: 'text-loss' },
 };
 
 // ---------------------------------------------------------------------------
@@ -273,44 +273,44 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                     <svg viewBox={`0 0 ${VW} ${VH}`} className="w-full h-auto" preserveAspectRatio="xMidYMid meet">
                         {/* Zone backgrounds — equal quadrants */}
                         <rect x={ML}   y={MT}   width={CW / 2} height={CH / 2} fill="rgba(251,146,60,0.06)" />
-                        <rect x={midX} y={MT}   width={CW / 2} height={CH / 2} fill="rgba(74,222,128,0.06)" />
-                        <rect x={ML}   y={midY} width={CW / 2} height={CH / 2} fill="rgba(248,113,113,0.06)" />
-                        <rect x={midX} y={midY} width={CW / 2} height={CH / 2} fill="rgba(250,204,21,0.045)" />
+                        <rect x={midX} y={MT}   width={CW / 2} height={CH / 2} fill="var(--profit-bg)" />
+                        <rect x={ML}   y={midY} width={CW / 2} height={CH / 2} fill="var(--loss-bg)" />
+                        <rect x={midX} y={midY} width={CW / 2} height={CH / 2} fill="var(--warning-bg)" />
 
                         {/* Grid lines */}
                         {[0, 25, 50, 75, 100].map(v => (
                             <g key={v}>
-                                <line x1={ML} y1={scaleY(v)} x2={ML + CW} y2={scaleY(v)} stroke="rgba(255,255,255,0.05)" strokeWidth={1} strokeDasharray="4 4" />
-                                <text x={ML - 6} y={scaleY(v) + 4} fill="#4b5563" fontSize={10} textAnchor="end" fontFamily="sans-serif" fontWeight={700}>{v}%</text>
+                                <line x1={ML} y1={scaleY(v)} x2={ML + CW} y2={scaleY(v)} stroke="var(--border-subtle)" strokeWidth={1} strokeDasharray="4 4" />
+                                <text x={ML - 6} y={scaleY(v) + 4} fill="var(--text-muted)" fontSize={10} textAnchor="end" fontFamily="sans-serif" fontWeight={700}>{v}%</text>
                             </g>
                         ))}
 
                         {/* Divider lines */}
-                        <line x1={midX} y1={MT} x2={midX} y2={MT + CH} stroke="rgba(255,255,255,0.15)" strokeWidth={1.5} strokeDasharray="6 3" />
-                        <line x1={ML} y1={midY} x2={ML + CW} y2={midY} stroke="rgba(255,255,255,0.15)" strokeWidth={1.5} strokeDasharray="6 3" />
+                        <line x1={midX} y1={MT} x2={midX} y2={MT + CH} stroke="var(--border-color)" strokeWidth={1.5} strokeDasharray="6 3" />
+                        <line x1={ML} y1={midY} x2={ML + CW} y2={midY} stroke="var(--border-color)" strokeWidth={1.5} strokeDasharray="6 3" />
 
                         {/* X axis */}
-                        <line x1={ML} y1={MT + CH} x2={ML + CW} y2={MT + CH} stroke="rgba(255,255,255,0.12)" strokeWidth={1} />
+                        <line x1={ML} y1={MT + CH} x2={ML + CW} y2={MT + CH} stroke="var(--border-color)" strokeWidth={1} />
                         {[0, 1, 2, 3, 4].map(i => {
                             const v = (maxMae / 4) * i;
                             const x = scaleX(v);
-                            return <text key={i} x={x} y={MT + CH + 16} fill="#4b5563" fontSize={10} textAnchor="middle" fontFamily="sans-serif" fontWeight={700}>{v.toFixed(1)}</text>;
+                            return <text key={i} x={x} y={MT + CH + 16} fill="var(--text-muted)" fontSize={10} textAnchor="middle" fontFamily="sans-serif" fontWeight={700}>{v.toFixed(1)}</text>;
                         })}
 
                         {/* Axis labels */}
-                        <text x={ML + CW / 2} y={VH - 4} fill="#6b7280" fontSize={9} textAnchor="middle" fontFamily="sans-serif" fontWeight={900} letterSpacing={1.5}>MAX ADVERSE EXCURSION (pts) →</text>
-                        <text x={12} y={MT + CH / 2} fill="#6b7280" fontSize={9} textAnchor="middle" fontFamily="sans-serif" fontWeight={900} letterSpacing={1.5} transform={`rotate(-90, 12, ${MT + CH / 2})`}>↑ EXIT EFFICIENCY %</text>
+                        <text x={ML + CW / 2} y={VH - 4} fill="var(--text-secondary)" fontSize={9} textAnchor="middle" fontFamily="sans-serif" fontWeight={900} letterSpacing={1.5}>MAX ADVERSE EXCURSION (pts) →</text>
+                        <text x={12} y={MT + CH / 2} fill="var(--text-secondary)" fontSize={9} textAnchor="middle" fontFamily="sans-serif" fontWeight={900} letterSpacing={1.5} transform={`rotate(-90, 12, ${MT + CH / 2})`}>↑ EXIT EFFICIENCY %</text>
 
                         {/* Zone labels — centered in equal quadrants */}
                         {([
-                            ['CLEAN',     ML + CW * 0.25, MT + CH * 0.25, 'rgba(74,222,128,0.5)',  'clean entry, good exit'],
+                            ['CLEAN',     ML + CW * 0.25, MT + CH * 0.25, 'var(--profit)',     'clean entry, good exit'],
                             ['SURVIVED',  ML + CW * 0.75, MT + CH * 0.25, 'rgba(251,146,60,0.5)',  'rough entry, made it work'],
-                            ['EARLY OUT', ML + CW * 0.25, MT + CH * 0.75, 'rgba(250,204,21,0.5)',  'left profit on the table'],
-                            ['PAINFUL',   ML + CW * 0.75, MT + CH * 0.75, 'rgba(248,113,113,0.5)', 'rough entry + poor exit'],
+                            ['EARLY OUT', ML + CW * 0.25, MT + CH * 0.75, 'var(--warning)',  'left profit on the table'],
+                            ['PAINFUL',   ML + CW * 0.75, MT + CH * 0.75, 'var(--loss)', 'rough entry + poor exit'],
                         ] as const).map(([name, x, y, color, sub]) => (
                             <g key={name} style={{ pointerEvents: 'none' }}>
                                 <text x={x} y={y - 4} fill={color} fontSize={10} fontWeight={900} fontFamily="sans-serif" letterSpacing={2} textAnchor="middle">{name}</text>
-                                <text x={x} y={y + 7} fill="rgba(255,255,255,0.20)" fontSize={9} fontFamily="sans-serif" textAnchor="middle">{sub}</text>
+                                <text x={x} y={y + 7} fill="var(--text-muted)" fontSize={9} fontFamily="sans-serif" textAnchor="middle">{sub}</text>
                             </g>
                         ))}
 
@@ -370,20 +370,20 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
 
                         return (
                             <div
-                                className="absolute pointer-events-none z-10 bg-[#0d0d1a] border border-white/10 rounded-xl p-3.5 min-w-[220px] shadow-2xl"
+                                className="absolute pointer-events-none z-10 bg-surface border border-border-color rounded-xl p-3.5 min-w-[220px] shadow-2xl"
                                 style={{
                                     ...(flipX ? { right: `${100 - cx}%` } : { left: `calc(${cx}% + 14px)` }),
                                     ...(flipY ? { bottom: `${100 - cy}%` } : { top: `calc(${cy}% - 8px)` }),
                                 }}
                             >
-                                <p className="text-xs font-black text-white uppercase tracking-wide mb-0.5">{hovered.symbol}</p>
-                                {exitDate && <p className="text-[10px] font-black uppercase tracking-widest text-gray-600 mb-2.5">{exitDate}</p>}
+                                <p className="text-xs font-black text-text-primary uppercase tracking-wide mb-0.5">{hovered.symbol}</p>
+                                {exitDate && <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-2.5">{exitDate}</p>}
                                 <Row label="Captured" value={`${hovered.exitDistFromEntry != null && hovered.exitDistFromEntry >= 0 ? '+' : ''}${hovered.exitDistFromEntry?.toFixed(4) ?? '—'} pts`} color={isWin ? 'text-profit' : 'text-loss'} />
                                 <Row label="Best available (MFE)" value={`+${hovered.mfe?.toFixed(4) ?? '—'} pts`} />
                                 {hovered.mfe != null && hovered.exitDistFromEntry != null && (
-                                    <Row label="Left on table" value={`${(hovered.mfe - hovered.exitDistFromEntry).toFixed(4)} pts`} color="text-yellow-400" />
+                                    <Row label="Left on table" value={`${(hovered.mfe - hovered.exitDistFromEntry).toFixed(4)} pts`} color="text-warning" />
                                 )}
-                                <div className="my-2 h-px bg-white/5" />
+                                <div className="my-2 h-px bg-border-subtle" />
                                 <Row label="Max against you (MAE)" value={`-${(hovered.mae ?? 0).toFixed(4)} pts`} color="text-loss" />
                                 {slMsg && <Row label="Your stop" value={slMsg} />}
                                 <Row label="Exit efficiency" value={`${hovered.eff.toFixed(1)}%`} />
@@ -391,8 +391,8 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                                 <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest" style={{ background: zone.color + '22', color: zone.color, border: `1px solid ${zone.color}44` }}>
                                     {zone.label}
                                 </div>
-                                <p className="text-[11px] text-white/30 italic mt-1.5">{zone.desc}</p>
-                                <p className="text-[10px] text-white/20 mt-2 uppercase tracking-widest">Click to view trade →</p>
+                                <p className="text-[11px] text-text-muted italic mt-1.5">{zone.desc}</p>
+                                <p className="text-[10px] text-text-muted mt-2 uppercase tracking-widest">Click to view trade →</p>
                             </div>
                         );
                     })()}
@@ -420,7 +420,7 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
 // ---------------------------------------------------------------------------
 // Tooltip row helper
 // ---------------------------------------------------------------------------
-function Row({ label, value, color = 'text-white' }: { label: string; value: string; color?: string }) {
+function Row({ label, value, color = 'text-text-primary' }: { label: string; value: string; color?: string }) {
     return (
         <div className="flex items-center justify-between gap-4 mb-1">
             <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">{label}</span>

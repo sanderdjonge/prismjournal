@@ -692,7 +692,7 @@ function SettingsContent() {
                 </aside>
 
                 {/* Content Area */}
-                <main className="flex-1 glass-card bg-black/40 backdrop-blur-md p-4 md:p-6 lg:p-10 border-white/5 min-h-[600px] flex flex-col">
+                <main className="flex-1 glass-card bg-surface-card backdrop-blur-md p-4 md:p-6 lg:p-10 border-white/5 min-h-[600px] flex flex-col">
 
                     {activeTab === 'preferences' && (
                         <div className="space-y-10 animate-fade-in">
@@ -764,7 +764,7 @@ function SettingsContent() {
                                                 value={notifs.telegramId}
                                                 onChange={(e) => setNotifs(prev => ({ ...prev, telegramId: e.target.value }))}
                                                 placeholder="e.g. 123456789"
-                                                className="flex-1 glass-card px-4 py-3 border-white/5 bg-black/40 font-mono text-sm text-white outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                                className="flex-1 glass-card px-4 py-3 border-white/5 bg-surface-card font-mono text-sm text-white outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
                                             />
                                             <button
                                                 onClick={async () => {
@@ -806,7 +806,7 @@ function SettingsContent() {
                                                 value={notifs.email}
                                                 onChange={(e) => setNotifs(prev => ({ ...prev, email: e.target.value }))}
                                                 placeholder="your@email.com"
-                                                className="flex-1 glass-card px-4 py-3 border-white/5 bg-black/40 text-sm text-white outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                                className="flex-1 glass-card px-4 py-3 border-white/5 bg-surface-card text-sm text-white outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
                                             />
                                             <button
                                                 onClick={async () => {
@@ -879,7 +879,7 @@ function SettingsContent() {
                                                                         "px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-wide transition-all",
                                                                         notifs.digestFrequency === f
                                                                             ? "bg-primary/10 border-primary/30 text-primary"
-                                                                            : "bg-black/20 border-white/10 text-gray-500 hover:text-white"
+                                                                            : "bg-surface-elevated border-white/10 text-gray-500 hover:text-white"
                                                                     )}
                                                                 >
                                                                     {f === 'DAILY' ? 'Daily' : 'Weekly (Mon)'}
@@ -892,7 +892,7 @@ function SettingsContent() {
                                                         <select
                                                             value={notifs.digestSendHour}
                                                             onChange={(e) => setNotifs(prev => ({ ...prev, digestSendHour: parseInt(e.target.value) }))}
-                                                            className="px-3 py-1.5 bg-black/40 border border-white/10 rounded-lg text-white text-xs outline-none focus:border-primary/50 transition-all"
+                                                            className="px-3 py-1.5 bg-surface-card border border-white/10 rounded-lg text-white text-xs outline-none focus:border-primary/50 transition-all"
                                                         >
                                                             {Array.from({ length: 24 }, (_, utcHour) => {
                                                                 // Convert UTC hour to user's local time for display
@@ -978,7 +978,7 @@ function SettingsContent() {
                                         value={notifs.mddThreshold}
                                         onChange={(e) => setNotifs(prev => ({ ...prev, mddThreshold: e.target.value }))}
                                         placeholder="e.g. 5"
-                                        className="w-32 glass-card px-4 py-3 border-white/5 bg-black/40 font-mono text-sm text-white outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                        className="w-32 glass-card px-4 py-3 border-white/5 bg-surface-card font-mono text-sm text-white outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
                                     />
                                 </div>
                             </div>
@@ -1056,7 +1056,7 @@ function SettingsContent() {
                                                 <p className="text-[10px] text-gray-500 text-center">
                                                     Scan this QR code with your authenticator app
                                                 </p>
-                                                <div className="text-xs font-mono text-gray-400 bg-black/40 px-3 py-1.5 rounded-lg">
+                                                <div className="text-xs font-mono text-gray-400 bg-surface-card px-3 py-1.5 rounded-lg">
                                                     Secret: {twoFASecret}
                                                 </div>
                                             </div>
@@ -1068,7 +1068,7 @@ function SettingsContent() {
                                                     value={twoFACode}
                                                     onChange={(e) => setTwoFACode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                                                     placeholder="Enter 6-digit code"
-                                                    className="w-full glass-card px-4 py-3 border-white/5 bg-black/40 font-mono text-lg text-white text-center tracking-[0.5em] outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                                    className="w-full glass-card px-4 py-3 border-white/5 bg-surface-card font-mono text-lg text-white text-center tracking-[0.5em] outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
                                                 />
                                             </div>
 
@@ -1143,7 +1143,7 @@ function SettingsContent() {
                                                 value={disable2FAPassword}
                                                 onChange={(e) => setDisable2FAPassword(e.target.value)}
                                                 placeholder="Enter your password"
-                                                className="w-full glass-card px-4 py-3 border-white/5 bg-black/40 text-sm text-white outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                                className="w-full glass-card px-4 py-3 border-white/5 bg-surface-card text-sm text-white outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
                                             />
                                             {twoFAError && <p className="text-danger text-[10px]">{twoFAError}</p>}
                                             <div className="flex gap-3">
@@ -1233,7 +1233,7 @@ function SettingsContent() {
                                         value={newTagName}
                                         onChange={(e) => setNewTagName(e.target.value)}
                                         placeholder="Tag name"
-                                        className="flex-1 px-4 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                        className="flex-1 px-4 py-2 bg-surface-card border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
                                     />
                                     <div className="flex items-center gap-2">
                                         <input
@@ -1302,7 +1302,7 @@ function SettingsContent() {
                                                                 type="text"
                                                                 value={editingTagName}
                                                                 onChange={(e) => setEditingTagName(e.target.value)}
-                                                                className="flex-1 px-3 py-1 bg-black/40 border border-white/10 rounded text-white text-sm outline-none focus:border-primary/50"
+                                                                className="flex-1 px-3 py-1 bg-surface-card border border-white/10 rounded text-white text-sm outline-none focus:border-primary/50"
                                                             />
                                                             <input
                                                                 type="color"

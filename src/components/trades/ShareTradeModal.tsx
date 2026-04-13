@@ -138,7 +138,7 @@ export function ShareTradeModal({ isOpen, onClose, tradeId, symbol, direction, p
                         initial={{ scale: 0.95, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.95, opacity: 0 }}
-                        className="bg-[#0d0d1a] border border-white/10 rounded-2xl w-full max-w-lg mx-4 overflow-hidden max-h-[90vh] overflow-y-auto"
+                        className="bg-surface-card border border-border-color rounded-2xl w-full max-w-lg mx-4 overflow-hidden max-h-[90vh] overflow-y-auto"
                         onClick={e => e.stopPropagation()}
                     >
                         {/* Header */}

@@ -13,6 +13,7 @@ import {
 } from 'recharts';
 import { useBenchmark } from '@/hooks/useBenchmark';
 import { TrendingUp, TrendingDown, Minus, Loader2 } from 'lucide-react';
+import { getChartColor } from '@/lib/chart-colors';
 
 interface BenchmarkComparisonProps {
     accountId?: string;
@@ -20,6 +21,11 @@ interface BenchmarkComparisonProps {
 }
 
 export default function BenchmarkComparison({ accountId, className = '' }: BenchmarkComparisonProps) {
+    const chartColors = {
+        profit: getChartColor('profit'),
+        textMuted: getChartColor('text-muted'),
+        textSecondary: getChartColor('text-secondary'),
+    };
     const { data, isLoading, error } = useBenchmark({
         accountId,
         benchmarks: ['SPY'],
@@ -119,8 +125,8 @@ export default function BenchmarkComparison({ accountId, className = '' }: Bench
                     <ComposedChart data={normalizedAccountEquity} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
                         <defs>
                             <linearGradient id="accountFillGradient" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="#4ade80" stopOpacity={0.2} />
-                                <stop offset="100%" stopColor="#4ade80" stopOpacity={0.02} />
+                                <stop offset="0%" stopColor={chartColors.profit} stopOpacity={0.2} />
+                                <stop offset="100%" stopColor={chartColors.profit} stopOpacity={0.02} />
                             </linearGradient>
                         </defs>
                         <CartesianGrid
@@ -132,7 +138,7 @@ export default function BenchmarkComparison({ accountId, className = '' }: Bench
                             dataKey="time"
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: '#4b5563', fontSize: 8 }}
+                            tick={{ fill: chartColors.textMuted, fontSize: 8 }}
                             tickFormatter={formatXAxisTick}
                             interval="preserveStartEnd"
                             minTickGap={50}
@@ -140,7 +146,7 @@ export default function BenchmarkComparison({ accountId, className = '' }: Bench
                         <YAxis
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: '#6b7280', fontSize: 9, fontFamily: 'monospace' }}
+                            tick={{ fill: chartColors.textSecondary, fontSize: 9, fontFamily: 'monospace' }}
                             tickFormatter={(v) => `${v.toFixed(0)}`}
                             width={35}
                             domain={['dataMin - 5', 'dataMax + 5']}
@@ -170,7 +176,7 @@ export default function BenchmarkComparison({ accountId, className = '' }: Bench
                         <Area
                             type="monotone"
                             dataKey="account"
-                            stroke="#4ade80"
+                            stroke={chartColors.profit}
                             strokeWidth={2}
                             fillOpacity={1}
                             fill="url(#accountFillGradient)"

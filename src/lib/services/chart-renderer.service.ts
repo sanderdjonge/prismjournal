@@ -1,3 +1,15 @@
+/**
+ * Server-side ECharts chart renderer.
+ *
+ * Hardcoded dark-mode hex colors below — no DOM/CSS variables available in SSR.
+ * Map to CSS custom property names for future maintenance:
+ *
+ *   #4ade80  →  --profit (green-400)     | #f87171  →  --loss (red-400)
+ *   #00f2ff  →  --primary (cyan)          | #7000ff  →  --secondary (purple)
+ *   #f59e0b  →  --warning (amber-500)     | #6b7280  →  --text-secondary (gray-500)
+ *   #374151  →  --border-color (gray-700) | #1f2937  →  --border-subtle (gray-800)
+ *   #0d0d14  →  --surface (near-black)
+ */
 import * as echarts from 'echarts';
 import type { EChartsOption } from 'echarts';
 import sharp from 'sharp';

@@ -419,7 +419,7 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                             <ChevronDown size={12} className={`transition-transform ${showStrategyDropdown ? 'rotate-180' : ''}`} />
                         </button>
                         {showStrategyDropdown && (
-                            <div className="absolute z-20 w-full mt-1 bg-[#0d0d1a] border border-white/[0.08] rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                            <div className="absolute z-20 w-full mt-1 bg-surface-card border border-border-glass rounded-lg shadow-xl max-h-48 overflow-y-auto">
                                 <button
                                     onClick={() => handleStrategyChange(null)}
                                     className={`w-full text-left px-3 py-2 text-[11px] hover:bg-white/[0.05] transition-colors ${!selectedStrategyId ? 'text-primary' : 'text-gray-400'}`}

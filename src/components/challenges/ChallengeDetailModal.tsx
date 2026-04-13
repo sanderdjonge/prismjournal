@@ -139,7 +139,7 @@ export function ChallengeDetailModal({
                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                        className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl max-h-[80vh] glass-card bg-[#0a0a0a] border-white/5 z-[101] shadow-2xl flex flex-col overflow-hidden"
+                        className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl max-h-[80vh] glass-card bg-surface border-border-subtle z-[101] shadow-2xl flex flex-col overflow-hidden"
                     >
                         {isLoading ? (
                             <div className="flex items-center justify-center py-20">
@@ -148,7 +148,7 @@ export function ChallengeDetailModal({
                         ) : challenge ? (
                             <>
                                 {/* Header */}
-                                <div className="p-4 border-b border-white/5 flex items-center justify-between">
+                                <div className="p-4 border-b border-border-subtle flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <div className={cn(
                                             "w-10 h-10 rounded-lg flex items-center justify-center",
@@ -213,7 +213,7 @@ export function ChallengeDetailModal({
                                 </div>
                                 
                                 {/* Stats */}
-                                <div className="p-4 border-b border-white/5 grid grid-cols-4 gap-3">
+                                <div className="p-4 border-b border-border-subtle grid grid-cols-4 gap-3">
                                     <div className="text-center">
                                         <div className="text-2xl font-bold text-white">{challenge.stats.totalDays}</div>
                                         <div className="text-[9px] text-gray-500 uppercase tracking-wide">Total Days</div>
@@ -239,7 +239,7 @@ export function ChallengeDetailModal({
                                 </div>
                                 
                                 {/* Rules */}
-                                <div className="px-4 py-3 border-b border-white/5">
+                                <div className="px-4 py-3 border-b border-border-subtle">
                                     <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2">Rules</div>
                                     <div className="flex flex-wrap gap-2">
                                         {challenge.rules.map((rule, i) => (

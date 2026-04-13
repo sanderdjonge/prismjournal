@@ -11,7 +11,7 @@ export const APP_VERSION = pkg.version; // e.g. "2.17.0"
  */
 export const BUILD_DATE = '2026-04-11';
 
-export const BUILD_NOTES = 'v2.39.1: Security fixes — non-expiring invite tokens, admin rate limiting, admin page guard, migration fail-closed, economic events admin-only, error message normalization, impact enum validation, audit logging restored';
+export const BUILD_NOTES = 'v2.40.0: Design system token consolidation — centralized CSS custom properties for all semantic colors/surfaces/borders/typography, Tailwind @theme mapping, composite component classes (glass-card, form-input, badge-*), chart-colors.ts utility, eliminated hardcoded hex and :root.light override hacks across 30+ components';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {

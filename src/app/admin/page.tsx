@@ -1531,11 +1531,6 @@ function InvitesTab() {
         setLoading(false);
     };
 
-    useEffect(() => {
-        loadTokens();
-        loadInviteOnlyMode();
-    }, []);
-
     const loadInviteOnlyMode = async () => {
         try {
             const res = await fetch('/api/admin/system-settings');
@@ -1545,6 +1540,11 @@ function InvitesTab() {
             console.error(e);
         }
     };
+
+    useEffect(() => {
+        loadTokens();
+        loadInviteOnlyMode();
+    }, []);
 
     const toggleInviteOnlyMode = async () => {
         setToggleLoading(true);

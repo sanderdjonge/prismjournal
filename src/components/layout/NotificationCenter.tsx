@@ -24,7 +24,6 @@ export default function NotificationCenter({ className }: NotificationCenterProp
   const [loading, setLoading] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Fetch notifications
   const fetchNotifications = async () => {
     try {
       const res = await fetch('/api/notifications');
@@ -36,14 +35,12 @@ export default function NotificationCenter({ className }: NotificationCenterProp
     }
   };
 
-  // Initial fetch and polling
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 60000); // Poll every minute
+    const interval = setInterval(fetchNotifications, 60000);
     return () => clearInterval(interval);
   }, []);
 
-  // Close on outside click
   useEffect(() => {
     if (!isOpen) return;
     const handleClickOutside = (event: MouseEvent) => {
@@ -55,7 +52,6 @@ export default function NotificationCenter({ className }: NotificationCenterProp
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  // Mark all as read
   const handleMarkAllRead = async () => {
     setLoading(true);
     try {
@@ -73,7 +69,6 @@ export default function NotificationCenter({ className }: NotificationCenterProp
     }
   };
 
-  // Mark single as read
   const handleMarkRead = async (id: string) => {
     try {
       await fetch('/api/notifications', {
@@ -90,7 +85,6 @@ export default function NotificationCenter({ className }: NotificationCenterProp
     }
   };
 
-  // Delete notification
   const handleDelete = async (id: string) => {
     try {
       await fetch('/api/notifications', {
@@ -108,7 +102,6 @@ export default function NotificationCenter({ className }: NotificationCenterProp
     }
   };
 
-  // Clear all
   const handleClearAll = async () => {
     setLoading(true);
     try {
@@ -126,7 +119,6 @@ export default function NotificationCenter({ className }: NotificationCenterProp
     }
   };
 
-  // Format relative time
   const formatTime = (dateString: string) => {
     const diff = Date.now() - new Date(dateString).getTime();
     const mins = Math.floor(diff / 60000);
@@ -138,7 +130,6 @@ export default function NotificationCenter({ className }: NotificationCenterProp
     return days < 7 ? `${days}d ago` : new Date(dateString).toLocaleDateString();
   };
 
-  // Get icon for notification type
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'TRADE_OPEN':
@@ -156,26 +147,23 @@ export default function NotificationCenter({ className }: NotificationCenterProp
 
   return (
     <div className={cn('relative', className)} ref={panelRef}>
-      {/* Bell Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-lg hover:bg-white/5 transition-colors"
+        className="relative p-2 rounded-lg hover:bg-surface-elevated transition-colors"
         title="Notifications"
       >
-        <Bell size={20} className="text-gray-400 hover:text-white" />
+        <Bell size={20} className="text-text-secondary hover:text-text-primary" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-loss text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 w-5 h-5 bg-loss text-text-primary text-[10px] font-bold rounded-full flex items-center justify-center">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
-      {/* Notification Panel */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-[var(--card-bg)] border border-[var(--glass-border)] rounded-xl shadow-2xl z-50 overflow-hidden">
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-            <h3 className="text-sm font-bold text-white uppercase tracking-wide">
+        <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-surface-card border border-border-glass rounded-xl shadow-2xl z-50 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border-color">
+            <h3 className="text-sm font-bold text-text-primary uppercase tracking-wide">
               Notifications
             </h3>
             <div className="flex items-center gap-2">
@@ -190,28 +178,27 @@ export default function NotificationCenter({ className }: NotificationCenterProp
               )}
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1 hover:bg-white/5 rounded transition-colors"
+                className="p-1 hover:bg-surface-elevated rounded transition-colors"
               >
-                <X size={16} className="text-gray-500" />
+                <X size={16} className="text-text-muted" />
               </button>
             </div>
           </div>
 
-          {/* Notifications List */}
           <div className="max-h-96 overflow-y-auto">
             {notifications.length === 0 ? (
               <div className="px-4 py-8 text-center">
-                <Bell size={32} className="mx-auto text-gray-600 mb-2" />
-                <p className="text-sm text-gray-500">No notifications yet</p>
+                <Bell size={32} className="mx-auto text-text-muted mb-2" />
+                <p className="text-sm text-text-muted">No notifications yet</p>
               </div>
             ) : (
-              <div className="divide-y divide-white/5">
+              <div className="divide-y divide-border-subtle">
                 {notifications.map((notification) => (
                   <div
                     key={notification.id}
                     className={cn(
-                      'px-4 py-3 hover:bg-white/5 transition-colors group',
-                      !notification.isRead && 'bg-primary/5'
+                      'px-4 py-3 hover:bg-surface-elevated transition-colors group',
+                      !notification.isRead && 'bg-accent-bg'
                     )}
                   >
                     <div className="flex items-start gap-3">
@@ -220,7 +207,7 @@ export default function NotificationCenter({ className }: NotificationCenterProp
                         <div className="flex items-center gap-2">
                           <h4 className={cn(
                             'text-sm font-semibold truncate',
-                            notification.isRead ? 'text-gray-400' : 'text-white'
+                            notification.isRead ? 'text-text-secondary' : 'text-text-primary'
                           )}>
                             {notification.title}
                           </h4>
@@ -228,10 +215,10 @@ export default function NotificationCenter({ className }: NotificationCenterProp
                             <span className="w-2 h-2 bg-primary rounded-full shrink-0" />
                           )}
                         </div>
-                        <p className="text-xs text-gray-500 mt-0.5 whitespace-pre-wrap break-words">
+                        <p className="text-xs text-text-muted mt-0.5 whitespace-pre-wrap break-words">
                           {notification.message}
                         </p>
-                        <p className="text-[10px] text-gray-600 mt-1">
+                        <p className="text-[10px] text-text-muted mt-1">
                           {formatTime(notification.createdAt)}
                         </p>
                       </div>
@@ -239,18 +226,18 @@ export default function NotificationCenter({ className }: NotificationCenterProp
                         {!notification.isRead && (
                           <button
                             onClick={() => handleMarkRead(notification.id)}
-                            className="p-1 hover:bg-white/10 rounded transition-colors"
+                            className="p-1 hover:bg-surface-hover rounded transition-colors"
                             title="Mark as read"
                           >
-                            <Check size={14} className="text-gray-400" />
+                            <Check size={14} className="text-text-secondary" />
                           </button>
                         )}
                         <button
                           onClick={() => handleDelete(notification.id)}
-                          className="p-1 hover:bg-white/10 rounded transition-colors"
+                          className="p-1 hover:bg-surface-hover rounded transition-colors"
                           title="Delete"
                         >
-                          <Trash2 size={14} className="text-gray-400" />
+                          <Trash2 size={14} className="text-text-secondary" />
                         </button>
                       </div>
                     </div>
@@ -260,16 +247,15 @@ export default function NotificationCenter({ className }: NotificationCenterProp
             )}
           </div>
 
-          {/* Footer */}
           {notifications.length > 0 && (
-            <div className="px-4 py-2 border-t border-white/10 flex items-center justify-between">
-              <span className="text-[10px] text-gray-600">
+            <div className="px-4 py-2 border-t border-border-color flex items-center justify-between">
+              <span className="text-[10px] text-text-muted">
                 {notifications.length} notification{notifications.length !== 1 ? 's' : ''}
               </span>
               <button
                 onClick={handleClearAll}
                 disabled={loading}
-                className="text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-danger transition-colors disabled:opacity-50"
+                className="text-[10px] font-bold uppercase tracking-widest text-text-muted hover:text-danger transition-colors disabled:opacity-50"
               >
                 Clear all
               </button>

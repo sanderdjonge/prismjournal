@@ -51,9 +51,9 @@ export default function BEMetricsWidget({ accountId }: Props) {
     const showWarning = beStopOutRate > 0.3;
 
     // Color helpers
-    const beRateColor = beProtectionRate >= 0.6 ? '#4ade80' : beProtectionRate >= 0.3 ? '#facc15' : '#f87171';
-    const beStopColor = beStopOutRate > 0.5 ? '#f87171' : beStopOutRate > 0.3 ? '#facc15' : '#4ade80';
-    const effColor = rEfficiency >= 0.7 ? '#4ade80' : rEfficiency >= 0.4 ? '#facc15' : '#f87171';
+    const beRateColor = beProtectionRate >= 0.6 ? 'var(--profit)' : beProtectionRate >= 0.3 ? 'var(--warning)' : 'var(--loss)';
+    const beStopColor = beStopOutRate > 0.5 ? 'var(--loss)' : beStopOutRate > 0.3 ? 'var(--warning)' : 'var(--profit)';
+    const effColor = rEfficiency >= 0.7 ? 'var(--profit)' : rEfficiency >= 0.4 ? 'var(--warning)' : 'var(--loss)';
 
     return (
         <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6 space-y-5">

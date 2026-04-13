@@ -269,7 +269,7 @@ export function TradingHeatmapWidget({ cells, currency = 'USD' }: TradingHeatmap
                                         <div
                                             key={hour}
                                             className={cn(
-                                                'flex-1 h-6 rounded-sm transition-colors cursor-default relative',
+                                                'flex-1 h-6 rounded-sm transition-colors cursor-default relative border border-white/5',
                                                 getCellColor(cell, viewMode),
                                                 hasData && 'hover:ring-1 hover:ring-white/30'
                                             )}

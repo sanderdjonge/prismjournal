@@ -131,10 +131,10 @@ export default function LoginPage() {
   };
 
   const inputClass =
-    'w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm font-bold text-white outline-none focus:border-primary/50 transition-all placeholder:text-gray-600';
+    'w-full bg-surface-input border border-border-color rounded-xl p-4 text-sm font-bold text-text-primary outline-none focus:border-primary/50 transition-all placeholder:text-text-placeholder';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-gray-950 to-black flex items-center justify-center p-6 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-surface via-gray-950 to-surface flex items-center justify-center p-6 relative overflow-hidden">
       {/* Ambient glow effects */}
       <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
@@ -142,7 +142,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md relative z-10">
         {/* Branding */}
         <div className="text-center mb-10">
-          <h1 className="text-5xl font-black text-white tracking-tighter uppercase italic">
+          <h1 className="text-5xl font-black text-text-primary tracking-tighter uppercase italic">
             Prism
           </h1>
           <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mt-2">
@@ -151,17 +151,17 @@ export default function LoginPage() {
         </div>
 
         {/* Card */}
-        <div className="glass-card bg-black/40 backdrop-blur-md border border-white/5 rounded-2xl p-8">
+        <div className="glass-card backdrop-blur-md border border-border-subtle rounded-2xl p-8">
           {/* Tab toggle */}
-          <div className="flex bg-white/5 rounded-xl p-1 mb-8">
+          <div className="flex bg-surface-elevated rounded-xl p-1 mb-8">
             <button
               type="button"
               onClick={() => switchTab('signin')}
               className={cn(
                 'flex-1 py-3 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] transition-all',
                 tab === 'signin'
-                  ? 'bg-primary text-black shadow-[0_0_15px_rgba(0,242,255,0.2)]'
-                  : 'text-gray-500 hover:text-gray-300'
+                  ? 'bg-primary text-black shadow-[0_0_15px_var(--glow-primary)]'
+                  : 'text-text-muted hover:text-text-secondary'
               )}
             >
               Sign In
@@ -172,8 +172,8 @@ export default function LoginPage() {
               className={cn(
                 'flex-1 py-3 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] transition-all',
                 tab === 'register'
-                  ? 'bg-primary text-black shadow-[0_0_15px_rgba(0,242,255,0.2)]'
-                  : 'text-gray-500 hover:text-gray-300'
+                  ? 'bg-primary text-black shadow-[0_0_15px_var(--glow-primary)]'
+                  : 'text-text-muted hover:text-text-secondary'
               )}
             >
               Register
@@ -184,7 +184,7 @@ export default function LoginPage() {
           {tab === 'signin' && (
             <form onSubmit={handleSignIn} className="space-y-5">
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-600 mb-2">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">
                   Email
                 </label>
                 <input
@@ -198,7 +198,7 @@ export default function LoginPage() {
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-600 mb-2">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">
                   Password
                 </label>
                 <input
@@ -216,7 +216,7 @@ export default function LoginPage() {
                 <div className="text-right">
                   <a
                     href="/forgot-password"
-                    className="text-gray-400 text-xs hover:text-primary transition-colors"
+                    className="text-text-secondary text-xs hover:text-primary transition-colors"
                   >
                     Forgot password?
                   </a>
@@ -225,7 +225,7 @@ export default function LoginPage() {
 
               {show2FA && (
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-gray-600 mb-2">
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">
                     Authenticator Code
                   </label>
                   <input
@@ -239,7 +239,7 @@ export default function LoginPage() {
                     className={inputClass}
                     autoFocus
                   />
-                  <p className="text-[10px] text-gray-600 mt-2">
+                  <p className="text-[10px] text-text-muted mt-2">
                     Enter the 6-digit code from your authenticator app.
                   </p>
                 </div>
@@ -253,7 +253,7 @@ export default function LoginPage() {
                 type="submit"
                 disabled={loading}
                 className={cn(
-                  'w-full px-8 py-4 rounded-2xl bg-primary text-black font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(0,242,255,0.3)] hover:brightness-110 active:scale-95 transition-all',
+                  'w-full px-8 py-4 rounded-2xl bg-primary text-black font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-2 shadow-[0_0_20px_var(--glow-primary)] hover:brightness-110 active:scale-95 transition-all',
                   loading && 'opacity-70 cursor-not-allowed'
                 )}
               >
@@ -266,7 +266,7 @@ export default function LoginPage() {
           {tab === 'register' && (
             <form onSubmit={handleRegister} className="space-y-5">
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-600 mb-2">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">
                   Name
                 </label>
                 <input
@@ -280,7 +280,7 @@ export default function LoginPage() {
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-600 mb-2">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">
                   Email
                 </label>
                 <input
@@ -294,7 +294,7 @@ export default function LoginPage() {
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-600 mb-2">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">
                   Password
                 </label>
                 <input
@@ -306,14 +306,14 @@ export default function LoginPage() {
                   className={inputClass}
                   autoComplete="new-password"
                 />
-                <p className="text-[9px] text-gray-600 mt-1.5">Min 8 chars, with uppercase, lowercase & number</p>
+                <p className="text-[9px] text-text-muted mt-1.5">Min 8 chars, with uppercase, lowercase & number</p>
               </div>
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-600 mb-2">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">
                   Invite Token{' '}
                   {inviteOnlyMode
                     ? <span className="text-danger">*required</span>
-                    : <span className="text-gray-700">(optional)</span>
+                    : <span className="text-text-muted">(optional)</span>
                   }
                 </label>
                 <input
@@ -333,7 +333,7 @@ export default function LoginPage() {
                 type="submit"
                 disabled={loading}
                 className={cn(
-                  'w-full px-8 py-4 rounded-2xl bg-primary text-black font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(0,242,255,0.3)] hover:brightness-110 active:scale-95 transition-all',
+                  'w-full px-8 py-4 rounded-2xl bg-primary text-black font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-2 shadow-[0_0_20px_var(--glow-primary)] hover:brightness-110 active:scale-95 transition-all',
                   loading && 'opacity-70 cursor-not-allowed'
                 )}
               >
@@ -345,10 +345,10 @@ export default function LoginPage() {
 
         {/* Footer */}
         <div className="text-center mt-8 space-y-1">
-          <p className="text-gray-700 text-[10px] font-bold uppercase tracking-widest">
+          <p className="text-text-muted text-[10px] font-bold uppercase tracking-widest">
             PrismJournal &copy; {new Date().getFullYear()}
           </p>
-          <p className="text-gray-800 text-[9px] font-mono">
+          <p className="text-text-muted text-[9px] font-mono">
             v{APP_VERSION} &middot; {BUILD_DATE}
           </p>
         </div>

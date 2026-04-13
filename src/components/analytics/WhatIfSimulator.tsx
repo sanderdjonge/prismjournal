@@ -257,7 +257,7 @@ function AdvancedFilterPopover({ type, filters, onChange, onClose, currency = 'U
   };
   
   return (
-    <div className="absolute z-50 top-full left-0 mt-1 p-3 bg-[#1a1a2e] border border-white/10 rounded-lg shadow-xl min-w-[280px]">
+    <div className="absolute z-50 top-full left-0 mt-1 p-3 bg-surface-card border border-white/10 rounded-lg shadow-xl min-w-[280px]">
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Configure Filter</span>
         <button onClick={onClose} className="text-gray-500 hover:text-white">

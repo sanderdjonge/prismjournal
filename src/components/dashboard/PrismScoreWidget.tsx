@@ -19,15 +19,15 @@ const COMPONENT_LABELS: Record<string, string> = {
 const COMPONENT_ORDER = ['profitFactor', 'winLossRatio', 'maxDrawdown', 'winRate', 'recoveryFactor', 'consistency'];
 
 function scoreColor(score: number): string {
-    if (score >= 80) return '#4ade80'; // green
-    if (score >= 50) return '#facc15'; // yellow
-    return '#f87171';                  // red
+    if (score >= 80) return 'var(--profit)';
+    if (score >= 50) return 'var(--warning)';
+    return 'var(--loss)';
 }
 
 function scoreBg(score: number): string {
-    if (score >= 80) return 'rgba(74,222,128,0.08)';
-    if (score >= 50) return 'rgba(250,204,21,0.08)';
-    return 'rgba(248,113,113,0.08)';
+    if (score >= 80) return 'var(--profit-bg)';
+    if (score >= 50) return 'var(--warning-bg)';
+    return 'var(--loss-bg)';
 }
 
 function scoreLabel(score: number): string {
@@ -86,7 +86,7 @@ function CompactScoreGauge({ score }: { score: number }) {
             <text x={cx} y={cy - 4} textAnchor="middle" fill={color} fontSize={22} fontWeight={900} fontFamily="inherit">
                 {score}
             </text>
-            <text x={cx} y={cy + 10} textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize={7} fontWeight={600} fontFamily="inherit">
+            <text x={cx} y={cy + 10} textAnchor="middle" fill="var(--text-muted)" fontSize={7} fontWeight={600} fontFamily="inherit">
                 / 100
             </text>
         </svg>
