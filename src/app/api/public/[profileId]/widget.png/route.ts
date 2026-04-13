@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateWidget } from '@/lib/services/widget.service';
+import logger from '@/lib/logger';
 
 export async function GET(
     _request: NextRequest,
@@ -21,7 +22,7 @@ export async function GET(
         if (message.includes('not found') || message.includes('not enabled')) {
             return new NextResponse('Profile not found', { status: 404 });
         }
-        console.error('[widget.png] Generation error:', error);
+        logger.error({ err: error }, '[widget.png] Generation error');
         return new NextResponse('Failed to generate widget', { status: 500 });
     }
 }

@@ -6,6 +6,7 @@ import logger from '@/lib/logger';
 import { saveFile, generateFilename, readFile, deleteFile } from '@/lib/storage';
 import { generateShareCardHtml } from '@/lib/templates/share-card-template';
 import { computePrismScore } from '@/lib/services/prism-score.service';
+import { calculateProfitFactor, formatProfitFactor } from '@/lib/analytics';
 import type { TradeDirection } from '@prisma/client';
 
 export interface ShareCardOptions {
@@ -82,7 +83,7 @@ export async function generateShareCard(options: ShareCardOptions): Promise<Shar
   // The user account setting showPrismScoreOnShare is separate (for future use)
   let prismScore: number | undefined;
   let winRate: number | undefined;
-  let profitFactor: number | undefined;
+  let profitFactor: string | undefined;
 
   if (showPrismScore) {
     // Get user's closed trades for score calculation
@@ -105,7 +106,7 @@ export async function generateShareCard(options: ShareCardOptions): Promise<Shar
     winRate = closedTrades.length > 0 ? Math.round((wins.length / closedTrades.length) * 100) : 0;
     const grossProfit = wins.reduce((s, t) => s + t.pnl, 0);
     const grossLoss = losses.reduce((s, t) => s + Math.abs(t.pnl), 0);
-    profitFactor = grossLoss > 0 ? Math.round((grossProfit / grossLoss) * 100) / 100 : (grossProfit > 0 ? 10 : 1);
+     profitFactor = formatProfitFactor(calculateProfitFactor(grossProfit, grossLoss));
   }
 
   // Build screenshot URL if available

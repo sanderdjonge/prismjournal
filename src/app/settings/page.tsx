@@ -49,6 +49,7 @@ import { APP_VERSION, versionToPhase } from '@/lib/version';
 import PropFirmReferenceTable from '@/components/prop-firm/PropFirmReferenceTable';
 import { useCurrency } from '@/lib/currency';
 import { useQueryClient } from '@tanstack/react-query';
+import { apiFetch, apiPost, apiPatch, apiDelete } from '@/lib/api/client';
 
 const CURRENCY_OPTIONS = [
     { label: 'USD - United States Dollar', value: 'USD' },
@@ -297,9 +298,8 @@ function SettingsContent() {
     const [embedCopied, setEmbedCopied] = useState(false);
 
     useEffect(() => {
-        fetch('/api/settings')
-            .then((r) => r.json())
-            .then((data) => {
+        apiFetch('/api/settings')
+            .then((data: any) => {
                 if (data.displayCurrency) setCurrency(data.displayCurrency);
                 if (data.timezone) setTimezone(data.timezone);
                 if (data.dateFormat) setDateFormat(data.dateFormat);
@@ -307,9 +307,8 @@ function SettingsContent() {
             })
             .catch(() => {});
 
-        fetch('/api/settings/notifications')
-            .then((r) => { if (!r.ok) throw new Error('not ok'); return r.json(); })
-            .then((data) => {
+        apiFetch('/api/settings/notifications')
+            .then((data: any) => {
                 setNotifs((prev) => ({
                     ...prev,
                     telegramAlerts: data.enableSync ?? prev.telegramAlerts,
@@ -327,9 +326,8 @@ function SettingsContent() {
             })
             .catch(() => {});
 
-        fetch('/api/account/bridge')
-            .then((r) => r.json())
-            .then((data: BridgeKeyInfo) => {
+        apiFetch('/api/account/bridge')
+            .then((data: any) => {
                 setBridgeInfo(data);
                 if (data.bridgeKey) setBridgeKey(data.bridgeKey);
                 if (data.syncUrl) setSyncUrl(data.syncUrl);
@@ -345,13 +343,8 @@ function SettingsContent() {
         setViewingAccountLoading(true);
         setViewingAccountDetails(null);
         try {
-            const res = await fetch(`/api/accounts/${accountId}/details?_t=${Date.now()}`, {
-                cache: 'no-store',
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setViewingAccountDetails(data.account);
-            }
+            const data = await apiFetch(`/api/accounts/${accountId}/details?_t=${Date.now()}`);
+            setViewingAccountDetails((data as any).account);
         } catch {
             // ignore
         } finally {
@@ -371,11 +364,8 @@ function SettingsContent() {
 
     const loadPropFirms = async () => {
         try {
-            const res = await fetch('/api/prop-firms');
-            if (res.ok) {
-                const data = await res.json();
-                setPropFirms(data.propFirms);
-            }
+            const data = await apiFetch<any>('/api/prop-firms');
+            setPropFirms(data.propFirms);
         } catch (error) {
             // error handled by loading state
         } finally {
@@ -385,11 +375,8 @@ function SettingsContent() {
 
     const loadTags = async () => {
         try {
-            const res = await fetch('/api/tags');
-            if (res.ok) {
-                const data = await res.json();
-                setTags(data.tags);
-            }
+            const data = await apiFetch<any>('/api/tags');
+            setTags(data.tags);
         } catch (error) {
             // error handled by loading state
         } finally {
@@ -399,20 +386,13 @@ function SettingsContent() {
 
     const loadAccountsData = async () => {
         try {
-            const [accountsRes, bridgeRes] = await Promise.all([
-                fetch('/api/accounts'),
-                fetch('/api/account/bridge'),
+            const [accountsData, bridgeData] = await Promise.all([
+                apiFetch<any>('/api/accounts'),
+                apiFetch('/api/account/bridge'),
             ]);
             
-            if (accountsRes.ok) {
-                const data = await accountsRes.json();
-                setAccounts(data.accounts);
-            }
-            
-            if (bridgeRes.ok) {
-                const data = await bridgeRes.json();
-                setBridgeInfo(data);
-            }
+            setAccounts(accountsData.accounts);
+            setBridgeInfo(bridgeData as any);
         } catch (error) {
             // error handled by loading state
         } finally {
@@ -424,9 +404,8 @@ function SettingsContent() {
     useEffect(() => {
         if (activeTab !== 'sharing' || profileLoading || profileId !== null) return;
         setProfileLoading(true);
-        fetch('/api/settings/profile')
-            .then(r => r.json())
-            .then(data => {
+        apiFetch('/api/settings/profile')
+            .then((data: any) => {
                 setProfileEnabled(data.publicProfileEnabled ?? false);
                 setProfileId(data.publicProfileId ?? null);
                 setProfileStats(data.publicProfileStats ?? { showWinRate: true, showEquityCurve: true, showPrismScore: false });
@@ -438,12 +417,7 @@ function SettingsContent() {
     async function handleToggleProfile(enabled: boolean) {
         setProfileSaving(true);
         try {
-            const res = await fetch('/api/settings/profile', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ publicProfileEnabled: enabled }),
-            });
-            const data = await res.json();
+            const data = await apiPatch<any>('/api/settings/profile', { publicProfileEnabled: enabled });
             setProfileEnabled(data.publicProfileEnabled);
             setProfileId(data.publicProfileId ?? null);
             if (enabled) setWidgetPreviewKey(k => k + 1);
@@ -454,11 +428,7 @@ function SettingsContent() {
         setProfileStats(stats);
         setProfileSaving(true);
         try {
-            await fetch('/api/settings/profile', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ publicProfileStats: stats }),
-            });
+            await apiPatch('/api/settings/profile', { publicProfileStats: stats });
             setWidgetPreviewKey(k => k + 1);
         } catch { /* ignore */ } finally { setProfileSaving(false); }
     }
@@ -478,8 +448,7 @@ function SettingsContent() {
         if (!confirm('Regenerate your Bridge Key? Your existing MT5 connection will stop working until you update the key in the EA.')) return;
         setRegenerating(true);
         try {
-            const res = await fetch('/api/account/bridge', { method: 'POST' });
-            const data = await res.json();
+            const data = await apiPost<any>('/api/account/bridge', {});
             if (data.bridgeKey) setBridgeKey(data.bridgeKey);
         } finally {
             setRegenerating(false);
@@ -491,36 +460,23 @@ function SettingsContent() {
         setSaveError(null);
         try {
             if (activeTab === 'preferences') {
-                await fetch('/api/settings', {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ displayCurrency: currency, timezone, dateFormat }),
-                });
+                await apiPatch('/api/settings', { displayCurrency: currency, timezone, dateFormat });
                 setCurrencyContext(currency);
                 queryClient.invalidateQueries({ queryKey: ['settings'] });
             } else if (activeTab === 'notifications') {
-                const res = await fetch('/api/settings/notifications', {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        enableSync: notifs.telegramAlerts,
-                        enableTrades: notifs.weeklyDigest,
-                        enableRisk: notifs.volatilityWarnings,
-                        telegramId: notifs.telegramId.trim() || null,
-                        mddThreshold: notifs.mddThreshold ? parseFloat(notifs.mddThreshold) : null,
-                        // Email notification settings
-                        email: notifs.email.trim() || null,
-                        enableWeeklyDigest: notifs.enableWeeklyDigestEmail,
-                        enableMddAlerts: notifs.enableMddEmailAlerts,
-                        digestFrequency: notifs.digestFrequency,
-                        digestSendHour: notifs.digestSendHour,
-                        inAppToast: notifs.inAppToast,
-                    }),
+                await apiPatch('/api/settings/notifications', {
+                    enableSync: notifs.telegramAlerts,
+                    enableTrades: notifs.weeklyDigest,
+                    enableRisk: notifs.volatilityWarnings,
+                    telegramId: notifs.telegramId.trim() || null,
+                    mddThreshold: notifs.mddThreshold ? parseFloat(notifs.mddThreshold) : null,
+                    email: notifs.email.trim() || null,
+                    enableWeeklyDigest: notifs.enableWeeklyDigestEmail,
+                    enableMddAlerts: notifs.enableMddEmailAlerts,
+                    digestFrequency: notifs.digestFrequency,
+                    digestSendHour: notifs.digestSendHour,
+                    inAppToast: notifs.inAppToast,
                 });
-                if (!res.ok) {
-                    const err = await res.json().catch(() => ({}));
-                    throw new Error(err?.error || `Failed to save notification settings (${res.status})`);
-                }
             }
             setSaved(true);
             setTimeout(() => setSaved(false), 2000);
@@ -539,16 +495,13 @@ function SettingsContent() {
         
         setRegenerating(true);
         try {
-            const res = await fetch('/api/account/bridge', { method: 'POST' });
-            if (res.ok) {
-                const data = await res.json();
-                setNewBridgeKey(data.bridgeKey);
-                setBridgeInfo(prev => prev ? {
-                    ...prev,
-                    bridgeKeyId: data.bridgeKeyId,
-                    isHashed: true,
-                } : null);
-            }
+            const data = await apiPost<any>('/api/account/bridge', {});
+            setNewBridgeKey(data.bridgeKey);
+            setBridgeInfo(prev => prev ? {
+                ...prev,
+                bridgeKeyId: data.bridgeKeyId,
+                isHashed: true,
+            } : null);
         } catch (error) {
             // error handled by loading state
         } finally {
@@ -580,34 +533,27 @@ function SettingsContent() {
         
         setAccountsSaving(true);
         try {
-            const res = await fetch(`/api/accounts/${editingId}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: editName,
-                    broker: editBroker || null,
-                    // Prop firm rule overrides
-                    maxDailyLoss: editMaxDailyLoss ? parseFloat(editMaxDailyLoss) : null,
-                    maxTotalDrawdown: editMaxDrawdown ? parseFloat(editMaxDrawdown) : null,
-                    profitTarget: editProfitTarget ? parseFloat(editProfitTarget) : null,
-                }),
+            await apiPatch(`/api/accounts/${editingId}`, {
+                name: editName,
+                broker: editBroker || null,
+                maxDailyLoss: editMaxDailyLoss ? parseFloat(editMaxDailyLoss) : null,
+                maxTotalDrawdown: editMaxDrawdown ? parseFloat(editMaxDrawdown) : null,
+                profitTarget: editProfitTarget ? parseFloat(editProfitTarget) : null,
             });
             
-            if (res.ok) {
-                setAccounts(prev => prev.map(a =>
-                    a.id === editingId
-                        ? {
-                            ...a,
-                            name: editName,
-                            broker: editBroker || null,
-                            maxDailyLoss: editMaxDailyLoss ? parseFloat(editMaxDailyLoss) : null,
-                            maxTotalDrawdown: editMaxDrawdown ? parseFloat(editMaxDrawdown) : null,
-                            profitTarget: editProfitTarget ? parseFloat(editProfitTarget) : null,
-                        }
-                        : a
-                ));
-                setEditingId(null);
-            }
+            setAccounts(prev => prev.map(a =>
+                a.id === editingId
+                    ? {
+                        ...a,
+                        name: editName,
+                        broker: editBroker || null,
+                        maxDailyLoss: editMaxDailyLoss ? parseFloat(editMaxDailyLoss) : null,
+                        maxTotalDrawdown: editMaxDrawdown ? parseFloat(editMaxDrawdown) : null,
+                        profitTarget: editProfitTarget ? parseFloat(editProfitTarget) : null,
+                    }
+                    : a
+            ));
+            setEditingId(null);
         } catch (error) {
             // error handled by saving state
         } finally {
@@ -621,22 +567,9 @@ function SettingsContent() {
         }
         
         try {
-            console.log('[handleArchive] Archiving account:', accountId);
-            const res = await fetch(`/api/accounts/${accountId}`, { method: 'DELETE' });
-            console.log('[handleArchive] Response status:', res.status);
-            
-            if (res.ok) {
-                const data = await res.json();
-                console.log('[handleArchive] Success:', data);
-                // Reload accounts to reflect the change
-                await loadAccountsData();
-            } else {
-                const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
-                console.error('[handleArchive] Failed:', errorData);
-                alert(`Failed to archive account: ${errorData.error || 'Please try again.'}`);
-            }
+            await apiDelete(`/api/accounts/${accountId}`);
+            await loadAccountsData();
         } catch (error) {
-            console.error('[handleArchive] Error:', error);
             alert('An error occurred while archiving the account.');
         }
     };
@@ -771,8 +704,7 @@ function SettingsContent() {
                                                     setTestingSend(true);
                                                     setTestResult(null);
                                                     try {
-                                                        const res = await fetch('/api/telegram/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chatId: notifs.telegramId.trim() }) });
-                                                        const data = await res.json();
+                                                        const data = await apiPost<any>('/api/telegram/test', { chatId: notifs.telegramId.trim() });
                                                         setTestResult(data.success ? 'sent' : data.error || 'Failed');
                                                     } catch { setTestResult('Failed'); }
                                                     finally { setTestingSend(false); setTimeout(() => setTestResult(null), 3000); }
@@ -813,12 +745,7 @@ function SettingsContent() {
                                                     setTestingEmail(true);
                                                     setEmailTestResult(null);
                                                     try {
-                                                        const res = await fetch('/api/settings/notifications', {
-                                                            method: 'POST',
-                                                            headers: { 'Content-Type': 'application/json' },
-                                                            body: JSON.stringify({ email: notifs.email.trim() }),
-                                                        });
-                                                        const data = await res.json();
+                                                        const data = await apiPost<any>('/api/settings/notifications', { email: notifs.email.trim() });
                                                         setEmailTestResult(data.success ? 'sent' : data.error || 'Failed');
                                                     } catch { setEmailTestResult('Failed'); }
                                                     finally { setTestingEmail(false); setTimeout(() => setEmailTestResult(null), 3000); }
@@ -1026,8 +953,7 @@ function SettingsContent() {
                                                 setTwoFALoading(true);
                                                 setTwoFAError(null);
                                                 try {
-                                                    const res = await fetch('/api/2fa/setup', { method: 'POST' });
-                                                    const data = await res.json();
+                                                    const data = await apiPost<any>('/api/2fa/setup', {});
                                                     if (data.error) throw new Error(data.error);
                                                     setTwoFASecret(data.secret);
                                                     const qrUrl = await QRCode.toDataURL(data.provisioning_uri);
@@ -1097,12 +1023,7 @@ function SettingsContent() {
                                                         setTwoFALoading(true);
                                                         setTwoFAError(null);
                                                         try {
-                                                            const res = await fetch('/api/2fa/verify', {
-                                                                method: 'POST',
-                                                                headers: { 'Content-Type': 'application/json' },
-                                                                body: JSON.stringify({ code: twoFACode }),
-                                                            });
-                                                            const data = await res.json();
+                                                            const data = await apiPost<any>('/api/2fa/verify', { code: twoFACode });
                                                             if (data.error) throw new Error(data.error);
                                                             setTwoFAEnabled(true);
                                                             setShow2FASetup(false);
@@ -1166,12 +1087,7 @@ function SettingsContent() {
                                                         setTwoFALoading(true);
                                                         setTwoFAError(null);
                                                         try {
-                                                            const res = await fetch('/api/2fa/disable', {
-                                                                method: 'POST',
-                                                                headers: { 'Content-Type': 'application/json' },
-                                                                body: JSON.stringify({ password: disable2FAPassword }),
-                                                            });
-                                                            const data = await res.json();
+                                                            const data = await apiPost<any>('/api/2fa/disable', { password: disable2FAPassword });
                                                             if (data.error) throw new Error(data.error);
                                                             setTwoFAEnabled(false);
                                                             setShowDisable2FA(false);
@@ -1249,17 +1165,10 @@ function SettingsContent() {
                                             if (!newTagName.trim()) return;
                                             setAddingTag(true);
                                             try {
-                                                const res = await fetch('/api/tags', {
-                                                    method: 'POST',
-                                                    headers: { 'Content-Type': 'application/json' },
-                                                    body: JSON.stringify({ name: newTagName.trim(), color: newTagColor }),
-                                                });
-                                                if (res.ok) {
-                                                    const data = await res.json();
-                                                    setTags(prev => [...prev, { ...data, tradeCount: 0 }]);
-                                                    setNewTagName('');
-                                                    setNewTagColor('#00f2ff');
-                                                }
+                                                const data = await apiPost<any>('/api/tags', { name: newTagName.trim(), color: newTagColor });
+                                                setTags(prev => [...prev, { ...data, tradeCount: 0 }]);
+                                                setNewTagName('');
+                                                setNewTagColor('#00f2ff');
                                             } catch (error) {
                                                 // error handled by loading state
                                             } finally {
@@ -1315,16 +1224,9 @@ function SettingsContent() {
                                                             <button
                                                                 onClick={async () => {
                                                                     try {
-                                                                        const res = await fetch(`/api/tags/${tag.id}`, {
-                                                                            method: 'PATCH',
-                                                                            headers: { 'Content-Type': 'application/json' },
-                                                                            body: JSON.stringify({ name: editingTagName.trim(), color: editingTagColor }),
-                                                                        });
-                                                                        if (res.ok) {
-                                                                            const data = await res.json();
-                                                                            setTags(prev => prev.map(t => t.id === tag.id ? data : t));
-                                                                            setEditingTagId(null);
-                                                                        }
+                                                                        const data = await apiPatch<any>(`/api/tags/${tag.id}`, { name: editingTagName.trim(), color: editingTagColor });
+                                                                        setTags(prev => prev.map(t => t.id === tag.id ? data : t));
+                                                                        setEditingTagId(null);
                                                                     } catch (error) {
                                                                         // error handled
                                                                     }
@@ -1369,10 +1271,8 @@ function SettingsContent() {
                                                                 onClick={async () => {
                                                                     if (!confirm(`Delete tag "${tag.name}"? This will remove it from all trades.`)) return;
                                                                     try {
-                                                                        const res = await fetch(`/api/tags/${tag.id}`, { method: 'DELETE' });
-                                                                        if (res.ok) {
-                                                                            setTags(prev => prev.filter(t => t.id !== tag.id));
-                                                                        }
+                                                                        await apiDelete(`/api/tags/${tag.id}`);
+                                                                        setTags(prev => prev.filter(t => t.id !== tag.id));
                                                                     } catch (error) {
                                                                         // error handled
                                                                     }

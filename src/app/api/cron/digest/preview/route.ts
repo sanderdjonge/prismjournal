@@ -1,14 +1,12 @@
-import { NextResponse } from 'next/server';
-import { withAuth } from '@/lib/api/withAuth';
-import prisma from '@/lib/prisma';
+import { NextResponse } from 'next/server'
+import { withAuth } from '@/lib/api/withAuth'
+import prisma from '@/lib/prisma'
+import { formatProfitFactor } from '@/lib/analytics'
+import { computeWeeklyDigestData, type DigestData } from '@/lib/services/digest-computation'
 
-/**
- * Preview endpoint for weekly digest email
- * Authenticated users can preview their digest without waiting for cron
- */
 export const GET = withAuth(async (_req, _ctx, session) => {
-    const userId = session.user.id;
-    
+    const userId = session.user.id
+
     const user = await prisma.user.findUnique({
         where: { id: userId },
         include: {
@@ -17,156 +15,30 @@ export const GET = withAuth(async (_req, _ctx, session) => {
                 take: 1,
             },
         },
-    });
+    })
 
     if (!user || !user.accounts[0]) {
-        return NextResponse.json({ error: 'No active account found' }, { status: 404 });
+        return NextResponse.json({ error: 'No active account found' }, { status: 404 })
     }
 
-    const account = user.accounts[0];
+    const account = user.accounts[0]
 
-    // Compute digest data
-    const digestData = await computeWeeklyDigestData(account.id, user.id);
+    const digestData = await computeWeeklyDigestData(account.id, user.id)
 
-    // Generate simple HTML preview
-    const html = generatePreviewHtml(digestData);
+    const html = generatePreviewHtml(digestData)
 
     return new Response(html, {
         headers: { 'Content-Type': 'text/html' },
-    });
-});
-
-interface DigestData {
-    userName: string;
-    weekStart: Date;
-    weekEnd: Date;
-    totalTrades: number;
-    winCount: number;
-    lossCount: number;
-    netPnl: number;
-    winRate: number;
-    winRateChange: number | null;
-    profitFactor: number;
-    avgRR: number;
-    returnOnEquity: number;
-}
-
-/**
- * Compute weekly digest data for an account
- */
-async function computeWeeklyDigestData(accountId: string, userId: string): Promise<DigestData> {
-    const now = new Date();
-    
-    // Get start of current week (Monday)
-    const weekEnd = new Date(now);
-    weekEnd.setHours(23, 59, 59, 999);
-    
-    const weekStart = new Date(now);
-    const dayOfWeek = weekStart.getDay();
-    const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Adjust so Monday is 0
-    weekStart.setDate(weekStart.getDate() - diff);
-    weekStart.setHours(0, 0, 0, 0);
-
-    // Get previous week for comparison
-    const prevWeekEnd = new Date(weekStart);
-    prevWeekEnd.setTime(prevWeekEnd.getTime() - 1);
-    
-    const prevWeekStart = new Date(prevWeekEnd);
-    prevWeekStart.setDate(prevWeekStart.getDate() - 6);
-    prevWeekStart.setHours(0, 0, 0, 0);
-
-    // Fetch trades for current week
-    const trades = await prisma.trade.findMany({
-        where: {
-            accountId,
-            exitTime: {
-                gte: weekStart,
-                lte: weekEnd,
-            },
-            pnl: { not: null },
-        },
-        orderBy: { exitTime: 'asc' },
-    });
-
-    // Fetch trades for previous week (for win rate comparison)
-    const prevWeekTrades = await prisma.trade.findMany({
-        where: {
-            accountId,
-            exitTime: {
-                gte: prevWeekStart,
-                lte: prevWeekEnd,
-            },
-            pnl: { not: null },
-        },
-    });
-
-    // Get user info
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { name: true },
-    });
-
-    // Get latest equity snapshot for account balance
-    const latestSnapshot = await prisma.equitySnapshot.findFirst({
-        where: { accountId },
-        orderBy: { timestamp: 'desc' },
-    });
-
-    // Calculate metrics
-    const totalTrades = trades.length;
-    const wins = trades.filter(t => (t.pnl || 0) > 0);
-    const losses = trades.filter(t => (t.pnl || 0) < 0);
-    const winCount = wins.length;
-    const lossCount = losses.length;
-    
-    const netPnl = trades.reduce((sum, t) => sum + (t.pnl || 0), 0);
-    const winRate = totalTrades > 0 ? (winCount / totalTrades) * 100 : 0;
-    
-    // Previous week win rate
-    const prevWinCount = prevWeekTrades.filter(t => (t.pnl || 0) > 0).length;
-    const prevWinRate = prevWeekTrades.length > 0 
-        ? (prevWinCount / prevWeekTrades.length) * 100 
-        : null;
-    const winRateChange = prevWinRate !== null ? winRate - prevWinRate : null;
-
-    // Profit factor
-    const grossProfit = wins.reduce((sum, t) => sum + (t.pnl || 0), 0);
-    const grossLoss = Math.abs(losses.reduce((sum, t) => sum + (t.pnl || 0), 0));
-    const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? Infinity : 0;
-
-    // Average R:R
-    const tradesWithR = trades.filter(t => t.rMultiple !== null);
-    const avgRR = tradesWithR.length > 0
-        ? tradesWithR.reduce((sum, t) => sum + (t.rMultiple || 0), 0) / tradesWithR.length
-        : 0;
-
-    // Return on equity
-    const accountBalance = latestSnapshot?.equity || latestSnapshot?.balance || 10000;
-    const returnOnEquity = (netPnl / accountBalance) * 100;
-
-    return {
-        userName: user?.name || 'Trader',
-        weekStart,
-        weekEnd,
-        totalTrades,
-        winCount,
-        lossCount,
-        netPnl,
-        winRate,
-        winRateChange,
-        profitFactor,
-        avgRR,
-        returnOnEquity,
-    };
-}
+    })
+})
 
 function generatePreviewHtml(data: DigestData): string {
     const formatDate = (date: Date) => {
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    };
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    }
 
-    const pnlColor = data.netPnl >= 0 ? '#4ade80' : '#f87171';
-    const pnlPrefix = data.netPnl >= 0 ? '+' : '';
+    const pnlColor = data.netPnl >= 0 ? '#4ade80' : '#f87171'
+    const pnlPrefix = data.netPnl >= 0 ? '+' : ''
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -232,7 +104,7 @@ function generatePreviewHtml(data: DigestData): string {
         </div>
         <div class="stat-card">
             <p class="stat-label">Profit Factor</p>
-            <p class="stat-value">${data.profitFactor === Infinity ? '∞' : data.profitFactor.toFixed(2)}</p>
+            <p class="stat-value">${formatProfitFactor(data.profitFactor)}</p>
         </div>
         <div class="stat-card">
             <p class="stat-label">Avg R:R</p>
@@ -243,7 +115,7 @@ function generatePreviewHtml(data: DigestData): string {
     <p style="text-align: center; margin-top: 32px; font-size: 12px; color: #64748b;">This is a preview of your weekly digest email.</p>
 </div>
 </body>
-</html>`;
+</html>`
 }
 
-export const runtime = 'nodejs';
+export const runtime = 'nodejs'

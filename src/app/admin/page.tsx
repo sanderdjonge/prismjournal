@@ -37,6 +37,7 @@ import {
     ChevronLeft,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { apiFetch, apiPost, apiPatch, apiDelete } from '@/lib/api/client';
 
 // Types
 interface User {
@@ -227,15 +228,13 @@ export default function AdminPage() {
     async function loadUsers() {
         setUsersLoading(true);
         try {
-            const res = await fetch(`/api/admin/users?includeInactive=true`);
-            if (res.status === 403) {
+            const data = await apiFetch<any>(`/api/admin/users?includeInactive=true`);
+            setUsers(data.users || []);
+        } catch (e: any) {
+            if (e?.statusCode === 403) {
                 setUsersError('Access denied. Admin privileges required.');
                 return;
             }
-            if (!res.ok) throw new Error('Failed to load users');
-            const data = await res.json();
-            setUsers(data.users || []);
-        } catch (e: any) {
             setUsersError(e.message || 'Failed to load users');
         } finally {
             setUsersLoading(false);
@@ -245,19 +244,9 @@ export default function AdminPage() {
     async function updateUser(userId: string, action: 'makeAdmin' | 'removeAdmin' | 'activate' | 'deactivate') {
         setUpdating(userId);
         try {
-            const res = await fetch('/api/admin/users', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId, action }),
-            });
-            if (!res.ok) {
-                const error = await res.json();
-                throw new Error(error.error || 'Failed to update user');
-            }
-            const data = await res.json();
+            const data = await apiPatch<any>('/api/admin/users', { userId, action });
             setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...data.user } : u));
         } catch (e: any) {
-            console.error('Failed to update user:', e);
             alert(e.message || 'Failed to update user');
         } finally {
             setUpdating(null);
@@ -267,17 +256,10 @@ export default function AdminPage() {
     async function deleteUser(userId: string) {
         setUpdating(userId);
         try {
-            const res = await fetch(`/api/admin/users?userId=${userId}&mode=hard`, {
-                method: 'DELETE',
-            });
-            if (!res.ok) {
-                const error = await res.json();
-                throw new Error(error.error || 'Failed to delete user');
-            }
+            await apiDelete(`/api/admin/users?userId=${userId}&mode=hard`);
             setUsers(prev => prev.filter(u => u.id !== userId));
             setConfirmDelete(null);
         } catch (e: any) {
-            console.error('Failed to delete user:', e);
             alert(e.message || 'Failed to delete user');
         } finally {
             setUpdating(null);
@@ -290,8 +272,9 @@ export default function AdminPage() {
             const selectedArr = Array.from(selectedUsers);
             const results = await Promise.allSettled(
                 selectedArr.map(userId =>
-                    fetch(`/api/admin/users?userId=${userId}&mode=hard`, { method: 'DELETE' })
-                        .then(res => ({ userId, ok: res.ok }))
+                    apiDelete(`/api/admin/users?userId=${userId}&mode=hard`)
+                        .then(() => ({ userId, ok: true }))
+                        .catch(() => ({ userId, ok: false }))
                 )
             );
             const succeeded = new Set<string>();
@@ -337,16 +320,7 @@ export default function AdminPage() {
         setResetLoading(userId);
         setResetSuccess(null);
         try {
-            const res = await fetch('/api/admin/users', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId }),
-            });
-            if (!res.ok) {
-                const data = await res.json().catch(() => ({}));
-                throw new Error(data.error || `Request failed (${res.status})`);
-            }
-            const data = await res.json();
+            await apiPost('/api/admin/users', { userId });
             setResetSuccess(`Reset email sent to ${email}`);
             setTimeout(() => setResetSuccess(null), 5000);
         } catch (e: any) {
@@ -358,95 +332,77 @@ export default function AdminPage() {
 
     async function sendBroadcast() {
         if (!broadcastTitle.trim() || !broadcastMessage.trim()) {
-            alert('Title and message are required');
-            return;
+            alert('Title and message are required')
+            return
         }
-        setBroadcastLoading(true);
-        setBroadcastResult(null);
+        setBroadcastLoading(true)
+        setBroadcastResult(null)
         try {
-            const res = await fetch('/api/admin/notifications/broadcast', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title: broadcastTitle, message: broadcastMessage, type: broadcastType }),
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Failed to send broadcast');
-            setBroadcastResult(data.message);
-            setBroadcastTitle('');
-            setBroadcastMessage('');
+            const data = await apiPost<any>('/api/admin/notifications/broadcast', { title: broadcastTitle, message: broadcastMessage, type: broadcastType })
+            setBroadcastResult(data.message)
+            setBroadcastTitle('')
+            setBroadcastMessage('')
         } catch (e: any) {
-            alert(e.message || 'Failed to send broadcast');
+            alert(e.message || 'Failed to send broadcast')
         } finally {
-            setBroadcastLoading(false);
+            setBroadcastLoading(false)
         }
     }
 
     // Infrastructure functions
     const loadInfrastructure = useCallback(async () => {
-        setInfraLoading(true);
-        setInfraError(null);
+        setInfraLoading(true)
+        setInfraError(null)
         try {
-            const res = await fetch('/api/admin/infrastructure');
-            if (!res.ok) throw new Error('Failed to load infrastructure data');
-            const data = await res.json();
-            setInfraData(data);
+            const data = await apiFetch<InfrastructureData>('/api/admin/infrastructure')
+            setInfraData(data)
         } catch (e: any) {
-            setInfraError(e.message || 'Failed to load infrastructure data');
+            setInfraError(e.message || 'Failed to load infrastructure data')
         } finally {
-            setInfraLoading(false);
+            setInfraLoading(false)
         }
-    }, []);
+    }, [])
     
     // Backups functions
     const loadBackups = useCallback(async () => {
-        setBackupLoading(true);
-        setBackupError(null);
+        setBackupLoading(true)
+        setBackupError(null)
         try {
-            const res = await fetch('/api/admin/backups');
-            if (!res.ok) throw new Error('Failed to load backup data');
-            const data = await res.json();
-            setBackupData(data);
+            const data = await apiFetch<BackupData>('/api/admin/backups')
+            setBackupData(data)
         } catch (e: any) {
-            setBackupError(e.message || 'Failed to load backup data');
+            setBackupError(e.message || 'Failed to load backup data')
         } finally {
-            setBackupLoading(false);
+            setBackupLoading(false)
         }
-    }, []);
+    }, [])
     
     async function createBackup() {
-        setBackupActionLoading(true);
+        setBackupActionLoading(true)
         try {
-            const res = await fetch('/api/admin/backups', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'create' }),
-            });
-            if (!res.ok) throw new Error('Failed to create backup');
-            await loadBackups();
-            alert('Backup created successfully!');
+            await apiPost('/api/admin/backups', { action: 'create' })
+            await loadBackups()
+            alert('Backup created successfully!')
         } catch (e: any) {
-            alert(e.message || 'Failed to create backup');
+            alert(e.message || 'Failed to create backup')
         } finally {
-            setBackupActionLoading(false);
+            setBackupActionLoading(false)
         }
     }
     
     // Audit log functions
     async function loadAuditLog(page = 1, action = '', search = '') {
-        setAuditLoading(true);
+        setAuditLoading(true)
         try {
-            const params = new URLSearchParams({ page: String(page), limit: '50' });
-            if (action) params.set('action', action);
-            if (search) params.set('search', search);
-            const res = await fetch(`/api/admin/audit-log?${params}`);
-            if (!res.ok) throw new Error('Failed to load audit log');
-            const data = await res.json();
-            setAuditData(data);
-            setAuditPage(page);
+            const params = new URLSearchParams({ page: String(page), limit: '50' })
+            if (action) params.set('action', action)
+            if (search) params.set('search', search)
+            const data = await apiFetch<AuditLogData>(`/api/admin/audit-log?${params}`)
+            setAuditData(data)
+            setAuditPage(page)
         } catch {
-            // silently fail — table will be empty
         } finally {
-            setAuditLoading(false);
+            setAuditLoading(false)
         }
     }
 
@@ -1520,75 +1476,58 @@ function InvitesTab() {
     const [toggleLoading, setToggleLoading] = useState(false);
 
     const loadTokens = async () => {
-        setLoading(true);
+        setLoading(true)
         try {
-            const res = await fetch('/api/admin/invite-tokens');
-            const data = await res.json();
-            setTokens(data.tokens || []);
-        } catch (e) {
-            console.error(e);
+            const data = await apiFetch<any>('/api/admin/invite-tokens')
+            setTokens(data.tokens || [])
+        } catch {
         }
-        setLoading(false);
-    };
+        setLoading(false)
+    }
 
     const loadInviteOnlyMode = async () => {
         try {
-            const res = await fetch('/api/admin/system-settings');
-            const data = await res.json();
-            setInviteOnlyMode(data.inviteOnlyMode ?? false);
-        } catch (e) {
-            console.error(e);
+            const data = await apiFetch<any>('/api/admin/system-settings')
+            setInviteOnlyMode(data.inviteOnlyMode ?? false)
+        } catch {
         }
-    };
+    }
 
     useEffect(() => {
-        loadTokens();
-        loadInviteOnlyMode();
-    }, []);
+        loadTokens()
+        loadInviteOnlyMode()
+    }, [])
 
     const toggleInviteOnlyMode = async () => {
-        setToggleLoading(true);
+        setToggleLoading(true)
         try {
-            const res = await fetch('/api/admin/system-settings', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ inviteOnlyMode: !inviteOnlyMode }),
-            });
-            const data = await res.json();
-            setInviteOnlyMode(data.inviteOnlyMode ?? false);
-        } catch (e) {
-            console.error(e);
+            const data = await apiPatch<any>('/api/admin/system-settings', { inviteOnlyMode: !inviteOnlyMode })
+            setInviteOnlyMode(data.inviteOnlyMode ?? false)
+        } catch {
         }
-        setToggleLoading(false);
-    };
+        setToggleLoading(false)
+    }
 
     const generateTokens = async () => {
-        setGenerating(true);
-        setNewTokens([]);
+        setGenerating(true)
+        setNewTokens([])
         try {
-            const res = await fetch('/api/admin/invite-tokens', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ count: newTokenCount, expiresDays }),
-            });
-            const data = await res.json();
-            setNewTokens(data.tokens || []);
-            loadTokens();
-        } catch (e) {
-            console.error(e);
+            const data = await apiPost<any>('/api/admin/invite-tokens', { count: newTokenCount, expiresDays })
+            setNewTokens(data.tokens || [])
+            loadTokens()
+        } catch {
         }
-        setGenerating(false);
-    };
+        setGenerating(false)
+    }
 
     const deleteToken = async (id: string) => {
-        if (!confirm('Delete this token?')) return;
+        if (!confirm('Delete this token?')) return
         try {
-            await fetch(`/api/admin/invite-tokens?id=${id}`, { method: 'DELETE' });
-            loadTokens();
-        } catch (e) {
-            console.error(e);
+            await apiDelete(`/api/admin/invite-tokens?id=${id}`)
+            loadTokens()
+        } catch {
         }
-    };
+    }
 
     const copyToken = (token: string) => {
         const url = `${window.location.origin}/login?invite=${token}`;

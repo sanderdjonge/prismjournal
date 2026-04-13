@@ -19,7 +19,7 @@ interface ShareCardTemplateData {
   showPrismScore: boolean;
   prismScore?: number;
   winRate?: number;
-  profitFactor?: number;
+  profitFactor?: string;
   comment?: string;
 }
 
@@ -355,7 +355,7 @@ export function generateShareCardHtml(data: ShareCardTemplateData): string {
       ${profitFactor !== undefined ? `
       <div class="footer-stat">
         <span class="footer-stat-label">Profit Factor</span>
-        <span class="footer-stat-value">${profitFactor.toFixed(1)}</span>
+        <span class="footer-stat-value">${profitFactor}</span>
       </div>
       ` : ''}
     </div>

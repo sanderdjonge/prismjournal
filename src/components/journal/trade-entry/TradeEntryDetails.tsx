@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Zap, Brain, FileText, CheckCircle2, XCircle, Plus, X, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/cn';
-import { MOOD_SELECTOR_OPTIONS } from '@/constants/tradeConfig';
+import React, { useState, useEffect, useRef } from 'react'
+import { Zap, Brain, FileText, CheckCircle2, XCircle, Plus, X, Loader2 } from 'lucide-react'
+import { cn } from '@/lib/cn'
+import { MOOD_SELECTOR_OPTIONS } from '@/constants/tradeConfig'
+import { useStrategies, useCreateStrategy } from '@/hooks/useStrategies'
 
 interface Strategy {
     id: string;
@@ -45,7 +46,6 @@ export function TradeEntryDetails({
     disabled = false,
 }: TradeEntryDetailsProps) {
     const [customStrategies, setCustomStrategies] = useState<Strategy[]>([]);
-    const [loading, setLoading] = useState(true);
     const [showNewStrategy, setShowNewStrategy] = useState(false);
     const [newStrategyName, setNewStrategyName] = useState('');
     const [newStrategyDesc, setNewStrategyDesc] = useState('');
@@ -53,23 +53,14 @@ export function TradeEntryDetails({
     const [error, setError] = useState('');
     const inputRef = useRef<HTMLInputElement>(null);
 
-    // Load custom strategies
+    const { data: strategiesData } = useStrategies()
+    const createStrategy = useCreateStrategy()
+
     useEffect(() => {
-        async function loadStrategies() {
-            try {
-                const res = await fetch('/api/strategies');
-                if (res.ok) {
-                    const data = await res.json();
-                    setCustomStrategies(data.strategies || []);
-                }
-            } catch {
-                // silently ignore
-            } finally {
-                setLoading(false);
-            }
+        if (strategiesData?.strategies) {
+            setCustomStrategies(strategiesData.strategies)
         }
-        loadStrategies();
-    }, []);
+    }, [strategiesData])
 
     // Focus input when showing new strategy form
     useEffect(() => {
@@ -80,39 +71,28 @@ export function TradeEntryDetails({
 
     const handleCreateStrategy = async () => {
         if (!newStrategyName.trim()) {
-            setError('Strategy name is required');
-            return;
+            setError('Strategy name is required')
+            return
         }
 
-        setSaving(true);
-        setError('');
+        setSaving(true)
+        setError('')
         try {
-            const res = await fetch('/api/strategies', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: newStrategyName.trim(),
-                    description: newStrategyDesc.trim() || undefined
-                })
-            });
-
-            if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.error || 'Failed to create strategy');
-            }
-
-            const { strategy: newStrat } = await res.json();
-            setCustomStrategies(prev => [...prev, newStrat]);
-            onStrategyChange(newStrat.name);
-            setNewStrategyName('');
-            setNewStrategyDesc('');
-            setShowNewStrategy(false);
+            const newStrat = await createStrategy.mutateAsync({
+                name: newStrategyName.trim(),
+                description: newStrategyDesc.trim() || undefined,
+            })
+            setCustomStrategies(prev => [...prev, newStrat])
+            onStrategyChange(newStrat.name)
+            setNewStrategyName('')
+            setNewStrategyDesc('')
+            setShowNewStrategy(false)
         } catch (e: any) {
-            setError(e.message || 'Failed to create strategy');
+            setError(e.message || 'Failed to create strategy')
         } finally {
-            setSaving(false);
+            setSaving(false)
         }
-    };
+    }
 
     // Combine default and custom strategies
     const allStrategies = [...DEFAULT_STRATEGIES, ...customStrategies.map(s => s.name)];
@@ -131,7 +111,7 @@ export function TradeEntryDetails({
                                 value={strategy} 
                                 onChange={e => onStrategyChange(e.target.value)}
                                 className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm font-bold text-white outline-none focus:border-primary/50 transition-all appearance-none"
-                                disabled={loading}
+                                disabled={!strategiesData}
                             >
                                 {DEFAULT_STRATEGIES.map(s => (
                                     <option key={s} value={s}>{s}</option>

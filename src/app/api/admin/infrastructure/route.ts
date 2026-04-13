@@ -1,12 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { spawn } from 'child_process';
 import { withAdmin } from '@/lib/api/withAdmin';
+import { ok, internalError } from '@/lib/api/responses';
+import logger from '@/lib/logger';
 
-/**
- * Run an external command without a shell (no string interpolation / injection risk).
- * Resolves with trimmed stdout on success, or '0' as a safe fallback on failure.
- */
 function runCommand(cmd: string, args: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
     const proc = spawn(cmd, args);
@@ -16,26 +14,24 @@ function runCommand(cmd: string, args: string[]): Promise<string> {
     proc.stderr.on('data', (d: Buffer) => { stderr += d.toString(); });
     proc.on('close', (code) => {
       if (code === 0 || stdout) resolve(stdout.trim());
-      else resolve('0'); // fallback like the original || echo "0"
+      else resolve('0');
     });
     proc.on('error', reject);
   });
 }
 
 
-// Get database size
 async function getDatabaseSize(): Promise<number> {
   try {
     const result = await prisma.$queryRaw<[{ size: bigint }]>`
       SELECT pg_database_size(current_database()) as size
     `;
-    return Number(result[0].size) / (1024 * 1024); // Convert to MB
+    return Number(result[0].size) / (1024 * 1024);
   } catch {
     return 0;
   }
 }
 
-// Get table row counts
 async function getTableRowCounts(): Promise<Record<string, number>> {
   try {
     const [users, trades, media, accounts, strategies, equitySnapshots] = await Promise.all([
@@ -53,10 +49,8 @@ async function getTableRowCounts(): Promise<Record<string, number>> {
   }
 }
 
-// Get storage usage
 async function getStorageUsage(): Promise<{ totalMb: number; screenshots: number; byType: Record<string, number> }> {
   try {
-    // Get media counts by type
     const mediaByType = await prisma.media.groupBy({
       by: ['mimetype'],
       _count: true,
@@ -72,18 +66,14 @@ async function getStorageUsage(): Promise<{ totalMb: number; screenshots: number
       }
     }
     
-    // Try to get actual storage size (works in Docker)
-    // spawn() is used here so the path is passed as a plain argument with no
-    // shell interpolation, eliminating any command-injection risk.
     let totalMb = 0;
     try {
       const storagePath = process.env.STORAGE_PATH || '/app/storage';
       const stdout = await runCommand('du', ['-sm', storagePath]);
       totalMb = parseFloat(stdout.split('\t')[0]) || 0;
     } catch {
-      // Fallback: estimate based on average file size (500KB per file)
       const totalMedia = Object.values(byType).reduce((a, b) => a + b, 0);
-      totalMb = totalMedia * 0.5; // 500KB per file estimate
+      totalMb = totalMedia * 0.5;
     }
     
     return { totalMb, screenshots, byType };
@@ -92,7 +82,6 @@ async function getStorageUsage(): Promise<{ totalMb: number; screenshots: number
   }
 }
 
-// Get user activity metrics
 async function getUserActivity(): Promise<{
   activeSessions24h: number;
   loginsToday: number;
@@ -104,21 +93,18 @@ async function getUserActivity(): Promise<{
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     
     const [activeSessions24h, loginsToday, failedLogins24h] = await Promise.all([
-      // Users who logged in within 24h (based on lastLoginAt timestamp)
       prisma.user.count({
         where: {
           lastLoginAt: { gte: yesterday },
           isActive: true,
         },
       }),
-      // Count users whose lastLoginAt is today (more reliable than audit logs)
       prisma.user.count({
         where: {
           lastLoginAt: { gte: todayStart },
           isActive: true,
         },
       }),
-      // Count failed login attempts from audit logs
       prisma.auditLog.count({
         where: {
           action: 'FAILED_LOGIN',
@@ -133,7 +119,6 @@ async function getUserActivity(): Promise<{
   }
 }
 
-// Get error tracking
 async function getErrorTracking(): Promise<{
   recentErrors: Array<{ action: string; details: string; createdAt: Date }>;
   failedSyncs24h: number;
@@ -142,8 +127,6 @@ async function getErrorTracking(): Promise<{
   try {
     const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
     
-    // Get recent security violations, login failures, and errors
-    // Note: The app logs LOGIN_FAILED, 2FA_FAILED, and SECURITY_VIOLATION events
     const recentErrors = await prisma.auditLog.findMany({
       where: {
         action: {
@@ -160,14 +143,12 @@ async function getErrorTracking(): Promise<{
       take: 10,
     });
     
-    // Format the details for display (convert Json to string)
     const formattedErrors = recentErrors.map(e => ({
       action: e.action,
       details: typeof e.details === 'string' ? e.details : JSON.stringify(e.details),
       createdAt: e.createdAt,
     }));
     
-    // Count failed syncs from audit logs (if SYNC_ERROR events exist)
     const failedSyncs24h = await prisma.auditLog.count({
       where: {
         action: 'SYNC_ERROR',
@@ -175,7 +156,6 @@ async function getErrorTracking(): Promise<{
       },
     });
     
-    // Calculate error rate (errors / total actions in 24h)
     const totalActions24h = await prisma.auditLog.count({
       where: { createdAt: { gte: yesterday } },
     });
@@ -189,12 +169,10 @@ async function getErrorTracking(): Promise<{
   }
 }
 
-// GET /api/admin/infrastructure
 export const GET = withAdmin(async (request: NextRequest) => {
   try {
     const startTime = Date.now();
     
-    // Run all queries in parallel
     const [databaseSize, tableCounts, storageUsage, userActivity, errorTracking] = await Promise.all([
       getDatabaseSize(),
       getTableRowCounts(),
@@ -203,14 +181,13 @@ export const GET = withAdmin(async (request: NextRequest) => {
       getErrorTracking(),
     ]);
     
-    // Measure DB latency
     const dbStart = Date.now();
     await prisma.$queryRaw`SELECT 1`;
     const dbLatencyMs = Date.now() - dbStart;
     
     const apiLatencyMs = Date.now() - startTime;
     
-    return NextResponse.json({
+    return ok({
       database: {
         sizeMb: Math.round(databaseSize * 10) / 10,
         tables: tableCounts,
@@ -235,10 +212,7 @@ export const GET = withAdmin(async (request: NextRequest) => {
       },
     });
   } catch (error) {
-    console.error('Infrastructure API error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch infrastructure data' },
-      { status: 500 }
-    );
+    logger.error({ err: error }, 'Infrastructure API error');
+    return internalError();
   }
 });

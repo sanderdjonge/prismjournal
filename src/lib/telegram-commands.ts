@@ -1,4 +1,5 @@
 import prisma from './prisma';
+import { calculateProfitFactor, formatProfitFactor as canonicalFormatProfitFactor } from './analytics';
 
 export const PNL_PERIODS = ['today', 'week', 'month', 'all'] as const;
 export type PnlPeriod = typeof PNL_PERIODS[number];
@@ -72,8 +73,8 @@ function computeSummary(trades: TradeLike[], accountId?: string): AccountSummary
 }
 
 function formatProfitFactor(s: AccountSummary): string {
-  if (s.grossLosses === 0) return '∞';
-  return (s.grossProfits / s.grossLosses).toFixed(2);
+  if (s.total === 0) return '0.00';
+  return canonicalFormatProfitFactor(calculateProfitFactor(s.grossProfits, s.grossLosses));
 }
 
 function formatWinRate(s: AccountSummary): string {

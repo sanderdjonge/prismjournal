@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAllUserAccounts } from '@/lib/getAccount';
 import { withAuth } from '@/lib/api/withAuth';
 import type { Session } from 'next-auth';
+import { ok } from '@/lib/api/responses';
 
 export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, unknown>, session: Session & { user: { id: string } }) => {
     const { searchParams } = new URL(request.url);
@@ -12,7 +13,7 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
     const accountIds = allAccounts.map((a) => a.id);
 
     if (accountIds.length === 0) {
-        return NextResponse.json({
+        return ok({
             beProtectionRate: 0,
             beStopOutRate: 0,
             avgRCaptured: 0,
@@ -25,7 +26,6 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
     const accountFilter = searchParams.get('accountId');
     const filteredIds = accountFilter && accountIds.includes(accountFilter) ? [accountFilter] : accountIds;
 
-    // Fetch all closed trades that have initialStopLoss set
     const trades = await prisma.trade.findMany({
         where: {
             accountId: { in: filteredIds },
@@ -46,7 +46,7 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
     const tradeCount = trades.length;
 
     if (tradeCount === 0) {
-        return NextResponse.json({
+        return ok({
             beProtectionRate: 0,
             beStopOutRate: 0,
             avgRCaptured: 0,
@@ -56,23 +56,19 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
         });
     }
 
-    // BE protection rate — % of trades where BE was triggered
     const beTriggeredTrades = trades.filter(t => t.beTriggered);
     const beProtectionRate = Math.round((beTriggeredTrades.length / tradeCount) * 1000) / 1000;
 
-    // BE stop-out rate — % of BE-triggered trades that closed at a loss
     const beStopOutCount = beTriggeredTrades.filter(t => (t.pnl ?? 0) <= 0).length;
     const beStopOutRate = beTriggeredTrades.length > 0
         ? Math.round((beStopOutCount / beTriggeredTrades.length) * 1000) / 1000
         : 0;
 
-    // Avg R captured — average rMultiple across all trades with an rMultiple
     const tradesWithR = trades.filter(t => t.rMultiple != null);
     const avgRCaptured = tradesWithR.length > 0
         ? Math.round((tradesWithR.reduce((sum, t) => sum + (t.rMultiple ?? 0), 0) / tradesWithR.length) * 100) / 100
         : 0;
 
-    // Avg R potential — avg (TP distance / initialSL distance) where both are available
     const tradesWithPotential = trades.filter(t =>
         t.takeProfit != null &&
         t.initialStopLoss != null &&
@@ -94,12 +90,11 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
             : 0;
     }
 
-    // R efficiency — avgRCaptured / avgRPotential (capped at 1)
     const rEfficiency = avgRPotential > 0
         ? Math.round(Math.min(avgRCaptured / avgRPotential, 1) * 1000) / 1000
         : 0;
 
-    return NextResponse.json({
+    return ok({
         beProtectionRate,
         beStopOutRate,
         avgRCaptured,

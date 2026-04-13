@@ -3,6 +3,7 @@ import { ok, created, badRequest } from '@/lib/api/responses';
 import prisma from '@/lib/prisma';
 import { validateBody, createAccountSchema } from '@/lib/validations';
 import { initializeChallengePhases } from '@/lib/prop-firm/challenge-service';
+import logger from '@/lib/logger';
 
 export const GET = withAuth(async (req, _ctx, session) => {
     const userId = session.user.id;
@@ -134,7 +135,7 @@ export const POST = withAuth(async (req, _ctx, session) => {
         try {
             await initializeChallengePhases(account.id, data.propFirmId, data.accountSize);
         } catch (error) {
-            console.error('Failed to initialize challenge phases:', error);
+            logger.error({ err: error }, 'Failed to initialize challenge phases');
             // Don't fail the request, just log the error
         }
     }

@@ -1,4 +1,5 @@
 import prisma from '@/lib/prisma';
+import { calculateProfitFactor } from '@/lib/analytics';
 import {
   WhatIfFilters,
   TradeData,
@@ -98,7 +99,7 @@ function calculateMetrics(trades: TradeData[]): SimulationResult {
     const grossProfit = wins.reduce((sum, t) => sum + (t.pnl ?? 0), 0);
     const grossLoss = Math.abs(losses.reduce((sum, t) => sum + (t.pnl ?? 0), 0));
 
-    const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? Infinity : 0;
+    const profitFactor = calculateProfitFactor(grossProfit, grossLoss);
 
     const tradesWithRR = closedTrades.filter(t => t.rMultiple !== null);
     const avgRR = tradesWithRR.length > 0

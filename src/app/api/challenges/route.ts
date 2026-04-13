@@ -1,11 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { withAuth } from '@/lib/api/withAuth';
 import prisma from '@/lib/prisma';
 import type { Session } from 'next-auth';
+import { validateBody } from '@/lib/validations/common';
 import { z } from 'zod';
 import { backfillChallengeEvaluations } from '@/lib/services/challenge-backfill.service';
+import { ok, created, badRequest, notFound } from '@/lib/api/responses';
+import logger from '@/lib/logger';
 
-// Validation schema for challenge rules
 const ruleSchema = z.object({
     type: z.enum(['MAX_DAILY_LOSS', 'MAX_TRADES_PER_DAY', 'MIN_RR', 'TIME_WINDOW', 'MAX_DRAWDOWN', 'WIN_RATE_TARGET']),
     value: z.union([z.number(), z.string()]),
@@ -22,7 +24,6 @@ const challengeSchema = z.object({
     endDate: z.string().optional(),
 });
 
-// GET /api/challenges - List user's challenges
 export const GET = withAuth(async (
     request: NextRequest,
     _ctx: Record<string, unknown>,
@@ -49,32 +50,22 @@ export const GET = withAuth(async (
         orderBy: { createdAt: 'desc' },
     });
 
-    return NextResponse.json(challenges.map(c => ({
+    return ok(challenges.map(c => ({
         ...c,
         evaluationCount: c._count.evaluations,
         _count: undefined,
     })));
 });
 
-// POST /api/challenges - Create a new challenge
 export const POST = withAuth(async (
     request: NextRequest,
     _ctx: Record<string, unknown>,
     session: Session & { user: { id: string } }
 ) => {
-    const body = await request.json();
-    const validated = challengeSchema.safeParse(body);
+    const validation = await validateBody(request, challengeSchema);
+    if (!validation.success) return validation.response;
+    const data = validation.data;
 
-    if (!validated.success) {
-        return NextResponse.json(
-            { error: 'Validation failed', details: validated.error.flatten() },
-            { status: 400 }
-        );
-    }
-
-    const data = validated.data;
-
-    // Validate account if provided
     if (data.accountId) {
         const account = await prisma.tradingAccount.findFirst({
             where: {
@@ -83,7 +74,7 @@ export const POST = withAuth(async (
             },
         });
         if (!account) {
-            return NextResponse.json({ error: 'Account not found' }, { status: 404 });
+            return notFound('Account');
         }
     }
 
@@ -101,10 +92,9 @@ export const POST = withAuth(async (
         },
     });
 
-    // Backfill evaluations for existing trades (runs asynchronously)
     backfillChallengeEvaluations(challenge.id).catch(err => {
-        console.error('[challenges] Backfill failed:', err);
+        logger.error({ err }, '[challenges] Backfill failed');
     });
 
-    return NextResponse.json(challenge, { status: 201 });
+    return created(challenge);
 });

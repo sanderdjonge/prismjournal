@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { withAuth } from '@/lib/api/withAuth';
 import type { Session } from 'next-auth';
 import { z } from 'zod';
 import { runWhatIfSimulation, runMultipleScenarios, WhatIfFilters } from '@/lib/services/what-if.service';
 import logger from '@/lib/logger';
+import { ok, badRequest, internalError } from '@/lib/api/responses';
 
-// Zod schema for nested Time filters
 const timeFiltersSchema = z.object({
   maxDurationHours: z.number().positive().optional(),
   minDurationHours: z.number().nonnegative().optional(),
@@ -14,7 +14,6 @@ const timeFiltersSchema = z.object({
   excludeHours: z.array(z.number().min(0).max(23)).optional(),
 }).optional();
 
-// Zod schema for nested Risk filters
 const riskFiltersSchema = z.object({
   stopLossMultiplier: z.number().positive().optional(),
   maeMultiplier: z.number().positive().optional(),
@@ -29,7 +28,6 @@ const riskFiltersSchema = z.object({
   }).optional(),
 }).optional();
 
-// Zod schema for nested Psychology filters
 const psychologyFiltersSchema = z.object({
   dailyLossLimit: z.number().positive().optional(),
   weeklyLossLimit: z.number().positive().optional(),
@@ -40,7 +38,6 @@ const psychologyFiltersSchema = z.object({
   }).optional(),
 }).optional();
 
-// Zod schema for nested Market filters
 const marketFiltersSchema = z.object({
   minVolatility: z.number().nonnegative().optional(),
   maxVolatility: z.number().positive().optional(),
@@ -48,9 +45,7 @@ const marketFiltersSchema = z.object({
   newsBufferMinutes: z.number().int().positive().optional(),
 }).optional();
 
-// Main WhatIf filters schema (supports both flat and nested)
 const whatIfSchema = z.object({
-  // Legacy flat filters
   excludeDays: z.array(z.number().min(0).max(6)).optional(),
   excludeHours: z.array(z.number().min(0).max(23)).optional(),
   minRR: z.number().optional(),
@@ -63,8 +58,7 @@ const whatIfSchema = z.object({
   endDate: z.string().optional(),
   accountIds: z.array(z.string()).optional(),
   direction: z.enum(['LONG', 'SHORT']).optional(),
-  
-  // New nested filters
+
   time: timeFiltersSchema,
   risk: riskFiltersSchema,
   psychology: psychologyFiltersSchema,
@@ -75,7 +69,6 @@ const multiScenarioSchema = z.object({
     scenarios: z.array(whatIfSchema).min(1).max(5),
 });
 
-// Helper to parse JSON from query param
 function parseJsonParam(param: string | null): unknown {
   if (!param) return undefined;
   try {
@@ -85,18 +78,15 @@ function parseJsonParam(param: string | null): unknown {
   }
 }
 
-// GET /api/analytics/what-if - Run single scenario
 export const GET = withAuth(async (
     request: NextRequest,
     _ctx: Record<string, unknown>,
     session: Session & { user: { id: string } }
 ) => {
     const { searchParams } = new URL(request.url);
-    
-    // Parse filters from query params
+
     const filters: WhatIfFilters = {};
-    
-    // Legacy flat filters
+
     if (searchParams.get('excludeDays')) {
         filters.excludeDays = searchParams.get('excludeDays')!.split(',').map(Number);
     }
@@ -133,8 +123,7 @@ export const GET = withAuth(async (
     if (searchParams.get('direction')) {
         filters.direction = searchParams.get('direction') as 'LONG' | 'SHORT';
     }
-    
-    // New nested Time filters
+
     if (searchParams.get('maxDurationHours')) {
         filters.time = { ...filters.time, maxDurationHours: parseFloat(searchParams.get('maxDurationHours')!) };
     }
@@ -142,13 +131,12 @@ export const GET = withAuth(async (
         filters.time = { ...filters.time, minDurationHours: parseFloat(searchParams.get('minDurationHours')!) };
     }
     if (searchParams.get('marketSession')) {
-        filters.time = { 
-            ...filters.time, 
-            marketSession: searchParams.get('marketSession')!.split(',') as ('LONDON' | 'NEW_YORK' | 'ASIA' | 'OVERLAP_LN' | 'OVERLAP_NA')[] 
+        filters.time = {
+            ...filters.time,
+            marketSession: searchParams.get('marketSession')!.split(',') as ('LONDON' | 'NEW_YORK' | 'ASIA' | 'OVERLAP_LN' | 'OVERLAP_NA')[]
         };
     }
-    
-    // New nested Risk filters
+
     if (searchParams.get('maeMultiplier')) {
         filters.risk = { ...filters.risk, maeMultiplier: parseFloat(searchParams.get('maeMultiplier')!) };
     }
@@ -173,8 +161,7 @@ export const GET = withAuth(async (
             filters.risk = { ...filters.risk, partialExitAt: parsed as { rLevel: number; percent: number } };
         }
     }
-    
-    // New nested Psychology filters
+
     if (searchParams.get('dailyLossLimit')) {
         filters.psychology = { ...filters.psychology, dailyLossLimit: parseFloat(searchParams.get('dailyLossLimit')!) };
     }
@@ -190,8 +177,7 @@ export const GET = withAuth(async (
             filters.psychology = { ...filters.psychology, avoidAfterBigLoss: parsed as { rThreshold: number; cooldownHours: number } };
         }
     }
-    
-    // New nested Market filters
+
     if (searchParams.get('minVolatility')) {
         filters.market = { ...filters.market, minVolatility: parseFloat(searchParams.get('minVolatility')!) };
     }
@@ -204,35 +190,26 @@ export const GET = withAuth(async (
     if (searchParams.get('newsBufferMinutes')) {
         filters.market = { ...filters.market, newsBufferMinutes: parseInt(searchParams.get('newsBufferMinutes')!, 10) };
     }
-    
-    // Validate with Zod
+
     const validated = whatIfSchema.safeParse(filters);
     if (!validated.success) {
-        return NextResponse.json(
-            { error: 'Validation failed', details: validated.error.flatten() },
-            { status: 400 }
-        );
+        return badRequest('Validation failed');
     }
 
     try {
-        // Convert date strings to Date objects after validation
         const filtersWithDates = {
             ...validated.data,
             startDate: validated.data.startDate ? new Date(validated.data.startDate) : undefined,
             endDate: validated.data.endDate ? new Date(validated.data.endDate) : undefined,
         };
         const result = await runWhatIfSimulation(session.user.id, filtersWithDates);
-        return NextResponse.json(result);
+        return ok(result);
     } catch (error) {
         logger.error({ error, userId: session.user.id }, '[what-if] Error running simulation');
-        return NextResponse.json(
-            { error: 'Failed to run simulation' },
-            { status: 500 }
-        );
+        return internalError();
     }
 });
 
-// POST /api/analytics/what-if - Run multiple scenarios
 export const POST = withAuth(async (
     request: NextRequest,
     _ctx: Record<string, unknown>,
@@ -243,15 +220,11 @@ export const POST = withAuth(async (
         const validated = multiScenarioSchema.safeParse(body);
 
         if (!validated.success) {
-            return NextResponse.json(
-                { error: 'Validation failed', details: validated.error.flatten() },
-                { status: 400 }
-            );
+            return badRequest('Validation failed');
         }
 
         const { scenarios } = validated.data;
 
-        // Convert date strings to Date objects
         const parsedScenarios = scenarios.map(s => ({
             ...s,
             startDate: s.startDate ? new Date(s.startDate) : undefined,
@@ -259,12 +232,9 @@ export const POST = withAuth(async (
         })) as WhatIfFilters[];
 
         const results = await runMultipleScenarios(session.user.id, parsedScenarios);
-        return NextResponse.json(results);
+        return ok(results);
     } catch (error) {
         logger.error({ error, userId: session.user.id }, '[what-if] Error running multi-scenario');
-        return NextResponse.json(
-            { error: 'Failed to run scenarios' },
-            { status: 500 }
-        );
+        return internalError();
     }
 });

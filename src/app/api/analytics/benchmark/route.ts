@@ -1,16 +1,12 @@
-/**
- * Benchmark Comparison API - Phase 24
- * Compares user performance against SPY/QQQ benchmarks
- */
-
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { withAuth } from '@/lib/api/withAuth';
 import type { Session } from 'next-auth';
 import { getBenchmarkComparison, getBenchmarkPrices } from '@/lib/services/benchmark.service';
+import { ok, internalError } from '@/lib/api/responses';
+import logger from '@/lib/logger';
 
 type AuthedSession = Session & { user: { id: string } };
 
-// GET /api/analytics/benchmark - Get benchmark comparison data
 export const GET = withAuth(async (
   request: NextRequest,
   _ctx: Record<string, unknown>,
@@ -26,7 +22,6 @@ export const GET = withAuth(async (
   const normalizedStart = searchParams.get('normalizedStart');
 
   try {
-    // If only prices requested (for chart overlay)
     if (pricesOnly && startDate && endDate) {
       const symbol = benchmarks[0] || 'SPY';
       const prices = await getBenchmarkPrices(
@@ -36,22 +31,17 @@ export const GET = withAuth(async (
         normalizedStart ? parseFloat(normalizedStart) : 100
       );
       
-      return NextResponse.json({
+      return ok({
         symbol,
         prices,
       });
     }
 
-    // Full comparison
     const comparison = await getBenchmarkComparison(userId, accountId, benchmarks);
     
-    return NextResponse.json(comparison);
+    return ok(comparison);
   } catch (error) {
-    console.error('Error fetching benchmark data:', error);
-    const message = error instanceof Error ? error.message : 'Failed to fetch benchmark data';
-    return NextResponse.json(
-      { error: message },
-      { status: 500 }
-    );
+    logger.error({ err: error }, 'Error fetching benchmark data');
+    return internalError();
   }
 });

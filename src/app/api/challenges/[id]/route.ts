@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { withAuth } from '@/lib/api/withAuth';
 import prisma from '@/lib/prisma';
 import type { Session } from 'next-auth';
 import { z } from 'zod';
+import { ok, badRequest, notFound } from '@/lib/api/responses';
 
-// Validation schema for updates
 const updateSchema = z.object({
     name: z.string().min(1).optional(),
     description: z.string().optional(),
@@ -17,13 +17,11 @@ const updateSchema = z.object({
     endDate: z.string().nullable().optional(),
 });
 
-// GET /api/challenges/[id] - Get challenge details with evaluations
 export const GET = withAuth(async (
     req: NextRequest,
     _ctx: Record<string, unknown>,
     session: Session & { user: { id: string } }
 ) => {
-    // Extract id from URL
     const url = new URL(req.url);
     const pathParts = url.pathname.split('/');
     const id = pathParts[pathParts.length - 1];
@@ -42,14 +40,13 @@ export const GET = withAuth(async (
     });
 
     if (!challenge) {
-        return NextResponse.json({ error: 'Challenge not found' }, { status: 404 });
+        return notFound('Challenge');
     }
 
-    // Calculate stats
     const totalDays = challenge.evaluations.length;
     const passedDays = challenge.evaluations.filter((e: { passed: boolean }) => e.passed).length;
 
-    return NextResponse.json({
+    return ok({
         ...challenge,
         stats: {
             totalDays,
@@ -60,13 +57,11 @@ export const GET = withAuth(async (
     });
 });
 
-// PATCH /api/challenges/[id] - Update challenge
 export const PATCH = withAuth(async (
     req: NextRequest,
     _ctx: Record<string, unknown>,
     session: Session & { user: { id: string } }
 ) => {
-    // Extract id from URL
     const url = new URL(req.url);
     const pathParts = url.pathname.split('/');
     const id = pathParts[pathParts.length - 1];
@@ -75,10 +70,7 @@ export const PATCH = withAuth(async (
     const validated = updateSchema.safeParse(body);
 
     if (!validated.success) {
-        return NextResponse.json(
-            { error: 'Validation failed', details: validated.error.flatten() },
-            { status: 400 }
-        );
+        return badRequest('Validation failed');
     }
 
     const challenge = await prisma.tradingChallenge.findFirst({
@@ -86,7 +78,7 @@ export const PATCH = withAuth(async (
     });
 
     if (!challenge) {
-        return NextResponse.json({ error: 'Challenge not found' }, { status: 404 });
+        return notFound('Challenge');
     }
 
     const updateData: Record<string, unknown> = {};
@@ -103,16 +95,14 @@ export const PATCH = withAuth(async (
         data: updateData,
     });
 
-    return NextResponse.json(updated);
+    return ok(updated);
 });
 
-// DELETE /api/challenges/[id] - Delete challenge
 export const DELETE = withAuth(async (
     req: NextRequest,
     _ctx: Record<string, unknown>,
     session: Session & { user: { id: string } }
 ) => {
-    // Extract id from URL
     const url = new URL(req.url);
     const pathParts = url.pathname.split('/');
     const id = pathParts[pathParts.length - 1];
@@ -122,12 +112,12 @@ export const DELETE = withAuth(async (
     });
 
     if (!challenge) {
-        return NextResponse.json({ error: 'Challenge not found' }, { status: 404 });
+        return notFound('Challenge');
     }
 
     await prisma.tradingChallenge.delete({
         where: { id },
     });
 
-    return NextResponse.json({ success: true });
+    return ok({ success: true });
 });

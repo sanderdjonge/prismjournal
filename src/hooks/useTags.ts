@@ -1,65 +1,42 @@
-// src/hooks/useTags.ts
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { apiFetch, apiPost, apiPatch, apiDelete } from '@/lib/api/client'
+import { queryKeys } from '@/lib/query-keys'
 
 export interface Tag {
-    id: string;
-    name: string;
-    color?: string | null;
-    _count?: { trades: number };
-}
-
-async function fetchTags(): Promise<{ tags: Tag[] }> {
-    const res = await fetch('/api/tags');
-    if (!res.ok) throw new Error('Failed to fetch tags');
-    return res.json();
+  id: string
+  name: string
+  color?: string | null
+  _count?: { trades: number }
 }
 
 export function useTags() {
-    return useQuery({
-        queryKey: ['tags'],
-        queryFn: fetchTags,
-    });
+  return useQuery({
+    queryKey: queryKeys.tags.all,
+    queryFn: () => apiFetch<{ tags: Tag[] }>('/api/tags'),
+  })
 }
 
 export function useCreateTag() {
-    const qc = useQueryClient();
-    return useMutation({
-        mutationFn: (body: { name: string; color?: string }) =>
-            fetch('/api/tags', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body),
-            }).then(async r => {
-                if (!r.ok) throw new Error(await r.text());
-                return r.json();
-            }),
-        onSuccess: () => qc.invalidateQueries({ queryKey: ['tags'] }),
-    });
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: { name: string; color?: string }) => apiPost('/api/tags', body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.tags.all }),
+  })
 }
 
 export function useUpdateTag() {
-    const qc = useQueryClient();
-    return useMutation({
-        mutationFn: ({ id, body }: { id: string; body: { name?: string; color?: string } }) =>
-            fetch(`/api/tags/${id}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body),
-            }).then(async r => {
-                if (!r.ok) throw new Error(await r.text());
-                return r.json();
-            }),
-        onSuccess: () => qc.invalidateQueries({ queryKey: ['tags'] }),
-    });
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, body }: { id: string; body: { name?: string; color?: string } }) =>
+      apiPatch(`/api/tags/${id}`, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.tags.all }),
+  })
 }
 
 export function useDeleteTag() {
-    const qc = useQueryClient();
-    return useMutation({
-        mutationFn: (id: string) =>
-            fetch(`/api/tags/${id}`, { method: 'DELETE' }).then(r => {
-                if (!r.ok) throw new Error('Delete failed');
-            }),
-        onSuccess: () => qc.invalidateQueries({ queryKey: ['tags'] }),
-    });
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => apiDelete(`/api/tags/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.tags.all }),
+  })
 }

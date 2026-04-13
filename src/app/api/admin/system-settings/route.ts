@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { withAdmin } from '@/lib/api/withAdmin';
 import { ok, badRequest, internalError } from '@/lib/api/responses';
+import logger from '@/lib/logger';
 import type { AdminSession } from '@/lib/api/withAdmin';
 import { z } from 'zod';
 
@@ -21,7 +22,7 @@ export const GET = withAdmin(async () => {
         }
         return ok({ inviteOnlyMode: settings.inviteOnlyMode });
     } catch (error) {
-        console.error('Error fetching system settings:', error);
+        logger.error({ err: error }, 'Error fetching system settings');
         return internalError();
     }
 });
@@ -43,7 +44,7 @@ export const PATCH = withAdmin(async (req: NextRequest, _ctx: Record<string, unk
 
         return ok({ inviteOnlyMode: settings.inviteOnlyMode });
     } catch (error) {
-        console.error('Error updating system settings:', error);
+        logger.error({ err: error }, 'Error updating system settings');
         return internalError();
     }
 });

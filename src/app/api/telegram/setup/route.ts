@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server';
+import { ok, internalError } from '@/lib/api/responses';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
 export async function GET() {
     if (!BOT_TOKEN) {
-        return NextResponse.json({ error: 'TELEGRAM_BOT_TOKEN not configured' }, { status: 500 });
+        return internalError();
     }
 
     const webhookUrl = `${process.env.NEXTAUTH_URL}/api/telegram/webhook`;
@@ -26,22 +26,16 @@ export async function GET() {
         const data = await response.json();
         
         if (data.ok) {
-            return NextResponse.json({ 
+            return ok({ 
                 success: true, 
                 message: `Webhook registered: ${webhookUrl}`,
                 result: data.result 
             });
         } else {
-            return NextResponse.json({ 
-                success: false, 
-                error: data.description 
-            }, { status: 500 });
+            return internalError();
         }
     } catch (error) {
-        return NextResponse.json({ 
-            success: false, 
-            error: 'Failed to register webhook' 
-        }, { status: 500 });
+        return internalError();
     }
 }
 

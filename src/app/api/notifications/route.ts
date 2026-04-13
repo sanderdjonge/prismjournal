@@ -1,11 +1,8 @@
-import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/lib/api/withAuth';
+import { ok, badRequest, internalError } from '@/lib/api/responses';
+import logger from '@/lib/logger';
 
-/**
- * GET /api/notifications
- * Get all notifications for the current user
- */
 export const GET = withAuth(async (_req, _ctx, session) => {
   try {
     const userId = session.user.id;
@@ -18,17 +15,13 @@ export const GET = withAuth(async (_req, _ctx, session) => {
 
     const unreadCount = notifications.filter(n => !n.isRead).length;
 
-    return NextResponse.json({ notifications, unreadCount });
+    return ok({ notifications, unreadCount });
   } catch (error) {
-    console.error('Failed to fetch notifications:', error);
-    return NextResponse.json({ notifications: [], unreadCount: 0 });
+    logger.error({ err: error }, 'Failed to fetch notifications');
+    return ok({ notifications: [], unreadCount: 0 });
   }
 });
 
-/**
- * POST /api/notifications
- * Create a new notification
- */
 export const POST = withAuth(async (req, _ctx, session) => {
   try {
     const userId = session.user.id;
@@ -37,7 +30,7 @@ export const POST = withAuth(async (req, _ctx, session) => {
     const { type, title, message } = body;
 
     if (!type || !title || !message) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      return badRequest('Missing required fields');
     }
 
     const notification = await prisma.notification.create({
@@ -49,17 +42,13 @@ export const POST = withAuth(async (req, _ctx, session) => {
       },
     });
 
-    return NextResponse.json(notification);
+    return ok(notification);
   } catch (error) {
-    console.error('Failed to create notification:', error);
-    return NextResponse.json({ error: 'Failed to create notification' }, { status: 500 });
+    logger.error({ err: error }, 'Failed to create notification');
+    return internalError();
   }
 });
 
-/**
- * PATCH /api/notifications
- * Mark notifications as read
- */
 export const PATCH = withAuth(async (req, _ctx, session) => {
   try {
     const userId = session.user.id;
@@ -79,17 +68,13 @@ export const PATCH = withAuth(async (req, _ctx, session) => {
       });
     }
 
-    return NextResponse.json({ success: true });
+    return ok({ success: true });
   } catch (error) {
-    console.error('Failed to update notifications:', error);
-    return NextResponse.json({ error: 'Failed to update notifications' }, { status: 500 });
+    logger.error({ err: error }, 'Failed to update notifications');
+    return internalError();
   }
 });
 
-/**
- * DELETE /api/notifications
- * Delete notifications
- */
 export const DELETE = withAuth(async (req, _ctx, session) => {
   try {
     const userId = session.user.id;
@@ -107,10 +92,10 @@ export const DELETE = withAuth(async (req, _ctx, session) => {
       });
     }
 
-    return NextResponse.json({ success: true });
+    return ok({ success: true });
   } catch (error) {
-    console.error('Failed to delete notifications:', error);
-    return NextResponse.json({ error: 'Failed to delete notifications' }, { status: 500 });
+    logger.error({ err: error }, 'Failed to delete notifications');
+    return internalError();
   }
 });
 

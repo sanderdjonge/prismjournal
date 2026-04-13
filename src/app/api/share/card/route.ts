@@ -1,15 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { withAuth } from '@/lib/api/withAuth';
 import type { Session } from 'next-auth';
+import { validateBody } from '@/lib/validations/common';
 import { z } from 'zod';
 import { generateShareCard } from '@/lib/services/share-card.service';
+import { ok, badRequest, notFound, forbidden, internalError } from '@/lib/api/responses';
+import logger from '@/lib/logger';
 
 const generateCardSchema = z.object({
     tradeId: z.string(),
-    includeScreenshot: z.boolean().default(true),
-    showPrismScore: z.boolean().default(false),
-    isPublic: z.boolean().default(false),
-    platform: z.enum(['discord', 'twitter', 'reddit', 'general']).default('general'),
+    includeScreenshot: z.boolean(),
+    showPrismScore: z.boolean(),
+    isPublic: z.boolean(),
+    platform: z.enum(['discord', 'twitter', 'reddit', 'general']),
     comment: z.string().max(200).optional(),
 });
 
@@ -18,10 +21,11 @@ export const POST = withAuth(async (
     _ctx: Record<string, unknown>,
     session: Session & { user: { id: string } }
 ) => {
-    try {
-        const body = await request.json();
-        const validated = generateCardSchema.parse(body);
+    const validation = await validateBody(request, generateCardSchema);
+    if (!validation.success) return validation.response;
+    const validated = validation.data;
 
+    try {
         const result = await generateShareCard({
             tradeId: validated.tradeId,
             userId: session.user.id,
@@ -32,28 +36,18 @@ export const POST = withAuth(async (
             comment: validated.comment,
         });
 
-        return NextResponse.json(result);
+        return ok(result);
     } catch (error) {
-        if (error instanceof z.ZodError) {
-            return NextResponse.json(
-                { error: 'Invalid request', details: error.errors },
-                { status: 400 }
-            );
-        }
-
         if (error instanceof Error) {
             if (error.message.includes('not found')) {
-                return NextResponse.json({ error: 'Trade not found' }, { status: 404 });
+                return notFound('Trade');
             }
             if (error.message.includes('Unauthorized')) {
-                return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+                return forbidden();
             }
         }
 
-        console.error('[share-card] Generation error:', error);
-        return NextResponse.json(
-            { error: 'Failed to generate share card' },
-            { status: 500 }
-        );
+        logger.error({ err: error }, '[share-card] Generation error');
+        return internalError();
     }
 });

@@ -1,4 +1,7 @@
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+'use client'
+
+import { useState, useEffect, createContext, useContext, ReactNode } from 'react'
+import { useSettings } from '@/hooks/useSettings'
 
 // Currency symbols mapping
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -47,21 +50,14 @@ interface CurrencyContextType {
 const CurrencyContext = createContext<CurrencyContextType | null>(null);
 
 export function CurrencyProvider({ children }: { children: ReactNode }) {
-  const [currency, setCurrencyState] = useState('USD');
+  const [currency, setCurrencyState] = useState('USD')
+  const { displayCurrency } = useSettings()
 
   useEffect(() => {
-    // Fetch user's currency preference
-    fetch('/api/settings')
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.displayCurrency) {
-          setCurrencyState(data.displayCurrency);
-        }
-      })
-      .catch(() => {
-        // Default to USD on error
-      });
-  }, []);
+    if (displayCurrency) {
+      setCurrencyState(displayCurrency)
+    }
+  }, [displayCurrency])
 
   const setCurrency = (newCurrency: string) => {
     setCurrencyState(newCurrency);

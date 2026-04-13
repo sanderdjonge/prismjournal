@@ -1,13 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { auth } from '@/lib/auth';
+import { validateBody } from '@/lib/validations/common';
 import { z } from 'zod';
 import { withAdmin } from '@/lib/api/withAdmin';
 import type { AdminSession } from '@/lib/api/withAdmin';
 import { deleteFile } from '@/lib/storage';
 import { checkLimit, Limiters } from '@/lib/rate-limit-redis';
+import { ok, badRequest, notFound, internalError } from '@/lib/api/responses';
+import logger from '@/lib/logger';
 
-// Audit log action types
 export enum AuditAction {
   USER_ROLE_CHANGE = 'USER_ROLE_CHANGE',
   USER_STATUS_CHANGE = 'USER_STATUS_CHANGE',
@@ -23,7 +25,6 @@ export enum AuditAction {
   SYNC_ERROR = 'SYNC_ERROR',
 }
 
-// Create audit log entry
 async function createAuditLog(
   action: AuditAction,
   details: Record<string, unknown>,
@@ -45,11 +46,10 @@ async function createAuditLog(
       },
     });
   } catch (error) {
-    console.error('Failed to create audit log:', error);
+    logger.error({ err: error }, 'Failed to create audit log');
   }
 }
 
-// GET - List all users with pagination
 export const GET = withAdmin(async (request: NextRequest, _ctx: Record<string, unknown>, session: AdminSession) => {
   const rateLimitResponse = await checkLimit(request, Limiters.admin);
   if (rateLimitResponse) return rateLimitResponse;
@@ -60,15 +60,12 @@ export const GET = withAdmin(async (request: NextRequest, _ctx: Record<string, u
   const search = searchParams.get('search') || '';
   const includeInactive = searchParams.get('includeInactive') === 'true';
 
-  // Build where clause - by default only show active users (soft-deleted users are hidden)
   const where: { isActive?: boolean; OR?: Array<{ email?: { contains: string; mode: 'insensitive' }; name?: { contains: string; mode: 'insensitive' }; username?: { contains: string; mode: 'insensitive' } }> } = {};
   
-  // Only filter by isActive if not explicitly including inactive users
   if (!includeInactive) {
     where.isActive = true;
   }
   
-  // Add search filter if provided
   if (search) {
     where.OR = [
       { email: { contains: search, mode: 'insensitive' as const } },
@@ -103,10 +100,9 @@ export const GET = withAdmin(async (request: NextRequest, _ctx: Record<string, u
     prisma.user.count({ where }),
   ]);
 
-  // Audit log user enumeration
-  await createAuditLog(AuditAction.ADMIN_ACCESS, { action: 'VIEW_USERS_LIST', page, limit, search }, request).catch(console.error);
+  await createAuditLog(AuditAction.ADMIN_ACCESS, { action: 'VIEW_USERS_LIST', page, limit, search }, request).catch(() => logger.error('Audit log creation failed'));
 
-  return NextResponse.json({
+  return ok({
     users,
     pagination: {
       page,
@@ -117,7 +113,6 @@ export const GET = withAdmin(async (request: NextRequest, _ctx: Record<string, u
   });
 });
 
-// PATCH - Update user role or status
 const updateUserSchema = z.object({
   userId: z.string(),
   action: z.enum(['makeAdmin', 'removeAdmin', 'activate', 'deactivate']),
@@ -128,19 +123,16 @@ export const PATCH = withAdmin(async (request: NextRequest, _ctx: Record<string,
   if (rateLimitResponse) return rateLimitResponse;
 
   try {
-    const body = await request.json();
-    const { userId, action } = updateUserSchema.parse(body);
+    const bodyValidation = await validateBody(request, updateUserSchema);
+    if (!bodyValidation.success) return bodyValidation.response;
+    const { userId, action } = bodyValidation.data;
 
-    // Prevent self-modification of admin status
     if (userId === session.user.id && (action === 'removeAdmin' || action === 'deactivate')) {
       await createAuditLog(AuditAction.SECURITY_VIOLATION, {
         action: 'SELF_DEMODIFICATION_ATTEMPT',
         targetAction: action,
       }, request);
-      return NextResponse.json(
-        { error: 'Cannot modify your own admin status or active state' },
-        { status: 400 }
-      );
+      return badRequest('Cannot modify your own admin status or active state');
     }
 
     const user = await prisma.user.findUnique({
@@ -149,7 +141,7 @@ export const PATCH = withAdmin(async (request: NextRequest, _ctx: Record<string,
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return notFound('User');
     }
 
     const isRoleAction = action === 'makeAdmin' || action === 'removeAdmin';
@@ -158,7 +150,7 @@ export const PATCH = withAdmin(async (request: NextRequest, _ctx: Record<string,
     const currentValue = user[field];
 
     if (currentValue === newValue) {
-      return NextResponse.json({ error: `User is already ${newValue ? (isRoleAction ? 'an admin' : 'active') : (isRoleAction ? 'not an admin' : 'inactive')}` }, { status: 400 });
+      return badRequest(`User is already ${newValue ? (isRoleAction ? 'an admin' : 'active') : (isRoleAction ? 'not an admin' : 'inactive')}`);
     }
 
     const updatedUser = await prisma.user.update({
@@ -173,20 +165,16 @@ export const PATCH = withAdmin(async (request: NextRequest, _ctx: Record<string,
       request
     );
 
-    return NextResponse.json({
+    return ok({
       success: true,
       user: updatedUser,
     });
   } catch (error) {
-    console.error('Admin user update error:', error);
-    return NextResponse.json(
-      { error: 'Failed to update user' },
-      { status: 500 }
-    );
+    logger.error({ err: error }, 'Admin user update error');
+    return internalError();
   }
 });
 
-// POST - Send password reset email on behalf of a user
 const sendResetSchema = z.object({
   userId: z.string(),
 });
@@ -196,23 +184,21 @@ export const POST = withAdmin(async (request: NextRequest, _ctx: Record<string, 
   if (rateLimitResponse) return rateLimitResponse;
 
   try {
-    const body = await request.json();
-    const { userId } = sendResetSchema.parse(body);
+    const bodyValidation = await validateBody(request, sendResetSchema);
+    if (!bodyValidation.success) return bodyValidation.response;
+    const { userId } = bodyValidation.data;
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, email: true, name: true, isActive: true },
     });
 
-    if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    if (!user.email) return NextResponse.json({ error: 'User has no email address' }, { status: 400 });
+    if (!user) return notFound('User');
+    if (!user.email) return badRequest('User has no email address');
 
     const baseUrl = process.env.NEXTAUTH_URL;
     if (!baseUrl) {
-      return NextResponse.json(
-        { error: 'NEXTAUTH_URL is not configured — cannot send reset email' },
-        { status: 503 }
-      );
+      return badRequest('NEXTAUTH_URL is not configured — cannot send reset email');
     }
 
     const { randomBytes } = await import('crypto');
@@ -235,10 +221,7 @@ export const POST = withAdmin(async (request: NextRequest, _ctx: Record<string, 
 
     const emailResult = await sendPasswordResetEmail(user.email, resetToken, `${baseUrl}/reset-password`);
     if (!emailResult.success) {
-      return NextResponse.json(
-        { error: `Failed to send email: ${emailResult.error ?? 'Unknown error'}` },
-        { status: 502 }
-      );
+      return badRequest(`Failed to send email: ${emailResult.error ?? 'Unknown error'}`);
     }
 
     await createAuditLog(AuditAction.SETTINGS_CHANGE, {
@@ -248,14 +231,13 @@ export const POST = withAdmin(async (request: NextRequest, _ctx: Record<string, 
       initiatedBy: session.user.id,
     }, request);
 
-    return NextResponse.json({ success: true, message: `Password reset email sent to ${user.email}` });
+    return ok({ success: true, message: `Password reset email sent to ${user.email}` });
   } catch (error) {
-    console.error('Admin send reset error:', error);
-    return NextResponse.json({ error: 'Failed to send reset email' }, { status: 500 });
+    logger.error({ err: error }, 'Admin send reset error');
+    return internalError();
   }
 });
 
-// DELETE - Soft delete (default) or hard delete (?mode=hard) user
 export const DELETE = withAdmin(async (request: NextRequest, _ctx: Record<string, unknown>, session: AdminSession) => {
   const rateLimitResponse = await checkLimit(request, Limiters.admin);
   if (rateLimitResponse) return rateLimitResponse;
@@ -266,18 +248,14 @@ export const DELETE = withAdmin(async (request: NextRequest, _ctx: Record<string
     const mode = searchParams.get('mode') || 'soft';
 
     if (!userId) {
-      return NextResponse.json({ error: 'User ID required' }, { status: 400 });
+      return badRequest('User ID required');
     }
 
-    // Prevent self-deletion
     if (userId === session.user.id) {
       await createAuditLog(AuditAction.SECURITY_VIOLATION, {
         action: 'SELF_DELETION_ATTEMPT',
       }, request);
-      return NextResponse.json(
-        { error: 'Cannot delete your own account' },
-        { status: 400 }
-      );
+      return badRequest('Cannot delete your own account');
     }
 
     const user = await prisma.user.findUnique({
@@ -286,11 +264,10 @@ export const DELETE = withAdmin(async (request: NextRequest, _ctx: Record<string
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return notFound('User');
     }
 
     if (mode === 'hard') {
-      // Hard delete - remove user and all related data in correct FK order
       await prisma.$transaction(async (tx) => {
         const accounts = await tx.tradingAccount.findMany({
           where: { userId },
@@ -298,7 +275,6 @@ export const DELETE = withAdmin(async (request: NextRequest, _ctx: Record<string
         });
         const accountIds = accounts.map(a => a.id);
 
-        // Layer 1: Trade-level data (references Trade RESTRICT)
         if (accountIds.length > 0) {
           const trades = await tx.trade.findMany({
             where: { accountId: { in: accountIds } },
@@ -307,7 +283,6 @@ export const DELETE = withAdmin(async (request: NextRequest, _ctx: Record<string
           const tradeIds = trades.map(t => t.id);
 
           if (tradeIds.length > 0) {
-            // Clean up screenshot files from disk before deleting Media records
             const mediaFiles = await tx.media.findMany({
               where: { tradeId: { in: tradeIds } },
               select: { filename: true },
@@ -325,7 +300,6 @@ export const DELETE = withAdmin(async (request: NextRequest, _ctx: Record<string
           await tx.trade.deleteMany({ where: { accountId: { in: accountIds } } });
         }
 
-        // Layer 2: Strategy data (references Strategy CASCADE)
         const strategies = await tx.strategy.findMany({
           where: { userId },
           select: { id: true },
@@ -336,12 +310,10 @@ export const DELETE = withAdmin(async (request: NextRequest, _ctx: Record<string
         }
         await tx.strategy.deleteMany({ where: { userId } });
 
-        // Layer 3: Account-level data (references TradingAccount RESTRICT)
         if (accountIds.length > 0) {
           await tx.equitySnapshot.deleteMany({ where: { accountId: { in: accountIds } } });
           await tx.dailyAccountSnapshot.deleteMany({ where: { accountId: { in: accountIds } } });
 
-          // ChallengePhase -> RuleViolation (SET NULL on phaseId, but delete explicitly)
           const phases = await tx.challengePhase.findMany({
             where: { accountId: { in: accountIds } },
             select: { id: true },
@@ -352,7 +324,6 @@ export const DELETE = withAdmin(async (request: NextRequest, _ctx: Record<string
           }
           await tx.challengePhase.deleteMany({ where: { accountId: { in: accountIds } } });
 
-          // TradingChallenge -> ChallengeEvaluation (CASCADE, but delete explicitly)
           const challenges = await tx.tradingChallenge.findMany({
             where: { accountId: { in: accountIds } },
             select: { id: true },
@@ -366,7 +337,6 @@ export const DELETE = withAdmin(async (request: NextRequest, _ctx: Record<string
           await tx.tradingAccount.deleteMany({ where: { id: { in: accountIds } } });
         }
 
-        // Layer 4: User-level data (references User RESTRICT)
         await tx.alertConfig.deleteMany({ where: { userId } });
         await tx.customStat.deleteMany({ where: { userId } });
         await tx.notification.deleteMany({ where: { userId } });
@@ -374,8 +344,6 @@ export const DELETE = withAdmin(async (request: NextRequest, _ctx: Record<string
         await tx.passwordResetToken.deleteMany({ where: { userId } });
         await tx.tiltmeterSnapshot.deleteMany({ where: { userId } });
 
-        // Checklist -> ChecklistItem has CASCADE, Checklist -> User has CASCADE
-        // But delete explicitly for safety
         const checklists = await tx.checklist.findMany({
           where: { userId },
           select: { id: true },
@@ -386,17 +354,12 @@ export const DELETE = withAdmin(async (request: NextRequest, _ctx: Record<string
           await tx.checklist.deleteMany({ where: { id: { in: checklistIds } } });
         }
 
-        // Tags auto-cascade but delete explicitly
         await tx.tag.deleteMany({ where: { userId } });
-        // ShareCard remaining (userId-linked, not tradeId-linked)
         await tx.shareCard.deleteMany({ where: { userId } });
-        // PreTradeNote references Trade (SET NULL) and TradingAccount (SET NULL)
         await tx.preTradeNote.deleteMany({ where: { userId } });
 
-        // AuditLog has no FK to User in schema, but we store userId
         await tx.auditLog.deleteMany({ where: { userId } });
 
-        // Finally delete the user
         await tx.user.delete({ where: { id: userId } });
       });
 
@@ -407,10 +370,9 @@ export const DELETE = withAdmin(async (request: NextRequest, _ctx: Record<string
         deletionType: 'hard',
       }, request);
 
-      return NextResponse.json({ success: true, deleted: true });
+      return ok({ success: true, deleted: true });
     }
 
-    // Soft delete - deactivate user
     await prisma.user.update({
       where: { id: userId },
       data: { isActive: false },
@@ -423,12 +385,9 @@ export const DELETE = withAdmin(async (request: NextRequest, _ctx: Record<string
       deletionType: 'soft',
     }, request);
 
-    return NextResponse.json({ success: true, deactivated: true });
+    return ok({ success: true, deactivated: true });
   } catch (error) {
-    console.error('Admin user delete error:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete user' },
-      { status: 500 }
-    );
+    logger.error({ err: error }, 'Admin user delete error');
+    return internalError();
   }
 });

@@ -1,11 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { passwordLimiter } from '@/lib/rate-limit';
 import bcrypt from 'bcryptjs';
+import { validateBody } from '@/lib/validations/common';
 import { z } from 'zod';
+import { ok, badRequest, internalError } from '@/lib/api/responses';
+import logger from '@/lib/logger';
 
 const resetPasswordSchema = z.object({
-  token: z.string().min(1, 'Token is required'),
+  token: z.string().min(1),
   password: z
     .string()
     .min(8, 'Password must be at least 8 characters')
@@ -14,34 +17,18 @@ const resetPasswordSchema = z.object({
     .regex(/[0-9]/, 'Password must contain at least one number'),
 });
 
-/**
- * POST /api/auth/reset-password
- * Reset password using token from email
- * Body: { token: string, password: string }
- */
 export async function POST(request: NextRequest) {
-  // Rate limit: 3 requests per minute
   const rateLimitResult = await passwordLimiter.check(request, 3);
   if (rateLimitResult) return rateLimitResult;
 
   try {
-    const body = await request.json();
-    const validation = resetPasswordSchema.safeParse(body);
-
-    if (!validation.success) {
-      return NextResponse.json(
-        { error: validation.error.errors[0]?.message || 'Invalid input' },
-        { status: 400 }
-      );
-    }
-
+    const validation = await validateBody(request, resetPasswordSchema);
+    if (!validation.success) return validation.response;
     const { token, password } = validation.data;
 
-    // Use tokenId (first 8 chars) for efficient lookup
     const tokenId = token.slice(0, 8);
     const now = new Date();
 
-    // Find token by tokenId first (efficient index lookup)
     const resetToken = await prisma.passwordResetToken.findFirst({
       where: {
         tokenId,
@@ -54,25 +41,16 @@ export async function POST(request: NextRequest) {
     });
 
     if (!resetToken) {
-      return NextResponse.json(
-        { error: 'Invalid or expired reset token' },
-        { status: 400 }
-      );
+      return badRequest('Invalid or expired reset token');
     }
 
-    // Verify the full token matches (bcrypt comparison)
     const isValid = await bcrypt.compare(token, resetToken.token);
     if (!isValid) {
-      return NextResponse.json(
-        { error: 'Invalid or expired reset token' },
-        { status: 400 }
-      );
+      return badRequest('Invalid or expired reset token');
     }
 
-    // Hash new password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Update user password and mark token as used
     await prisma.$transaction([
       prisma.user.update({
         where: { id: resetToken.userId },
@@ -84,7 +62,6 @@ export async function POST(request: NextRequest) {
       }),
     ]);
 
-    // Delete all other reset tokens for this user
     await prisma.passwordResetToken.deleteMany({
       where: {
         userId: resetToken.userId,
@@ -92,15 +69,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({
+    return ok({
       success: true,
       message: 'Password has been reset successfully. You can now log in with your new password.',
     });
   } catch (error) {
-    console.error('Password reset error:', error);
-    return NextResponse.json(
-      { error: 'An error occurred. Please try again.' },
-      { status: 500 }
-    );
+    logger.error({ err: error }, 'Password reset error');
+    return internalError();
   }
 }

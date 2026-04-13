@@ -1,15 +1,22 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/lib/api/withAuth';
 import type { Session } from 'next-auth';
+import { validateBody } from '@/lib/validations/common';
+import { ok, notFound } from '@/lib/api/responses';
+import { z } from 'zod';
 
-// GET /api/strategies/[id] - Get a single strategy
+const updateStrategySchema = z.object({
+    name: z.string().optional(),
+    description: z.string().optional(),
+    checklistId: z.string().nullable().optional(),
+});
+
 export const GET = withAuth(async (
     req: NextRequest,
     _ctx: Record<string, unknown>,
     session: Session & { user: { id: string } }
 ) => {
-    // Extract id from URL
     const url = new URL(req.url);
     const pathParts = url.pathname.split('/');
     const id = pathParts[pathParts.length - 1];
@@ -33,46 +40,43 @@ export const GET = withAuth(async (
     });
 
     if (!strategy) {
-        return NextResponse.json({ error: 'Strategy not found' }, { status: 404 });
+        return notFound('Strategy');
     }
 
-    return NextResponse.json(strategy);
+    return ok(strategy);
 });
 
-// PATCH /api/strategies/[id] - Update a strategy
 export const PATCH = withAuth(async (
     req: NextRequest,
     _ctx: Record<string, unknown>,
     session: Session & { user: { id: string } }
 ) => {
-    // Extract id from URL
     const url = new URL(req.url);
     const pathParts = url.pathname.split('/');
     const id = pathParts[pathParts.length - 1];
 
-    const body = await req.json();
+    const validation = await validateBody(req, updateStrategySchema);
+    if (!validation.success) return validation.response;
+    const body = validation.data;
     const { name, description, checklistId } = body;
 
-    // Verify ownership
     const existing = await prisma.strategy.findFirst({
         where: { id, userId: session.user.id },
     });
 
     if (!existing) {
-        return NextResponse.json({ error: 'Strategy not found' }, { status: 404 });
+        return notFound('Strategy');
     }
 
-    // If checklistId is provided (non-null), verify it belongs to the user
     if (checklistId != null && checklistId !== '') {
         const checklist = await prisma.checklist.findFirst({
             where: { id: checklistId, userId: session.user.id },
         });
         if (!checklist) {
-            return NextResponse.json({ error: 'Checklist not found' }, { status: 404 });
+            return notFound('Checklist');
         }
     }
 
-    // Build update data — allow explicit null to clear checklistId
     const updateData: {
         name?: string;
         description?: string | null;
@@ -95,30 +99,26 @@ export const PATCH = withAuth(async (
         },
     });
 
-    return NextResponse.json(updated);
+    return ok(updated);
 });
 
-// DELETE /api/strategies/[id] - Delete a strategy
 export const DELETE = withAuth(async (
     req: NextRequest,
     _ctx: Record<string, unknown>,
     session: Session & { user: { id: string } }
 ) => {
-    // Extract id from URL
     const url = new URL(req.url);
     const pathParts = url.pathname.split('/');
     const id = pathParts[pathParts.length - 1];
 
-    // Verify ownership
     const existing = await prisma.strategy.findFirst({
         where: { id, userId: session.user.id },
     });
 
     if (!existing) {
-        return NextResponse.json({ error: 'Strategy not found' }, { status: 404 });
+        return notFound('Strategy');
     }
 
-    // Unlink trades from this strategy before deleting
     await prisma.trade.updateMany({
         where: { strategyId: id },
         data: { strategyId: null },
@@ -128,7 +128,7 @@ export const DELETE = withAuth(async (
         where: { id },
     });
 
-    return NextResponse.json({ success: true });
+    return ok({ success: true });
 });
 
 export const runtime = 'nodejs';

@@ -1,12 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { withAuth } from '@/lib/api/withAuth'
+import { calculateProfitFactor, serializeProfitFactor, calculateAvgRMultiple } from '@/lib/analytics'
 import prisma from '@/lib/prisma'
 import type { Session } from 'next-auth'
+import { ok, notFound } from '@/lib/api/responses'
 
 interface AnalyticsResponse {
   winRate: number
   avgR: number
-  profitFactor: number
+  profitFactor: number | null
   maxDrawdown: number
   bestTrade: { pnl: number; r: number | null; date: string } | null
   worstTrade: { pnl: number; r: number | null; date: string } | null
@@ -66,7 +68,7 @@ export const GET = withAuth(async (
   })
 
   if (!strategy) {
-    return NextResponse.json({ error: 'Strategy not found' }, { status: 404 })
+    return notFound('Strategy')
   }
 
   const trades = await prisma.trade.findMany({
@@ -86,19 +88,18 @@ export const GET = withAuth(async (
   })
 
   if (trades.length === 0) {
-    return NextResponse.json(getEmptyResponse())
+    return ok(getEmptyResponse())
   }
 
-  const wins = trades.filter(t => (t.pnl ?? 0) >= 0)
+  const wins = trades.filter(t => (t.pnl ?? 0) > 0)
   const losses = trades.filter(t => (t.pnl ?? 0) < 0)
   const winRate = (wins.length / trades.length) * 100
 
-  const rValues = trades.map(t => t.rMultiple).filter((r): r is number => r !== null)
-  const avgR = rValues.length > 0 ? rValues.reduce((a, b) => a + b, 0) / rValues.length : 0
+  const avgR = calculateAvgRMultiple(trades.map(t => ({ pnl: t.pnl ?? 0, rMultiple: t.rMultiple })))
 
   const totalWins = wins.reduce((sum, t) => sum + (t.pnl ?? 0), 0)
   const totalLosses = Math.abs(losses.reduce((sum, t) => sum + (t.pnl ?? 0), 0))
-  const profitFactor = totalLosses > 0 ? totalWins / totalLosses : totalWins > 0 ? 999 : 0
+  const profitFactor = calculateProfitFactor(totalWins, totalLosses)
 
   const totalPnl = trades.reduce((sum, t) => sum + (t.pnl ?? 0), 0)
   const expectancy = trades.length > 0 ? totalPnl / trades.length : 0
@@ -191,13 +192,13 @@ export const GET = withAuth(async (
     long: {
       winRate: longTrades.length > 0 ? (longTrades.filter(t => (t.pnl ?? 0) >= 0).length / longTrades.length) * 100 : 0,
       pnl: longTrades.reduce((sum, t) => sum + (t.pnl ?? 0), 0),
-      avgR: longTrades.length > 0 ? longTrades.reduce((sum, t) => sum + (t.rMultiple ?? 0), 0) / longTrades.length : 0,
+      avgR: calculateAvgRMultiple(longTrades.map(t => ({ pnl: t.pnl ?? 0, rMultiple: t.rMultiple }))),
       count: longTrades.length,
     },
     short: {
       winRate: shortTrades.length > 0 ? (shortTrades.filter(t => (t.pnl ?? 0) >= 0).length / shortTrades.length) * 100 : 0,
       pnl: shortTrades.reduce((sum, t) => sum + (t.pnl ?? 0), 0),
-      avgR: shortTrades.length > 0 ? shortTrades.reduce((sum, t) => sum + (t.rMultiple ?? 0), 0) / shortTrades.length : 0,
+      avgR: calculateAvgRMultiple(shortTrades.map(t => ({ pnl: t.pnl ?? 0, rMultiple: t.rMultiple }))),
       count: shortTrades.length,
     },
   }
@@ -246,7 +247,7 @@ export const GET = withAuth(async (
   const response: AnalyticsResponse = {
     winRate,
     avgR,
-    profitFactor,
+    profitFactor: serializeProfitFactor(profitFactor),
     maxDrawdown,
     bestTrade,
     worstTrade,
@@ -262,7 +263,7 @@ export const GET = withAuth(async (
     byDayOfWeek,
   }
 
-  return NextResponse.json(response)
+  return ok(response)
 })
 
 export const runtime = 'nodejs'

@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/lib/api/withAuth';
 import { badRequest, ok } from '@/lib/api/responses';
+import { calculateProfitFactor, serializeProfitFactor } from '@/lib/analytics';
 
 interface ComparisonMetrics {
     profitFactor: number | null;
@@ -64,7 +65,7 @@ function calculateMetrics(trades: Array<{ pnl: number | null; rMultiple: number 
     const totalWins = wins.reduce((sum, p) => sum + p, 0);
     const totalLosses = Math.abs(losses.reduce((sum, p) => sum + p, 0));
     
-    const profitFactor = totalLosses > 0 ? totalWins / totalLosses : totalWins > 0 ? Infinity : 0;
+    const profitFactor = calculateProfitFactor(totalWins, totalLosses);
     const winRate = trades.length > 0 ? (wins.length / trades.length) * 100 : 0;
     const avgRR = rMultiples.length > 0 ? rMultiples.reduce((sum, r) => sum + r, 0) / rMultiples.length : 0;
     const expectancy = trades.length > 0 ? totalPnl / trades.length : 0;
@@ -73,7 +74,7 @@ function calculateMetrics(trades: Array<{ pnl: number | null; rMultiple: number 
     const avgTrade = pnls.length > 0 ? totalPnl / pnls.length : 0;
 
     return {
-        profitFactor: isFinite(profitFactor) ? profitFactor : null,
+        profitFactor: serializeProfitFactor(profitFactor),
         winRate,
         totalPnl,
         totalTrades: trades.length,
