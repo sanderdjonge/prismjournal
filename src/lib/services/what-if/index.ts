@@ -17,6 +17,7 @@ export * from './correlation-matrix';
 
 // Re-export common types at top level
 import { TradeData, WhatIfFilters, TimeFilters, RiskFilters, PsychologyFilters, MarketFilters } from './types';
+import { calculateProfitFactor } from '@/lib/analytics';
 
 // ESM imports for filter functions (Task 1: replace require() with imports)
 import {
@@ -225,7 +226,7 @@ export class WhatIfSimulator {
       totalPnL,
       winRate: wins.length / closedTrades.length,
       avgR: totalR / closedTrades.length,
-      profitFactor: totalLosses > 0 ? totalWins / totalLosses : totalWins > 0 ? Infinity : 0,
+      profitFactor: calculateProfitFactor(totalWins, totalLosses),
     };
   }
 }

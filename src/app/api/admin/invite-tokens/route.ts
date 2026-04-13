@@ -4,6 +4,7 @@ import { randomBytes } from 'crypto';
 import { withAdmin } from '@/lib/api/withAdmin';
 import { ok, badRequest, internalError } from '@/lib/api/responses';
 import type { AdminSession } from '@/lib/api/withAdmin';
+import logger from '@/lib/logger';
 import { z } from 'zod';
 
 const generateTokensSchema = z.object({
@@ -49,7 +50,7 @@ export const POST = withAdmin(async (req: NextRequest, _ctx: Record<string, unkn
 
     return ok({ tokens, count: tokens.length });
   } catch (error) {
-    console.error('Error generating invite tokens:', error);
+    logger.error({ err: error }, 'Error generating invite tokens');
     return internalError();
   }
 });
@@ -82,7 +83,7 @@ export const GET = withAdmin(async (req: NextRequest, _ctx: Record<string, unkno
       totalPages: Math.ceil(total / limit),
     });
   } catch (error) {
-    console.error('Error fetching invite tokens:', error);
+    logger.error({ err: error }, 'Error fetching invite tokens');
     return internalError();
   }
 });
@@ -105,7 +106,7 @@ export const DELETE = withAdmin(async (req: NextRequest, _ctx: Record<string, un
       if (error && typeof error === 'object' && 'code' in error && (error as { code: string }).code === 'P2025') {
         return badRequest('Token not found');
       }
-      console.error('Error deleting invite token:', error);
+      logger.error({ err: error }, 'Error deleting invite token');
       return internalError();
     }
 
@@ -115,7 +116,7 @@ export const DELETE = withAdmin(async (req: NextRequest, _ctx: Record<string, un
 
     return ok({ deleted: true });
   } catch (error) {
-    console.error('Error deleting invite token:', error);
+    logger.error({ err: error }, 'Error deleting invite token');
     return internalError();
   }
 });

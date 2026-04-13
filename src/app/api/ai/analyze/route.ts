@@ -1,21 +1,21 @@
 import { NextRequest } from 'next/server';
 import { getAIClient, NEBUL_MODEL } from '@/lib/ai';
 import { withAuth } from '@/lib/api/withAuth';
-import { badRequest, internalError, ok } from '@/lib/api/responses';
+import { internalError, ok } from '@/lib/api/responses';
+import { validateBody } from '@/lib/validations/common';
+import { z } from 'zod';
+
+const analyzeSchema = z.object({
+    prompt: z.string().optional(),
+    trade: z.record(z.unknown()).optional(),
+}).refine(data => data.prompt || data.trade, {
+    message: 'Provide a prompt or trade object',
+});
 
 export const POST = withAuth(async (request: NextRequest) => {
-    let body: { prompt?: string; trade?: Record<string, unknown> };
-    try {
-        body = await request.json();
-    } catch {
-        return badRequest('Invalid JSON');
-    }
-
-    const { prompt, trade } = body;
-
-    if (!prompt && !trade) {
-        return badRequest('Provide a prompt or trade object');
-    }
+    const validation = await validateBody(request, analyzeSchema);
+    if (!validation.success) return validation.response;
+    const { prompt, trade } = validation.data;
 
     const userMessage = prompt ?? `Analyze this trade and provide actionable feedback:\n${JSON.stringify(trade, null, 2)}`;
 

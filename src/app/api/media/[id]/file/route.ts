@@ -2,11 +2,12 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { readFile } from '@/lib/storage';
 import { withAuth } from '@/lib/api/withAuth';
+import { notFound, forbidden } from '@/lib/api/responses';
+import logger from '@/lib/logger';
 
 export const GET = withAuth(async (_req, ctx, session) => {
     const { id } = await (ctx as { params: Promise<{ id: string }> }).params;
 
-    // Get media record
     const media = await prisma.media.findUnique({
         where: { id },
         include: {
@@ -19,19 +20,16 @@ export const GET = withAuth(async (_req, ctx, session) => {
     });
 
     if (!media) {
-        return NextResponse.json({ error: 'Media not found' }, { status: 404 });
+        return notFound('Media');
     }
 
-    // Verify user owns the trade
     if (media.trade.account.userId !== session.user.id) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        return forbidden();
     }
 
     try {
-        // Read file from storage
         const fileBuffer = await readFile(media.filename);
 
-        // Return file with proper content type
         return new NextResponse(new Uint8Array(fileBuffer), {
             headers: {
                 'Content-Type': media.mimetype,
@@ -40,8 +38,8 @@ export const GET = withAuth(async (_req, ctx, session) => {
             },
         });
     } catch (error) {
-        console.error('Error reading file:', error);
-        return NextResponse.json({ error: 'File not found' }, { status: 404 });
+        logger.error({ err: error }, 'Error reading file');
+        return notFound('File');
     }
 });
 

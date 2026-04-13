@@ -1,123 +1,88 @@
-'use client';
+'use client'
 
-import { useState, useEffect, useRef } from 'react';
-import { Bell, X, Check, Trash2 } from 'lucide-react';
-import { cn } from '@/lib/cn';
+import { useState, useEffect, useRef } from 'react'
+import { Bell, X, Check, Trash2 } from 'lucide-react'
+import { cn } from '@/lib/cn'
+import { useNotifications, useMarkNotificationsRead, useDeleteNotification } from '@/hooks/useNotifications'
 
 interface Notification {
-  id: string;
-  type: string;
-  title: string;
-  message: string;
-  isRead: boolean;
-  createdAt: string;
+  id: string
+  type: string
+  title: string
+  message: string
+  isRead: boolean
+  createdAt: string
 }
 
 interface NotificationCenterProps {
-  className?: string;
+  className?: string
 }
 
 export default function NotificationCenter({ className }: NotificationCenterProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const panelRef = useRef<HTMLDivElement>(null);
+  const [isOpen, setIsOpen] = useState(false)
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [loading, setLoading] = useState(false)
+  const panelRef = useRef<HTMLDivElement>(null)
 
-  const fetchNotifications = async () => {
-    try {
-      const res = await fetch('/api/notifications');
-      const data = await res.json();
-      setNotifications(data.notifications || []);
-      setUnreadCount(data.unreadCount || 0);
-    } catch {
-      // silently ignore fetch errors
+  const { data: notifsData } = useNotifications()
+  const markRead = useMarkNotificationsRead()
+  const deleteNotif = useDeleteNotification()
+
+  useEffect(() => {
+    if (notifsData) {
+      setNotifications(
+        (notifsData.notifications || []).map(n => ({
+          ...n,
+          isRead: n.read,
+        }))
+      )
+      const unread = (notifsData.notifications || []).filter((n: any) => !n.read).length
+      setUnreadCount(unread)
     }
-  };
+  }, [notifsData])
 
   useEffect(() => {
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 60000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) return
     const handleClickOutside = (event: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
+        setIsOpen(false)
       }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
-
-  const handleMarkAllRead = async () => {
-    setLoading(true);
-    try {
-      await fetch('/api/notifications', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ markAll: true }),
-      });
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-      setUnreadCount(0);
-    } catch {
-      // silently ignore
-    } finally {
-      setLoading(false);
     }
-  };
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isOpen])
 
-  const handleMarkRead = async (id: string) => {
-    try {
-      await fetch('/api/notifications', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: [id] }),
-      });
-      setNotifications(prev =>
-        prev.map(n => (n.id === id ? { ...n, isRead: true } : n))
-      );
-      setUnreadCount(prev => Math.max(0, prev - 1));
-    } catch {
-      // silently ignore
-    }
-  };
+  const handleMarkAllRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })))
+    setUnreadCount(0)
+    markRead.mutate(undefined)
+  }
 
-  const handleDelete = async (id: string) => {
-    try {
-      await fetch('/api/notifications', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: [id] }),
-      });
-      setNotifications(prev => prev.filter(n => n.id !== id));
-      const notification = notifications.find(n => n.id === id);
-      if (notification && !notification.isRead) {
-        setUnreadCount(prev => Math.max(0, prev - 1));
-      }
-    } catch {
-      // silently ignore
-    }
-  };
+  const handleMarkRead = (id: string) => {
+    setNotifications(prev =>
+      prev.map(n => (n.id === id ? { ...n, isRead: true } : n))
+    )
+    setUnreadCount(prev => Math.max(0, prev - 1))
+    markRead.mutate([id])
+  }
 
-  const handleClearAll = async () => {
-    setLoading(true);
-    try {
-      await fetch('/api/notifications', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clearAll: true }),
-      });
-      setNotifications([]);
-      setUnreadCount(0);
-    } catch {
-      // silently ignore
-    } finally {
-      setLoading(false);
+  const handleDelete = (id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id))
+    const notification = notifications.find(n => n.id === id)
+    if (notification && !notification.isRead) {
+      setUnreadCount(prev => Math.max(0, prev - 1))
     }
-  };
+    deleteNotif.mutate(id)
+  }
+
+  const handleClearAll = () => {
+    setLoading(true)
+    setNotifications([])
+    setUnreadCount(0)
+    deleteNotif.mutate(undefined)
+    setLoading(false)
+  }
 
   const formatTime = (dateString: string) => {
     const diff = Date.now() - new Date(dateString).getTime();

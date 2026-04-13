@@ -1,10 +1,11 @@
-import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { validateBody, registerSchema } from '@/lib/validations';
 import { generateBridgeKey } from '@/lib/getAccount';
 import { logAuditEvent } from '@/lib/audit';
 import { checkLimit, Limiters } from '@/lib/rate-limit-redis';
+import { ok, badRequest, internalError } from '@/lib/api/responses';
+import logger from '@/lib/logger';
 
 export async function POST(request: Request) {
     const rateLimitResponse = await checkLimit(request, Limiters.register);
@@ -18,7 +19,6 @@ export async function POST(request: Request) {
 
         const body = validation.data;
 
-        // Check if invite-only mode is enabled
         const systemSettings = await prisma.systemSettings.findUnique({
             where: { id: 'system' },
         });
@@ -33,10 +33,6 @@ export async function POST(request: Request) {
                     throw Object.assign(new Error('Invite token required'), { status: 400 });
                 }
 
-                // Use atomic conditional update to prevent double-spend race condition.
-                // updateMany returns { count } — if another tx already consumed the token,
-                // count will be 0 and we reject.
-                // Handle NULL expiresAt (non-expiring tokens) via OR clause.
                 const { count: consumed } = await tx.inviteToken.updateMany({
                     where: {
                         token: body.invite,
@@ -50,8 +46,6 @@ export async function POST(request: Request) {
                 });
 
                 if (consumed === 0) {
-                    // Token validation failed — return generic message to prevent state enumeration.
-                    // Log the specific reason server-side for debugging.
                     const inviteToken = await tx.inviteToken.findUnique({
                         where: { token: body.invite },
                     });
@@ -67,16 +61,15 @@ export async function POST(request: Request) {
                         reason = 'email_mismatch'
                     }
 
-                    console.warn(`[register] Invite token validation failed: ${reason}`)
+                    logger.warn({ reason }, '[register] Invite token validation failed')
                     throw Object.assign(new Error('Invalid or expired invite token'), { status: 400 });
                 }
 
-                // Check email match BEFORE creating user (avoid wasting the token on wrong email)
                 const inviteRecord = await tx.inviteToken.findUnique({
                     where: { token: body.invite },
                 });
                 if (inviteRecord?.email && inviteRecord.email !== body.email) {
-                    console.warn('[register] Invite token email mismatch')
+                    logger.warn('[register] Invite token email mismatch')
                     throw Object.assign(new Error('Invalid or expired invite token'), { status: 400 });
                 }
             }
@@ -96,8 +89,6 @@ export async function POST(request: Request) {
                 },
             });
 
-            // Create default trading account INSIDE the transaction to guarantee atomicity.
-            // If this fails the entire registration rolls back — no orphaned users.
             await tx.tradingAccount.create({
                 data: {
                     userId: newUser.id,
@@ -111,7 +102,6 @@ export async function POST(request: Request) {
                 },
             });
 
-            // Update invite token with user ID inside the transaction
             if (systemSettings?.inviteOnlyMode && body.invite) {
                 await tx.inviteToken.update({
                     where: { token: body.invite },
@@ -122,22 +112,22 @@ export async function POST(request: Request) {
             return newUser;
         });
 
-        return NextResponse.json({ 
+        return ok({ 
             id: user.id, 
             email: user.email, 
             name: user.name,
-            bridgeKey: key, // Return the bridge key once during registration
+            bridgeKey: key,
         });
     } catch (error: unknown) {
         const err = error as { status?: number; message?: string };
         const status = err?.status ?? 500;
         const message = err?.message ?? 'Registration failed. Please try again.';
         if (status >= 400 && status < 500) {
-            return NextResponse.json({ error: message }, { status });
+            return badRequest(message);
         }
-        console.error('[register]', error);
-        logAuditEvent('REGISTRATION_FAILED', null, { reason: 'internal_error' }).catch(console.error);
-        return NextResponse.json({ error: 'Registration failed. Please try again.' }, { status: 500 });
+        logger.error({ err: error }, '[register]');
+        logAuditEvent('REGISTRATION_FAILED', null, { reason: 'internal_error' }).catch(() => logger.error('Audit log for registration failed'));
+        return internalError();
     }
 }
 

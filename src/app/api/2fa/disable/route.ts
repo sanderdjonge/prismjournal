@@ -1,22 +1,27 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { badRequest, notFound, ok } from '@/lib/api/responses';
 import { usedTotpCodes, cleanupUsedCodes } from '@/lib/auth';
 import { withAuth } from '@/lib/api/withAuth';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { verifySync } from 'otplib';
 import { authLimiter } from '@/lib/rate-limit';
+import { validateBody } from '@/lib/validations/common';
+import { z } from 'zod';
+
+const disable2faSchema = z.object({
+    password: z.string().min(1),
+    code: z.string().length(6),
+});
 
 export const POST = withAuth(async (request: NextRequest, _ctx, session) => {
     const rateLimitResult = await authLimiter.check(request, 5);
     if (rateLimitResult) return rateLimitResult;
 
-    const { password, code } = await request.json();
+    const validation = await validateBody(request, disable2faSchema);
+    if (!validation.success) return validation.response;
+    const { password, code } = validation.data;
 
-    if (!password || !code) {
-        return NextResponse.json({ error: 'Password and code are required' }, { status: 400 });
-    }
-
-    // Get user with password and TOTP settings
     const user = await prisma.user.findUnique({
         where: { id: session.user.id },
         select: {
@@ -27,41 +32,35 @@ export const POST = withAuth(async (request: NextRequest, _ctx, session) => {
     });
 
     if (!user || !user.password) {
-        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        return notFound('User');
     }
 
     if (!user.totpEnabled) {
-        return NextResponse.json({ error: '2FA is not enabled' }, { status: 400 });
+        return badRequest('2FA is not enabled');
     }
 
-    // Verify password
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
-        return NextResponse.json({ error: 'Invalid password' }, { status: 400 });
+        return badRequest('Invalid password');
     }
 
-    // Verify TOTP code
     if (!user.totpSecret) {
-        return NextResponse.json({ error: '2FA secret not found' }, { status: 400 });
+        return badRequest('2FA secret not found');
     }
 
-    // TOTP replay protection
     cleanupUsedCodes();
     const codeKey = `${session.user.id}:${code}`;
     if (usedTotpCodes.has(codeKey)) {
-        return NextResponse.json({ error: 'Invalid verification code' }, { status: 400 });
+        return badRequest('Invalid verification code');
     }
 
-    // Verify using otplib v13 API
     const result = verifySync({ secret: user.totpSecret, token: code });
     if (!result.valid) {
-        return NextResponse.json({ error: 'Invalid verification code' }, { status: 400 });
+        return badRequest('Invalid verification code');
     }
 
-    // Mark code as used for 90 seconds
     usedTotpCodes.set(codeKey, Date.now() + 90_000);
 
-    // Disable 2FA
     await prisma.user.update({
         where: { id: session.user.id },
         data: {
@@ -70,5 +69,5 @@ export const POST = withAuth(async (request: NextRequest, _ctx, session) => {
         }
     });
 
-    return NextResponse.json({ success: true, message: '2FA disabled successfully' });
+    return ok({ success: true, message: '2FA disabled successfully' });
 });

@@ -1,17 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { withAuth } from '@/lib/api/withAuth';
 import { withAdmin } from '@/lib/api/withAdmin';
 import prisma from '@/lib/prisma';
 import type { Session } from 'next-auth';
+import { validateBody } from '@/lib/validations/common';
 import { z } from 'zod';
+import { ok, created, badRequest } from '@/lib/api/responses';
 
-// Validation schema for creating/updating events
 const eventSchema = z.object({
     name: z.string().min(1),
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // YYYY-MM-DD
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     time: z.string().optional(),
     currency: z.string().min(1),
-    impact: z.enum(['LOW', 'MEDIUM', 'HIGH']).default('MEDIUM'),
+    impact: z.enum(['LOW', 'MEDIUM', 'HIGH']),
     forecast: z.string().optional(),
     actual: z.string().optional(),
     previous: z.string().optional(),
@@ -19,7 +20,6 @@ const eventSchema = z.object({
     externalId: z.string().optional(),
 });
 
-// GET /api/economic-events - List events with filters
 export const GET = withAuth(async (
     request: NextRequest,
     _ctx: Record<string, unknown>,
@@ -50,7 +50,7 @@ export const GET = withAuth(async (
         const validImpacts = ['LOW', 'MEDIUM', 'HIGH'];
         const upperImpact = impact.toUpperCase();
         if (!validImpacts.includes(upperImpact)) {
-            return NextResponse.json({ error: 'Invalid impact value' }, { status: 400 });
+            return badRequest('Invalid impact value');
         }
         where.impact = upperImpact;
     }
@@ -60,34 +60,24 @@ export const GET = withAuth(async (
         take: 100,
     });
 
-    return NextResponse.json({ events });
+    return ok({ events });
 });
 
-// POST /api/economic-events - Create event (admin only)
 export const POST = withAdmin(async (
     request: NextRequest,
     _ctx: Record<string, unknown>,
     session: Session & { user: { id: string; isSuperuser: boolean } }
 ) => {
-    const body = await request.json();
-    const validated = eventSchema.safeParse(body);
+    const validation = await validateBody(request, eventSchema);
+    if (!validation.success) return validation.response;
+    const data = validation.data;
 
-    if (!validated.success) {
-        return NextResponse.json(
-            { error: 'Validation failed', details: validated.error.flatten() },
-            { status: 400 }
-        );
-    }
-
-    const data = validated.data;
-
-    // Check for duplicate by externalId if provided
     if (data.externalId) {
         const existing = await prisma.economicEvent.findUnique({
             where: { externalId: data.externalId },
         });
         if (existing) {
-            return NextResponse.json(existing, { status: 200 }); // Already exists, return it
+            return ok(existing);
         }
     }
 
@@ -106,5 +96,5 @@ export const POST = withAdmin(async (
         },
     });
 
-    return NextResponse.json(event, { status: 201 });
+    return created(event);
 });

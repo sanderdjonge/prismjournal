@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAllUserAccounts } from '@/lib/getAccount';
-import { calculateProfitFactor } from '@/lib/analytics';
+import { calculateProfitFactorFromTrades, calculateMaxDrawdownPercent } from '@/lib/analytics';
 import { formatDistanceToNow } from '@/lib/formatTime';
 import { withAuth } from '@/lib/api/withAuth';
 import { cacheGet, cacheSet } from '@/lib/api/cache';
+import { ok } from '@/lib/api/responses';
 import type { Session } from 'next-auth';
 
 const emptyResponse = {
@@ -39,7 +40,7 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
     const accountIds = allAccounts.map((a) => a.id);
 
     if (accountIds.length === 0) {
-        return NextResponse.json(emptyResponse);
+        return ok(emptyResponse);
     }
 
     const accountFilter = searchParams.get('account');
@@ -47,7 +48,7 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
 
     const cacheKey = `dashboard:${userId}:${period}:${accountFilter ?? 'all'}`;
     const cached = cacheGet(cacheKey);
-    if (cached) return NextResponse.json(cached);
+    if (cached) return ok(cached);
 
     const [trades, allClosedTrades, allTimeClosedTrades] = await Promise.all([
         prisma.trade.findMany({
@@ -77,8 +78,6 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
         }),
     ]);
 
-    // --- Equity curve ---
-    // Build from closed trades within period
     let equityData: { time: string; value: number }[] = [];
 
     if (allClosedTrades.length > 0) {
@@ -98,7 +97,6 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
         }
     }
 
-    // --- All-time equity curve ---
     let allTimeEquityData: { time: string; value: number }[] = [];
 
     if (allTimeClosedTrades.length > 0) {
@@ -118,40 +116,26 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
         }
     }
 
-    // --- Win rate & profit factor ---
     const closedTrades = trades.filter(t => t.exitTime && t.pnl !== null);
     const wins = closedTrades.filter(t => (t.pnl ?? 0) > 0);
     const losses = closedTrades.filter(t => (t.pnl ?? 0) < 0);
 
-    // --- Total P&L (net: gross profit + commission + swap) ---
     const totalPnl = closedTrades.reduce((sum, t) => sum + (t.pnl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0), 0);
 
     const winRate = closedTrades.length > 0 ? Math.round((wins.length / closedTrades.length) * 100) : 0;
-    const profitFactor = calculateProfitFactor(closedTrades.map(t => ({ pnl: t.pnl ?? 0 })));
+    const profitFactor = calculateProfitFactorFromTrades(closedTrades.map(t => ({ pnl: t.pnl ?? 0 })));
 
-    // --- Expectancy (average $ per trade) ---
     const expectancy = closedTrades.length > 0 ? totalPnl / closedTrades.length : 0;
 
-    // --- Max Drawdown ---
-    let maxDrawdown = 0;
-    let peak = 0;
-    let runningPnl = 0;
     const sortedByExit = [...closedTrades].sort((a, b) =>
         (a.exitTime?.getTime() ?? 0) - (b.exitTime?.getTime() ?? 0)
     );
-    for (const t of sortedByExit) {
-        runningPnl += t.pnl ?? 0;
-        if (runningPnl > peak) peak = runningPnl;
-        const drawdown = peak - runningPnl;
-        if (drawdown > maxDrawdown) maxDrawdown = drawdown;
-    }
+    const maxDrawdown = calculateMaxDrawdownPercent(sortedByExit.map(t => t.pnl ?? 0));
 
-    // --- Best & Worst Trade ---
     const pnls = closedTrades.map(t => t.pnl ?? 0);
     const bestTrade = pnls.length > 0 ? Math.max(...pnls) : 0;
     const worstTrade = pnls.length > 0 ? Math.abs(Math.min(...pnls)) : 0;
 
-    // --- Average Duration ---
     let avgDurationMinutes = 0;
     const tradesWithDuration = closedTrades.filter(t => t.entryTime && t.exitTime);
     if (tradesWithDuration.length > 0) {
@@ -162,16 +146,12 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
         avgDurationMinutes = totalMinutes / tradesWithDuration.length;
     }
 
-    // --- Average R-Multiple ---
-    // Use stored rMultiple field (calculated at sync time using initialStopLoss)
-    // rather than recalculating incorrectly from current stopLoss
     const tradesWithRR = closedTrades.filter(t => t.rMultiple != null);
     let avgRMultiple = 0;
     if (tradesWithRR.length > 0) {
         avgRMultiple = tradesWithRR.reduce((sum, t) => sum + (t.rMultiple ?? 0), 0) / tradesWithRR.length;
     }
 
-    // --- Consecutive Wins/Losses ---
     let consecutiveWins = 0;
     let consecutiveLosses = 0;
     let currentWinStreak = 0;
@@ -194,7 +174,6 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
     consecutiveWins = maxWinStreak;
     consecutiveLosses = maxLossStreak;
 
-    // --- Recent trades (last 5, formatted for RecentTrades component) ---
     const recent = await prisma.trade.findMany({
         where: { accountId: { in: filteredIds } },
         orderBy: { entryTime: 'desc' },
@@ -211,7 +190,6 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
         isActive: !t.exitTime,
     }));
 
-    // --- Calendar data (trades by EXIT date, aggregated in PostgreSQL) ---
     const calendarRaw = await prisma.$queryRaw<{ date: string; pnl: number; count: number; wins: number; losses: number; avg_rr: number | null }[]>`
       SELECT
         TO_CHAR("exitTime" AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS date,
@@ -241,8 +219,6 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
         avgRR: data.avgRR,
     }));
 
-    // Get account balance for % Profit calculation
-    // Use currentBalance if available, otherwise fall back to balance, then accountSize
     const accountBalance = allAccounts.length > 0
         ? allAccounts.reduce((sum, acc) => sum + (acc.currentBalance ?? acc.balance ?? acc.accountSize ?? 0), 0)
         : 0;
@@ -268,7 +244,7 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
     };
 
     cacheSet(cacheKey, responseData, 60_000);
-    return NextResponse.json(responseData);
+    return ok(responseData);
 });
 
 export const runtime = 'nodejs';

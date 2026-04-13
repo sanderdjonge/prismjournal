@@ -1,10 +1,11 @@
-import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { validateBody, tradeUpdateSchema } from '@/lib/validations';
 import { deleteFile } from '@/lib/storage';
 import { getAllUserAccounts } from '@/lib/getAccount';
 import { withAuth } from '@/lib/api/withAuth';
 import { evaluateAndRecordCompliance, TradeContext } from '@/lib/services/strategy-compliance.service';
+import { ok, notFound } from '@/lib/api/responses';
+import logger from '@/lib/logger';
 
 export const GET = withAuth(async (_req, ctx, session) => {
     const { id } = await (ctx as { params: Promise<{ id: string }> }).params;
@@ -18,7 +19,7 @@ export const GET = withAuth(async (_req, ctx, session) => {
         },
     });
     if (!trade) {
-        return NextResponse.json({ error: 'Trade not found' }, { status: 404 });
+        return notFound('Trade');
     }
 
     const media = await prisma.media.findMany({
@@ -29,7 +30,7 @@ export const GET = withAuth(async (_req, ctx, session) => {
         select: { id: true, filename: true, timeframe: true, event: true },
     });
 
-    return NextResponse.json({
+    return ok({
         id: trade.id,
         symbol: trade.symbol,
         direction: trade.direction,
@@ -74,22 +75,18 @@ export const PATCH = withAuth(async (req, ctx, session) => {
 
     const body = validation.data;
 
-    // Verify ownership
     const existingTrade = await prisma.trade.findFirst({
         where: { id, account: { userId: session.user.id } },
         include: { account: true },
     });
     if (!existingTrade) {
-        return NextResponse.json({ error: 'Trade not found' }, { status: 404 });
+        return notFound('Trade');
     }
 
-    // Handle strategy - use existing strategyId or find by name
     let strategyId: string | null | undefined = undefined;
     if (body.strategyId !== undefined) {
-        // If strategyId is explicitly provided, use it directly
         strategyId = body.strategyId || null;
     } else if (body.strategy !== undefined) {
-        // Legacy: strategy field contains name - find existing strategy by name
         if (body.strategy) {
             const existingStrategy = await prisma.strategy.findFirst({
                 where: {
@@ -131,7 +128,6 @@ export const PATCH = withAuth(async (req, ctx, session) => {
     if (body.exitRating !== undefined) updateData.exitRating = body.exitRating;
     if (body.managementRating !== undefined) updateData.managementRating = body.managementRating;
 
-    // Account reassignment
     if (body.accountId && body.accountId !== existingTrade.accountId) {
         const userAccounts = await getAllUserAccounts(existingTrade.account.userId);
         const targetAccount = userAccounts.find(a => a.id === body.accountId);
@@ -144,9 +140,6 @@ export const PATCH = withAuth(async (req, ctx, session) => {
         include: { strategy: true },
     });
 
-    // Re-evaluate compliance only when strategyId is explicitly changed on a closed trade.
-    // Always clear existing violations for this trade first (clean slate), then evaluate
-    // with the new strategy. If strategy is removed (null), violations are simply cleared.
     const strategyChanged = strategyId !== undefined;
     const isClosedTrade = trade.status === 'CLOSED' && trade.exitTime;
 
@@ -175,23 +168,22 @@ export const PATCH = withAuth(async (req, ctx, session) => {
                 await evaluateAndRecordCompliance(tradeContext, strategyId);
             }
         } catch (err) {
-            console.error('[trades] Failed to evaluate compliance:', err);
+            logger.error({ err }, '[trades] Failed to evaluate compliance');
         }
     }
 
-    return NextResponse.json({ success: true, id: trade.id });
+    return ok({ success: true, id: trade.id });
 });
 
 export const DELETE = withAuth(async (_req, ctx, session) => {
     const { id } = await (ctx as { params: Promise<{ id: string }> }).params;
 
-    // Verify ownership before deleting
     const trade = await prisma.trade.findFirst({
         where: { id, account: { userId: session.user.id } },
         select: { id: true },
     });
     if (!trade) {
-        return NextResponse.json({ error: 'Trade not found' }, { status: 404 });
+        return notFound('Trade');
     }
 
     const mediaFiles = await prisma.media.findMany({
@@ -206,7 +198,7 @@ export const DELETE = withAuth(async (_req, ctx, session) => {
     await prisma.media.deleteMany({ where: { tradeId: id } });
     await prisma.trade.delete({ where: { id } });
 
-    return NextResponse.json({ success: true });
+    return ok({ success: true });
 });
 
 export const runtime = 'nodejs';

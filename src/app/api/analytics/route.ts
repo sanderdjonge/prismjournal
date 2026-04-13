@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAllUserAccounts } from '@/lib/getAccount';
-import { calculateProfitFactor } from '@/lib/analytics';
+import { calculateProfitFactorFromTrades, calculateWinRatePercent } from '@/lib/analytics';
 import { withAuth } from '@/lib/api/withAuth';
 import { cacheGet, cacheSet } from '@/lib/api/cache';
 import { normaliseBrokerSymbol } from '@/lib/symbol-normaliser';
+import { ok } from '@/lib/api/responses';
 import type { Session } from 'next-auth';
 
 export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, unknown>, session: Session & { user: { id: string } }) => {
@@ -18,7 +19,7 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
     const accountIds = allAccounts.map((a) => a.id);
 
     if (accountIds.length === 0) {
-        return NextResponse.json({
+        return ok({
             symbolData: [],
             expectancyData: [],
             sessionData: Array.from({ length: 24 }, (_, i) => ({ hour: i, count: 0 })),
@@ -34,9 +35,8 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
 
     const cacheKey = `analytics:${userId}:${from ?? ''}:${to ?? ''}:${accountFilter ?? 'all'}`;
     const cached = cacheGet(cacheKey);
-    if (cached) return NextResponse.json(cached);
+    if (cached) return ok(cached);
 
-    // Build date filter
     const dateFilter: { gte?: Date; lte?: Date } = {};
     if (from) dateFilter.gte = new Date(from);
     if (to) dateFilter.lte = new Date(to);
@@ -52,7 +52,7 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
     });
 
     if (trades.length === 0) {
-        return NextResponse.json({
+        return ok({
             symbolData: [],
             expectancyData: [],
             sessionData: Array.from({ length: 24 }, (_, i) => ({ hour: i, count: 0 })),
@@ -63,7 +63,6 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
         });
     }
 
-    // --- Symbol aggregation (normalised: strips .cash/.pro/etc suffixes, uppercase) ---
     const symbolMap = new Map<string, { profit: number; wins: number; total: number }>();
     for (const t of trades) {
         const pnl = t.pnl ?? 0;
@@ -78,10 +77,9 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
     const symbolData = Array.from(symbolMap.entries()).map(([symbol, d]) => ({
         symbol,
         profit: Math.round(d.profit),
-        winRate: Math.round((d.wins / d.total) * 100),
+        winRate: calculateWinRatePercent(d.wins, d.total),
     })).sort((a, b) => b.profit - a.profit);
 
-    // --- Edge evolution (rolling average PnL) ---
     const expectancyData: { trade: number; val: number }[] = [];
     let runningSum = 0;
     trades.forEach((t, i) => {
@@ -89,11 +87,9 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
         const avg = runningSum / (i + 1);
         expectancyData.push({ trade: i + 1, val: Math.round(avg * 100) / 100 });
     });
-    // Downsample to max 20 points for chart performance
     const step = Math.max(1, Math.floor(expectancyData.length / 20));
     const sampledExpectancy = expectancyData.filter((_, i) => i % step === 0 || i === expectancyData.length - 1);
 
-    // --- Session distribution (by entry hour) - ALL trades, not just closed with PnL ---
     const allTradesForHours = await prisma.trade.findMany({
         where: {
             accountId: { in: filteredIds },
@@ -126,24 +122,21 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
         }
     }
 
-    // Calculate derived metrics and format for frontend
     const sessionData = hourBuckets.map(h => ({
         hour: h.hour,
         count: h.count,
         wins: h.wins,
         losses: h.losses,
         totalPnl: Math.round(h.totalPnl * 100) / 100,
-        winRate: h.count > 0 ? Math.round((h.wins / h.count) * 100) : 0,
+        winRate: h.count > 0 ? calculateWinRatePercent(h.wins, h.count) : 0,
         avgRR: h.rrCount > 0 ? Math.round((h.totalRR / h.rrCount) * 100) / 100 : 0,
     }));
 
-    // --- Key metrics ---
     const pnlValues = trades.map(t => ({ pnl: t.pnl ?? 0 }));
-    const profitFactor = calculateProfitFactor(pnlValues);
+    const profitFactor = calculateProfitFactorFromTrades(pnlValues);
     const netPnl = trades.reduce((s, t) => s + (t.pnl ?? 0), 0);
     const expectancy = trades.length > 0 ? Math.round((netPnl / trades.length) * 100) / 100 : 0;
 
-    // Mean realized R:R from closed trades with entry, exit, and SL
     const rrTrades = trades.filter(t => t.entryPrice && t.exitPrice && t.stopLoss && t.stopLoss !== 0);
     let avgRR = 0;
     if (rrTrades.length > 0) {
@@ -157,7 +150,6 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
         avgRR = Math.round((totalRR / rrTrades.length) * 100) / 100;
     }
 
-    // Mean drawdown — simplistic: average of negative P&L trades as % of sum
     const losers = trades.filter(t => (t.pnl ?? 0) < 0);
     const meanDrawdown = losers.length > 0
         ? Math.round(Math.abs(losers.reduce((s, t) => s + (t.pnl ?? 0), 0) / losers.length) * 100) / 100
@@ -174,7 +166,7 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
     };
 
     cacheSet(cacheKey, responseData, 5 * 60_000);
-    return NextResponse.json(responseData);
+    return ok(responseData);
 });
 
 export const runtime = 'nodejs';

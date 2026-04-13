@@ -4,6 +4,7 @@ import logger from '@/lib/logger';
 import { saveFile, generateFilename, readFile } from '@/lib/storage';
 import { generateWidgetHtml } from '@/lib/templates/widget-template';
 import { computePrismScore } from '@/lib/services/prism-score.service';
+import { calculateProfitFactor, serializeProfitFactor } from '@/lib/analytics';
 
 export interface WidgetStats {
     winRate: number;
@@ -63,7 +64,7 @@ async function getUserStats(userId: string): Promise<WidgetStats> {
     const grossProfit = wins.reduce((sum, t) => sum + (t.pnl ?? 0), 0);
     const grossLoss = Math.abs(losses.reduce((sum, t) => sum + (t.pnl ?? 0), 0));
 
-    const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? Infinity : 0;
+    const profitFactor = calculateProfitFactor(grossProfit, grossLoss);
     const winRate = closedTrades.length > 0 ? (wins.length / closedTrades.length) * 100 : 0;
 
     // Calculate Prism Score
@@ -88,7 +89,7 @@ async function getUserStats(userId: string): Promise<WidgetStats> {
 
     return {
         winRate,
-        profitFactor: profitFactor === Infinity ? 999 : profitFactor,
+        profitFactor: serializeProfitFactor(profitFactor) ?? 0,
         totalTrades: closedTrades.length,
         prismScore,
         equityCurve: equityCurve.slice(-30), // Last 30 trades

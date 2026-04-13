@@ -1,9 +1,4 @@
-/**
- * Missed Trades API - Phase 24
- * Handles CRUD operations for hypothetical/missed trades
- */
-
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { TradeDirection } from '@prisma/client';
 import { withAuth } from '@/lib/api/withAuth';
 import type { Session } from 'next-auth';
@@ -13,10 +8,27 @@ import {
   getMissedTradeStats,
   CreateMissedTradeInput,
 } from '@/lib/services/missed-trade.service';
+import { validateBody } from '@/lib/validations/common';
+import { z } from 'zod';
+import { ok, created, badRequest, internalError } from '@/lib/api/responses';
+import logger from '@/lib/logger';
 
 type AuthedSession = Session & { user: { id: string } };
 
-// GET /api/trades/missed - List missed trades with stats
+const createMissedTradeSchema = z.object({
+  accountId: z.string().min(1),
+  symbol: z.string().min(1),
+  direction: z.nativeEnum(TradeDirection),
+  entryPrice: z.coerce.number(),
+  stopLoss: z.coerce.number(),
+  takeProfit: z.coerce.number(),
+  exitPrice: z.coerce.number().optional(),
+  entryTime: z.string().min(1),
+  exitTime: z.string().optional(),
+  notes: z.string().optional(),
+  reasonNotTaken: z.string().optional(),
+});
+
 export const GET = withAuth(async (
   request: NextRequest,
   _ctx: Record<string, unknown>,
@@ -39,17 +51,13 @@ export const GET = withAuth(async (
       response.stats = await getMissedTradeStats(userId, accountId);
     }
 
-    return NextResponse.json(response);
+    return ok(response);
   } catch (error) {
-    console.error('Error fetching missed trades:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch missed trades' },
-      { status: 500 }
-    );
+    logger.error({ err: error }, 'Error fetching missed trades');
+    return internalError();
   }
 });
 
-// POST /api/trades/missed - Create a missed trade
 export const POST = withAuth(async (
   request: NextRequest,
   _ctx: Record<string, unknown>,
@@ -58,9 +66,9 @@ export const POST = withAuth(async (
   const userId = session.user.id;
   
   try {
-    const body = await request.json();
+    const validation = await validateBody(request, createMissedTradeSchema);
+    if (!validation.success) return validation.response;
 
-    // Validate required fields
     const {
       accountId,
       symbol,
@@ -73,31 +81,16 @@ export const POST = withAuth(async (
       exitTime,
       notes,
       reasonNotTaken,
-    } = body;
-
-    if (!accountId || !symbol || !direction || !entryPrice || !stopLoss || !takeProfit || !entryTime) {
-      return NextResponse.json(
-        { error: 'Missing required fields: accountId, symbol, direction, entryPrice, stopLoss, takeProfit, entryTime' },
-        { status: 400 }
-      );
-    }
-
-    // Validate direction
-    if (!Object.values(TradeDirection).includes(direction)) {
-      return NextResponse.json(
-        { error: 'Invalid direction. Must be LONG or SHORT' },
-        { status: 400 }
-      );
-    }
+    } = validation.data;
 
     const input: CreateMissedTradeInput = {
       accountId,
       symbol: symbol.toUpperCase(),
       direction,
-      entryPrice: parseFloat(entryPrice),
-      stopLoss: parseFloat(stopLoss),
-      takeProfit: parseFloat(takeProfit),
-      exitPrice: exitPrice ? parseFloat(exitPrice) : undefined,
+      entryPrice,
+      stopLoss,
+      takeProfit,
+      exitPrice,
       entryTime: new Date(entryTime),
       exitTime: exitTime ? new Date(exitTime) : undefined,
       notes,
@@ -106,13 +99,9 @@ export const POST = withAuth(async (
 
     const missedTrade = await createMissedTrade(userId, input);
 
-    return NextResponse.json(missedTrade, { status: 201 });
+    return created(missedTrade);
   } catch (error) {
-    console.error('Error creating missed trade:', error);
-    const message = error instanceof Error ? error.message : 'Failed to create missed trade';
-    return NextResponse.json(
-      { error: message },
-      { status: 500 }
-    );
+    logger.error({ err: error }, 'Error creating missed trade');
+    return internalError();
   }
 });

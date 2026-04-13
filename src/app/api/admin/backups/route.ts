@@ -1,13 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { spawn } from 'child_process';
 import { withAdmin } from '@/lib/api/withAdmin';
+import { ok, badRequest, notFound, internalError } from '@/lib/api/responses';
+import logger from '@/lib/logger';
 import { existsSync, readdirSync, statSync, unlinkSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
-/**
- * Execute a command with spawn (safer than exec - no shell interpolation).
- * Returns a promise that resolves with { stdout, stderr } on completion.
- */
 function execCommand(
   command: string,
   args: string[],
@@ -39,40 +37,23 @@ function execCommand(
   });
 }
 
-/**
- * Validate a path for safe use in shell commands.
- * Prevents command injection by rejecting dangerous characters.
- */
 function isValidPathForShell(path: string): boolean {
-  // Reject paths containing shell metacharacters or path traversal
-  // Note: brackets must be escaped inside character class
   const dangerousPattern = /[;&|`$(){}\[\]<>\\!*?]/;
   if (dangerousPattern.test(path)) return false;
   if (path.includes('..')) return false;
-  // Only allow absolute paths or relative paths without traversal
   return path.startsWith('/') || path.startsWith('./');
 }
 
-/**
- * Validate a database identifier (hostname, username, database name).
- * Allows alphanumeric, underscore, hyphen, and dot characters.
- * Used for Docker hostnames like 'db' which don't look like file paths.
- */
 function isValidDbIdentifier(identifier: string): boolean {
-  // Database identifiers should be alphanumeric with limited special chars
-  // PostgreSQL allows: letters, digits, underscores, hyphens (in quoted identifiers)
-  // Hostnames can also contain dots
   return /^[a-zA-Z0-9_.-]+$/.test(identifier);
 }
 
-// Backup directory - validate on initialization
 const BACKUP_DIR_RAW = process.env.BACKUP_PATH || '/backups';
 const BACKUP_DIR = isValidPathForShell(BACKUP_DIR_RAW) ? BACKUP_DIR_RAW : '/backups';
 if (!isValidPathForShell(BACKUP_DIR_RAW)) {
   console.warn('[backups] Invalid BACKUP_PATH detected, using default /backups');
 }
 
-// Ensure backup subdirectories exist
 function ensureBackupDirectories(): void {
   const subdirs = ['hourly', 'daily', 'weekly'];
   for (const subdir of subdirs) {
@@ -82,16 +63,14 @@ function ensureBackupDirectories(): void {
         mkdirSync(dirPath, { recursive: true });
         console.log(`[backups] Created backup directory: ${dirPath}`);
       } catch (error) {
-        console.error(`[backups] Failed to create backup directory ${dirPath}:`, error);
+        logger.error({ err: error, dirPath }, '[backups] Failed to create backup directory');
       }
     }
   }
 }
 
-// Initialize backup directories on module load
 ensureBackupDirectories();
 
-// Get backup files from a directory
 function getBackupFiles(subdir: string): Array<{ name: string; size: number; createdAt: Date }> {
   const dirPath = join(BACKUP_DIR, subdir);
   if (!existsSync(dirPath)) return [];
@@ -114,13 +93,11 @@ function getBackupFiles(subdir: string): Array<{ name: string; size: number; cre
   }
 }
 
-// Get backup configuration
 async function getBackupConfig(): Promise<{
   keepHourly: number;
   keepDaily: number;
   keepWeekly: number;
 }> {
-  // Default values - these could be stored in database or config file
   return {
     keepHourly: parseInt(process.env.BACKUP_KEEP_HOURLY || '24'),
     keepDaily: parseInt(process.env.BACKUP_KEEP_DAILY || '30'),
@@ -128,7 +105,6 @@ async function getBackupConfig(): Promise<{
   };
 }
 
-// GET /api/admin/backups - List all backups
 export const GET = withAdmin(async (request: NextRequest) => {
   const [hourlyBackups, dailyBackups, weeklyBackups, config] = await Promise.all([
     Promise.resolve(getBackupFiles('hourly')),
@@ -137,14 +113,12 @@ export const GET = withAdmin(async (request: NextRequest) => {
     getBackupConfig(),
   ]);
 
-  // Calculate totals
   const allBackups = [...hourlyBackups, ...dailyBackups, ...weeklyBackups];
   const totalSize = allBackups.reduce((sum, b) => sum + b.size, 0);
 
-  // Get last backup time
   const lastBackup = hourlyBackups[0]?.createdAt || dailyBackups[0]?.createdAt || null;
 
-  return NextResponse.json({
+  return ok({
     status: {
       lastBackup,
       totalBackups: allBackups.length,
@@ -168,36 +142,25 @@ export const GET = withAdmin(async (request: NextRequest) => {
   });
 });
 
-// POST /api/admin/backups - Create manual backup
 export const POST = withAdmin(async (request: NextRequest) => {
   try {
     const body = await request.json().catch(() => ({}));
     const { action, file } = body;
     
     if (action === 'create') {
-      // Trigger manual backup
       const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 15);
       const backupFile = join(BACKUP_DIR, 'hourly', `manual_${timestamp}.dump`);
       
-      // Parse DATABASE_URL to avoid exposing credentials in command line
       const dbUrl = new URL(process.env.DATABASE_URL!);
       const dbHost = dbUrl.hostname;
       const dbPort = dbUrl.port || '5432';
       const dbUser = dbUrl.username;
-      const dbName = dbUrl.pathname.slice(1); // Remove leading slash
+      const dbName = dbUrl.pathname.slice(1);
       
-      // Validate database connection parameters to prevent command injection
-      // Use isValidDbIdentifier for database identifiers (hostnames, usernames, database names)
-      // which may not look like file paths (e.g., Docker hostname 'db')
       if (!isValidDbIdentifier(dbHost) || !isValidDbIdentifier(dbUser) || !isValidDbIdentifier(dbName)) {
-        return NextResponse.json(
-          { error: 'Invalid database configuration detected' },
-          { status: 500 }
-        );
+        return internalError();
       }
       
-      // Run pg_dump using spawn with argument array (safer than exec - no shell interpolation)
-      // PGPASSWORD is passed via env var to avoid exposing in process list
       try {
         const { stderr } = await execCommand('pg_dump', [
           `--host=${dbHost}`,
@@ -214,17 +177,14 @@ export const POST = withAdmin(async (request: NextRequest) => {
         });
         
         if (stderr && !stderr.includes('NOTICE')) {
-          console.error('Backup stderr:', stderr);
+          logger.error({ stderr }, 'Backup stderr');
         }
       } catch (backupError) {
-        console.error('Backup creation failed:', backupError);
-        return NextResponse.json(
-          { error: 'Failed to create backup', details: String(backupError) },
-          { status: 500 }
-        );
+        logger.error({ err: backupError }, 'Backup creation failed');
+        return internalError();
       }
       
-      return NextResponse.json({
+      return ok({
         success: true,
         message: 'Backup created successfully',
         file: `manual_${timestamp}.dump`,
@@ -232,31 +192,16 @@ export const POST = withAdmin(async (request: NextRequest) => {
     }
     
     if (action === 'restore' && file) {
-      // Restore is intentionally not implemented via API for safety reasons.
-      // Database restore is a destructive operation that should be performed
-      // manually by a system administrator with proper safeguards:
-      // 1. Create a safety backup before restore
-      // 2. Verify the backup file integrity
-      // 3. Stop application instances to prevent data corruption
-      // 4. Run pg_restore manually
-      // 5. Verify data integrity before resuming service
-      return NextResponse.json({
-        error: 'Restore operation is not available via API. Please contact system administrator to perform restore manually.',
-        hint: 'Use pg_restore command directly on the server with the backup file.'
-      }, { status: 400 });
+      return badRequest('Restore operation is not available via API. Please contact system administrator to perform restore manually.');
     }
     
-    return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+    return badRequest('Invalid action');
   } catch (error) {
-    console.error('Backup action error:', error);
-    return NextResponse.json(
-      { error: 'Failed to perform backup action' },
-      { status: 500 }
-    );
+    logger.error({ err: error }, 'Backup action error');
+    return internalError();
   }
 });
 
-// DELETE /api/admin/backups?file=...&type=... - Delete a backup
 export const DELETE = withAdmin(async (request: NextRequest) => {
   try {
     const { searchParams } = new URL(request.url);
@@ -264,48 +209,40 @@ export const DELETE = withAdmin(async (request: NextRequest) => {
     const type = searchParams.get('type') || 'hourly';
     
     if (!file) {
-      return NextResponse.json({ error: 'File parameter required' }, { status: 400 });
+      return badRequest('File parameter required');
     }
 
     const allowedTypes = ['hourly', 'daily', 'weekly'];
     if (!allowedTypes.includes(type)) {
-      return NextResponse.json({ error: 'Invalid backup type' }, { status: 400 });
+      return badRequest('Invalid backup type');
     }
 
-    // Security: prevent path traversal
     if (file.includes('..') || file.includes('/')) {
-      return NextResponse.json({ error: 'Invalid file name' }, { status: 400 });
+      return badRequest('Invalid file name');
     }
     
     const backupPath = join(BACKUP_DIR, type, file);
     
     if (!existsSync(backupPath)) {
-      return NextResponse.json({ error: 'Backup file not found' }, { status: 404 });
+      return notFound('Backup file');
     }
     
     unlinkSync(backupPath);
     
-    return NextResponse.json({
+    return ok({
       success: true,
       message: `Deleted backup: ${file}`,
     });
   } catch (error) {
-    console.error('Backup delete error:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete backup' },
-      { status: 500 }
-    );
+    logger.error({ err: error }, 'Backup delete error');
+    return internalError();
   }
 });
 
-// PATCH /api/admin/backups - Update backup configuration
 export const PATCH = withAdmin(async (request: NextRequest) => {
   try {
     const body = await request.json();
     const { keepHourly, keepDaily, keepWeekly } = body;
-
-    // In a production system, you'd store these in the database
-    // For now, we'll just return success and note that env vars need to be updated
 
     const config = {
       keepHourly: keepHourly || parseInt(process.env.BACKUP_KEEP_HOURLY || '24'),
@@ -313,18 +250,13 @@ export const PATCH = withAdmin(async (request: NextRequest) => {
       keepWeekly: keepWeekly || parseInt(process.env.BACKUP_KEEP_WEEKLY || '12'),
     };
 
-    // TODO: Store in database or update config file
-
-    return NextResponse.json({
+    return ok({
       success: true,
       message: 'Configuration updated. Note: Changes require container restart to take effect.',
       config,
     });
   } catch (error) {
-    console.error('Backup config error:', error);
-    return NextResponse.json(
-      { error: 'Failed to update configuration' },
-      { status: 500 }
-    );
+    logger.error({ err: error }, 'Backup config error');
+    return internalError();
   }
 });

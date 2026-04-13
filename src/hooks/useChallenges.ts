@@ -1,162 +1,122 @@
-'use client';
+'use client'
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { apiFetch, apiPost, apiPatch, apiDelete } from '@/lib/api/client'
+import { queryKeys } from '@/lib/query-keys'
 
 export type ChallengeRule = {
-    type: 'MAX_DAILY_LOSS' | 'MAX_TRADES_PER_DAY' | 'MIN_RR' | 'TIME_WINDOW' | 'MAX_DRAWDOWN' | 'WIN_RATE_TARGET';
-    value: number | string;
-    operator?: 'LT' | 'LTE' | 'GT' | 'GTE' | 'EQ';
-};
+  type: 'MAX_DAILY_LOSS' | 'MAX_TRADES_PER_DAY' | 'MIN_RR' | 'TIME_WINDOW' | 'MAX_DRAWDOWN' | 'WIN_RATE_TARGET'
+  value: number | string
+  operator?: 'LT' | 'LTE' | 'GT' | 'GTE' | 'EQ'
+}
 
 export type TradingChallenge = {
-    id: string;
-    name: string;
-    description: string | null;
-    scope: 'GLOBAL' | 'PER_ACCOUNT';
-    accountId: string | null;
-    rules: ChallengeRule[];
-    startDate: string;
-    endDate: string | null;
-    isActive: boolean;
-    daysPassed: number;
-    daysFailed: number;
-    totalDays: number;
-    evaluationCount: number;
-    createdAt: string;
-};
+  id: string
+  name: string
+  description: string | null
+  scope: 'GLOBAL' | 'PER_ACCOUNT'
+  accountId: string | null
+  rules: ChallengeRule[]
+  startDate: string
+  endDate: string | null
+  isActive: boolean
+  daysPassed: number
+  daysFailed: number
+  totalDays: number
+  evaluationCount: number
+  createdAt: string
+}
 
 export type ChallengeEvaluation = {
-    id: string;
-    challengeId: string;
-    date: string;
-    passed: boolean;
-    failureReasons: string[] | null;
-    tradeIds: string[];
-};
+  id: string
+  challengeId: string
+  date: string
+  passed: boolean
+  failureReasons: string[] | null
+  tradeIds: string[]
+}
 
 export type ChallengeWithEvaluations = TradingChallenge & {
-    evaluations: ChallengeEvaluation[];
-    stats: {
-        totalDays: number;
-        passedDays: number;
-        failedDays: number;
-        successRate: number;
-    };
-};
+  evaluations: ChallengeEvaluation[]
+  stats: {
+    totalDays: number
+    passedDays: number
+    failedDays: number
+    successRate: number
+  }
+}
 
 export function useChallenges(activeOnly = false) {
-    return useQuery({
-        queryKey: ['challenges', { activeOnly }],
-        queryFn: async () => {
-            const url = `/api/challenges${activeOnly ? '?active=true' : ''}`;
-            const res = await fetch(url);
-            if (!res.ok) throw new Error('Failed to fetch challenges');
-            return res.json() as Promise<TradingChallenge[]>;
-        },
-    });
+  return useQuery({
+    queryKey: queryKeys.challenges.list(activeOnly),
+    queryFn: () =>
+      apiFetch<TradingChallenge[]>(`/api/challenges${activeOnly ? '?active=true' : ''}`),
+  })
 }
 
 export function useChallenge(id: string | null) {
-    return useQuery({
-        queryKey: ['challenge', id],
-        queryFn: async () => {
-            if (!id) return null;
-            const res = await fetch(`/api/challenges/${id}`);
-            if (!res.ok) throw new Error('Failed to fetch challenge');
-            return res.json() as Promise<ChallengeWithEvaluations>;
-        },
-        enabled: !!id,
-    });
+  return useQuery({
+    queryKey: queryKeys.challenges.detail(id ?? ''),
+    queryFn: () => {
+      if (!id) return null
+      return apiFetch<ChallengeWithEvaluations>(`/api/challenges/${id}`)
+    },
+    enabled: !!id,
+  })
 }
 
 type CreateChallengeData = {
-    name: string;
-    description?: string;
-    scope?: 'GLOBAL' | 'PER_ACCOUNT';
-    accountId?: string;
-    rules: ChallengeRule[];
-    startDate: string;
-    endDate?: string;
-};
+  name: string
+  description?: string
+  scope?: 'GLOBAL' | 'PER_ACCOUNT'
+  accountId?: string
+  rules: ChallengeRule[]
+  startDate: string
+  endDate?: string
+}
 
 export function useCreateChallenge() {
-    const queryClient = useQueryClient();
-    
-    return useMutation({
-        mutationFn: async (data: CreateChallengeData) => {
-            const res = await fetch('/api/challenges', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data),
-            });
-            if (!res.ok) throw new Error('Failed to create challenge');
-            return res.json();
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['challenges'] });
-        },
-    });
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: CreateChallengeData) => apiPost('/api/challenges', data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.challenges.all }),
+  })
 }
 
 type UpdateChallengeData = {
-    name?: string;
-    description?: string;
-    rules?: ChallengeRule[];
-    isActive?: boolean;
-    endDate?: string | null;
-};
+  name?: string
+  description?: string
+  rules?: ChallengeRule[]
+  isActive?: boolean
+  endDate?: string | null
+}
 
 export function useUpdateChallenge(id: string) {
-    const queryClient = useQueryClient();
-    
-    return useMutation({
-        mutationFn: async (data: UpdateChallengeData) => {
-            const res = await fetch(`/api/challenges/${id}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data),
-            });
-            if (!res.ok) throw new Error('Failed to update challenge');
-            return res.json();
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['challenges'] });
-            queryClient.invalidateQueries({ queryKey: ['challenge', id] });
-        },
-    });
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: UpdateChallengeData) => apiPatch(`/api/challenges/${id}`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.challenges.all })
+      qc.invalidateQueries({ queryKey: queryKeys.challenges.detail(id) })
+    },
+  })
 }
 
 export function useDeleteChallenge(id: string) {
-    const queryClient = useQueryClient();
-    
-    return useMutation({
-        mutationFn: async () => {
-            const res = await fetch(`/api/challenges/${id}`, {
-                method: 'DELETE',
-            });
-            if (!res.ok) throw new Error('Failed to delete challenge');
-            return res.json();
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['challenges'] });
-        },
-    });
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => apiDelete(`/api/challenges/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.challenges.all }),
+  })
 }
 
 export function useBackfillChallenge(id: string) {
-    const queryClient = useQueryClient();
-    
-    return useMutation({
-        mutationFn: async () => {
-            const res = await fetch(`/api/challenges/${id}/backfill`, {
-                method: 'POST',
-            });
-            if (!res.ok) throw new Error('Failed to backfill challenge');
-            return res.json() as Promise<{ success: boolean; daysEvaluated: number }>;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['challenges'] });
-            queryClient.invalidateQueries({ queryKey: ['challenge', id] });
-        },
-    });
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => apiPost<{ success: boolean; daysEvaluated: number }>(`/api/challenges/${id}/backfill`, {}),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.challenges.all })
+      qc.invalidateQueries({ queryKey: queryKeys.challenges.detail(id) })
+    },
+  })
 }

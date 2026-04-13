@@ -1,9 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { withAuth } from '@/lib/api/withAuth';
 import type { Session } from 'next-auth';
+import { validateBody } from '@/lib/validations/common';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { ok, badRequest, notFound, forbidden, internalError } from '@/lib/api/responses';
 
 const discordShareSchema = z.object({
     cardId: z.string(),
@@ -11,7 +13,6 @@ const discordShareSchema = z.object({
     message: z.string().max(500).optional(),
 });
 
-// Validate Discord webhook URL format
 function isValidDiscordWebhook(url: string): boolean {
     try {
         const parsed = new URL(url);
@@ -29,19 +30,15 @@ export const POST = withAuth(async (
     _ctx: Record<string, unknown>,
     session: Session & { user: { id: string } }
 ) => {
+    const validation = await validateBody(request, discordShareSchema);
+    if (!validation.success) return validation.response;
+    const validated = validation.data;
+
+    if (!isValidDiscordWebhook(validated.webhookUrl)) {
+        return badRequest('Invalid Discord webhook URL');
+    }
+
     try {
-        const body = await request.json();
-        const validated = discordShareSchema.parse(body);
-
-        // Validate webhook URL is a Discord webhook
-        if (!isValidDiscordWebhook(validated.webhookUrl)) {
-            return NextResponse.json(
-                { error: 'Invalid Discord webhook URL' },
-                { status: 400 }
-            );
-        }
-
-        // Get share card and verify ownership
         const shareCard = await prisma.shareCard.findUnique({
             where: { id: validated.cardId },
             include: {
@@ -57,24 +54,22 @@ export const POST = withAuth(async (
         });
 
         if (!shareCard) {
-            return NextResponse.json({ error: 'Share card not found' }, { status: 404 });
+            return notFound('Share card');
         }
 
         if (shareCard.userId !== session.user.id) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+            return forbidden();
         }
 
-        // Check expiration
         if (shareCard.expiresAt < new Date()) {
-            return NextResponse.json({ error: 'Share card has expired' }, { status: 410 });
+            return badRequest('Share card has expired');
         }
 
-        // Build Discord embed
         const isProfit = (shareCard.trade.pnl ?? 0) >= 0;
         const embed = {
             title: `${shareCard.trade.symbol} ${shareCard.trade.direction}`,
             description: validated.message || undefined,
-            color: isProfit ? 0x4ade80 : 0xf87171, // Green for profit, red for loss
+            color: isProfit ? 0x4ade80 : 0xf87171,
             fields: [
                 {
                     name: 'P&L',
@@ -88,7 +83,6 @@ export const POST = withAuth(async (
             timestamp: new Date().toISOString(),
         };
 
-        // Build the Discord payload
         interface DiscordEmbed {
             title: string;
             description?: string;
@@ -101,9 +95,7 @@ export const POST = withAuth(async (
 
         const discordEmbed: DiscordEmbed = { ...embed };
 
-        // Add image if media exists
         if (shareCard.media) {
-            // Build the public URL for the image
             const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3002';
             discordEmbed.image = {
                 url: `${baseUrl}/api/share/card/${shareCard.id}/image`,
@@ -114,7 +106,6 @@ export const POST = withAuth(async (
             embeds: [discordEmbed],
         };
 
-        // Send to Discord
         const response = await fetch(validated.webhookUrl, {
             method: 'POST',
             headers: {
@@ -126,27 +117,14 @@ export const POST = withAuth(async (
         if (!response.ok) {
             const errorText = await response.text();
             logger.error({ status: response.status, error: errorText }, '[share-discord] Webhook failed');
-            return NextResponse.json(
-                { error: 'Failed to send to Discord' },
-                { status: 502 }
-            );
+            return badRequest('Failed to send to Discord');
         }
 
         logger.info({ cardId: shareCard.id, userId: session.user.id }, '[share-discord] Shared successfully');
 
-        return NextResponse.json({ success: true });
+        return ok({ success: true });
     } catch (error) {
-        if (error instanceof z.ZodError) {
-            return NextResponse.json(
-                { error: 'Invalid request', details: error.errors },
-                { status: 400 }
-            );
-        }
-
         logger.error({ error }, '[share-discord] Error');
-        return NextResponse.json(
-            { error: 'Failed to share to Discord' },
-            { status: 500 }
-        );
+        return internalError();
     }
 });

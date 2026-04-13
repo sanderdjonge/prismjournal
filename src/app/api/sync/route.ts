@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { getUserByBridgeKey, getAccountByPlatformId } from '@/lib/getAccount';
@@ -7,32 +6,22 @@ import { upsertSyncTrade } from '@/lib/services/trade-sync.service';
 import { saveEquitySnapshot } from '@/lib/services/equity.service';
 import { cacheDelete } from '@/lib/api/cache';
 import { checkLimit, Limiters } from '@/lib/rate-limit-redis';
+import { ok, badRequest, unauthorized, internalError } from '@/lib/api/responses';
 
-/**
- * POST /api/sync
- *
- * Sync endpoint for MT5/cTrader bridge.
- *
- * With multi-account support:
- * - Bridge key authenticates the user (now on User model, not TradingAccount)
- * - platform + platformAccountId in payload routes to correct account
- * - If no platform info provided, uses first active account (backwards compatibility)
- */
 export async function POST(request: Request) {
     const rateLimitResponse = await checkLimit(request, Limiters.sync);
     if (rateLimitResponse) return rateLimitResponse;
 
     const bridgeKey = request.headers.get('X-Bridge-Key');
     if (!bridgeKey) {
-        return NextResponse.json({ error: 'Missing X-Bridge-Key' }, { status: 400 });
+        return badRequest('Missing X-Bridge-Key');
     }
 
     const user = await getUserByBridgeKey(bridgeKey);
     if (!user) {
-        return NextResponse.json({ error: 'Invalid bridge key' }, { status: 401 });
+        return unauthorized();
     }
 
-    // Raw body log — helps diagnose silent validation rejections
     let rawBody: unknown;
     try {
         rawBody = await request.clone().json();
@@ -50,11 +39,9 @@ export async function POST(request: Request) {
     const payload = validation.data;
 
     try {
-        // Determine which account to use
         let account;
         
         if (payload.platformAccountId) {
-            // Multi-account routing: find account by platform + platformAccountId
             account = await getAccountByPlatformId(
                 user.id,
                 payload.platform ?? 'METATRADER5',
@@ -62,7 +49,6 @@ export async function POST(request: Request) {
             );
             
             if (!account) {
-                // Auto-create account if it doesn't exist
                 const platform = payload.platform ?? 'METATRADER5';
                 account = await prisma.tradingAccount.create({
                     data: {
@@ -77,11 +63,9 @@ export async function POST(request: Request) {
                 });
             }
         } else {
-            // Backwards compatibility: use first active account
             account = user.accounts[0];
             
             if (!account) {
-                // Create default account if none exists
                 account = await prisma.tradingAccount.create({
                     data: {
                         userId: user.id,
@@ -101,10 +85,10 @@ export async function POST(request: Request) {
         }
         cacheDelete(`dashboard:${user.id}`);
         cacheDelete(`analytics:${user.id}`);
-        return NextResponse.json({ success: true });
+        return ok({ success: true });
     } catch (error) {
         logger.error({ err: error }, 'Sync error');
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        return internalError();
     }
 }
 

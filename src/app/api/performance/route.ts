@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAllUserAccounts } from '@/lib/getAccount';
-import { calculateProfitFactor } from '@/lib/analytics';
+import { calculateProfitFactorFromTrades } from '@/lib/analytics';
 import { withAuth } from '@/lib/api/withAuth';
 import type { Session } from 'next-auth';
 
@@ -98,7 +98,7 @@ export const GET = withAuth(async (request: NextRequest, ctx: Record<string, unk
     // --- Key stats (net PnL: gross profit + commission + swap) ---
     const pnlList = trades.map(t => (t.pnl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0));
     const netPnl = pnlList.reduce((a, b) => a + b, 0);
-    const profitFactor = calculateProfitFactor(trades.map(t => ({ pnl: t.pnl ?? 0 })));
+    const profitFactor = calculateProfitFactorFromTrades(trades.map(t => ({ pnl: t.pnl ?? 0 })));
 
     const winners = pnlList.filter(p => p > 0);
     const losers = pnlList.filter(p => p < 0);

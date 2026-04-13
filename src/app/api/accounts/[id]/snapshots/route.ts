@@ -1,15 +1,11 @@
 import { withAuth } from '@/lib/api/withAuth';
 import { ok, notFound } from '@/lib/api/responses';
 import prisma from '@/lib/prisma';
+import logger from '@/lib/logger';
 
-/**
- * GET /api/accounts/[id]/snapshots
- * Returns all daily snapshots for an account
- */
 export const GET = withAuth(async (_req, ctx, session) => {
     const { id } = await (ctx.params as Promise<{ id: string }>);
 
-    // Verify the account belongs to the user
     const account = await prisma.tradingAccount.findFirst({
         where: { id, userId: session.user.id },
         select: { id: true, name: true, currency: true, accountSize: true },
@@ -19,7 +15,6 @@ export const GET = withAuth(async (_req, ctx, session) => {
         return notFound('Account');
     }
 
-    // Get all daily snapshots for the account
     let snapshots: any[] = [];
     try {
         snapshots = await prisma.dailyAccountSnapshot.findMany({
@@ -27,11 +22,9 @@ export const GET = withAuth(async (_req, ctx, session) => {
             orderBy: { snapshotDate: 'asc' },
         });
     } catch (error) {
-        console.error('Error fetching snapshots:', error);
-        // Table might not exist yet, return empty array
+        logger.error({ err: error }, 'Error fetching snapshots');
     }
 
-    // Calculate cumulative P&L
     let cumulativePnl = 0;
     const snapshotsWithCumulative = snapshots.map((snapshot: any) => {
         cumulativePnl += snapshot.dailyPnl || 0;

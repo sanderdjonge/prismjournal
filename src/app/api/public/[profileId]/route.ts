@@ -1,5 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
+import { calculateProfitFactor, formatProfitFactor } from '@/lib/analytics';
+import { ok, notFound, internalError } from '@/lib/api/responses';
+import logger from '@/lib/logger';
 
 export async function GET(
     request: NextRequest,
@@ -8,7 +11,6 @@ export async function GET(
     try {
         const { profileId } = await params;
 
-        // Find user by public profile ID
         const user = await prisma.user.findFirst({
             where: {
                 publicProfileId: profileId,
@@ -23,10 +25,9 @@ export async function GET(
         });
 
         if (!user) {
-            return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+            return notFound('Profile');
         }
 
-        // Get stats
         const trades = await prisma.trade.findMany({
             where: {
                 account: { userId: user.id },
@@ -44,13 +45,12 @@ export async function GET(
         const totalPnl = closedTrades.reduce((sum, t) => sum + (t.pnl ?? 0), 0);
         const grossProfit = wins.reduce((sum, t) => sum + (t.pnl ?? 0), 0);
         const grossLoss = Math.abs(closedTrades.filter(t => (t.pnl ?? 0) < 0).reduce((sum, t) => sum + (t.pnl ?? 0), 0));
-        const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? 999 : 0;
+        const profitFactor = calculateProfitFactor(grossProfit, grossLoss);
         const winRate = closedTrades.length > 0 ? (wins.length / closedTrades.length) * 100 : 0;
 
-        // Build equity curve
         const startingValue = 10000;
         let runningPnl = 0;
-        const sortedTrades = [...closedTrades].sort((a, b) => 
+        const sortedTrades = [...closedTrades].sort((a, b) =>
             new Date(a.exitTime!).getTime() - new Date(b.exitTime!).getTime()
         );
         const equityCurve = sortedTrades.slice(-30).map(t => {
@@ -61,7 +61,7 @@ export async function GET(
             };
         });
 
-        return NextResponse.json({
+        return ok({
             profile: {
                 id: profileId,
                 name: user.name,
@@ -71,13 +71,13 @@ export async function GET(
             performance: {
                 totalTrades: closedTrades.length,
                 winRate: winRate.toFixed(1),
-                profitFactor: profitFactor === 999 ? '∞' : profitFactor.toFixed(2),
+                profitFactor: formatProfitFactor(profitFactor),
                 totalPnl: totalPnl.toFixed(2),
                 equityCurve,
             },
         });
     } catch (error) {
-        console.error('[public-profile] Error:', error);
-        return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 });
+        logger.error({ err: error }, '[public-profile] Error');
+        return internalError();
     }
 }

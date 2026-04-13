@@ -1,13 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/lib/api/withAuth';
 import { generateBridgeKey } from '@/lib/getAccount';
+import { ok, notFound } from '@/lib/api/responses';
 
-/**
- * GET /api/account/bridge
- * Returns the bridge key info for the current user.
- * The bridge key is now per-user (not per-account) for multi-account support.
- */
 export const GET = withAuth(async (request: NextRequest, _ctx, session) => {
     const userId = session.user.id;
 
@@ -20,18 +16,16 @@ export const GET = withAuth(async (request: NextRequest, _ctx, session) => {
     });
 
     if (!user) {
-        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        return notFound('User');
     }
 
-    // Derive sync URL from the request host so it works with any tunnel/domain
     const forwardedHost = request.headers.get('x-forwarded-host');
     const forwardedProto = request.headers.get('x-forwarded-proto') ?? 'https';
     const host = forwardedHost ?? request.headers.get('host') ?? 'localhost:3000';
     const proto = forwardedHost ? forwardedProto : (host.startsWith('localhost') ? 'http' : 'https');
     const syncUrl = `${proto}://${host}/api/sync`;
 
-    return NextResponse.json({
-        // For hashed keys, we can't show the full key (user must regenerate if lost)
+    return ok({
         bridgeKey: null,
         bridgeKeyId: user.bridgeKeyId,
         isHashed: !!user.bridgeKeyHash,
@@ -39,11 +33,6 @@ export const GET = withAuth(async (request: NextRequest, _ctx, session) => {
     });
 });
 
-/**
- * POST /api/account/bridge
- * Regenerates the bridge key for the current user.
- * The new key is returned once and cannot be retrieved again.
- */
 export const POST = withAuth(async (_req, _ctx, session) => {
     const userId = session.user.id;
 
@@ -57,8 +46,7 @@ export const POST = withAuth(async (_req, _ctx, session) => {
         },
     });
 
-    // Return the full key only once — it cannot be retrieved again
-    return NextResponse.json({ bridgeKey: key, bridgeKeyId: keyId });
+    return ok({ bridgeKey: key, bridgeKeyId: keyId });
 });
 
 export const runtime = 'nodejs';

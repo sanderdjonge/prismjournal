@@ -9,7 +9,8 @@ import {
     Plus, X, Edit2, Archive, Target, DollarSign, BarChart3, AlertTriangle,
     CheckCircle, Calendar, Shield, Trash2
 } from 'lucide-react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/cn'
+import { apiFetch, apiPost, apiPatch, apiDelete } from '@/lib/api/client'
 import { useCurrency } from '@/lib/currency';
 import { autoScreenshotConfigSchema } from '@/lib/validations/screenshot-config';
 import { calculateDrawdown } from '@/lib/drawdown';
@@ -322,43 +323,31 @@ function AccountsContent() {
 
     const loadAccountsData = async () => {
         try {
-            const res = await fetch('/api/accounts');
-            if (res.ok) {
-                const data = await res.json();
-                setAccounts(data.accounts ?? []);
-            }
+            const data = await apiFetch<any>('/api/accounts')
+            setAccounts(data.accounts ?? [])
         } catch (error) {
-            // error handled by loading state
         } finally {
-            setLoading(false);
+            setLoading(false)
         }
-    };
+    }
 
     const loadPropFirms = async () => {
         try {
-            const res = await fetch('/api/prop-firms');
-            if (res.ok) {
-                const data = await res.json();
-                setPropFirms(data.propFirms);
-            }
+            const data = await apiFetch<any>('/api/prop-firms')
+            setPropFirms(data.propFirms)
         } catch (error) {
-            // error handled by loading state
         } finally {
-            setPropFirmsLoading(false);
+            setPropFirmsLoading(false)
         }
-    };
+    }
 
     const loadBridgeInfo = async () => {
         try {
-            const res = await fetch('/api/account/bridge');
-            if (res.ok) {
-                const data = await res.json();
-                setBridgeInfo(data);
-            }
+            const data = await apiFetch<any>('/api/account/bridge')
+            setBridgeInfo(data)
         } catch (error) {
-            // error handled by loading state
         }
-    };
+    }
 
     const handleSort = (key: SortKey) => {
         if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -383,18 +372,16 @@ function AccountsContent() {
     }
 
     async function handleRegenerate() {
-        if (!confirm('Regenerate your Bridge Key? Your existing MT5 connection will stop working until you update the key in the EA.')) return;
-        setRegenerating(true);
+        if (!confirm('Regenerate your Bridge Key? Your existing MT5 connection will stop working until you update the key in the EA.')) return
+        setRegenerating(true)
         try {
-            const res = await fetch('/api/account/bridge', { method: 'POST' });
-            const data = await res.json();
+            const data = await apiPost<any>('/api/account/bridge', {})
             if (data.bridgeKey) {
-                // Show the new key directly — it's only available once, don't re-fetch
-                setBridgeInfo(prev => prev ? { ...prev, bridgeKey: data.bridgeKey, bridgeKeyId: data.bridgeKeyId, isHashed: false } : prev);
-                setShowKey(true);
+                setBridgeInfo(prev => prev ? { ...prev, bridgeKey: data.bridgeKey, bridgeKeyId: data.bridgeKeyId, isHashed: false } : prev)
+                setShowKey(true)
             }
         } finally {
-            setRegenerating(false);
+            setRegenerating(false)
         }
     }
 
@@ -420,70 +407,55 @@ function AccountsContent() {
     };
 
     const handleSaveEdit = async () => {
-        if (!editingAccount) return;
+        if (!editingAccount) return
         
-        setSavingEdit(true);
+        setSavingEdit(true)
         try {
-            const res = await fetch(`/api/accounts/${editingAccount.id}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: editForm.name,
-                    broker: editForm.broker || null,
-                    platformAccountId: editForm.platformAccountId || null,
-                    propFirmId: editForm.propFirmId || null,
-                    accountSize: editForm.accountSize ? parseFloat(editForm.accountSize) : null,
-                    currency: editForm.currency,
-                    profitSplit: editForm.profitSplit ? parseFloat(editForm.profitSplit) : null,
-                    maxDailyLoss: editForm.maxDailyLoss ? parseFloat(editForm.maxDailyLoss) : null,
-                    maxTotalDrawdown: editForm.maxTotalDrawdown ? parseFloat(editForm.maxTotalDrawdown) : null,
-                    profitTarget: editForm.profitTarget ? parseFloat(editForm.profitTarget) : null,
-                    autoScreenshotConfig: editForm.screenshotConfig,
-                }),
-            });
-            
-            if (res.ok) {
-                await loadAccountsData();
-                setEditingAccount(null);
-            }
+            await apiPatch(`/api/accounts/${editingAccount.id}`, {
+                name: editForm.name,
+                broker: editForm.broker || null,
+                platformAccountId: editForm.platformAccountId || null,
+                propFirmId: editForm.propFirmId || null,
+                accountSize: editForm.accountSize ? parseFloat(editForm.accountSize) : null,
+                currency: editForm.currency,
+                profitSplit: editForm.profitSplit ? parseFloat(editForm.profitSplit) : null,
+                maxDailyLoss: editForm.maxDailyLoss ? parseFloat(editForm.maxDailyLoss) : null,
+                maxTotalDrawdown: editForm.maxTotalDrawdown ? parseFloat(editForm.maxTotalDrawdown) : null,
+                profitTarget: editForm.profitTarget ? parseFloat(editForm.profitTarget) : null,
+                autoScreenshotConfig: editForm.screenshotConfig,
+            })
+
+            await loadAccountsData()
+            setEditingAccount(null)
         } catch (error) {
-            // error handled by saving state
         } finally {
-            setSavingEdit(false);
+            setSavingEdit(false)
         }
-    };
+    }
 
     const handleArchive = async (accountId: string) => {
         if (!confirm('Are you sure you want to archive this account? It will no longer appear in your active accounts.')) {
-            return;
+            return
         }
         
         try {
-            const res = await fetch(`/api/accounts/${accountId}`, { method: 'DELETE' });
-            
-            if (res.ok) {
-                await loadAccountsData();
-            } else {
-                const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
-                alert(`Failed to archive account: ${errorData.error || 'Please try again.'}`);
-            }
-        } catch (error) {
-            alert('An error occurred while archiving the account.');
+            await apiDelete(`/api/accounts/${accountId}`)
+            await loadAccountsData()
+        } catch (e: any) {
+            alert(e.message || 'An error occurred while archiving the account.')
         }
-    };
+    }
 
     const loadArchivedAccounts = async () => {
-        setArchivedLoading(true);
+        setArchivedLoading(true)
         try {
-            const res = await fetch('/api/accounts?includeArchived=true');
-            if (res.ok) {
-                const data = await res.json();
-                setArchivedAccounts((data.accounts ?? []).filter((a: AccountSummary) => !a.isActive));
-            }
+            const data = await apiFetch<any>('/api/accounts?includeArchived=true')
+            setArchivedAccounts((data.accounts ?? []).filter((a: AccountSummary) => !a.isActive))
+        } catch {
         } finally {
-            setArchivedLoading(false);
+            setArchivedLoading(false)
         }
-    };
+    }
 
     const handleToggleArchived = () => {
         const next = !showArchived;
@@ -492,60 +464,52 @@ function AccountsContent() {
     };
 
     const handlePermanentDelete = async () => {
-        if (!deleteTarget || deleteConfirmText !== deleteTarget.name) return;
-        setDeleting(true);
+        if (!deleteTarget || deleteConfirmText !== deleteTarget.name) return
+        setDeleting(true)
         try {
-            const res = await fetch(`/api/accounts/${deleteTarget.id}?permanent=true`, { method: 'DELETE' });
-            if (res.ok) {
-                setArchivedAccounts(prev => prev.filter(a => a.id !== deleteTarget.id));
-                setDeleteTarget(null);
-                setDeleteConfirmText('');
-            }
+            await apiDelete(`/api/accounts/${deleteTarget.id}?permanent=true`)
+            setArchivedAccounts(prev => prev.filter(a => a.id !== deleteTarget.id))
+            setDeleteTarget(null)
+            setDeleteConfirmText('')
+        } catch {
         } finally {
-            setDeleting(false);
+            setDeleting(false)
         }
-    };
+    }
 
     const handleAddAccount = async () => {
-        if (!newAccount.name.trim()) return;
+        if (!newAccount.name.trim()) return
         
-        setAddingAccount(true);
+        setAddingAccount(true)
         try {
-            const res = await fetch('/api/accounts', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: newAccount.name,
-                    broker: newAccount.broker || undefined,
-                    platform: newAccount.platform,
-                    platformAccountId: newAccount.platformAccountId || undefined,
-                    accountType: newAccount.accountType,
-                    propFirmId: newAccount.propFirmId || undefined,
-                    accountSize: newAccount.accountSize ? parseFloat(newAccount.accountSize) : undefined,
-                    currency: newAccount.currency,
-                }),
-            });
-            
-            if (res.ok) {
-                await loadAccountsData();
-                setShowAddAccount(false);
-                setNewAccount({
-                    name: '',
-                    broker: '',
-                    platform: 'METATRADER5',
-                    platformAccountId: '',
-                    accountType: 'OWN_MONEY',
-                    propFirmId: '',
-                    accountSize: '',
-                    currency: 'USD',
-                });
-            }
+            await apiPost('/api/accounts', {
+                name: newAccount.name,
+                broker: newAccount.broker || undefined,
+                platform: newAccount.platform,
+                platformAccountId: newAccount.platformAccountId || undefined,
+                accountType: newAccount.accountType,
+                propFirmId: newAccount.propFirmId || undefined,
+                accountSize: newAccount.accountSize ? parseFloat(newAccount.accountSize) : undefined,
+                currency: newAccount.currency,
+            })
+
+            await loadAccountsData()
+            setShowAddAccount(false)
+            setNewAccount({
+                name: '',
+                broker: '',
+                platform: 'METATRADER5',
+                platformAccountId: '',
+                accountType: 'OWN_MONEY',
+                propFirmId: '',
+                accountSize: '',
+                currency: 'USD',
+            })
         } catch (error) {
-            // error handled by loading state
         } finally {
-            setAddingAccount(false);
+            setAddingAccount(false)
         }
-    };
+    }
 
     if (loading) {
         return (

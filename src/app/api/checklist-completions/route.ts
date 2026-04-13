@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { withAuth } from '@/lib/api/withAuth';
 import prisma from '@/lib/prisma';
 import type { Session } from 'next-auth';
+import { validateBody } from '@/lib/validations/common';
 import { z } from 'zod';
+import { ok, badRequest, notFound } from '@/lib/api/responses';
 
-// Validation schema
 const saveChecklistSchema = z.object({
     tradeId: z.string(),
     strategyId: z.string(),
@@ -15,7 +16,6 @@ const saveChecklistSchema = z.object({
     })),
 });
 
-// GET /api/checklist-completions - Get checklist completion for a trade
 export const GET = withAuth(async (
     request: NextRequest,
     _ctx: Record<string, unknown>,
@@ -25,10 +25,9 @@ export const GET = withAuth(async (
     const tradeId = searchParams.get('tradeId');
 
     if (!tradeId) {
-        return NextResponse.json({ error: 'tradeId required' }, { status: 400 });
+        return badRequest('tradeId required');
     }
 
-    // Verify trade belongs to user
     const trade = await prisma.trade.findFirst({
         where: {
             id: tradeId,
@@ -49,21 +48,17 @@ export const GET = withAuth(async (
     });
 
     if (!trade) {
-        return NextResponse.json({ error: 'Trade not found' }, { status: 404 });
+        return notFound('Trade');
     }
 
     if (!trade.strategy) {
-        return NextResponse.json({
-            hasStrategy: false,
-            checklist: null,
-        });
+        return ok({ hasStrategy: false, checklist: null });
     }
 
-    // Get checklist items from the linked Checklist relation
     const checklistItems = trade.strategy?.checklist?.items ?? null;
 
     if (!checklistItems || checklistItems.length === 0) {
-        return NextResponse.json({
+        return ok({
             hasStrategy: true,
             strategyId: trade.strategy.id,
             strategyName: trade.strategy.name,
@@ -72,7 +67,6 @@ export const GET = withAuth(async (
         });
     }
 
-    // Get existing completion state
     const completion = trade.checklistCompletion;
     const checkedState: Record<string, boolean> = {};
     
@@ -83,7 +77,7 @@ export const GET = withAuth(async (
         });
     }
 
-    return NextResponse.json({
+    return ok({
         hasStrategy: true,
         strategyId: trade.strategy.id,
         strategyName: trade.strategy.name,
@@ -98,25 +92,15 @@ export const GET = withAuth(async (
     });
 });
 
-// POST /api/checklist-completions - Save checklist completion
 export const POST = withAuth(async (
     request: NextRequest,
     _ctx: Record<string, unknown>,
     session: Session & { user: { id: string } }
 ) => {
-    const body = await request.json();
-    const parsed = saveChecklistSchema.safeParse(body);
+    const validation = await validateBody(request, saveChecklistSchema);
+    if (!validation.success) return validation.response;
+    const { tradeId, strategyId, checklist } = validation.data;
 
-    if (!parsed.success) {
-        return NextResponse.json(
-            { error: 'Invalid request body', details: parsed.error.errors },
-            { status: 400 }
-        );
-    }
-
-    const { tradeId, strategyId, checklist } = parsed.data;
-
-    // Verify trade belongs to user
     const trade = await prisma.trade.findFirst({
         where: {
             id: tradeId,
@@ -125,10 +109,9 @@ export const POST = withAuth(async (
     });
 
     if (!trade) {
-        return NextResponse.json({ error: 'Trade not found' }, { status: 404 });
+        return notFound('Trade');
     }
 
-    // Verify strategy exists and belongs to user
     const strategy = await prisma.strategy.findFirst({
         where: {
             id: strategyId,
@@ -137,15 +120,13 @@ export const POST = withAuth(async (
     });
 
     if (!strategy) {
-        return NextResponse.json({ error: 'Strategy not found' }, { status: 404 });
+        return notFound('Strategy');
     }
 
-    // Calculate completion stats
     const totalItems = checklist.length;
     const checkedItems = checklist.filter((item) => item.checked).length;
     const completionPct = totalItems > 0 ? (checkedItems / totalItems) * 100 : 0;
 
-    // Upsert completion
     const completion = await prisma.checklistCompletion.upsert({
         where: { tradeId },
         create: {
@@ -164,5 +145,5 @@ export const POST = withAuth(async (
         },
     });
 
-    return NextResponse.json(completion);
+    return ok(completion);
 });

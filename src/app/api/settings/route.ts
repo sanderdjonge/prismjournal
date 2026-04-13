@@ -1,16 +1,16 @@
-import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 // eslint-disable-next-line no-restricted-imports
 import { auth } from '@/lib/auth';
 import { validateBody, settingsUpdateSchema } from '@/lib/validations';
 import { withAuth } from '@/lib/api/withAuth';
+import { ok } from '@/lib/api/responses';
 
 export async function GET() {
     const session = await auth();
     const userId = session?.user?.id;
 
     if (!userId) {
-        return NextResponse.json({ displayCurrency: 'USD', timezone: 'Europe/Amsterdam', dateFormat: 'DD-MM-YYYY', brokerTimezoneOffset: 0, dashboardPeriod: '30', twoFAEnabled: false, isSuperuser: false });
+        return ok({ displayCurrency: 'USD', timezone: 'Europe/Amsterdam', dateFormat: 'DD-MM-YYYY', brokerTimezoneOffset: 0, dashboardPeriod: '30', twoFAEnabled: false, isSuperuser: false });
     }
 
     const [settings, user] = await Promise.all([
@@ -18,7 +18,7 @@ export async function GET() {
         prisma.user.findUnique({ where: { id: userId }, select: { totpEnabled: true, isSuperuser: true } }),
     ]);
 
-    return NextResponse.json({
+    return ok({
         displayCurrency: settings?.displayCurrency ?? 'USD',
         timezone: settings?.timezone ?? 'Europe/Amsterdam',
         dateFormat: settings?.dateFormat ?? 'DD-MM-YYYY',
@@ -50,7 +50,7 @@ export const PATCH = withAuth(async (req, _ctx, session) => {
             dashboardPeriod: body.dashboardPeriod ?? '30',
         },
     });
-    return NextResponse.json(settings);
+    return ok(settings);
 });
 
 export const runtime = 'nodejs';

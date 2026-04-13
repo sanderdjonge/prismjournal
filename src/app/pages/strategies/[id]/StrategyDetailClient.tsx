@@ -9,6 +9,7 @@ import ComplianceWidget from '@/components/dashboard/ComplianceWidget'
 import TiltmeterWidget from '@/components/dashboard/TiltmeterWidget'
 import { useChecklists } from '@/hooks/useChecklists'
 import { useStrategyAnalytics } from '@/hooks/useStrategyAnalytics'
+import { apiFetch, apiPatch, apiDelete, apiPost } from '@/lib/api/client'
 import { StrategyMetricsPanel } from '@/components/strategies/StrategyMetricsPanel'
 import { StrategyEquityChart } from '@/components/strategies/StrategyEquityChart'
 import { StrategyMonthlyReturns } from '@/components/strategies/StrategyMonthlyReturns'
@@ -72,96 +73,68 @@ export default function StrategyDetailClient() {
 
   async function fetchStrategy() {
     try {
-      const res = await fetch(`/api/strategies/${params.id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setStrategy(data);
-        setEditName(data.name);
-        setEditDescription(data.description || '');
-      } else {
-        router.push('/pages/strategies');
-      }
-    } catch (err) {
-      console.error('Failed to fetch strategy:', err);
+      const data = await apiFetch<Strategy>(`/api/strategies/${params.id}`)
+      setStrategy(data)
+      setEditName(data.name)
+      setEditDescription(data.description || '')
+    } catch {
+      router.push('/pages/strategies')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
   }
 
   async function handleSaveEdit() {
-    if (!strategy || !editName.trim()) return;
-    setIsSaving(true);
+    if (!strategy || !editName.trim()) return
+    setIsSaving(true)
     try {
-      const res = await fetch(`/api/strategies/${strategy.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: editName.trim(), description: editDescription.trim() || null }),
-      });
-      if (res.ok) {
-        const updated = await res.json();
-        setStrategy(prev => prev ? { ...prev, name: updated.name, description: updated.description } : null);
-        setIsEditing(false);
-      }
-    } catch (err) {
-      console.error('Failed to update strategy:', err);
+      const updated = await apiPatch<Strategy>(`/api/strategies/${strategy.id}`, { name: editName.trim(), description: editDescription.trim() || null })
+      setStrategy(prev => prev ? { ...prev, name: updated.name, description: updated.description } : null)
+      setIsEditing(false)
+    } catch {
     } finally {
-      setIsSaving(false);
+      setIsSaving(false)
     }
   }
 
   async function handleDelete() {
-    if (!strategy) return;
-    setIsDeleting(true);
+    if (!strategy) return
+    setIsDeleting(true)
     try {
-      const res = await fetch(`/api/strategies/${strategy.id}`, { method: 'DELETE' });
-      if (res.ok) {
-        router.push('/pages/strategies');
-      }
-    } catch (err) {
-      console.error('Failed to delete strategy:', err);
+      await apiDelete(`/api/strategies/${strategy.id}`)
+      router.push('/pages/strategies')
+    } catch {
     } finally {
-      setIsDeleting(false);
-      setShowDeleteConfirm(false);
+      setIsDeleting(false)
+      setShowDeleteConfirm(false)
     }
   }
 
   async function handleChecklistChange(checklistId: string | null) {
-    if (!strategy) return;
-    setIsSavingChecklist(true);
+    if (!strategy) return
+    setIsSavingChecklist(true)
     try {
-      const res = await fetch(`/api/strategies/${strategy.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ checklistId }),
-      });
-      if (res.ok) {
-        const updated = await res.json();
-        setStrategy(prev =>
-          prev ? { ...prev, checklistId: updated.checklistId, checklist: updated.checklist ?? null } : null
-        );
-      }
-    } catch (err) {
-      console.error('Failed to update checklist:', err);
+      const updated = await apiPatch<Strategy>(`/api/strategies/${strategy.id}`, { checklistId })
+      setStrategy(prev =>
+        prev ? { ...prev, checklistId: updated.checklistId, checklist: updated.checklist ?? null } : null
+      )
+    } catch {
     } finally {
-      setIsSavingChecklist(false);
+      setIsSavingChecklist(false)
     }
   }
 
   async function handleReevaluate() {
-    if (!strategy) return;
-    setIsReevaluating(true);
-    setReevaluateResult(null);
+    if (!strategy) return
+    setIsReevaluating(true)
+    setReevaluateResult(null)
     try {
-      const res = await fetch(`/api/strategies/${strategy.id}/re-evaluate`, { method: 'POST' });
-      if (res.ok) {
-        const data = await res.json();
-        setReevaluateResult({ evaluated: data.tradesEvaluated, violations: data.totalViolations });
-        router.refresh();
-      }
-    } catch (err) {
-      console.error('Failed to re-evaluate:', err);
+      const data = await apiPost<any>(`/api/strategies/${strategy.id}/re-evaluate`, {})
+      setReevaluateResult({ evaluated: data.tradesEvaluated, violations: data.totalViolations })
+      router.refresh()
+    } catch {
     } finally {
-      setIsReevaluating(false);
+      setIsReevaluating(false)
     }
   }
 

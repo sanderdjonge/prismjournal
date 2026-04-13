@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Edit3, Tag as TagIcon, Plus } from 'lucide-react';
-import { useTags, useCreateTag } from '@/hooks/useTags';
+import { useTags, useCreateTag } from '@/hooks/useTags'
+import { apiFetch, apiPatch } from '@/lib/api/client'
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
@@ -111,13 +112,11 @@ export default function TradeEditModal({ trade, isOpen, onClose, onSaved }: Trad
             const existingTagIds = (trade as { tags?: { id: string }[] }).tags?.map(t => t.id) ?? [];
             setSelectedTagIds(existingTagIds);
 
-            // Load existing media
-            fetch(`/api/trades/${trade.id}`)
-                .then(res => res.json())
+            apiFetch<any>(`/api/trades/${trade.id}`)
                 .then(data => {
-                    setExistingMedia(data.media || []);
+                    setExistingMedia(data.media || [])
                 })
-                .catch(() => setExistingMedia([]));
+                .catch(() => setExistingMedia([]))
         }
     }, [trade, isOpen, reset]);
 
@@ -139,58 +138,47 @@ export default function TradeEditModal({ trade, isOpen, onClose, onSaved }: Trad
     };
 
     const onSubmit = async (values: TradeFormValues) => {
-        if (!trade) return;
+        if (!trade) return
 
         try {
-            const res = await fetch(`/api/trades/${trade.id}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    symbol: values.symbol.trim().toUpperCase(),
-                    type: values.type,
-                    volume: values.volume,
-                    entryPrice: values.entryPrice,
-                    exitPrice: values.isClosed && values.exitPrice ? Number(values.exitPrice) : undefined,
-                    takeProfit: values.takeProfit ? Number(values.takeProfit) : undefined,
-                    stopLoss: values.stopLoss ? Number(values.stopLoss) : undefined,
-                    pnl: values.isClosed ? computedPnl ?? undefined : undefined,
-                    status: values.isClosed ? 'CLOSED' : 'OPEN',
-                    strategy: values.strategy,
-                    mood: values.mood,
-                    planCompliance: values.planCompliance,
-                    notes: values.notes?.trim() || undefined,
-                    accountId: editAccountId || undefined,
-                }),
-            });
-            if (!res.ok) throw new Error('Server error');
+            await apiPatch(`/api/trades/${trade.id}`, {
+                symbol: values.symbol.trim().toUpperCase(),
+                type: values.type,
+                volume: values.volume,
+                entryPrice: values.entryPrice,
+                exitPrice: values.isClosed && values.exitPrice ? Number(values.exitPrice) : undefined,
+                takeProfit: values.takeProfit ? Number(values.takeProfit) : undefined,
+                stopLoss: values.stopLoss ? Number(values.stopLoss) : undefined,
+                pnl: values.isClosed ? computedPnl ?? undefined : undefined,
+                status: values.isClosed ? 'CLOSED' : 'OPEN',
+                strategy: values.strategy,
+                mood: values.mood,
+                planCompliance: values.planCompliance,
+                notes: values.notes?.trim() || undefined,
+                accountId: editAccountId || undefined,
+            })
 
-            // Sync tags
-            await fetch(`/api/trades/${trade.id}/tags`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tagIds: selectedTagIds }),
-            });
+            await apiPatch(`/api/trades/${trade.id}/tags`, { tagIds: selectedTagIds })
 
-            // Upload screenshots if any
             if (screenshots.length > 0) {
                 for (let i = 0; i < screenshots.length; i++) {
-                    const formData = new FormData();
-                    formData.append('file', screenshots[i]);
-                    formData.append('timeframe', `SCREENSHOT_${i + 1}`);
+                    const formData = new FormData()
+                    formData.append('file', screenshots[i])
+                    formData.append('timeframe', `SCREENSHOT_${i + 1}`)
 
                     await fetch(`/api/trades/${trade.id}/upload`, {
                         method: 'POST',
                         body: formData,
-                    });
+                    })
                 }
             }
 
-            toast.success('Trade updated successfully');
-            onSaved();
+            toast.success('Trade updated successfully')
+            onSaved()
         } catch {
-            toast.error('Failed to save trade. Please try again.');
+            toast.error('Failed to save trade. Please try again.')
         }
-    };
+    }
 
     if (!trade) return null;
 

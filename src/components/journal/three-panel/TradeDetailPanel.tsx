@@ -1,17 +1,18 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { toast } from 'sonner';
-import { Share2, Plus, X, ChevronDown } from 'lucide-react';
-import { useUpdateTrade } from '@/hooks/useTrades';
-import { useTags, useCreateTag } from '@/hooks/useTags';
-import { useStrategies } from '@/hooks/useStrategies';
-import { ExcursionBar } from '@/components/journal/ExcursionBar';
-import { computeDuration, deriveListZone } from './TradeListPanel';
-import { MOOD_OPTIONS, COMPLIANCE_OPTIONS } from '@/constants/tradeConfig';
-import { SetupChecklist, SetupChecklistRef } from '@/components/pre-trade/SetupChecklist';
-import { ShareTradeModal } from '@/components/trades/ShareTradeModal';
-import type { JournalTrade } from '@/app/journal/page';
+import { useState, useEffect, useRef } from 'react'
+import { toast } from 'sonner'
+import { Share2, Plus, X, ChevronDown } from 'lucide-react'
+import { useUpdateTrade } from '@/hooks/useTrades'
+import { useTags, useCreateTag } from '@/hooks/useTags'
+import { useStrategies } from '@/hooks/useStrategies'
+import { apiFetch, apiPatch } from '@/lib/api/client'
+import { ExcursionBar } from '@/components/journal/ExcursionBar'
+import { computeDuration, deriveListZone } from './TradeListPanel'
+import { MOOD_OPTIONS, COMPLIANCE_OPTIONS } from '@/constants/tradeConfig'
+import { SetupChecklist, SetupChecklistRef } from '@/components/pre-trade/SetupChecklist'
+import { ShareTradeModal } from '@/components/trades/ShareTradeModal'
+import type { JournalTrade } from '@/app/journal/page'
 
 interface ChecklistItemWithRequired {
     id: string;
@@ -112,31 +113,27 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
 
     useEffect(() => {
         if (selectedStrategyId) {
-            fetch(`/api/strategies/${selectedStrategyId}`)
-                .then(res => res.json())
+            apiFetch<StrategyWithChecklist>(`/api/strategies/${selectedStrategyId}`)
                 .then(data => {
-                    setStrategy(data);
-                    // Fetch existing completions for this trade+strategy
-                    fetch(`/api/checklist-completions?tradeId=${trade.id}`)
-                        .then(res => res.json())
-                        .then(compData => {
+                    setStrategy(data)
+                    apiFetch(`/api/checklist-completions?tradeId=${trade.id}`)
+                        .then((compData: any) => {
                             if (compData.hasStrategy && compData.checkedState) {
-                                setCheckedItems(compData.checkedState);
+                                setCheckedItems(compData.checkedState)
                             } else {
-                                setCheckedItems({});
+                                setCheckedItems({})
                             }
                         })
-                        .catch(() => setCheckedItems({}));
+                        .catch(() => setCheckedItems({}))
                 })
-                .catch(err => {
-                    console.error('Failed to fetch strategy:', err);
-                    setStrategy(null);
-                });
+                .catch(() => {
+                    setStrategy(null)
+                })
         } else {
-            setStrategy(null);
-            setCheckedItems({});
+            setStrategy(null)
+            setCheckedItems({})
         }
-    }, [selectedStrategyId, trade.id]);
+    }, [selectedStrategyId, trade.id])
 
     const handleRating = (field: 'entryRating' | 'exitRating' | 'managementRating', val: number) => {
         // Update local state immediately for responsive UI
@@ -191,17 +188,12 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
 
     const handleSaveTags = async (tagIds: string[]) => {
         try {
-            const res = await fetch(`/api/trades/${trade.id}/tags`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tagIds }),
-            });
-            if (!res.ok) throw new Error('Failed to update tags');
-            toast.success('Tags updated');
+            await apiPatch(`/api/trades/${trade.id}/tags`, { tagIds })
+            toast.success('Tags updated')
         } catch (err) {
-            toast.error('Failed to update tags');
+            toast.error('Failed to update tags')
         }
-    };
+    }
 
     const handleToggleTag = (tagId: string) => {
         const newTagIds = selectedTagIds.includes(tagId)

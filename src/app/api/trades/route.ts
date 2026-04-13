@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAllUserAccounts } from '@/lib/getAccount';
 import { formatDistanceToNow } from '@/lib/formatTime';
@@ -7,34 +7,33 @@ import { Prisma } from '@prisma/client';
 import { withAuth } from '@/lib/api/withAuth';
 import { cacheDelete } from '@/lib/api/cache';
 import { evaluateAndRecordCompliance, TradeContext } from '@/lib/services/strategy-compliance.service';
+import { ok, badRequest } from '@/lib/api/responses';
+import logger from '@/lib/logger';
 
 export const GET = withAuth(async (request, _ctx, session) => {
     const userId = session.user.id;
 
     const allAccounts = await getAllUserAccounts(userId);
-    if (allAccounts.length === 0) return NextResponse.json({ trades: [], pagination: { page: 1, limit: 50, total: 0, totalPages: 0 } });
+    if (allAccounts.length === 0) return ok({ trades: [], pagination: { page: 1, limit: 50, total: 0, totalPages: 0 } });
 
     const accountIds = allAccounts.map((a) => a.id);
 
     const searchParams = (request as NextRequest).nextUrl.searchParams;
 
-    // Filter parameters
     const symbol = searchParams.get('symbol');
-    const side = searchParams.get('side'); // BUY/SELL
-    const result = searchParams.get('result'); // WIN/LOSS/OPEN
-    const closeReasonFilter = searchParams.get('closeReason'); // SL/TP/MANUAL/EA/STOP_OUT
+    const side = searchParams.get('side');
+    const result = searchParams.get('result');
+    const closeReasonFilter = searchParams.get('closeReason');
     const dateFrom = searchParams.get('from');
     const dateTo = searchParams.get('to');
-    const search = searchParams.get('q'); // Search query
-    const tagFilter = searchParams.get('tag'); // Tag ID filter
-    const accountFilter = searchParams.get('account'); // Specific account ID filter
-    const strategyFilter = searchParams.get('strategyId'); // 'none' = no strategy assigned
+    const search = searchParams.get('q');
+    const tagFilter = searchParams.get('tag');
+    const accountFilter = searchParams.get('account');
+    const strategyFilter = searchParams.get('strategyId');
 
-    // Pagination — cap limit to 500 to prevent runaway queries
     const limit = Math.min(500, Math.max(1, parseInt(searchParams.get('limit') || '50') || 50));
     const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1);
 
-    // Build where clause — optionally restrict to specific account
     const filteredAccountIds = accountFilter && accountIds.includes(accountFilter)
         ? [accountFilter]
         : accountIds;
@@ -43,17 +42,14 @@ export const GET = withAuth(async (request, _ctx, session) => {
         accountId: { in: filteredAccountIds },
     };
 
-    // Symbol filter (case-insensitive contains)
     if (symbol) {
         where.symbol = { contains: symbol, mode: 'insensitive' };
     }
 
-    // Side filter (LONG/SHORT)
     if (side === 'LONG' || side === 'SHORT') {
         where.direction = side;
     }
 
-    // Result filter (WIN/LOSS/OPEN)
     if (result === 'WIN') {
         where.AND = [
             { exitTime: { not: null } },
@@ -68,12 +64,10 @@ export const GET = withAuth(async (request, _ctx, session) => {
         where.exitTime = null;
     }
 
-    // Close reason filter
     if (closeReasonFilter) {
         where.closeReason = closeReasonFilter;
     }
 
-    // Date range filter
     if (dateFrom && dateTo) {
         const endDate = new Date(dateTo);
         endDate.setDate(endDate.getDate() + 1);
@@ -86,7 +80,6 @@ export const GET = withAuth(async (request, _ctx, session) => {
         where.entryTime = { lt: endDate };
     }
 
-    // Search filter (symbol, ticket, notes, entryReason, exitReason)
     if (search) {
         where.OR = [
             { symbol: { contains: search, mode: 'insensitive' } },
@@ -97,14 +90,12 @@ export const GET = withAuth(async (request, _ctx, session) => {
         ];
     }
 
-    // Strategy filter
     if (strategyFilter === 'none') {
         where.strategyId = null;
     } else if (strategyFilter) {
         where.strategyId = strategyFilter;
     }
 
-    // Tag filter - find trades with a specific tag (by ID)
     let tagFilterIds: string[] | null = null;
     if (tagFilter) {
         const tradeTags = await prisma.tradeTag.findMany({
@@ -112,18 +103,15 @@ export const GET = withAuth(async (request, _ctx, session) => {
             select: { tradeId: true },
         });
         tagFilterIds = tradeTags.map((tt) => tt.tradeId);
-        // If no trades have this tag, return empty
         if (tagFilterIds.length === 0) {
-            return NextResponse.json({ trades: [], pagination: { page: 1, limit, total: 0, totalPages: 0 } });
+            return ok({ trades: [], pagination: { page: 1, limit, total: 0, totalPages: 0 } });
         }
     }
 
-    // Apply tag filter to where clause
     if (tagFilterIds) {
         where.id = { in: tagFilterIds };
     }
 
-    // idsOnly mode — return all matching IDs, no pagination
     const idsOnly = searchParams.get('idsOnly') === 'true';
     if (idsOnly) {
         const ids = await prisma.trade.findMany({
@@ -131,7 +119,7 @@ export const GET = withAuth(async (request, _ctx, session) => {
             select: { id: true },
             orderBy: { entryTime: 'desc' },
         });
-        return NextResponse.json({ ids: ids.map(t => t.id) });
+        return ok({ ids: ids.map(t => t.id) });
     }
 
     const [trades, total] = await Promise.all([
@@ -191,7 +179,7 @@ export const GET = withAuth(async (request, _ctx, session) => {
         rMultiple: t.rMultiple ?? null,
     }));
 
-    return NextResponse.json({
+    return ok({
         trades: formatted,
         pagination: {
             page,
@@ -205,12 +193,11 @@ export const GET = withAuth(async (request, _ctx, session) => {
 export const POST = withAuth(async (req, _ctx, session) => {
     const userId = session.user.id;
 
-    // Resolve default account for this user
     const defaultAccount = await prisma.tradingAccount.findFirst({
         where: { userId, isActive: true },
         orderBy: { createdAt: 'asc' },
     });
-    if (!defaultAccount) return NextResponse.json({ error: 'No account configured' }, { status: 400 });
+    if (!defaultAccount) return badRequest('No account configured');
 
     const validation = await validateBody(req, tradeCreateSchema);
     if (!validation.success) {
@@ -219,7 +206,6 @@ export const POST = withAuth(async (req, _ctx, session) => {
 
     const body = validation.data;
 
-    // Use provided accountId or fall back to default account
     let account = defaultAccount;
     if (body.accountId && body.accountId !== defaultAccount.id) {
         const specified = await prisma.tradingAccount.findFirst({
@@ -228,12 +214,10 @@ export const POST = withAuth(async (req, _ctx, session) => {
         if (specified) account = specified;
     }
 
-    // Use strategyId if provided, otherwise find existing strategy by name
     let strategyId: string | null = null;
     if (body.strategyId) {
         strategyId = body.strategyId;
     } else if (body.strategy) {
-        // Find existing strategy by name (don't auto-create)
         const existingStrategy = await prisma.strategy.findFirst({
             where: {
                 name: body.strategy,
@@ -246,7 +230,6 @@ export const POST = withAuth(async (req, _ctx, session) => {
     const ticket = `MANUAL-${Date.now()}`;
     const now = new Date();
 
-    // Determine status - default to OPEN if not specified
     const status = body.status === 'CLOSED' ? 'CLOSED' : 'OPEN';
     const isClosed = status === 'CLOSED';
 
@@ -273,7 +256,6 @@ export const POST = withAuth(async (req, _ctx, session) => {
         include: { strategy: true },
     });
 
-    // Evaluate strategy compliance for closed trades with strategy assigned
     if (trade.strategyId && trade.status === 'CLOSED' && trade.exitTime) {
         try {
             const tradeContext: TradeContext = {
@@ -295,14 +277,14 @@ export const POST = withAuth(async (req, _ctx, session) => {
             };
             await evaluateAndRecordCompliance(tradeContext, trade.strategyId);
         } catch (err) {
-            console.error('[trades] Failed to evaluate compliance:', err);
+            logger.error({ err }, '[trades] Failed to evaluate compliance');
         }
     }
 
     cacheDelete(`dashboard:${userId}`);
     cacheDelete(`analytics:${userId}`);
 
-    return NextResponse.json({
+    return ok({
         id: trade.id,
         ticket: trade.ticket,
         symbol: trade.symbol,

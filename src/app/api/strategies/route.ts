@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { withAuth } from '@/lib/api/withAuth';
+import { ok, badRequest, notFound } from '@/lib/api/responses';
 import type { Session } from 'next-auth';
 
-// GET /api/strategies - List all strategies for the current user
 export const GET = withAuth(async (
     _req: NextRequest,
     _ctx: Record<string, unknown>,
@@ -19,30 +19,24 @@ export const GET = withAuth(async (
         }
     });
 
-    // Calculate adherence and tiltmeter for each strategy
     const strategiesWithMetrics = await Promise.all(
         strategies.map(async (strategy) => {
-            // Get violation count for this strategy
             const violationCount = await prisma.strategyViolation.count({
                 where: { strategyId: strategy.id }
             });
 
-            // Get unique trades that have violations for this strategy
             const tradesWithViolations = await prisma.strategyViolation.groupBy({
                 by: ['tradeId'],
                 where: { strategyId: strategy.id },
                 _count: true
             });
 
-            // Calculate adherence (trades without violations / total trades)
             const totalTrades = strategy._count.trades;
             const tradesWithViolationsCount = tradesWithViolations.length;
             const adherenceScore = totalTrades > 0 
                 ? Math.round(((totalTrades - tradesWithViolationsCount) / totalTrades) * 100)
                 : 100;
 
-            // Simple tilt calculation based on violation count
-            // Scale: 0 violations = 0, 10+ violations = 100
             const tiltmeterScore = Math.min(100, violationCount * 10);
 
             return {
@@ -57,10 +51,9 @@ export const GET = withAuth(async (
         })
     );
 
-    return NextResponse.json({ strategies: strategiesWithMetrics });
+    return ok({ strategies: strategiesWithMetrics });
 });
 
-// POST /api/strategies - Create a new strategy
 export const POST = withAuth(async (
     req: NextRequest,
     _ctx: Record<string, unknown>,
@@ -70,7 +63,7 @@ export const POST = withAuth(async (
     const { name, description, checklistId } = body;
 
     if (!name || typeof name !== 'string' || !name.trim()) {
-        return NextResponse.json({ error: 'Strategy name is required' }, { status: 400 });
+        return badRequest('Strategy name is required');
     }
 
     const existing = await prisma.strategy.findFirst({
@@ -81,16 +74,15 @@ export const POST = withAuth(async (
     });
 
     if (existing) {
-        return NextResponse.json({ error: 'Strategy already exists' }, { status: 409 });
+        return badRequest('Strategy already exists');
     }
 
-    // Verify checklist ownership if provided
     if (checklistId) {
         const checklist = await prisma.checklist.findFirst({
             where: { id: checklistId, userId: session.user.id },
         });
         if (!checklist) {
-            return NextResponse.json({ error: 'Checklist not found' }, { status: 404 });
+            return notFound('Checklist');
         }
     }
 
@@ -103,10 +95,9 @@ export const POST = withAuth(async (
         }
     });
 
-    return NextResponse.json({ strategy });
+    return ok({ strategy });
 });
 
-// DELETE /api/strategies - Delete a strategy
 export const DELETE = withAuth(async (
     req: NextRequest,
     _ctx: Record<string, unknown>,
@@ -116,7 +107,7 @@ export const DELETE = withAuth(async (
     const id = searchParams.get('id');
 
     if (!id) {
-        return NextResponse.json({ error: 'Strategy ID is required' }, { status: 400 });
+        return badRequest('Strategy ID is required');
     }
 
     const strategy = await prisma.strategy.findFirst({
@@ -124,7 +115,7 @@ export const DELETE = withAuth(async (
     });
 
     if (!strategy) {
-        return NextResponse.json({ error: 'Strategy not found' }, { status: 404 });
+        return notFound('Strategy');
     }
 
     await prisma.trade.updateMany({
@@ -134,7 +125,7 @@ export const DELETE = withAuth(async (
 
     await prisma.strategy.delete({ where: { id } });
 
-    return NextResponse.json({ success: true });
+    return ok({ success: true });
 });
 
 export const runtime = 'nodejs';

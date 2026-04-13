@@ -1,49 +1,17 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
-
-interface ComplianceStats {
-  totalTrades: number;
-  compliantTrades: number;
-  violationCount: number;
-  adherenceRate: number;
-  costOfViolations: number;
-  violationsByType: Record<string, number>;
-}
+import { useComplianceStats } from '@/hooks/useComplianceStats'
 
 interface Props {
-  periodDays?: number;
-  strategyId?: string;
-  accountId?: string;
+  periodDays?: number
+  strategyId?: string
+  accountId?: string
 }
 
 export default function ComplianceWidget({ periodDays = 30, strategyId, accountId }: Props) {
-  const [stats, setStats] = useState<ComplianceStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: stats, isLoading } = useComplianceStats(periodDays, strategyId, accountId)
 
-  useEffect(() => {
-    async function fetchStats() {
-      try {
-        const params = new URLSearchParams();
-        params.set('periodDays', String(periodDays));
-        if (strategyId) params.set('strategyId', strategyId);
-        if (accountId) params.set('accountId', accountId);
-
-        const res = await fetch(`/api/analytics/compliance?${params}`);
-        if (res.ok) {
-          const data = await res.json();
-          setStats(data);
-        }
-      } catch (err) {
-        console.error('Failed to fetch compliance stats:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchStats();
-  }, [periodDays, strategyId, accountId]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="glass-card rounded-lg p-6 animate-pulse">
         <div className="h-4 bg-surface-elevated rounded w-1/2 mb-4"></div>

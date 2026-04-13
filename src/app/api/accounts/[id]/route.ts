@@ -2,6 +2,7 @@ import { withAuth } from '@/lib/api/withAuth';
 import { ok, notFound, internalError, badRequest } from '@/lib/api/responses';
 import prisma from '@/lib/prisma';
 import { validateBody, updateAccountSchema } from '@/lib/validations';
+import logger from '@/lib/logger';
 
 export const GET = withAuth(async (_req, ctx, session) => {
     const { id } = await (ctx.params as Promise<{ id: string }>);
@@ -97,7 +98,7 @@ export const DELETE = withAuth(async (req, ctx, session) => {
 
         return ok({ account });
     } catch (error) {
-        console.error('[DELETE /api/accounts/[id]] Error:', error);
+        logger.error({ err: error }, '[DELETE /api/accounts/[id]] Error');
         return internalError();
     }
 });

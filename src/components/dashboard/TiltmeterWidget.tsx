@@ -1,17 +1,12 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
-
-interface TiltmeterScore {
-  score: number;
-  totalViolations: number;
-  components: Record<string, { count: number; weightedScore: number }>;
-}
+import { useState } from 'react'
+import { useTiltmeterScore } from '@/hooks/useTiltmeter'
 
 interface Props {
-  periodDays?: number;
-  strategyId?: string;
-  accountId?: string;
+  periodDays?: number
+  strategyId?: string
+  accountId?: string
 }
 
 const RULE_DESCRIPTIONS: Record<string, { label: string; description: string; severity: 'low' | 'medium' | 'high' }> = {
@@ -28,33 +23,10 @@ const RULE_DESCRIPTIONS: Record<string, { label: string; description: string; se
 };
 
 export default function TiltmeterWidget({ periodDays = 30, strategyId, accountId }: Props) {
-  const [data, setData] = useState<TiltmeterScore | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState(false);
+  const { data, isLoading } = useTiltmeterScore(accountId, periodDays)
+  const [expanded, setExpanded] = useState(false)
 
-  useEffect(() => {
-    async function fetchScore() {
-      try {
-        const params = new URLSearchParams();
-        params.set('periodDays', String(periodDays));
-        if (strategyId) params.set('strategyId', strategyId);
-        if (accountId) params.set('accountId', accountId);
-
-        const res = await fetch(`/api/analytics/tiltmeter?${params}`);
-        if (res.ok) {
-          const score = await res.json();
-          setData(score);
-        }
-      } catch (err) {
-        console.error('Failed to fetch tiltmeter:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchScore();
-  }, [periodDays, strategyId, accountId]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="glass-card rounded-lg p-6 animate-pulse">
         <div className="h-4 bg-surface-elevated rounded w-1/2 mb-4"></div>
@@ -63,7 +35,7 @@ export default function TiltmeterWidget({ periodDays = 30, strategyId, accountId
     );
   }
 
-  if (!data) return null;
+  if (!data) return null
 
   const getTiltLabel = (score: number) => {
     if (score <= 20) return { text: 'Zen', emoji: '🧘', color: 'text-profit', bg: 'bg-profit', advice: 'Excellent discipline! Keep following your rules.' };
@@ -73,9 +45,9 @@ export default function TiltmeterWidget({ periodDays = 30, strategyId, accountId
     return { text: 'Tilt', emoji: '🤯', color: 'text-loss', bg: 'bg-loss', advice: 'STOP TRADING. Step away and reset your mindset.' };
   };
 
-  const tilt = getTiltLabel(data.score);
+  const tilt = getTiltLabel(data.score)
   const sortedComponents = Object.entries(data.components)
-    .sort((a, b) => b[1].weightedScore - a[1].weightedScore);
+    .sort((a, b) => b[1].weightedScore - a[1].weightedScore)
 
   return (
     <div className="glass-card rounded-lg p-6">
