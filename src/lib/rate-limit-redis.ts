@@ -134,4 +134,5 @@ export const Limiters = {
   register: { name: 'register', limit: 5,   windowMs: 60_000 } as RateLimiterConfig,
   sync:     { name: 'sync',     limit: parseInt(process.env.RATE_LIMIT_SYNC ?? '600'), windowMs: 60_000 } as RateLimiterConfig,
   api:      { name: 'api',      limit: parseInt(process.env.RATE_LIMIT_API  ?? '100'), windowMs: 60_000 } as RateLimiterConfig,
+  admin:    { name: 'admin',    limit: 30,  windowMs: 60_000 } as RateLimiterConfig,
 };
