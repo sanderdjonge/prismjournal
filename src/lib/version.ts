@@ -11,7 +11,7 @@ export const APP_VERSION = pkg.version; // e.g. "2.17.0"
  */
 export const BUILD_DATE = '2026-04-13';
 
-export const BUILD_NOTES = 'v2.43.0: Code Consolidation Phase 2D-2F — Replaced 50+ raw fetch() calls in 11 client components with apiFetch/hooks; added Zod validateBody to 17 API routes; standardized 273 NextResponse.json() → response helpers in 46 API routes; replaced 43 console.error → pino logger in 28 files';
+export const BUILD_NOTES = 'API & client standardization';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {
