@@ -17,16 +17,21 @@ export interface TradeFilters {
   strategyId?: string
 }
 
+interface TradesResponse {
+  trades: unknown[]
+  pagination: { page: number; limit: number; total: number; totalPages: number }
+}
+
 async function fetchTrades(filters: TradeFilters) {
   const params = new URLSearchParams()
   Object.entries(filters).forEach(([k, v]) => {
     if (v !== undefined && v !== null && v !== '') params.set(k, String(v))
   })
-  return apiFetch(`/api/trades?${params}`)
+  return apiFetch<TradesResponse>(`/api/trades?${params}`)
 }
 
 export function useTrades(filters: TradeFilters = {}) {
-  return useQuery({
+  return useQuery<TradesResponse>({
     queryKey: queryKeys.trades.list(filters),
     queryFn: () => fetchTrades(filters),
     placeholderData: keepPreviousData,

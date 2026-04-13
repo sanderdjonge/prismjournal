@@ -19,7 +19,7 @@ export function useTags() {
 export function useCreateTag() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (body: { name: string; color?: string }) => apiPost('/api/tags', body),
+    mutationFn: (body: { name: string; color?: string }) => apiPost<Tag>('/api/tags', body),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.tags.all }),
   })
 }
