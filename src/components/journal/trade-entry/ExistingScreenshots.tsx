@@ -4,11 +4,7 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { Lightbox } from '../trade-analysis';
 
-interface MediaItem {
-    id: string;
-    url: string;
-    timeframe: string;
-}
+import type { MediaItem } from '@/types/trade'
 
 interface ExistingScreenshotsProps {
     media: MediaItem[];

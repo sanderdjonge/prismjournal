@@ -3,6 +3,7 @@ import { ok, badRequest } from '@/lib/api/responses';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
 import { evaluateAndRecordCompliance, TradeContext } from '@/lib/services/strategy-compliance.service';
+import logger from '@/lib/logger';
 
 const bulkDeleteSchema = z.object({
     action: z.literal('delete'),
@@ -137,7 +138,7 @@ export const POST = withAuth(async (req, _ctx, session) => {
                     pnl: trade.pnl,
                     initialStopLoss: trade.initialStopLoss,
                 };
-                await evaluateAndRecordCompliance(tradeContext, strategyId).catch(() => {});
+                await evaluateAndRecordCompliance(tradeContext, strategyId).catch((err) => { logger.error({ err }, 'Bulk operation partial failure') });
             }
         }
 

@@ -1,6 +1,7 @@
 // src/components/ui/Button.tsx
 import { ButtonHTMLAttributes, forwardRef } from 'react';
 import { cn } from '@/lib/cn';
+import { Spinner } from '@/components/ui/Spinner';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type Size = 'sm' | 'md' | 'lg';
@@ -38,7 +39,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             {...props}
         >
             {loading && (
-                <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                <Spinner size="sm" className="border-current border-t-transparent" />
             )}
             {children}
         </button>

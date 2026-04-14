@@ -21,11 +21,7 @@ import { getContractSize, calcPnl } from '@/lib/tradeCalculations';
 import { tradeFormSchema, type TradeFormValues } from '@/lib/validations/tradeForm';
 import { useAccounts } from '@/hooks/useAccounts';
 
-interface MediaItem {
-    id: string;
-    url: string;
-    timeframe: string;
-}
+import type { MediaItem } from '@/types/trade'
 
 interface TradeEditModalProps {
     trade: JournalTrade | null;

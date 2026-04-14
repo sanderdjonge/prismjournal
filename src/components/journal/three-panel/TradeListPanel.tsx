@@ -1,6 +1,7 @@
 'use client';
 
 import type { JournalTrade } from '@/app/journal/page';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 // ── Exported utilities (tested in __tests__/tradeListUtils.test.ts) ─────────
 
@@ -48,9 +49,7 @@ export function TradeListPanel({ trades, selectedId, onSelect }: TradeListPanelP
 
             <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
                 {trades.length === 0 && (
-                    <div className="flex items-center justify-center h-24 text-[9px] font-black uppercase tracking-widest text-gray-700">
-                        No trades
-                    </div>
+                    <EmptyState title="No trades" className="py-6" />
                 )}
 
                 {trades.map(t => {

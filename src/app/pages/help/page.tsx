@@ -9,6 +9,7 @@ import {
     Info, AlertTriangle, Lightbulb, Target,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { toast } from 'sonner';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -745,7 +746,7 @@ function HelpContent() {
         fetch('/api/prop-firms')
             .then(r => r.json())
             .then(d => setFirms(d.propFirms ?? []))
-            .catch(() => {})
+            .catch(() => toast.error('Failed to submit'))
             .finally(() => setLoading(false));
     }, []);
 

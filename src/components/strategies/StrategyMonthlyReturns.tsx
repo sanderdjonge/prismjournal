@@ -3,6 +3,7 @@
 import { useCurrency } from '@/lib/currency'
 import { cn } from '@/lib/cn'
 import { formatPercent } from '@/lib/formatNumber'
+import { EmptyState } from '@/components/ui/EmptyState'
 
 const MONTH_LABELS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D']
 
@@ -16,7 +17,7 @@ export function StrategyMonthlyReturns({ data }: MonthlyReturnsProps) {
   if (data.length === 0) {
     return (
       <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6 h-[300px] flex items-center justify-center">
-        <p className="text-gray-500 text-sm">No data yet</p>
+        <EmptyState title="No data yet" className="py-0" />
       </div>
     )
   }

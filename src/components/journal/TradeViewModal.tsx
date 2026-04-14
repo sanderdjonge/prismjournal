@@ -10,6 +10,7 @@ import { Lightbox } from './trade-analysis';
 import { CloseReasonBadge } from '@/components/ui/CloseReasonBadge';
 import { ExcursionBar } from '@/components/journal/ExcursionBar';
 import { ShareTradeModal } from '@/components/trades/ShareTradeModal';
+import { Spinner } from '@/components/ui/Spinner';
 
 interface TradeViewModalProps {
     trade: JournalTrade | null;
@@ -18,12 +19,7 @@ interface TradeViewModalProps {
     onEdit: () => void;
 }
 
-interface MediaItem {
-    id: string;
-    url: string;
-    timeframe: string;
-    event: string;
-}
+import type { MediaItem } from '@/types/trade'
 
 
 export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: TradeViewModalProps) {
@@ -311,7 +307,7 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                             {/* Screenshots Section */}
                             {loadingMedia ? (
                                 <div className="flex items-center justify-center py-8">
-                                    <div className="w-6 h-6 border-2 border-white/20 border-t-primary rounded-full animate-spin" />
+                                    <Spinner size="sm" className="border-white/20 border-t-primary" />
                                 </div>
                             ) : media.length > 0 ? (
                                 <div className="space-y-3">

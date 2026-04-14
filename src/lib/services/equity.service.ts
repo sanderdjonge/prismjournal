@@ -4,6 +4,7 @@ import { sendMddAlertEmail } from '@/lib/email';
 import { checkMddAlert } from '@/lib/notifications';
 import { formatPercent } from '@/lib/formatNumber';
 import type { SyncEquitySnapshot } from '@/lib/validations';
+import logger from '@/lib/logger';
 
 /**
  * Send drawdown alerts via Telegram and/or email if the threshold is breached.
@@ -55,12 +56,12 @@ export async function saveEquitySnapshot(
     ]);
 
     // Fire alerts asynchronously — errors must not fail the sync
-    sendDrawdownAlert(userId, snapshot.balance, snapshot.equity).catch(() => {});
+    sendDrawdownAlert(userId, snapshot.balance, snapshot.equity).catch((err) => { logger.error({ err }, 'Failed to create snapshot') });
 
     const peakResult = await prisma.equitySnapshot.aggregate({
         _max: { equity: true },
         where: { accountId },
     });
     const peakEquity = peakResult._max.equity ?? 0;
-    checkMddAlert(userId, accountId, snapshot.equity, peakEquity).catch(() => {});
+    checkMddAlert(userId, accountId, snapshot.equity, peakEquity).catch((err) => { logger.error({ err }, 'Failed to create snapshot') });
 }

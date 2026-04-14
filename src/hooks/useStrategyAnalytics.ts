@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 
-interface AnalyticsData {
+export interface StrategyAnalyticsData {
   winRate: number
   avgR: number
   profitFactor: number
@@ -31,7 +31,7 @@ interface AnalyticsData {
 export function useStrategyAnalytics(strategyId: string) {
   return useQuery({
     queryKey: ['strategy-analytics', strategyId],
-    queryFn: async (): Promise<AnalyticsData> => {
+    queryFn: async (): Promise<StrategyAnalyticsData> => {
       const res = await fetch(`/api/strategies/${strategyId}/analytics`)
       if (!res.ok) {
         if (res.status === 404) throw new Error('Strategy not found')

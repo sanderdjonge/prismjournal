@@ -46,10 +46,12 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { APP_VERSION, versionToPhase } from '@/lib/version';
+import type { BridgeKeyInfoFull } from '@/types/auth'
 import PropFirmReferenceTable from '@/components/prop-firm/PropFirmReferenceTable';
 import { useCurrency } from '@/lib/currency';
 import { useQueryClient } from '@tanstack/react-query';
 import { apiFetch, apiPost, apiPatch, apiDelete } from '@/lib/api/client';
+import { toast } from 'sonner';
 
 const CURRENCY_OPTIONS = [
     { label: 'USD - United States Dollar', value: 'USD' },
@@ -143,12 +145,6 @@ interface PropFirm {
     popularity: number;
 }
 
-interface BridgeKeyInfo {
-    bridgeKey: string | null;
-    bridgeKeyId: string | null;
-    isHashed: boolean;
-    syncUrl: string;
-}
 
 function SettingsContent() {
     const router = useRouter();
@@ -214,7 +210,7 @@ function SettingsContent() {
 
     // Accounts state
     const [accounts, setAccounts] = useState<TradingAccount[]>([]);
-    const [bridgeInfo, setBridgeInfo] = useState<BridgeKeyInfo | null>(null);
+    const [bridgeInfo, setBridgeInfo] = useState<BridgeKeyInfoFull | null>(null);
     const [accountsLoading, setAccountsLoading] = useState(true);
     const [newBridgeKey, setNewBridgeKey] = useState<string | null>(null);
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -291,7 +287,7 @@ function SettingsContent() {
                 if (data.dateFormat) setDateFormat(data.dateFormat);
                 if (data.twoFAEnabled !== undefined) setTwoFAEnabled(data.twoFAEnabled);
             })
-            .catch(() => {});
+            .catch(() => toast.error('Failed to load settings'));
 
         apiFetch('/api/settings/notifications')
             .then((data: any) => {
@@ -310,7 +306,7 @@ function SettingsContent() {
                     inAppToast: data.inAppToast ?? true,
                 }));
             })
-            .catch(() => {});
+            .catch(() => toast.error('Failed to update settings'));
 
         apiFetch('/api/account/bridge')
             .then((data: any) => {
@@ -318,7 +314,7 @@ function SettingsContent() {
                 if (data.bridgeKey) setBridgeKey(data.bridgeKey);
                 if (data.syncUrl) setSyncUrl(data.syncUrl);
             })
-            .catch(() => {});
+            .catch(() => toast.error('Failed to update settings'));
 
         loadAccountsData();
         loadPropFirms();
@@ -396,7 +392,7 @@ function SettingsContent() {
                 setProfileId(data.publicProfileId ?? null);
                 setProfileStats(data.publicProfileStats ?? { showWinRate: true, showEquityCurve: true, showPrismScore: false });
             })
-            .catch(() => {})
+            .catch(() => toast.error('Failed to update settings'))
             .finally(() => setProfileLoading(false));
     }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -556,7 +552,7 @@ function SettingsContent() {
             await apiDelete(`/api/accounts/${accountId}`);
             await loadAccountsData();
         } catch (error) {
-            alert('An error occurred while archiving the account.');
+            toast.error('An error occurred while archiving the account.');
         }
     };
 

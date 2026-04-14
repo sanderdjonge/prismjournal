@@ -8,22 +8,19 @@ import type {
   PsychologyFilters,
   MarketFilters,
 } from '@/lib/services/what-if/types';
+import type { EquityPointDetailed } from '@/types/trade'
 
-// Re-export types for backward compatibility
 export type {
   WhatIfFilters,
   TimeFilters,
   RiskFilters,
   PsychologyFilters,
   MarketFilters,
-} from '@/lib/services/what-if/types';
+} from '@/lib/services/what-if/types'
 
-export interface EquityPoint {
-    date: string;
-    value: number;
-    actualValue: number;
-    simulatedValue: number;
-}
+export type { EquityPointDetailed as EquityPoint } from '@/types/trade'
+
+type EquityPoint = EquityPointDetailed
 
 export interface SimulationResult {
     totalTrades: number;

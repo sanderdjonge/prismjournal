@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Plus, X, Target, AlertTriangle } from 'lucide-react';
 import DashboardShell from '@/components/layout/DashboardShell';
 import ChecklistManager from '@/components/strategies/ChecklistManager';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 interface Strategy {
   id: string;
@@ -116,16 +117,20 @@ export default function StrategiesClient({ strategies: initialStrategies }: Prop
 
         {strategies.length === 0 ? (
           <div className="glass-card p-12 border-white/5 text-center">
-            <div className="text-gray-400 mb-4">No strategies found.</div>
-            <p className="text-gray-500 text-sm mb-6">
-              Create your first strategy to define trading rules and track compliance.
-            </p>
-            <button
-              onClick={() => setShowModal(true)}
-              className="text-primary hover:text-primary/80 transition-colors text-sm font-bold"
-            >
-              Create your first strategy →
-            </button>
+            <EmptyState
+              icon={Target}
+              title="No strategies found."
+              description="Create your first strategy to define trading rules and track compliance."
+              action={
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="text-primary hover:text-primary/80 transition-colors text-sm font-bold"
+                >
+                  Create your first strategy →
+                </button>
+              }
+              className="py-0"
+            />
           </div>
         ) : (
           <div className="grid gap-4">

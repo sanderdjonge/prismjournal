@@ -40,6 +40,7 @@ import {
 import { cn } from '@/lib/cn';
 import { formatPercent } from '@/lib/formatNumber';
 import { apiFetch, apiPost, apiPatch, apiDelete } from '@/lib/api/client';
+import { toast } from 'sonner';
 
 // Types
 interface User {
@@ -240,7 +241,7 @@ export default function AdminPage() {
             const data = await apiPatch<any>('/api/admin/users', { userId, action });
             setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...data.user } : u));
         } catch (e: any) {
-            alert(e.message || 'Failed to update user');
+            toast.error(e.message || 'Failed to update user');
         } finally {
             setUpdating(null);
         }
@@ -253,7 +254,7 @@ export default function AdminPage() {
             setUsers(prev => prev.filter(u => u.id !== userId));
             setConfirmDelete(null);
         } catch (e: any) {
-            alert(e.message || 'Failed to delete user');
+            toast.error(e.message || 'Failed to delete user');
         } finally {
             setUpdating(null);
         }
@@ -284,9 +285,9 @@ export default function AdminPage() {
             succeeded.forEach(id => newSelected.delete(id));
             setSelectedUsers(newSelected);
             setConfirmBulkDelete(false);
-            if (failCount > 0) alert(`${failCount} user(s) failed to delete`);
+            if (failCount > 0) toast.error(`${failCount} user(s) failed to delete`);
         } catch (e: any) {
-            alert(e.message || 'Bulk delete failed');
+            toast.error(e.message || 'Bulk delete failed');
         } finally {
             setBulkDeleting(false);
         }
@@ -317,7 +318,7 @@ export default function AdminPage() {
             setResetSuccess(`Reset email sent to ${email}`);
             setTimeout(() => setResetSuccess(null), 5000);
         } catch (e: any) {
-            alert(e.message || 'Failed to send reset email');
+            toast.error(e.message || 'Failed to send reset email');
         } finally {
             setResetLoading(null);
         }
@@ -325,7 +326,7 @@ export default function AdminPage() {
 
     async function sendBroadcast() {
         if (!broadcastTitle.trim() || !broadcastMessage.trim()) {
-            alert('Title and message are required')
+            toast.error('Title and message are required')
             return
         }
         setBroadcastLoading(true)
@@ -336,7 +337,7 @@ export default function AdminPage() {
             setBroadcastTitle('')
             setBroadcastMessage('')
         } catch (e: any) {
-            alert(e.message || 'Failed to send broadcast')
+            toast.error(e.message || 'Failed to send broadcast')
         } finally {
             setBroadcastLoading(false)
         }
@@ -375,9 +376,9 @@ export default function AdminPage() {
         try {
             await apiPost('/api/admin/backups', { action: 'create' })
             await loadBackups()
-            alert('Backup created successfully!')
+            toast.success('Backup created successfully!')
         } catch (e: any) {
-            alert(e.message || 'Failed to create backup')
+            toast.error(e.message || 'Failed to create backup')
         } finally {
             setBackupActionLoading(false)
         }

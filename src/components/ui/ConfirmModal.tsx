@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { X, AlertTriangle } from 'lucide-react';
+import { Spinner } from '@/components/ui/Spinner';
 
 interface ConfirmModalProps {
     isOpen: boolean;
@@ -89,7 +90,7 @@ export function ConfirmModal({
                     >
                         {isLoading ? (
                             <>
-                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                <Spinner size="sm" className="border-white/30 border-t-white" />
                                 Processing...
                             </>
                         ) : (
