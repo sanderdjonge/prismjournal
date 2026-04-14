@@ -25,6 +25,8 @@ import {
 import { cn } from '@/lib/cn';
 import { formatPercent as formatPercentUtil } from '@/lib/formatNumber';
 import { ChallengeCalendar } from '@/components/prop-firm/ChallengeCalendar';
+import type { AnalyticsData } from '@/hooks/useAnalytics'
+import { toast } from 'sonner';
 
 interface PhaseConfig {
     phaseNumber: number;
@@ -118,16 +120,6 @@ interface AccountDetails {
     } | null;
 }
 
-interface AnalyticsData {
-    symbolData: Array<{ symbol: string; profit: number; winRate: number }>;
-    expectancyData: Array<{ trade: number; val: number }>;
-    sessionData: Array<{ hour: number; count: number }>;
-    profitFactor: number;
-    expectancy: number;
-    avgRR: number;
-    meanDrawdown: number;
-}
-
 function PropFirmAccountContent() {
     const params = useParams();
     const router = useRouter();
@@ -210,7 +202,7 @@ function PropFirmAccountContent() {
         fetch(`/api/accounts/${accountId}/snapshots`)
             .then(r => r.json())
             .then(data => setSnapshots(data.snapshots ?? []))
-            .catch(() => {})
+            .catch(() => toast.error('Failed to save'))
             .finally(() => setSnapshotsLoading(false));
     }, [accountId, account]);
 
@@ -271,11 +263,11 @@ function PropFirmAccountContent() {
                 });
             } else {
                 const error = await res.json().catch(() => ({ error: 'Unknown error' }));
-                alert(`Failed to acknowledge: ${error.error || 'Please try again'}`);
+                toast.error(`Failed to acknowledge: ${error.error || 'Please try again'}`);
             }
         } catch (err) {
             console.error('Error acknowledging violation:', err);
-            alert('An error occurred. Please try again.');
+            toast.error('An error occurred. Please try again.');
         } finally {
             setAcknowledgingId(null);
         }

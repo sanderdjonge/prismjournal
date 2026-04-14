@@ -11,39 +11,11 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { CheckCircle2, XCircle, Minus, TrendingUp, TrendingDown, HelpCircle } from 'lucide-react';
 import { formatPercent } from '@/lib/formatNumber';
+import type { ComplianceMetrics } from '@/types/analytics'
 
 interface ComplianceWidgetProps {
     accountId?: string | null;
     strategyId?: string | null;
-}
-
-interface ComplianceMetrics {
-    fullCompletion: {
-        tradeCount: number;
-        winRate: number;
-        avgRR: number;
-        totalPnl: number;
-        avgPnl: number;
-    };
-    partialCompletion: {
-        tradeCount: number;
-        winRate: number;
-        avgRR: number;
-        totalPnl: number;
-        avgPnl: number;
-    };
-    noCompletion: {
-        tradeCount: number;
-        winRate: number;
-        avgRR: number;
-        totalPnl: number;
-        avgPnl: number;
-    };
-    overall: {
-        totalTrades: number;
-        avgCompletionPct: number;
-        completionRate: number;
-    };
 }
 
 async function fetchComplianceMetrics(accountId?: string, strategyId?: string): Promise<ComplianceMetrics> {

@@ -2,12 +2,13 @@ import { Suspense } from 'react';
 import DashboardShell from '@/components/layout/DashboardShell';
 import Dashboard from '@/components/dashboard/Dashboard';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
+import { Spinner } from '@/components/ui/Spinner';
 import { auth } from '@/lib/auth';
 
 function DashboardSkeleton() {
   return (
     <div className="flex items-center justify-center min-h-[400px]">
-      <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      <Spinner size="lg" />
     </div>
   );
 }

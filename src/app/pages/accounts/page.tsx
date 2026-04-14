@@ -16,6 +16,8 @@ import { PLATFORM_LABELS, PLATFORM_COLORS } from '@/constants/platforms'
 import { useCurrency } from '@/lib/currency';
 import { autoScreenshotConfigSchema } from '@/lib/validations/screenshot-config';
 import { calculateDrawdown } from '@/lib/drawdown';
+import type { BridgeKeyInfoFull } from '@/types/auth'
+import { toast } from 'sonner';
 
 interface AccountSummary {
     id: string;
@@ -68,13 +70,6 @@ interface PropFirm {
     hasScalingPlan: boolean;
     scalingConfig: unknown;
     popularity: number;
-}
-
-interface BridgeKeyInfo {
-    bridgeKey: string | null;
-    bridgeKeyId: string | null;
-    isHashed: boolean;
-    syncUrl: string;
 }
 
 type SortKey = 'name' | 'totalPnl' | 'tradeCount' | 'currentBalance';
@@ -232,7 +227,7 @@ function AccountsContent() {
     const [activeTab, setActiveTab] = useState<'accounts' | 'connect'>('accounts');
     
     // Bridge state
-    const [bridgeInfo, setBridgeInfo] = useState<BridgeKeyInfo | null>(null);
+    const [bridgeInfo, setBridgeInfo] = useState<BridgeKeyInfoFull | null>(null);
     const [showKey, setShowKey] = useState(false);
     const [copied, setCopied] = useState<string | null>(null);
     const [regenerating, setRegenerating] = useState(false);
@@ -430,7 +425,7 @@ function AccountsContent() {
             await apiDelete(`/api/accounts/${accountId}`)
             await loadAccountsData()
         } catch (e: any) {
-            alert(e.message || 'An error occurred while archiving the account.')
+            toast.error(e.message || 'An error occurred while archiving the account.')
         }
     }
 

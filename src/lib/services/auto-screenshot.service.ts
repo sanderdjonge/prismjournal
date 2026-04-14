@@ -128,7 +128,7 @@ export async function captureAutoScreenshots(
     if (event === 'CLOSE') {
         await prisma.pendingScreenshot.deleteMany({
             where: { tradeId, event: 'OPEN' },
-        }).catch(() => {});
+        }).catch((err) => { logger.error({ err }, 'Screenshot capture failed') });
     }
 
     const normalisedSymbol = normaliseSymbol(trade.symbol);
@@ -243,6 +243,6 @@ export async function processScheduledScreenshots(): Promise<void> {
         }
 
         // Delete the pending record regardless of success/failure so it doesn't retry forever.
-        await prisma.pendingScreenshot.delete({ where: { id: pending.id } }).catch(() => {});
+        await prisma.pendingScreenshot.delete({ where: { id: pending.id } }).catch((err) => { logger.error({ err }, 'Screenshot capture failed') });
     }
 }

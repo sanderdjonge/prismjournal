@@ -3,12 +3,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiFetch, apiPost, apiPatch, apiDelete } from '@/lib/api/client'
 import { queryKeys } from '@/lib/query-keys'
-
-export type ChallengeRule = {
-  type: 'MAX_DAILY_LOSS' | 'MAX_TRADES_PER_DAY' | 'MIN_RR' | 'TIME_WINDOW' | 'MAX_DRAWDOWN' | 'WIN_RATE_TARGET'
-  value: number | string
-  operator?: 'LT' | 'LTE' | 'GT' | 'GTE' | 'EQ'
-}
+export type { ChallengeRule } from '@/types/prop-firm'
+import type { ChallengeRule } from '@/types/prop-firm'
 
 export type TradingChallenge = {
   id: string

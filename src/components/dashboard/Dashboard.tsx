@@ -16,18 +16,8 @@ import { useDashboard } from '@/hooks/useDashboard';
 import { useSettings } from '@/hooks/useSettings';
 import { MetricRow } from '@/components/ui';
 import { GraduationCap } from 'lucide-react';
+import type { RecentTrade, EquityPoint } from '@/types/trade'
 
-type RecentTrade = {
-    id: string;
-    symbol: string;
-    direction: 'LONG' | 'SHORT';
-    price: string;
-    pnl: number;
-    time: string;
-    isActive?: boolean;
-};
-
-type EquityPoint = { time: string; value: number };
 type CalendarDay = { date: string; pnl: number; trades: number; wins: number; losses: number };
 
 type DashboardData = {

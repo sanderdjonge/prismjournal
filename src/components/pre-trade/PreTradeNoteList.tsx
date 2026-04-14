@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { ArrowUpRight, ArrowDownRight, Clock, Link2, MoreVertical, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { formatDistanceToNow, formatShortDate } from '@/lib/formatTime';
+import { Spinner } from '@/components/ui/Spinner';
 
 interface PreTradeNote {
     id: string;
@@ -91,7 +92,7 @@ export function PreTradeNoteList({
     if (loading) {
         return (
             <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+                <Spinner size="sm" />
             </div>
         );
     }

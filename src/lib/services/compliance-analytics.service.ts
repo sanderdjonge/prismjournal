@@ -6,39 +6,8 @@
  */
 
 import prisma from '@/lib/prisma';
-
-export interface ComplianceMetrics {
-    // 100% completion stats
-    fullCompletion: {
-        tradeCount: number;
-        winRate: number;
-        avgRR: number;
-        totalPnl: number;
-        avgPnl: number;
-    };
-    // Partial completion (1-99%)
-    partialCompletion: {
-        tradeCount: number;
-        winRate: number;
-        avgRR: number;
-        totalPnl: number;
-        avgPnl: number;
-    };
-    // No completion (0% or no checklist)
-    noCompletion: {
-        tradeCount: number;
-        winRate: number;
-        avgRR: number;
-        totalPnl: number;
-        avgPnl: number;
-    };
-    // Overall stats
-    overall: {
-        totalTrades: number;
-        avgCompletionPct: number;
-        completionRate: number; // % of trades with 100% completion
-    };
-}
+export type { ComplianceMetrics, ComplianceMetricsGroup } from '@/types/analytics'
+import type { ComplianceMetrics } from '@/types/analytics'
 
 interface TradeWithCompletion {
     id: string;

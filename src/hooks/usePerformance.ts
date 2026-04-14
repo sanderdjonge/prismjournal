@@ -1,13 +1,13 @@
 // src/hooks/usePerformance.ts
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { STALE_TIME } from '@/constants/queryConfig';
+import type { EquityPoint } from '@/types/trade'
 
 interface PerformanceParams {
     period: string;
     accountId?: string | null;
 }
 
-type EquityPoint = { time: string; value: number };
 type MonthlyReturn = { month: number; value: number };
 export type PerfData = {
     equity: EquityPoint[];

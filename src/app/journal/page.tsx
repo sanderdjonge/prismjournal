@@ -10,6 +10,7 @@ import TradeEditModal from '@/components/journal/TradeEditModal';
 import TradeEntryModal from '@/components/journal/TradeEntryModal';
 import { JournalThreePanelView } from '@/components/journal/JournalThreePanelView';
 import { SkeletonRow, ConfirmModal } from '@/components/ui';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { useTrades, useDeleteTrade, TradeFilters } from '@/hooks/useTrades';
 import { useTags } from '@/hooks/useTags';
 import { useStrategies } from '@/hooks/useStrategies';
@@ -579,15 +580,18 @@ function JournalContent() {
                                 <div className="text-[10px] font-black uppercase tracking-widest text-gray-500 animate-pulse">Loading...</div>
                             </div>
                         ) : trades.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center h-[400px] gap-3 text-gray-600">
-                                <p className="text-[10px] font-black uppercase tracking-widest">No records found</p>
+                            <EmptyState
+                              title="No records found"
+                              action={
                                 <button
-                                    onClick={() => setIsModalOpen(true)}
-                                    className="text-primary text-[10px] font-black uppercase tracking-widest hover:underline"
+                                  onClick={() => setIsModalOpen(true)}
+                                  className="text-primary text-[10px] font-black uppercase tracking-widest hover:underline"
                                 >
-                                    + Log your first trade
+                                  + Log your first trade
                                 </button>
-                            </div>
+                              }
+                              className="py-0 h-[400px]"
+                            />
                         ) : (
                             <JournalThreePanelView trades={trades} />
                         )}
@@ -601,15 +605,18 @@ function JournalContent() {
                                 ))}
                             </div>
                         ) : trades.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center h-48 gap-3 text-gray-600">
-                                <p className="text-[10px] font-black uppercase tracking-widest">No records found</p>
+                            <EmptyState
+                              title="No records found"
+                              action={
                                 <button
-                                    onClick={() => setIsModalOpen(true)}
-                                    className="text-primary text-[10px] font-black uppercase tracking-widest hover:underline"
+                                  onClick={() => setIsModalOpen(true)}
+                                  className="text-primary text-[10px] font-black uppercase tracking-widest hover:underline"
                                 >
-                                    + Log your first trade
+                                  + Log your first trade
                                 </button>
-                            </div>
+                              }
+                              className="py-0 h-48"
+                            />
                         ) : (
                             <DraggableTable
                                 data={trades}

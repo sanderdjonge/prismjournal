@@ -1,4 +1,3 @@
-// src/components/ui/Skeleton.tsx
 import { cn } from '@/lib/cn';
 
 interface SkeletonProps {
@@ -28,6 +27,20 @@ export function SkeletonRow() {
             <Skeleton className="h-4 w-12" />
             <Skeleton className="h-4 w-20" />
             <Skeleton className="h-4 w-16 ml-auto" />
+        </div>
+    );
+}
+
+export function SkeletonPage() {
+    return (
+        <div className="space-y-6 p-6">
+            <Skeleton className="h-8 w-1/3" />
+            <div className="grid grid-cols-4 gap-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                    <SkeletonCard key={i} />
+                ))}
+            </div>
+            <Skeleton className="h-64 w-full" />
         </div>
     );
 }

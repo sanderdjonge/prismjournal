@@ -7,6 +7,7 @@ import { cn } from '@/lib/cn';
 import { formatDateKey } from '@/lib/formatTime';
 import { useCurrency } from '@/lib/currency';
 import { useChallenges, useCreateChallenge, type TradingChallenge, type ChallengeRule } from '@/hooks/useChallenges';
+import { Spinner } from '@/components/ui/Spinner';
 import { ChallengeDetailModal } from './ChallengeDetailModal';
 
 const RULE_LABELS: Record<string, string> = {
@@ -295,7 +296,7 @@ export function ChallengeProgressWidget() {
                 
                 {isLoading ? (
                     <div className="flex items-center justify-center py-8 text-gray-600">
-                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent" />
+                        <Spinner size="sm" />
                     </div>
                 ) : activeChallenges.length === 0 ? (
                     <div className="text-center py-6">

@@ -7,6 +7,7 @@ import { cn } from '@/lib/cn';
 import { formatPercent } from '@/lib/formatNumber';
 import { useCurrency } from '@/lib/currency';
 import { useChallenge, useDeleteChallenge, useUpdateChallenge, useBackfillChallenge, type ChallengeRule, type ChallengeEvaluation } from '@/hooks/useChallenges';
+import { Spinner } from '@/components/ui/Spinner';
 import { useState } from 'react';
 
 const RULE_LABELS: Record<string, string> = {
@@ -146,7 +147,7 @@ export function ChallengeDetailModal({
                     >
                         {isLoading ? (
                             <div className="flex items-center justify-center py-20">
-                                <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
+                                <Spinner size="sm" />
                             </div>
                         ) : challenge ? (
                             <>

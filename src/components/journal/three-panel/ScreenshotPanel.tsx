@@ -6,12 +6,7 @@ import { computeDuration } from './TradeListPanel';
 import type { JournalTrade } from '@/app/journal/page';
 import { formatPercent } from '@/lib/formatNumber';
 
-interface MediaItem {
-    id: string;
-    url: string;
-    timeframe: string;
-    event: string;
-}
+import type { MediaItem } from '@/types/trade'
 
 interface ScreenshotPanelProps {
     trade: JournalTrade | null;

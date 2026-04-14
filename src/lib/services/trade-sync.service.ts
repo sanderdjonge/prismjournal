@@ -7,6 +7,7 @@ import { formatPercent } from '@/lib/formatNumber';
 import { captureAutoScreenshots } from './auto-screenshot.service';
 import { autoAdvancePhaseIfNeeded } from '@/lib/prop-firm/challenge-service';
 import { sendDailyLossAlertIfNeeded } from './daily-loss-alert.service';
+import type { ChallengeRule } from '@/types/prop-firm'
 
 const syncInFlight = new Map<string, number>();
 const SYNC_LOCK_TTL_MS = 10_000;
@@ -22,12 +23,6 @@ function acquireSyncLock(ticket: string): boolean {
 function releaseSyncLock(ticket: string): void {
     syncInFlight.delete(ticket);
 }
-
-type ChallengeRule = {
-    type: 'MAX_DAILY_LOSS' | 'MAX_TRADES_PER_DAY' | 'MIN_RR' | 'TIME_WINDOW' | 'MAX_DRAWDOWN' | 'WIN_RATE_TARGET';
-    value: number | string;
-    operator?: 'LT' | 'LTE' | 'GT' | 'GTE' | 'EQ';
-};
 
 /**
  * Evaluate active trading challenges for a user after a trade is synced.
@@ -85,7 +80,7 @@ async function evaluateChallenges(
             });
 
             // Evaluate each rule
-            const rules = challenge.rules as ChallengeRule[];
+            const rules = challenge.rules as unknown as ChallengeRule[];
             const failureReasons: string[] = [];
             let passed = true;
 
@@ -507,7 +502,7 @@ export async function upsertSyncTrade(
 
     // Auto-apply MT5 platform tag for synced trades
     if (isNew) {
-        applyPlatformTag(userId, upsertedTrade.id, 'MT5').catch(() => {});
+        applyPlatformTag(userId, upsertedTrade.id, 'MT5').catch((err) => { logger.error({ err }, 'Failed to apply platform tag') });
 
         // Auto-link to pre-trade note if matching
         linkPreTradeNote(
@@ -516,12 +511,12 @@ export async function upsertSyncTrade(
             trade.symbol,
             direction,
             entryTime,
-        ).catch(() => {});
+        ).catch((err) => { logger.error({ err }, 'Failed to link pre-trade note') });
     }
 
     // Skip notifications during history replay to avoid flooding Telegram
     if (!isHistorySync) {
-        sendTradeAlert(userId, trade, isNew, isClosed).catch(() => {});
+        sendTradeAlert(userId, trade, isNew, isClosed).catch((err) => { logger.error({ err }, 'Failed to send trade alert') });
 
         if (isNew || isClosed) {
             const notifTitle = isNew
@@ -535,7 +530,7 @@ export async function upsertSyncTrade(
                 type: isNew ? 'TRADE_OPEN' : 'TRADE_CLOSE',
                 title: notifTitle,
                 message: notifMessage,
-            }).catch(() => {});
+            }).catch((err) => { logger.error({ err }, 'Failed to create notification') });
         }
     }
 
@@ -570,7 +565,7 @@ export async function upsertSyncTrade(
                 accountId,
                 exitTime ?? entryTime,
                 trade.pnl ?? null,
-            ).catch(() => {});
+        ).catch((err) => { logger.error({ err }, 'Failed to evaluate challenges') });
         }
 
         // Check for prop firm phase auto-advancement on closed trades
@@ -589,7 +584,7 @@ export async function upsertSyncTrade(
                             message: result.message,
                             sendTelegram: alertConfig?.enableTrades ?? false,
                             telegramId: alertConfig?.telegramId,
-                        }).catch(() => {});
+            }).catch((err) => { logger.error({ err }, 'Failed to create phase advancement notification') });
                     }
                 })
                 .catch((err) => {

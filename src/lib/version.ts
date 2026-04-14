@@ -11,7 +11,7 @@ export const APP_VERSION = pkg.version; // e.g. "2.17.0"
  */
 export const BUILD_DATE = '2026-04-14';
 
-export const BUILD_NOTES = 'Format & naming consolidation';
+export const BUILD_NOTES = 'Type & UI component consolidation';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {

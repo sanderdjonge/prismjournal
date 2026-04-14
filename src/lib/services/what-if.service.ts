@@ -6,16 +6,12 @@ import {
   TradeData,
   normalizeFilters,
 } from './what-if/types';
+import type { EquityPointDetailed } from '@/types/trade'
 
-// Re-export types for backward compatibility
-export type { WhatIfFilters, TradeData } from './what-if/types';
+export type { EquityPointDetailed as EquityPoint } from '@/types/trade'
+export type { WhatIfFilters, TradeData } from './what-if/types'
 
-export interface EquityPoint {
-    date: string;
-    value: number;
-    actualValue: number;
-    simulatedValue: number;
-}
+type EquityPoint = EquityPointDetailed
 
 export interface SimulationResult {
     totalTrades: number;

@@ -1,12 +1,7 @@
 import prisma from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { formatPercent } from '@/lib/formatNumber';
-
-type ChallengeRule = {
-    type: 'MAX_DAILY_LOSS' | 'MAX_TRADES_PER_DAY' | 'MIN_RR' | 'TIME_WINDOW' | 'MAX_DRAWDOWN' | 'WIN_RATE_TARGET';
-    value: number | string;
-    operator?: 'LT' | 'LTE' | 'GT' | 'GTE' | 'EQ';
-};
+import type { ChallengeRule } from '@/types/prop-firm'
 
 /**
  * Backfill challenge evaluations for existing trades.
@@ -27,7 +22,7 @@ export async function backfillChallengeEvaluations(challengeId: string): Promise
             return { success: false, daysEvaluated: 0, error: 'Challenge not found' };
         }
 
-        const rules = challenge.rules as ChallengeRule[];
+        const rules = challenge.rules as unknown as ChallengeRule[];
         const startDate = new Date(challenge.startDate);
         const endDate = challenge.endDate ? new Date(challenge.endDate) : new Date();
 

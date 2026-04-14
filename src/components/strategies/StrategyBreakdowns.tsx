@@ -3,6 +3,7 @@
 import { useCurrency } from '@/lib/currency'
 import { cn } from '@/lib/cn'
 import { formatPercent } from '@/lib/formatNumber'
+import { EmptyState } from '@/components/ui/EmptyState'
 
 interface BreakdownsProps {
   bySymbol: Array<{ symbol: string; winRate: number; pnl: number; count: number }>
@@ -25,7 +26,7 @@ export function StrategyBreakdowns({ bySymbol, byDirection, byTimeOfDay, byDayOf
         <h4 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-3">By Symbol</h4>
         <div className="space-y-2">
           {bySymbol.length === 0 ? (
-            <p className="text-gray-600 text-xs">No data</p>
+            <EmptyState title="No data" className="py-4" />
           ) : (
             bySymbol.map((s) => (
               <div key={s.symbol} className="flex items-center justify-between text-xs">
