@@ -1,5 +1,6 @@
 import prisma from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { formatPercent } from '@/lib/formatNumber';
 
 type ChallengeRule = {
     type: 'MAX_DAILY_LOSS' | 'MAX_TRADES_PER_DAY' | 'MIN_RR' | 'TIME_WINDOW' | 'MAX_DRAWDOWN' | 'WIN_RATE_TARGET';
@@ -197,7 +198,7 @@ function evaluateRule(
                 const wins = closedTrades.filter(t => (t.pnl ?? 0) > 0).length;
                 const winRate = (wins / closedTrades.length) * 100;
                 if (winRate < targetWR) {
-                    return { passed: false, reason: `Win rate ${winRate.toFixed(1)}% below target ${targetWR}%` };
+                    return { passed: false, reason: `Win rate ${formatPercent(winRate, 1)} below target ${targetWR}%` };
                 }
             }
             return { passed: true };

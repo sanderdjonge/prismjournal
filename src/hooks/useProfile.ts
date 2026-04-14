@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiFetch, apiPatch } from '@/lib/api/client'
 import { queryKeys } from '@/lib/query-keys'
+import { STALE_TIME } from '@/constants/queryConfig'
 
 interface ProfileData {
   name: string
@@ -13,7 +14,7 @@ export function useProfile() {
   return useQuery<ProfileData>({
     queryKey: queryKeys.profile.all,
     queryFn: () => apiFetch('/api/settings/profile'),
-    staleTime: 60_000,
+    staleTime: STALE_TIME.MEDIUM,
   })
 }
 

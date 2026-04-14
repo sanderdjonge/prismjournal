@@ -1,5 +1,6 @@
 import prisma from './prisma';
 import { calculateProfitFactor, formatProfitFactor as canonicalFormatProfitFactor } from './analytics';
+import { formatPercent } from '@/lib/formatNumber';
 
 export const PNL_PERIODS = ['today', 'week', 'month', 'all'] as const;
 export type PnlPeriod = typeof PNL_PERIODS[number];
@@ -47,7 +48,7 @@ interface TradeLike {
 }
 
 interface AccountSummary {
-  netPnl: number;
+  totalPnl: number;
   wins: number;
   total: number;
   grossProfits: number;
@@ -57,19 +58,19 @@ interface AccountSummary {
 
 function computeSummary(trades: TradeLike[], accountId?: string): AccountSummary {
   const filtered = accountId ? trades.filter(t => t.accountId === accountId) : trades;
-  let netPnl = 0, wins = 0, total = 0, grossProfits = 0, grossLosses = 0;
+  let totalPnl = 0, wins = 0, total = 0, grossProfits = 0, grossLosses = 0;
   const rMultiples: number[] = [];
   for (const t of filtered) {
     if (t.pnl === null) continue;
     total++;
-    netPnl += t.pnl;
+    totalPnl += t.pnl;
     if (t.pnl > 0) { wins++; grossProfits += t.pnl; }
     else if (t.pnl < 0) { grossLosses += Math.abs(t.pnl); }
     if (t.rMultiple !== null && t.rMultiple !== undefined) {
       rMultiples.push(t.rMultiple);
     }
   }
-  return { netPnl, wins, total, grossProfits, grossLosses, rMultiples };
+  return { totalPnl, wins, total, grossProfits, grossLosses, rMultiples };
 }
 
 function formatProfitFactor(s: AccountSummary): string {
@@ -85,8 +86,8 @@ function formatWinRate(s: AccountSummary): string {
 
 function formatOverallPnl(s: AccountSummary, currencies: string[]): string {
   const allSame = currencies.length > 0 && currencies.every(c => c === currencies[0]);
-  if (allSame) return `${formatSign(s.netPnl)} ${currencies[0]}`;
-  return `${formatSign(s.netPnl)} (mixed currencies — see breakdown)`;
+  if (allSame) return `${formatSign(s.totalPnl)} ${currencies[0]}`;
+  return `${formatSign(s.totalPnl)} (mixed currencies — see breakdown)`;
 }
 
 const MAX_TELEGRAM_LEN = 4096;
@@ -154,7 +155,7 @@ export async function handlePnlCommand(chatId: string, period: PnlPeriod): Promi
           if (s.total === 0) return null;
           const safeName = escapeHtml(account.name ?? account.id);
           const currency = account.currency ?? '';
-          return `${safeName} (${currency})\n  PnL: ${formatSign(s.netPnl)} · WR: ${((s.wins / s.total) * 100).toFixed(0)}%`;
+          return `${safeName} (${currency})\n  PnL: ${formatSign(s.totalPnl)} · WR: ${formatPercent((s.wins / s.total) * 100, 0)}`;
         })
         .filter(Boolean)
         .join('\n\n');

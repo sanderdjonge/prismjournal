@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
+import { useCurrency } from '@/lib/currency'
+
 export interface SessionHour {
     hour: number;
     count: number;
@@ -28,18 +30,11 @@ const VIEW_OPTIONS: { value: ViewMode; label: string }[] = [
     { value: 'rr', label: 'R:R' },
 ];
 
-function formatCurrency(value: number, currency: string = 'USD'): string {
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency,
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-    }).format(value);
-}
 
 export function TradingHoursWidget({ data, currency = 'USD' }: TradingHoursWidgetProps) {
     const [viewMode, setViewMode] = useState<ViewMode>('trades');
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    const { formatAmount: fmt } = useCurrency()
 
     // Calculate max values for scaling
     const maxCount = Math.max(...data.map(d => d.count), 1);
@@ -126,7 +121,7 @@ export function TradingHoursWidget({ data, currency = 'USD' }: TradingHoursWidge
                 <>
                     <div className="text-white font-bold">{timeStr}</div>
                     <div className={cn('mt-1 font-bold', hour.totalPnl >= 0 ? 'text-profit' : 'text-loss')}>
-                        {formatCurrency(hour.totalPnl, currency)}
+                        {fmt(hour.totalPnl, { compact: true })}
                     </div>
                     <div className="text-gray-400 text-[9px] mt-0.5">
                         {hour.count} trade{hour.count !== 1 ? 's' : ''}

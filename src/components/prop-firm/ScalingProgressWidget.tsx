@@ -9,6 +9,7 @@
 
 import React from 'react';
 import { TrendingUp, HelpCircle, CheckCircle2, Circle } from 'lucide-react';
+import { formatPercent } from '@/lib/formatNumber';
 
 interface ScalingLevel {
     level: number;
@@ -113,7 +114,7 @@ export function ScalingProgressWidget({
                         {nextLevel ? `Progress to Level ${nextLevel.level}` : 'Max Level Reached!'}
                     </span>
                     <span className="text-sm font-medium text-white">
-                        {currentProgress.toFixed(1)}% / {nextLevel?.targetProfit || 0}%
+                        {formatPercent(currentProgress, 1)} / {nextLevel?.targetProfit || 0}%
                     </span>
                 </div>
                 <div className="h-3 bg-white/10 rounded-full overflow-hidden">

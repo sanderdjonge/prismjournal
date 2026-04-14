@@ -14,6 +14,8 @@ import {
 import { useBenchmark } from '@/hooks/useBenchmark';
 import { TrendingUp, TrendingDown, Minus, Loader2 } from 'lucide-react';
 import { getChartColor } from '@/lib/chart-colors';
+import { formatPercent } from '@/lib/formatNumber';
+import { formatDateKey } from '@/lib/formatTime';
 
 interface BenchmarkComparisonProps {
     accountId?: string;
@@ -54,7 +56,7 @@ export default function BenchmarkComparison({ accountId, className = '' }: Bench
 
     // Normalize equity curves to start at 100 for comparison
     const normalizedAccountEquity = account.equityCurve.map((point, i) => ({
-        time: new Date(point.date).toISOString().split('T')[0],
+        time: formatDateKey(point.date),
         account: account.startingBalance > 0 
             ? (point.equity / account.startingBalance) * 100 
             : 100,
@@ -91,7 +93,7 @@ export default function BenchmarkComparison({ accountId, className = '' }: Bench
                     )}
                     {comparison.spyDifferencePercent !== null && (
                         <p className={`text-xs font-mono ${comparison.spyDifferencePercent >= 0 ? 'text-profit' : 'text-loss'}`}>
-                            {comparison.spyDifferencePercent >= 0 ? '+' : ''}{comparison.spyDifferencePercent.toFixed(1)}% vs SPY
+                            {comparison.spyDifferencePercent >= 0 ? '+' : ''}{formatPercent(comparison.spyDifferencePercent, 1)} vs SPY
                         </p>
                     )}
                 </div>
@@ -102,19 +104,19 @@ export default function BenchmarkComparison({ accountId, className = '' }: Bench
                 <div className="text-center p-2 rounded-lg bg-white/5">
                     <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">Your Return</p>
                     <p className={`text-sm font-bold font-mono ${account.returnPercent >= 0 ? 'text-profit' : 'text-loss'}`}>
-                        {account.returnPercent >= 0 ? '+' : ''}{account.returnPercent.toFixed(1)}%
+                        {account.returnPercent >= 0 ? '+' : ''}{formatPercent(account.returnPercent, 1)}
                     </p>
                 </div>
                 <div className="text-center p-2 rounded-lg bg-white/5">
                     <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">SPY Return</p>
                     <p className="text-sm font-bold font-mono text-blue-400">
-                        {spy.returnPercent >= 0 ? '+' : ''}{spy.returnPercent.toFixed(1)}%
+                        {spy.returnPercent >= 0 ? '+' : ''}{formatPercent(spy.returnPercent, 1)}
                     </p>
                 </div>
                 <div className="text-center p-2 rounded-lg bg-white/5">
                     <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">Difference</p>
                     <p className={`text-sm font-bold font-mono ${(comparison.spyDifferencePercent ?? 0) >= 0 ? 'text-profit' : 'text-loss'}`}>
-                        {(comparison.spyDifferencePercent ?? 0) >= 0 ? '+' : ''}{(comparison.spyDifferencePercent ?? 0).toFixed(1)}%
+                        {(comparison.spyDifferencePercent ?? 0) >= 0 ? '+' : ''}{formatPercent(comparison.spyDifferencePercent ?? 0, 1)}
                     </p>
                 </div>
             </div>

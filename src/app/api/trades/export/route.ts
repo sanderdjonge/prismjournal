@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAllUserAccounts } from '@/lib/getAccount';
 import { withAuth } from '@/lib/api/withAuth';
+import { formatDateKey } from '@/lib/formatTime';
 
 export const GET = withAuth(async (request, _ctx, session) => {
     const { searchParams } = new URL(request.url);
@@ -105,7 +106,7 @@ export const GET = withAuth(async (request, _ctx, session) => {
     return new NextResponse(csv, {
         headers: {
             'Content-Type': 'text/csv',
-            'Content-Disposition': `attachment; filename="trades_${new Date().toISOString().split('T')[0]}.csv"`,
+            'Content-Disposition': `attachment; filename="trades_${formatDateKey(new Date())}.csv"`,
         },
     });
 });

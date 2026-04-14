@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { getAllUserAccounts } from '@/lib/getAccount';
 import { calculateProfitFactorFromTrades } from '@/lib/analytics';
 import { withAuth } from '@/lib/api/withAuth';
+import { formatDateKey } from '@/lib/formatTime';
 import type { Session } from 'next-auth';
 
 export const GET = withAuth(async (request: NextRequest, ctx: Record<string, unknown>, session: Session & { user: { id: string } }) => {
@@ -30,7 +31,7 @@ export const GET = withAuth(async (request: NextRequest, ctx: Record<string, unk
     if (accountIds.length === 0) {
         return NextResponse.json({
             equity: [],
-            netPnl: 0,
+            totalPnl: 0,
             maxDrawdown: 0,
             sharpe: 0,
             profitFactor: 0,
@@ -75,21 +76,21 @@ export const GET = withAuth(async (request: NextRequest, ctx: Record<string, unk
         let running = 0;
         for (const t of allClosedTrades) {
             running += (t.pnl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
-            const key = t.exitTime!.toISOString().split('T')[0];
+            const key = formatDateKey(t.exitTime!);
             byDay.set(key, running);
         }
         equityData = Array.from(byDay.entries())
             .map(([time, value]) => ({ time, value }))
             .sort((a, b) => a.time.localeCompare(b.time));
         // Prepend zero anchor at period start so curve visually starts at 0
-        const startKey = startDate.toISOString().split('T')[0];
+        const startKey = formatDateKey(startDate);
         if (equityData[0]?.time !== startKey) {
             equityData.unshift({ time: startKey, value: 0 });
         }
     } else if (snapshots.length >= 2) {
         const byDay = new Map<string, number>();
         for (const s of snapshots) {
-            const key = s.timestamp.toISOString().split('T')[0];
+            const key = formatDateKey(s.timestamp);
             byDay.set(key, s.equity);
         }
         equityData = Array.from(byDay.entries()).map(([time, value]) => ({ time, value }));
@@ -97,14 +98,14 @@ export const GET = withAuth(async (request: NextRequest, ctx: Record<string, unk
 
     // --- Key stats (net PnL: gross profit + commission + swap) ---
     const pnlList = trades.map(t => (t.pnl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0));
-    const netPnl = pnlList.reduce((a, b) => a + b, 0);
+    const totalPnl = pnlList.reduce((a, b) => a + b, 0);
     const profitFactor = calculateProfitFactorFromTrades(trades.map(t => ({ pnl: t.pnl ?? 0 })));
 
     const winners = pnlList.filter(p => p > 0);
     const losers = pnlList.filter(p => p < 0);
     const avgWin = winners.length > 0 ? winners.reduce((a, b) => a + b, 0) / winners.length : 0;
     const avgLoss = losers.length > 0 ? Math.abs(losers.reduce((a, b) => a + b, 0) / losers.length) : 0;
-    const expectancy = trades.length > 0 ? netPnl / trades.length : 0;
+    const expectancy = trades.length > 0 ? totalPnl / trades.length : 0;
 
     // Max drawdown from equity curve (balance-based)
     const latestSnap = snapshots.length > 0 ? snapshots[snapshots.length - 1] : null;
@@ -154,7 +155,7 @@ export const GET = withAuth(async (request: NextRequest, ctx: Record<string, unk
 
     return NextResponse.json({
         equity: equityData,
-        netPnl: Math.round(netPnl * 100) / 100,
+        totalPnl: Math.round(totalPnl * 100) / 100,
         maxDrawdown: Math.round(maxDrawdown * 100) / 100,
         sharpe,
         profitFactor,

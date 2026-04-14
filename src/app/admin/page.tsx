@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardShell from '@/components/layout/DashboardShell';
+import { formatDistanceToNow, formatShortDate } from '@/lib/formatTime';
 import {
     Shield,
     Users,
@@ -37,6 +38,7 @@ import {
     ChevronLeft,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { formatPercent } from '@/lib/formatNumber';
 import { apiFetch, apiPost, apiPatch, apiDelete } from '@/lib/api/client';
 
 // Types
@@ -139,16 +141,7 @@ function formatUptime(seconds: number): string {
     return `${mins}m`;
 }
 
-// Format date relative
-function formatRelative(dateStr: string): string {
-    const diffMs = Date.now() - new Date(dateStr).getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    const diffHours = Math.floor(diffMs / 3600000);
-    if (diffHours < 24) return `${diffHours}h ago`;
-    return `${Math.floor(diffMs / 86400000)}d ago`;
-}
+
 
 export default function AdminPage() {
     const router = useRouter();
@@ -763,12 +756,12 @@ export default function AdminPage() {
                                                 </td>
                                                 <td className="p-4">
                                                     <span className="text-xs text-gray-500 flex items-center gap-1">
-                                                        <Calendar size={10} /> {new Date(user.createdAt).toLocaleDateString()}
+                                                        <Calendar size={10} /> {formatShortDate(user.createdAt)}
                                                     </span>
                                                 </td>
                                                 <td className="p-4">
                                                     <span className="text-xs text-gray-500 flex items-center gap-1">
-                                                        <Clock size={10} /> {user.lastLoginAt ? formatRelative(user.lastLoginAt) : 'Never'}
+                                                        <Clock size={10} /> {user.lastLoginAt ? formatDistanceToNow(user.lastLoginAt) : 'Never'}
                                                     </span>
                                                 </td>
                                                 <td className="p-4 text-right">
@@ -1018,7 +1011,7 @@ export default function AdminPage() {
                                         <div className="p-5 space-y-3">
                                             <div className="flex items-center justify-between">
                                                 <span className="text-xs text-gray-500">Error Rate (24h)</span>
-                                                <span className="text-sm font-bold text-white">{(infraData.errors.errorRate24h * 100).toFixed(2)}%</span>
+                                                <span className="text-sm font-bold text-white">{formatPercent(infraData.errors.errorRate24h * 100, 2)}</span>
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-xs text-gray-500">Failed Syncs</span>
@@ -1096,7 +1089,7 @@ export default function AdminPage() {
                                             <Clock size={20} className="text-primary" />
                                             <div>
                                                 <p className="text-sm font-black text-white">
-                                                    {backupData.status.lastBackup ? formatRelative(backupData.status.lastBackup) : 'Never'}
+                                                    {backupData.status.lastBackup ? formatDistanceToNow(backupData.status.lastBackup) : 'Never'}
                                                 </p>
                                                 <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">Last Backup</p>
                                             </div>
@@ -1666,7 +1659,7 @@ function InvitesTab() {
                                         )}
                                     </td>
                                     <td className="px-4 py-2.5 text-gray-500">
-                                        {token.expiresAt ? new Date(token.expiresAt).toLocaleDateString() : 'Never'}
+                                        {token.expiresAt ? formatShortDate(token.expiresAt) : 'Never'}
                                     </td>
                                     <td className="px-4 py-2.5">
                                         <div className="flex gap-2">

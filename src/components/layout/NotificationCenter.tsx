@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Bell, X, Check, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/cn'
+import { formatDistanceToNow, formatShortDate } from '@/lib/formatTime'
 import { useNotifications, useMarkNotificationsRead, useDeleteNotification } from '@/hooks/useNotifications'
 
 interface Notification {
@@ -84,16 +85,6 @@ export default function NotificationCenter({ className }: NotificationCenterProp
     setLoading(false)
   }
 
-  const formatTime = (dateString: string) => {
-    const diff = Date.now() - new Date(dateString).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return 'Just now';
-    if (mins < 60) return `${mins}m ago`;
-    const hours = Math.floor(diff / 3600000);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(diff / 86400000);
-    return days < 7 ? `${days}d ago` : new Date(dateString).toLocaleDateString();
-  };
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -184,7 +175,7 @@ export default function NotificationCenter({ className }: NotificationCenterProp
                           {notification.message}
                         </p>
                         <p className="text-[10px] text-text-muted mt-1">
-                          {formatTime(notification.createdAt)}
+                          {(() => { const diff = Date.now() - new Date(notification.createdAt).getTime(); const days = Math.floor(diff / 86400000); return days >= 7 ? formatShortDate(notification.createdAt) : formatDistanceToNow(notification.createdAt) })()}
                         </p>
                       </div>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

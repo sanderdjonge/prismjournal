@@ -1,5 +1,6 @@
 import { StrategyRuleType } from '@prisma/client';
 import prisma from '@/lib/prisma';
+import { formatDateKey } from '@/lib/formatTime';
 
 // ============================================
 // Types
@@ -170,7 +171,7 @@ export async function getTiltmeterHistory(
     const violationsByDate = new Map<string, { count: number; weightedScore: number }>();
 
     for (const v of violations) {
-      const dateKey = v.occurredAt.toISOString().split('T')[0];
+      const dateKey = formatDateKey(v.occurredAt);
       const weight = RULE_TYPE_WEIGHTS[v.ruleType] || 1.0;
       
       const existing = violationsByDate.get(dateKey) || { count: 0, weightedScore: 0 };
@@ -184,7 +185,7 @@ export async function getTiltmeterHistory(
     const currentDate = new Date(start);
     
     while (currentDate <= end) {
-      const dateKey = currentDate.toISOString().split('T')[0];
+      const dateKey = formatDateKey(currentDate);
       const dayData = violationsByDate.get(dateKey);
       
       // Calculate cumulative score up to this date
@@ -192,7 +193,7 @@ export async function getTiltmeterHistory(
       const lookbackStart = new Date(currentDate.getTime() - 30 * 24 * 60 * 60 * 1000);
       
       for (const [d, data] of violationsByDate.entries()) {
-        if (d >= lookbackStart.toISOString().split('T')[0] && d <= dateKey) {
+        if (d >= formatDateKey(lookbackStart) && d <= dateKey) {
           // Apply recency decay
           const dayDiff = Math.floor((currentDate.getTime() - new Date(d).getTime()) / (24 * 60 * 60 * 1000));
           const recency = Math.max(0.1, 1 - dayDiff / 30);

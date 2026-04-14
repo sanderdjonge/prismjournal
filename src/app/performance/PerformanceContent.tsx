@@ -4,6 +4,7 @@ import EquityChart from '@/components/dashboard/EquityChart';
 import Gauge from '@/components/dashboard/Gauge';
 import { TrendingUp, ArrowDownLeft, Activity, Target, BarChart3, Zap } from 'lucide-react';
 import { useCurrency } from '@/lib/currency';
+import { formatPercent } from '@/lib/formatNumber';
 import { useAccounts } from '@/hooks/useAccounts';
 import { usePerformance } from '@/hooks/usePerformance';
 import { useAnalytics } from '@/hooks/useAnalytics';
@@ -51,8 +52,8 @@ export function PerformanceContent() {
     });
 
     const STATS = [
-        { id: 'stat_pnl', label: 'Net P&L', val: formatPnl(data.netPnl), status: data.netPnl >= 0 ? 'text-profit' : 'text-loss', icon: TrendingUp },
-        { id: 'stat_dd', label: 'Max Drawdown', val: `${data.maxDrawdown.toFixed(2)}%`, status: 'text-loss', icon: ArrowDownLeft },
+        { id: 'stat_pnl', label: 'Net P&L', val: formatPnl(data.totalPnl), status: data.totalPnl >= 0 ? 'text-profit' : 'text-loss', icon: TrendingUp },
+        { id: 'stat_dd', label: 'Max Drawdown', val: formatPercent(data.maxDrawdown, 2), status: 'text-loss', icon: ArrowDownLeft },
         { id: 'stat_sharpe', label: 'Sharpe Ratio', val: data.sharpe !== null ? data.sharpe.toFixed(2) : 'N/A', status: 'text-primary', icon: Activity },
         { id: 'stat_pf', label: 'Profit Factor', val: data.profitFactor.toFixed(2), status: 'text-profit', icon: Target },
     ];
@@ -203,7 +204,7 @@ export function PerformanceContent() {
                                 ? 'bg-profit/10 text-profit border border-profit/20'
                                 : 'bg-loss/10 text-loss border border-loss/20'}`}
                         >
-                            {r.value >= 0 ? '+' : ''}{r.value.toFixed(1)}%
+                            {r.value >= 0 ? '+' : ''}{formatPercent(r.value, 1)}
                         </div>
                     ))}
                 </div>

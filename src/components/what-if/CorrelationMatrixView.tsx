@@ -2,6 +2,7 @@
 
 import { useMemo, Fragment } from 'react'
 import { CorrelationMatrix as CorrelationMatrixType } from '@/lib/services/what-if/correlation-matrix'
+import { formatShortDate } from '@/lib/formatTime'
 
 interface CorrelationMatrixProps {
   matrix: CorrelationMatrixType
@@ -45,7 +46,7 @@ export function CorrelationMatrixView({ matrix, onCellClick }: CorrelationMatrix
             Filter Correlation Matrix
           </h3>
           <span className="text-[9px] text-gray-500">
-            {matrix.tradeCount} trades • {matrix.generatedAt.toLocaleDateString()}
+            {matrix.tradeCount} trades • {formatShortDate(matrix.generatedAt)}
           </span>
         </div>
       </div>

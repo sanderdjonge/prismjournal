@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { STALE_TIME } from '@/constants/queryConfig';
 
 export interface BEMetrics {
     beProtectionRate: number;   // 0–1 fraction of trades where BE was triggered
@@ -21,7 +22,6 @@ export function useBEMetrics(accountId?: string | null) {
                 return r.json();
             });
         },
-        staleTime: 30_000,
-        retry: 1,
+        staleTime: STALE_TIME.DEFAULT,
     });
 }

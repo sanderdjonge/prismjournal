@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { formatPercent } from '@/lib/formatNumber';
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
@@ -21,7 +22,7 @@ export interface WeeklyDigestData {
   userName?: string;
   weekStart: Date;
   weekEnd: Date;
-  netPnl: number;
+  totalPnl: number;
   returnOnEquity: number;
   totalTrades: number;
   winCount: number;
@@ -60,7 +61,7 @@ export async function sendWeeklyDigestEmail(data: WeeklyDigestData): Promise<Ema
     // userName is available in data but not currently used in email template
     weekStart,
     weekEnd,
-    netPnl,
+    totalPnl,
     returnOnEquity,
     totalTrades,
     winCount,
@@ -94,12 +95,10 @@ export async function sendWeeklyDigestEmail(data: WeeklyDigestData): Promise<Ema
     return `${prefix}$${Math.abs(value).toFixed(2)}`;
   };
 
-  // Format percentage
-  const formatPercent = (value: number) => `${value.toFixed(1)}%`;
 
   // Determine P&L color class
-  const pnlColor = netPnl >= 0 ? '#4ade80' : '#f87171';
-  const pnlPrefix = netPnl >= 0 ? '+' : '';
+  const pnlColor = totalPnl >= 0 ? '#4ade80' : '#f87171';
+  const pnlPrefix = totalPnl >= 0 ? '+' : '';
 
   // Calculate max bar width for daily P&L chart
   const maxDailyPnl = Math.max(...dailyPnl.map(d => Math.abs(d.pnl)), 1);
@@ -130,14 +129,14 @@ export async function sendWeeklyDigestEmail(data: WeeklyDigestData): Promise<Ema
       <tr>
         <td style="font-size:13px;color:#e2e8f0;font-weight:600;padding:${padding};">${inst.symbol}</td>
         <td style="font-size:13px;color:#94a3b8;padding:${padding};text-align:center;">${inst.trades}</td>
-        <td style="font-size:13px;color:#94a3b8;padding:${padding};text-align:center;">${formatPercent(inst.winRate)}</td>
+        <td style="font-size:13px;color:#94a3b8;padding:${padding};text-align:center;">${formatPercent(inst.winRate, 1)}</td>
         <td style="font-size:13px;color:${instPnlColor};font-weight:600;padding:${padding};text-align:right;">${formatCurrency(inst.pnl)}</td>
       </tr>`;
   }).join('');
 
   // Win rate change indicator
   const winRateChangeHtml = winRateChange !== null
-    ? `<p style="margin:2px 0 0;font-size:12px;color:${winRateChange >= 0 ? '#4ade80' : '#f87171'};">${winRateChange >= 0 ? '▲' : '▼'} ${Math.abs(winRateChange).toFixed(1)}% vs last week</p>`
+    ? `<p style="margin:2px 0 0;font-size:12px;color:${winRateChange >= 0 ? '#4ade80' : '#f87171'};">${winRateChange >= 0 ? '▲' : '▼'} ${formatPercent(Math.abs(winRateChange), 1)} vs last week</p>`
     : '<p style="margin:2px 0 0;font-size:12px;color:#64748b;">First week tracked</p>';
 
   // Drawdown bar width (assuming 10% threshold)
@@ -183,8 +182,8 @@ export async function sendWeeklyDigestEmail(data: WeeklyDigestData): Promise<Ema
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#1a1a2e;border:1px solid #2d2d44;border-radius:12px;">
     <tr><td style="padding:24px;text-align:center;">
       <p style="margin:0;font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;">Net P&L This Week</p>
-      <p style="margin:8px 0 0;font-size:36px;font-weight:800;color:${pnlColor};letter-spacing:-1px;">${pnlPrefix}$${Math.abs(netPnl).toFixed(2)}</p>
-      <p style="margin:4px 0 0;font-size:13px;color:${pnlColor};">${returnOnEquity >= 0 ? '▲' : '▼'} ${Math.abs(returnOnEquity).toFixed(2)}% return on equity</p>
+      <p style="margin:8px 0 0;font-size:36px;font-weight:800;color:${pnlColor};letter-spacing:-1px;">${pnlPrefix}$${Math.abs(totalPnl).toFixed(2)}</p>
+      <p style="margin:4px 0 0;font-size:13px;color:${pnlColor};">${returnOnEquity >= 0 ? '▲' : '▼'} ${formatPercent(Math.abs(returnOnEquity), 2)} return on equity</p>
     </td></tr>
   </table>
 </td></tr>
@@ -206,7 +205,7 @@ export async function sendWeeklyDigestEmail(data: WeeklyDigestData): Promise<Ema
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#1a1a2e;border:1px solid #2d2d44;border-radius:10px;">
           <tr><td style="padding:16px 20px;">
             <p style="margin:0;font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Win Rate</p>
-            <p style="margin:4px 0 0;font-size:24px;font-weight:700;color:#e2e8f0;">${formatPercent(winRate)}</p>
+            <p style="margin:4px 0 0;font-size:24px;font-weight:700;color:#e2e8f0;">${formatPercent(winRate, 1)}</p>
             ${winRateChangeHtml}
           </td></tr>
         </table>
@@ -280,7 +279,7 @@ export async function sendWeeklyDigestEmail(data: WeeklyDigestData): Promise<Ema
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
         <tr>
           <td style="padding:6px 0;font-size:13px;color:#94a3b8;">Max Drawdown</td>
-          <td style="padding:6px 0;font-size:13px;color:#e2e8f0;text-align:right;font-weight:600;">${formatPercent(maxDrawdown)}</td>
+          <td style="padding:6px 0;font-size:13px;color:#e2e8f0;text-align:right;font-weight:600;">${formatPercent(maxDrawdown, 1)}</td>
         </tr>
         <tr>
           <td colspan="2" style="padding:0 0 6px;">
@@ -413,15 +412,15 @@ export async function sendMddAlertEmail(
     const { data: result, error } = await resend.emails.send({
       from: process.env.EMAIL_FROM || 'PrismJournal <noreply@example.com>',
       to: email,
-      subject: `⚠️ Max Drawdown Alert: ${currentDrawdown.toFixed(1)}%`,
+      subject: `⚠️ Max Drawdown Alert: ${formatPercent(currentDrawdown, 1)}`,
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #0f0f23; color: #e2e8f0;">
           <h1 style="color: #f87171;">⚠️ Max Drawdown Alert</h1>
           <p>Your account has reached the maximum drawdown threshold.</p>
           <div style="background-color: #1a1a2e; border-radius: 8px; padding: 20px; margin: 20px 0;">
             <p style="margin: 0; color: #94a3b8;">Current Drawdown</p>
-            <p style="margin: 8px 0 0; font-size: 32px; font-weight: bold; color: #f87171;">${currentDrawdown.toFixed(2)}%</p>
-            <p style="margin: 8px 0 0; color: #64748b;">Threshold: ${threshold.toFixed(1)}%</p>
+            <p style="margin: 8px 0 0; font-size: 32px; font-weight: bold; color: #f87171;">${formatPercent(currentDrawdown, 2)}</p>
+            <p style="margin: 8px 0 0; color: #64748b;">Threshold: ${formatPercent(threshold, 1)}</p>
           </div>
           <p style="color: #94a3b8;">Consider reviewing your open positions and risk management strategy.</p>
         </div>

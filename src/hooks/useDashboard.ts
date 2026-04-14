@@ -1,6 +1,7 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { apiFetch } from '@/lib/api/client'
 import { queryKeys } from '@/lib/query-keys'
+import { STALE_TIME } from '@/constants/queryConfig'
 
 export type DashboardData = {
   equity: { time: string; value: number }[]
@@ -46,6 +47,6 @@ export function useDashboard(period: string, accountId: string | null) {
       if (accountId) params.set('account', accountId)
       return apiFetch(`/api/dashboard?${params.toString()}`)
     },
-    staleTime: 30_000,
+    staleTime: STALE_TIME.DEFAULT,
   })
 }

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiFetch, apiPost } from '@/lib/api/client'
 import { queryKeys } from '@/lib/query-keys'
+import { STALE_TIME } from '@/constants/queryConfig'
 
 export interface BridgeKeyInfo {
   bridgeKey: string | null
@@ -11,7 +12,7 @@ export function useBridgeKey() {
   return useQuery<BridgeKeyInfo>({
     queryKey: queryKeys['bridge-key'].all,
     queryFn: () => apiFetch('/api/account/bridge'),
-    staleTime: 60_000,
+    staleTime: STALE_TIME.MEDIUM,
   })
 }
 

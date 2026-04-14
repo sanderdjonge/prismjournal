@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiFetch, apiPost, apiPatch } from '@/lib/api/client'
 import { queryKeys } from '@/lib/query-keys'
+import { STALE_TIME } from '@/constants/queryConfig'
 
 interface PreTradeNote {
   id: string
@@ -38,7 +39,7 @@ export function usePreTradeNotes({ status, limit = 50 }: UsePreTradeNotesParams 
       params.set('limit', String(limit))
       return apiFetch(`/api/pre-trade-notes?${params}`)
     },
-    staleTime: 30_000,
+    staleTime: STALE_TIME.DEFAULT,
   })
 }
 

@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiFetch, apiPatch } from '@/lib/api/client'
 import { queryKeys } from '@/lib/query-keys'
+import { STALE_TIME } from '@/constants/queryConfig'
 
 type UserSettings = {
   displayCurrency: string
@@ -20,7 +21,7 @@ export function useSettings() {
   const { data, error, isLoading, refetch } = useQuery<UserSettings>({
     queryKey: queryKeys.settings.all,
     queryFn: () => apiFetch<UserSettings>('/api/settings'),
-    staleTime: 60_000,
+    staleTime: STALE_TIME.MEDIUM,
   })
 
   const mutation = useMutation({

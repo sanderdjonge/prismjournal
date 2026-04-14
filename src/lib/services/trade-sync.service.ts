@@ -3,6 +3,7 @@ import logger from '@/lib/logger';
 import { createNotification } from '@/lib/notifications';
 import { sendTelegramMessage } from '@/lib/telegram';
 import type { SyncTrade } from '@/lib/validations';
+import { formatPercent } from '@/lib/formatNumber';
 import { captureAutoScreenshots } from './auto-screenshot.service';
 import { autoAdvancePhaseIfNeeded } from '@/lib/prop-firm/challenge-service';
 import { sendDailyLossAlertIfNeeded } from './daily-loss-alert.service';
@@ -204,7 +205,7 @@ function evaluateRule(
                 const wins = closedTrades.filter(t => (t.pnl ?? 0) > 0).length;
                 const winRate = (wins / closedTrades.length) * 100;
                 if (winRate < targetWR) {
-                    return { passed: false, reason: `Win rate ${winRate.toFixed(1)}% below target ${targetWR}%` };
+                    return { passed: false, reason: `Win rate ${formatPercent(winRate, 1)} below target ${targetWR}%` };
                 }
             }
             return { passed: true };

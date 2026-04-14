@@ -3,21 +3,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowUpRight, ArrowDownRight, Clock, Link2, MoreVertical, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
-
-// Simple relative time formatter
-function getRelativeTime(date: Date): string {
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return 'just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString();
-}
+import { formatDistanceToNow, formatShortDate } from '@/lib/formatTime';
 
 interface PreTradeNote {
     id: string;
@@ -181,7 +167,7 @@ export function PreTradeNoteList({
                             <div className="flex items-center gap-1">
                                 <span className="text-[10px] text-gray-500 flex items-center gap-1">
                                     <Clock size={10} />
-                                    {getRelativeTime(new Date(note.createdAt))}
+                                    {(() => { const diff = Date.now() - new Date(note.createdAt).getTime(); const mins = Math.floor(diff / 60000); if (mins < 1) return 'just now'; const days = Math.floor(diff / 86400000); return days >= 7 ? formatShortDate(note.createdAt) : formatDistanceToNow(note.createdAt).replace('Just now', 'just now') })()}
                                 </span>
                                 
                                 {/* Action Menu */}

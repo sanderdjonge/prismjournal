@@ -3,6 +3,7 @@
 import { TrendingUp, TrendingDown, Target, AlertTriangle, DollarSign, BarChart3, Activity, Percent } from 'lucide-react'
 import { useCurrency } from '@/lib/currency'
 import { cn } from '@/lib/cn'
+import { formatPercent } from '@/lib/formatNumber'
 
 interface MetricsPanelProps {
   winRate: number
@@ -32,7 +33,7 @@ export function StrategyMetricsPanel({
   const metrics = [
     {
       label: 'Win Rate',
-      value: `${winRate.toFixed(1)}%`,
+      value: formatPercent(winRate, 1),
       icon: Percent,
       color: winRate >= 50 ? 'text-profit' : 'text-loss',
     },
@@ -50,7 +51,7 @@ export function StrategyMetricsPanel({
     },
     {
       label: 'Max Drawdown',
-      value: `${maxDrawdown.toFixed(1)}%`,
+      value: formatPercent(maxDrawdown, 1),
       icon: AlertTriangle,
       color: 'text-loss',
     },

@@ -10,7 +10,9 @@ import {
     CheckCircle, Calendar, Shield, Trash2
 } from 'lucide-react';
 import { cn } from '@/lib/cn'
+import { formatPercent } from '@/lib/formatNumber'
 import { apiFetch, apiPost, apiPatch, apiDelete } from '@/lib/api/client'
+import { PLATFORM_LABELS, PLATFORM_COLORS } from '@/constants/platforms'
 import { useCurrency } from '@/lib/currency';
 import { autoScreenshotConfigSchema } from '@/lib/validations/screenshot-config';
 import { calculateDrawdown } from '@/lib/drawdown';
@@ -95,20 +97,6 @@ const DEFAULT_SCREENSHOT_CONFIG: ScreenshotConfig = {
 };
 
 const TIMEFRAME_OPTIONS = ['M1', 'M5', 'M15', 'M30', 'H1', 'H4', 'D1', 'W1'] as const;
-
-const PLATFORM_LABELS: Record<string, string> = {
-    METATRADER5: 'MT5',
-    CTRADER: 'cTrader',
-    TRADINGVIEW: 'TradingView',
-    MANUAL: 'Manual',
-};
-
-const PLATFORM_COLORS: Record<string, string> = {
-    METATRADER5: 'bg-orange-500/20 text-orange-400',
-    CTRADER: 'bg-blue-500/20 text-blue-400',
-    TRADINGVIEW: 'bg-profit/20 text-profit',
-    MANUAL: 'bg-gray-500/20 text-gray-400',
-};
 
 function phaseBadge(phase: string | null) {
     if (!phase) return null;
@@ -202,7 +190,7 @@ function AccountCard({ account, onClick, onEdit, onArchive }: { account: Account
                                     {account.propFirm.drawdownType === 'TRAILING' ? '(Trail)' : '(Static)'}
                                 </span>
                             </span>
-                            <span>{drawdownPct.toFixed(2)}% / {account.propFirm.maxDrawdown}%</span>
+                            <span>{formatPercent(drawdownPct, 2)} / {account.propFirm.maxDrawdown}%</span>
                         </div>
                         <div className="h-1 bg-white/5 rounded-full overflow-hidden">
                             <div

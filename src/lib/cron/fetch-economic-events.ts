@@ -1,5 +1,6 @@
 import prisma from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { formatDateKey } from '@/lib/formatTime';
 
 const TRADING_ECONOMICS_API = 'https://api.tradingeconomics.com/calendar';
 
@@ -44,8 +45,8 @@ export async function fetchEconomicEvents() {
     const params = new URLSearchParams({
       country: COUNTRIES.join(','),
       importance: 'High',
-      start_date: startDate.toISOString().split('T')[0],
-      end_date: endDate.toISOString().split('T')[0],
+      start_date: formatDateKey(startDate),
+      end_date: formatDateKey(endDate),
       c: apiKey,
     });
 

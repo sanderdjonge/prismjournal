@@ -18,6 +18,7 @@ import { useAccounts } from '@/hooks/useAccounts';
 import { useFilters, FilterConfig } from '@/hooks/useFilters';
 import { FilterChipBar } from '@/components/filters/FilterChipBar';
 import { Plus, ChevronLeft, ChevronRight, Download, Tag as TagIcon, Trash2, X, Wallet, LayoutGrid, Columns3, Crosshair } from 'lucide-react';
+import { formatDateKey } from '@/lib/formatTime';
 
 export type JournalTrade = {
     id: string;
@@ -266,7 +267,7 @@ function JournalContent() {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `trades_${new Date().toISOString().split('T')[0]}.csv`;
+            a.download = `trades_${formatDateKey(new Date())}.csv`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);

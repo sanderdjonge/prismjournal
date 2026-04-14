@@ -3,6 +3,7 @@
 import { AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react'
 import { useCurrency } from '@/lib/currency'
 import { cn } from '@/lib/cn'
+import { formatPercent } from '@/lib/formatNumber'
 
 interface RuleBreakdownProps {
   data: Array<{
@@ -69,7 +70,7 @@ export function StrategyRuleBreakdown({ data }: RuleBreakdownProps) {
                   <td className="py-3 text-gray-200">{label}</td>
                   <td className="py-3 text-right text-gray-400">
                     {rule.violationCount}
-                    <span className="text-xs text-gray-600 ml-1">({rule.violationPercent.toFixed(0)}%)</span>
+                    <span className="text-xs text-gray-600 ml-1">({formatPercent(rule.violationPercent, 0)})</span>
                   </td>
                   <td className={cn(
                     'py-3 text-right font-mono',

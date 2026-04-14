@@ -9,9 +9,9 @@ export const APP_VERSION = pkg.version; // e.g. "2.17.0"
  * Build date — update this whenever you bump the version.
  * Format: YYYY-MM-DD
  */
-export const BUILD_DATE = '2026-04-13';
+export const BUILD_DATE = '2026-04-14';
 
-export const BUILD_NOTES = 'API & client standardization';
+export const BUILD_NOTES = 'Format & naming consolidation';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {

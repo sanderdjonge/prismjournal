@@ -1,5 +1,6 @@
 import prisma from '@/lib/prisma';
 import { calculateProfitFactor } from '@/lib/analytics';
+import { formatDateKey } from '@/lib/formatTime';
 import {
   WhatIfFilters,
   TradeData,
@@ -55,7 +56,7 @@ function calculateEquityCurve(trades: TradeData[], startingBalance = 10000): Equ
     for (const trade of sortedTrades) {
         runningPnl += trade.pnl ?? 0;
         curve.push({
-            date: new Date(trade.exitTime!).toISOString().split('T')[0],
+            date: formatDateKey(trade.exitTime!),
             value: startingBalance + runningPnl,
             actualValue: startingBalance + runningPnl,
             simulatedValue: startingBalance + runningPnl,

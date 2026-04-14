@@ -1,4 +1,18 @@
 /**
+ * Direction terminology translation layer (BUY/SELL ↔ LONG/SHORT):
+ *
+ * - Database stores trade direction as `TradeDirection.LONG` / `TradeDirection.SHORT` (Prisma enum).
+ * - The MT5 Expert Advisor (PrismSync.mq5) sends `BUY` / `SELL` in its sync payload.
+ * - The sync boundary (`src/lib/services/trade-sync.service.ts` + `/api/sync` route) converts
+ *   BUY → LONG and SELL → SHORT before writing to the database.
+ * - The API trades route (`/api/trades`) converts LONG → BUY and SHORT → SELL for frontend display.
+ *
+ * This translation layer must not be changed without coordinating with the MT5 EA, as the EA
+ * only sends BUY/SELL and the database only stores LONG/SHORT. Mismatched mappings will cause
+ * trades to be stored with incorrect directions.
+ */
+
+/**
  * Explicit overrides for MT5 broker index/CFD symbols → Twelve Data symbols.
  * Twelve Data uses its own naming for indices that differs from MT5 broker conventions.
  * Symbols not listed here that can't be auto-detected are returned as-is and may

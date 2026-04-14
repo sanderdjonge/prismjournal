@@ -1,5 +1,6 @@
 // src/hooks/usePerformance.ts
 import { useSuspenseQuery } from '@tanstack/react-query';
+import { STALE_TIME } from '@/constants/queryConfig';
 
 interface PerformanceParams {
     period: string;
@@ -10,7 +11,7 @@ type EquityPoint = { time: string; value: number };
 type MonthlyReturn = { month: number; value: number };
 export type PerfData = {
     equity: EquityPoint[];
-    netPnl: number;
+    totalPnl: number;
     maxDrawdown: number;
     sharpe: number | null;
     profitFactor: number;
@@ -32,7 +33,6 @@ export function usePerformance({ period, accountId }: PerformanceParams) {
                 return r.json();
             });
         },
-        staleTime: 30_000,
-        retry: 1,
+        staleTime: STALE_TIME.DEFAULT,
     });
 }

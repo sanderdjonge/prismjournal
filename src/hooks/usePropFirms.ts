@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { apiFetch } from '@/lib/api/client'
 import { queryKeys } from '@/lib/query-keys'
+import { STALE_TIME } from '@/constants/queryConfig'
 
 export interface PropFirm {
   id: string
@@ -17,6 +18,6 @@ export function usePropFirms() {
   return useQuery<{ propFirms: PropFirm[] }>({
     queryKey: queryKeys['prop-firms'].all,
     queryFn: () => apiFetch('/api/prop-firms'),
-    staleTime: 300_000,
+    staleTime: STALE_TIME.LONG,
   })
 }

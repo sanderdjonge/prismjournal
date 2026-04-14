@@ -4,6 +4,7 @@ import { calculateProfitFactor, serializeProfitFactor, calculateAvgRMultiple } f
 import prisma from '@/lib/prisma'
 import type { Session } from 'next-auth'
 import { ok, notFound } from '@/lib/api/responses'
+import { formatDateKey } from '@/lib/formatTime'
 
 interface AnalyticsResponse {
   winRate: number
@@ -132,7 +133,7 @@ export const GET = withAuth(async (
   for (const t of trades) {
     runningPnl += t.pnl ?? 0
     equityCurve.push({
-      date: t.exitTime!.toISOString().split('T')[0],
+      date: formatDateKey(t.exitTime!),
       cumulative: runningPnl,
     })
   }

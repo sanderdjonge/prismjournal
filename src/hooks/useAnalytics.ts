@@ -1,5 +1,6 @@
 // src/hooks/useAnalytics.ts
 import { useSuspenseQuery } from '@tanstack/react-query';
+import { STALE_TIME } from '@/constants/queryConfig';
 
 interface AnalyticsParams {
     from?: string;
@@ -42,7 +43,6 @@ export function useAnalytics({ from, to, account }: AnalyticsParams = {}) {
                 return r.json();
             });
         },
-        staleTime: 30_000,
-        retry: 1,
+        staleTime: STALE_TIME.DEFAULT,
     });
 }

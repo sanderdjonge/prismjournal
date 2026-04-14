@@ -6,6 +6,7 @@ import { Share2, Plus, X, ChevronDown } from 'lucide-react'
 import { useUpdateTrade } from '@/hooks/useTrades'
 import { useTags, useCreateTag } from '@/hooks/useTags'
 import { useStrategies } from '@/hooks/useStrategies'
+import { useCurrency } from '@/lib/currency'
 import { apiFetch, apiPatch } from '@/lib/api/client'
 import { ExcursionBar } from '@/components/journal/ExcursionBar'
 import { computeDuration, deriveListZone } from './TradeListPanel'
@@ -73,6 +74,7 @@ function Cell({ label, children }: { label: string; children: React.ReactNode })
 }
 
 export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
+    const { formatPnl } = useCurrency()
     const update = useUpdateTrade();
     const { data: tagsData } = useTags();
     const createTag = useCreateTag();
@@ -278,7 +280,7 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                     </div>
                     <div className="text-right">
                         <div className={`font-mono text-[20px] font-bold leading-none ${trade.pnl >= 0 ? 'text-profit' : 'text-loss'}`}>
-                            {trade.pnl >= 0 ? '+' : '-'}${Math.abs(trade.pnl).toFixed(2)}
+                            {formatPnl(trade.pnl)}
                         </div>
                         <div className="text-[8px] font-black uppercase tracking-[0.18em] text-gray-600 mt-1">
                             {trade.pnl >= 0 ? 'profit' : 'loss'}

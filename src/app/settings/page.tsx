@@ -150,20 +150,6 @@ interface BridgeKeyInfo {
     syncUrl: string;
 }
 
-const PLATFORM_LABELS: Record<string, string> = {
-    METATRADER5: 'MT5',
-    CTRADER: 'cTrader',
-    TRADINGVIEW: 'TradingView',
-    MANUAL: 'Manual',
-};
-
-const PLATFORM_COLORS: Record<string, string> = {
-    METATRADER5: 'bg-orange-500/20 text-orange-400',
-    CTRADER: 'bg-blue-500/20 text-blue-400',
-    TRADINGVIEW: 'bg-profit/20 text-profit',
-    MANUAL: 'bg-gray-500/20 text-gray-400',
-};
-
 function SettingsContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -574,14 +560,7 @@ function SettingsContent() {
         }
     };
 
-    const formatCurrency = (value: number | null | undefined, currency: string | null | undefined) => {
-        const safeValue = value ?? 0;
-        const safeCurrency = currency ?? 'USD';
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: safeCurrency,
-        }).format(safeValue);
-    };
+    const { formatAmount: fmtCurrency } = useCurrency()
 
     const tabs = [
         { id: 'preferences', label: 'Preferences', icon: Globe },

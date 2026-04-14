@@ -4,25 +4,14 @@ import { useState, useRef, useEffect } from 'react';
 import { Wallet, ChevronDown, Check, Layers } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useAccounts } from '@/hooks/useAccounts';
-
-const PLATFORM_LABELS: Record<string, string> = {
-    METATRADER5: 'MT5',
-    CTRADER: 'cTrader',
-    TRADINGVIEW: 'TradingView',
-    MANUAL: 'Manual',
-};
-
-const PLATFORM_COLORS: Record<string, string> = {
-    METATRADER5: 'text-orange-400',
-    CTRADER: 'text-blue-400',
-    TRADINGVIEW: 'text-profit',
-    MANUAL: 'text-gray-400',
-};
+import { useCurrency } from '@/lib/currency';
+import { PLATFORM_LABELS, PLATFORM_COLORS } from '@/constants/platforms';
 
 export default function AccountSwitcher() {
     const { accounts, selectedAccountId, selectedAccount, selectAccount, loading } = useAccounts();
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const { formatAmount: fmt } = useCurrency()
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -39,16 +28,6 @@ export default function AccountSwitcher() {
     if (!loading && accounts.length === 0) {
         return null;
     }
-
-    const formatBalance = (balance: number | null, currency: string) => {
-        if (balance === null) return '—';
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency,
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-        }).format(balance);
-    };
 
     return (
         <div className="relative" ref={dropdownRef}>
@@ -124,7 +103,7 @@ export default function AccountSwitcher() {
                                             {PLATFORM_LABELS[account.platform] || account.platform}
                                         </span>
                                         <span>•</span>
-                                        <span>{formatBalance(account.currentBalance, account.currency)}</span>
+                                        <span>{fmt(account.currentBalance)}</span>
                                     </div>
                                 </div>
                                 {selectedAccountId === account.id && (

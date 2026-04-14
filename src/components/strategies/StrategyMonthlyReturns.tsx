@@ -2,6 +2,7 @@
 
 import { useCurrency } from '@/lib/currency'
 import { cn } from '@/lib/cn'
+import { formatPercent } from '@/lib/formatNumber'
 
 const MONTH_LABELS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D']
 
@@ -57,7 +58,7 @@ export function StrategyMonthlyReturns({ data }: MonthlyReturnsProps) {
                       title={hasData ? `${formatAmount(pnl)}` : undefined}
                     >
                       <span>{label}</span>
-                      {hasData && <span className="text-[6px] opacity-70">{(cellData.returnPercent).toFixed(0)}%</span>}
+                      {hasData && <span className="text-[6px] opacity-70">{formatPercent(cellData.returnPercent, 0)}</span>}
                     </div>
                   )
                 })}

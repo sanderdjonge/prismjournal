@@ -16,6 +16,8 @@ import { StrategyMonthlyReturns } from '@/components/strategies/StrategyMonthlyR
 import { StrategyRuleBreakdown } from '@/components/strategies/StrategyRuleBreakdown'
 import { StrategyBreakdowns } from '@/components/strategies/StrategyBreakdowns'
 import { ArrowLeft, Edit2, Trash2, Check, Loader2, RefreshCw, ChevronDown } from 'lucide-react'
+import { formatShortDate } from '@/lib/formatTime'
+import { useCurrency } from '@/lib/currency'
 
 interface ChecklistItemData {
   id: string;
@@ -64,6 +66,8 @@ export default function StrategyDetailClient() {
 
   const { data: checklistsData } = useChecklists()
   const { data: analytics, isLoading: analyticsLoading } = useStrategyAnalytics(strategy?.id ?? '')
+
+  const { formatPnl } = useCurrency()
 
   useEffect(() => {
     if (params.id) {
@@ -365,7 +369,7 @@ export default function StrategyDetailClient() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400 text-sm">Created</span>
-                  <span className="text-gray-400 text-sm">{new Date(strategy.createdAt).toLocaleDateString()}</span>
+                  <span className="text-gray-400 text-sm">{formatShortDate(strategy.createdAt)}</span>
                 </div>
               </div>
             </div>
@@ -388,10 +392,10 @@ export default function StrategyDetailClient() {
                   {strategy.trades.map(trade => (
                     <tr key={trade.id} className="border-b border-white/5 last:border-0">
                       <td className="py-3 text-gray-400">
-                        {trade.exitTime ? new Date(trade.exitTime).toLocaleDateString() : '—'}
+                        {trade.exitTime ? formatShortDate(trade.exitTime) : '—'}
                       </td>
                       <td className={`py-3 font-mono ${trade.pnl && trade.pnl >= 0 ? 'text-profit' : 'text-loss'}`}>
-                        {trade.pnl ? `$${trade.pnl.toFixed(2)}` : '—'}
+                        {trade.pnl ? formatPnl(trade.pnl) : '—'}
                       </td>
                     </tr>
                   ))}

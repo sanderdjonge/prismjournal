@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { calculateProfitFactor, formatProfitFactor } from '@/lib/analytics';
 import { ok, notFound, internalError } from '@/lib/api/responses';
 import logger from '@/lib/logger';
+import { formatDateKey } from '@/lib/formatTime';
 
 export async function GET(
     request: NextRequest,
@@ -56,7 +57,7 @@ export async function GET(
         const equityCurve = sortedTrades.slice(-30).map(t => {
             runningPnl += t.pnl ?? 0;
             return {
-                date: new Date(t.exitTime!).toISOString().split('T')[0],
+                date: formatDateKey(t.exitTime!),
                 value: startingValue + runningPnl,
             };
         });

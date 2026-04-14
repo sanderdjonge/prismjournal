@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { apiFetch } from '@/lib/api/client'
 import { queryKeys } from '@/lib/query-keys'
+import { STALE_TIME } from '@/constants/queryConfig'
 
 export interface TiltmeterDataPoint {
   date: string
@@ -36,7 +37,7 @@ export function useTiltmeterHistory(
       params.set('history', 'true')
       return apiFetch(`/api/analytics/tiltmeter?${params.toString()}`)
     },
-    staleTime: 60_000,
+    staleTime: STALE_TIME.MEDIUM,
     enabled,
   })
 }
@@ -53,7 +54,7 @@ export function useTiltmeterScore(
       if (accountId) params.set('account', accountId)
       return apiFetch(`/api/analytics/tiltmeter?${params.toString()}`)
     },
-    staleTime: 60_000,
+    staleTime: STALE_TIME.MEDIUM,
     enabled,
   })
 }

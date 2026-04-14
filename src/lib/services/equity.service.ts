@@ -2,6 +2,7 @@ import prisma from '@/lib/prisma';
 import { sendTelegramMessage } from '@/lib/telegram';
 import { sendMddAlertEmail } from '@/lib/email';
 import { checkMddAlert } from '@/lib/notifications';
+import { formatPercent } from '@/lib/formatNumber';
 import type { SyncEquitySnapshot } from '@/lib/validations';
 
 /**
@@ -17,7 +18,7 @@ async function sendDrawdownAlert(userId: string, balance: number, equity: number
     if (config.telegramId && config.enableRisk) {
         await sendTelegramMessage(
             config.telegramId,
-            `⚠️ <b>Drawdown Alert</b>\nEquity drawdown at <b>${drawdownPct.toFixed(1)}%</b> — threshold ${config.mddThreshold}%\nBalance: $${balance.toFixed(2)} | Equity: $${equity.toFixed(2)}`
+            `⚠️ <b>Drawdown Alert</b>\nEquity drawdown at <b>${formatPercent(drawdownPct, 1)}</b> — threshold ${config.mddThreshold}%\nBalance: $${balance.toFixed(2)} | Equity: $${equity.toFixed(2)}`
         );
     }
 
