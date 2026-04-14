@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { apiFetch } from '@/lib/api/client'
 import { queryKeys } from '@/lib/query-keys'
+import { STALE_TIME } from '@/constants/queryConfig'
 
 export interface NotificationSettings {
   enableSync: boolean
@@ -19,6 +20,6 @@ export function useNotificationSettings() {
   return useQuery<NotificationSettings>({
     queryKey: queryKeys['notifications-settings'].all,
     queryFn: () => apiFetch('/api/settings/notifications'),
-    staleTime: 60_000,
+    staleTime: STALE_TIME.MEDIUM,
   })
 }

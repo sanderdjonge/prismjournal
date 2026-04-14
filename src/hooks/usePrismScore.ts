@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { STALE_TIME } from '@/constants/queryConfig';
 
 export interface PrismScoreComponents {
     profitFactor: number;
@@ -31,7 +32,6 @@ export function usePrismScore(accountId: string | null) {
                 return r.json();
             });
         },
-        staleTime: 60_000,
-        retry: 1,
+        staleTime: STALE_TIME.MEDIUM,
     });
 }

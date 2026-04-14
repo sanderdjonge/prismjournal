@@ -40,7 +40,6 @@ export function useStrategyAnalytics(strategyId: string) {
       return res.json()
     },
     staleTime: 5 * 60 * 1000,
-    retry: 1,
     enabled: !!strategyId,
   })
 }

@@ -5,6 +5,7 @@
  */
 
 import prisma from '@/lib/prisma';
+import { formatPercent } from '@/lib/formatNumber';
 
 interface PhaseConfig {
     phaseNumber: number;
@@ -97,7 +98,7 @@ export async function checkPhaseAdvancement(accountId: string): Promise<Advancem
             : profitTargetReached && !minTradingDaysMet
                 ? `Profit target reached but need ${minTradingDaysRequired - tradingDaysCount} more trading days`
                 : !profitTargetReached
-                    ? `Progress: ${currentProgress.toFixed(2)}% / ${targetProgress}% target`
+                    ? `Progress: ${formatPercent(currentProgress, 2)} / ${targetProgress}% target`
                     : 'Requirements not met',
         currentProgress,
         targetProgress,

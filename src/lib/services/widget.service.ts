@@ -5,6 +5,7 @@ import { saveFile, generateFilename, readFile } from '@/lib/storage';
 import { generateWidgetHtml } from '@/lib/templates/widget-template';
 import { computePrismScore } from '@/lib/services/prism-score.service';
 import { calculateProfitFactor, serializeProfitFactor } from '@/lib/analytics';
+import { formatDateKey } from '@/lib/formatTime';
 
 export interface WidgetStats {
     winRate: number;
@@ -82,7 +83,7 @@ async function getUserStats(userId: string): Promise<WidgetStats> {
     for (const trade of closedTrades) {
         runningPnl += trade.pnl ?? 0;
         equityCurve.push({
-            date: new Date(trade.exitTime!).toISOString().split('T')[0],
+            date: formatDateKey(trade.exitTime!),
             value: startingValue + runningPnl,
         });
     }

@@ -3,6 +3,8 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import DashboardShell from '@/components/layout/DashboardShell';
+import { formatShortDate, formatDateKey } from '@/lib/formatTime';
+import { useCurrency } from '@/lib/currency'
 import {
     ArrowLeft,
     TrendingUp,
@@ -21,6 +23,7 @@ import {
     PieChart,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { formatPercent as formatPercentUtil } from '@/lib/formatNumber';
 import { ChallengeCalendar } from '@/components/prop-firm/ChallengeCalendar';
 
 interface PhaseConfig {
@@ -177,7 +180,7 @@ function PropFirmAccountContent() {
                 // Get challenge start date from the first phase
                 const firstPhase = account.challengePhases[0];
                 const fromDate = firstPhase?.startedAt
-                    ? new Date(firstPhase.startedAt).toISOString().split('T')[0]
+                    ? formatDateKey(firstPhase.startedAt)
                     : undefined;
                 
                 const url = new URL(`/api/analytics`, window.location.origin);
@@ -211,17 +214,11 @@ function PropFirmAccountContent() {
             .finally(() => setSnapshotsLoading(false));
     }, [accountId, account]);
 
-    const formatCurrency = (value: number | null | undefined, currency: string = 'USD') => {
-        const safeValue = value ?? 0;
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: currency,
-        }).format(safeValue);
-    };
+    const { formatAmount: fmtCurrency } = useCurrency()
 
     const formatPercent = (value: number | null | undefined) => {
         const safeValue = value ?? 0;
-        return `${safeValue.toFixed(2)}%`;
+        return formatPercentUtil(safeValue, 2);
     };
 
     const getSeverityColor = (severity: string) => {
@@ -413,8 +410,8 @@ function PropFirmAccountContent() {
                                     />
                                 </div>
                                 <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
-                                    <span>{formatCurrency(totalPnl, account.currency)} realized</span>
-                                    <span>Target: {formatCurrency((currentPhase?.profitTargetAmount || (accountSize * (currentPhase?.profitTarget || 10) / 100)), account.currency)}</span>
+                                    <span>{fmtCurrency(totalPnl)} realized</span>
+                                    <span>Target: {fmtCurrency((currentPhase?.profitTargetAmount || (accountSize * (currentPhase?.profitTarget || 10) / 100)))}</span>
                                 </div>
                             </div>
 
@@ -600,7 +597,7 @@ function PropFirmAccountContent() {
                                                     "text-base font-bold",
                                                     analytics.expectancy >= 0 ? "text-profit" : "text-loss"
                                                 )}>
-                                                    {analytics.expectancy >= 0 ? '+' : ''}{formatCurrency(analytics.expectancy, account?.currency)}
+                                                    {analytics.expectancy >= 0 ? '+' : ''}{fmtCurrency(analytics.expectancy)}
                                                 </p>
                                             </div>
                                             <div className="text-center p-2 rounded-lg bg-black/20 border border-white/5">
@@ -616,7 +613,7 @@ function PropFirmAccountContent() {
                                             <div className="text-center p-2 rounded-lg bg-black/20 border border-white/5">
                                                 <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Avg Loss</p>
                                                 <p className="text-base font-bold text-orange-400">
-                                                    {formatCurrency(analytics.meanDrawdown, account?.currency)}
+                                                    {fmtCurrency(analytics.meanDrawdown)}
                                                 </p>
                                             </div>
                                         </div>
@@ -645,7 +642,7 @@ function PropFirmAccountContent() {
                                                             "text-xs font-bold",
                                                             symbol.profit >= 0 ? "text-profit" : "text-loss"
                                                         )}>
-                                                            {symbol.profit >= 0 ? '+' : ''}{formatCurrency(symbol.profit, account?.currency)}
+                                                            {symbol.profit >= 0 ? '+' : ''}{fmtCurrency(symbol.profit)}
                                                         </span>
                                                     </div>
                                                 ))}
@@ -715,7 +712,7 @@ function PropFirmAccountContent() {
                                                             <div className="bg-white/95 dark:bg-black/90 border border-gray-200 dark:border-white/20 rounded px-2 py-1 text-[9px]">
                                                                 <p className="text-gray-600 dark:text-gray-400">{new Date(s.snapshotDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
                                                                 <p className={cn("font-bold", isPos ? "text-profit" : "text-loss")}>
-                                                                    {isPos ? '+' : ''}{formatCurrency(s.dailyPnl, account?.currency)}
+                                                                    {isPos ? '+' : ''}{fmtCurrency(s.dailyPnl)}
                                                                 </p>
                                                             </div>
                                                         </div>
@@ -751,7 +748,7 @@ function PropFirmAccountContent() {
                             ) : (
                                 <ChallengeCalendar
                                     dailyData={snapshots.map(s => ({
-                                        date: new Date(s.snapshotDate).toISOString().split('T')[0],
+                                        date: formatDateKey(s.snapshotDate),
                                         pnl: s.dailyPnl,
                                         pnlPercent: (s.dailyPnl / (accountSize || 10000)) * 100,
                                         dailyLossUsedPercent: s.dailyLossUsed ?? 0,
@@ -777,11 +774,11 @@ function PropFirmAccountContent() {
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm text-gray-400">Account Size</span>
-                                    <span className="font-bold text-white">{formatCurrency(accountSize, account.currency)}</span>
+                                    <span className="font-bold text-white">{fmtCurrency(accountSize)}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm text-gray-400">Current Balance</span>
-                                    <span className="font-bold text-white">{formatCurrency(currentBalance, account.currency)}</span>
+                                    <span className="font-bold text-white">{fmtCurrency(currentBalance)}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm text-gray-400">Total P&L</span>
@@ -789,7 +786,7 @@ function PropFirmAccountContent() {
                                         "font-bold",
                                         totalPnl >= 0 ? "text-profit" : "text-loss"
                                     )}>
-                                        {formatCurrency(totalPnl, account.currency)}
+                                        {fmtCurrency(totalPnl)}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between">
@@ -885,13 +882,13 @@ function PropFirmAccountContent() {
                                     {scalingConfig.initialBalance && scalingConfig.increment && (
                                         <div className="space-y-4">
                                             <p className="text-sm text-gray-400">
-                                                Scale your account up to {formatCurrency(scalingConfig.initialBalance + (scalingConfig.increment || 0) * 4, account.currency)}
+                                                Scale your account up to {fmtCurrency(scalingConfig.initialBalance + (scalingConfig.increment || 0) * 4)}
                                             </p>
                                             
                                             <div className="space-y-2">
                                                 <div className="flex items-center justify-between text-xs text-gray-400">
-                                                    <span>Current: {formatCurrency(accountSize, account.currency)}</span>
-                                                    <span>Max: {formatCurrency(scalingConfig.initialBalance, account.currency)}</span>
+                                                    <span>Current: {fmtCurrency(accountSize)}</span>
+                                                    <span>Max: {fmtCurrency(scalingConfig.initialBalance)}</span>
                                                 </div>
                                                 <div className="h-2 bg-black/40 rounded-full overflow-hidden">
                                                     <div
@@ -927,7 +924,7 @@ function PropFirmAccountContent() {
                                             )}
                                             
                                             <p className="text-xs text-gray-500">
-                                                Each scale: +{formatCurrency(scalingConfig.increment, account.currency)} balance
+                                                Each scale: +{fmtCurrency(scalingConfig.increment)} balance
                                             </p>
                                         </div>
                                     )}
@@ -1088,7 +1085,7 @@ function PropFirmAccountContent() {
                                                     )}
                                                 </div>
                                                 <span className="text-xs text-gray-400">
-                                                    {new Date(violation.occurredAt).toLocaleDateString()}
+                                                    {formatShortDate(violation.occurredAt)}
                                                 </span>
                                             </div>
                                             <p className="text-xs text-gray-300 mb-2">{violation.description}</p>
@@ -1108,7 +1105,7 @@ function PropFirmAccountContent() {
                                             )}
                                             {violation.isResolved && violation.resolvedAt && (
                                                 <p className="text-xs text-gray-500">
-                                                    Resolved: {new Date(violation.resolvedAt).toLocaleDateString()}
+                                                    Resolved: {formatShortDate(violation.resolvedAt)}
                                                 </p>
                                             )}
                                         </div>

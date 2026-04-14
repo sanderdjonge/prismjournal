@@ -195,7 +195,7 @@ export class WhatIfSimulator {
    */
   getStatistics(): {
     totalTrades: number;
-    totalPnL: number;
+    totalPnl: number;
     winRate: number;
     avgR: number;
     profitFactor: number;
@@ -205,7 +205,7 @@ export class WhatIfSimulator {
     if (closedTrades.length === 0) {
       return {
         totalTrades: 0,
-        totalPnL: 0,
+        totalPnl: 0,
         winRate: 0,
         avgR: 0,
         profitFactor: 0,
@@ -216,14 +216,14 @@ export class WhatIfSimulator {
     // Task 5: Fix breakeven classification - use < 0, not <= 0
     const losses = closedTrades.filter(t => (t.pnl ?? 0) < 0);
     
-    const totalPnL = closedTrades.reduce((sum, t) => sum + (t.pnl ?? 0), 0);
+    const totalPnl = closedTrades.reduce((sum, t) => sum + (t.pnl ?? 0), 0);
     const totalWins = wins.reduce((sum, t) => sum + (t.pnl ?? 0), 0);
     const totalLosses = Math.abs(losses.reduce((sum, t) => sum + (t.pnl ?? 0), 0));
     const totalR = closedTrades.reduce((sum, t) => sum + (t.rMultiple ?? 0), 0);
     
     return {
       totalTrades: closedTrades.length,
-      totalPnL,
+      totalPnl,
       winRate: wins.length / closedTrades.length,
       avgR: totalR / closedTrades.length,
       profitFactor: calculateProfitFactor(totalWins, totalLosses),

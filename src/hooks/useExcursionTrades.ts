@@ -1,5 +1,6 @@
 // src/hooks/useExcursionTrades.ts
 import { useQuery } from '@tanstack/react-query';
+import { STALE_TIME } from '@/constants/queryConfig';
 import type { JournalTrade } from '@/app/journal/page';
 
 export interface QuadrantTrade extends JournalTrade {
@@ -185,7 +186,6 @@ export function useExcursionTrades(params: UseExcursionTradesParams = {}) {
     return useQuery<QuadrantTrade[]>({
         queryKey: ['excursion-trades', params.from ?? '', params.to ?? '', params.account ?? '', params.limit ?? 500],
         queryFn: () => fetchExcursionTrades(params),
-        staleTime: 30_000,
-        retry: 1,
+        staleTime: STALE_TIME.DEFAULT,
     });
 }

@@ -6,11 +6,13 @@
  *   Win/Loss Ratio     20% — min(avgWin / avgLoss / 2.5, 1) × 100
  *   Max Drawdown       20% — max(0, 100 − maxDrawdownPct)
  *   Win Rate           15% — min(winRate% / 60, 1) × 100
- *   Recovery Factor    10% — min(netPnl / maxDrawdown / 3.5, 1) × 100
- *   Consistency        10% — max(0, 100 − stdDevDailyPnl / |netPnl| × 100)
+ *   Recovery Factor    10% — min(totalPnl / maxDrawdown / 3.5, 1) × 100
+ *   Consistency        10% — max(0, 100 − stdDevDailyPnl / |totalPnl| × 100)
  *
  * Pure function — no DB access. Caller is responsible for filtering trades.
  */
+
+import { formatDateKey } from '@/lib/formatTime'
 
 export interface TradeForScore {
     pnl: number | null;
@@ -89,19 +91,19 @@ export function computePrismScore(trades: TradeForScore[]): PrismScoreResult {
     const ddScore  = clamp(100 - maxDDPct);
 
     // --- Recovery Factor ---
-    const netPnl = sorted.reduce((s, t) => s + t.pnl, 0);
-    const recFactor = maxDD > 0 ? Math.abs(netPnl) / maxDD : (netPnl > 0 ? 10 : 1);
+    const totalPnl = sorted.reduce((s, t) => s + t.pnl, 0);
+    const recFactor = maxDD > 0 ? Math.abs(totalPnl) / maxDD : (totalPnl > 0 ? 10 : 1);
     const recScore  = clamp((recFactor / 3.5) * 100);
 
-    // --- Consistency (stdDev of daily P&L relative to |netPnl|) ---
+    // --- Consistency (stdDev of daily P&L relative to |totalPnl|) ---
     const byDay = new Map<string, number>();
     for (const t of sorted) {
-        const key = t.exitTime.toISOString().slice(0, 10);
+        const key = formatDateKey(t.exitTime);
         byDay.set(key, (byDay.get(key) ?? 0) + t.pnl);
     }
     const dailyPnls  = Array.from(byDay.values());
     const sd         = stdDev(dailyPnls);
-    const absNet     = Math.abs(netPnl);
+    const absNet     = Math.abs(totalPnl);
     // When net P&L is negligible, consistency is hard to define — default to 50
     const consScore  = absNet > 0.01
         ? clamp(100 - (sd / absNet) * 100)

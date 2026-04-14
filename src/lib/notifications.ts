@@ -1,6 +1,7 @@
 import prisma from './prisma';
 import { sendTelegramMessage } from './telegram';
 import { sendMddAlertEmail } from './email';
+import { formatPercent } from '@/lib/formatNumber';
 
 export type NotificationType = 'TRADE_OPEN' | 'TRADE_CLOSE' | 'MDD_ALERT' | 'SYNC_ERROR' | 'SYSTEM' | 'RULE_VIOLATION';
 
@@ -115,7 +116,7 @@ export async function checkMddAlert(
       userId,
       type: 'MDD_ALERT',
       title: '⚠️ Max Drawdown Alert',
-      message: `Your account drawdown has reached ${currentDrawdown.toFixed(2)}%, exceeding your threshold of ${threshold}%. Consider reviewing your positions.`,
+      message: `Your account drawdown has reached ${formatPercent(currentDrawdown, 2)}, exceeding your threshold of ${threshold}%. Consider reviewing your positions.`,
       sendTelegram: alertConfig.enableRisk,
       telegramId: alertConfig.telegramId,
       sendEmail: alertConfig.enableMddAlerts,

@@ -4,6 +4,7 @@ import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import dayjs from 'dayjs';
 import { useCurrency } from '@/lib/currency';
 import { cn } from '@/lib/cn';
+import { formatPercent } from '@/lib/formatNumber';
 import { useEconomicEvents, useEventsByDate, type EconomicEvent } from '@/hooks/useEconomicEvents';
 import { EventBadge, EventDot } from './EventBadge';
 
@@ -180,7 +181,7 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
     const formatMetricValue = useCallback((val: number | null): string => {
         if (val === null) return '';
         if (metric === 'pnl') return `${val >= 0 ? '+' : ''}${symbol}${Math.abs(val).toFixed(0)}`;
-        if (metric === 'pct') return `${val >= 0 ? '+' : ''}${val.toFixed(1)}%`;
+        if (metric === 'pct') return `${val >= 0 ? '+' : ''}${formatPercent(val, 1)}`;
         if (metric === 'rr') return `${val.toFixed(1)}R`;
         return '';
     }, [metric, symbol]);

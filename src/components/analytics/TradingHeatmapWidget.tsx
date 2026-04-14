@@ -3,6 +3,8 @@
 import { useState, useMemo } from 'react';
 import { ChevronDown, TrendingUp, TrendingDown, AlertTriangle, Lightbulb } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { formatPercent } from '@/lib/formatNumber';
+import { useCurrency } from '@/lib/currency'
 import type { HeatmapCell } from '@/app/api/analytics/heatmap/route';
 
 type ViewMode = 'pnl' | 'winRate' | 'count' | 'expectedValue';
@@ -28,15 +30,6 @@ const VIEW_OPTIONS: { value: ViewMode; label: string }[] = [
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
-
-function formatCurrency(value: number, currency: string = 'USD'): string {
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency,
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-    }).format(value);
-}
 
 function getCellColor(cell: HeatmapCell | undefined, mode: ViewMode): string {
     if (!cell || cell.count === 0) return 'bg-white/5';
@@ -99,7 +92,7 @@ function getLegendColors(mode: ViewMode): { color: string; label: string }[] {
     ];
 }
 
-function generateInsights(cells: HeatmapCell[], currency: string): TradingInsight[] {
+function generateInsights(cells: HeatmapCell[], fmt: (amount: number | null | undefined, options?: { showSign?: boolean; compact?: boolean }) => string): TradingInsight[] {
     const insights: TradingInsight[] = [];
     
     // Filter cells with meaningful data (at least 3 trades)
@@ -126,8 +119,8 @@ function generateInsights(cells: HeatmapCell[], currency: string): TradingInsigh
         insights.push({
             type: 'danger',
             title: `Avoid ${dayName} ${timeRange}`,
-            message: `${cell.winRate.toFixed(0)}% win rate with ${formatCurrency(Math.abs(cell.totalPnl), currency)} in losses across ${cell.count} trades.`,
-            metric: `${cell.winRate.toFixed(0)}% WR`,
+            message: `${formatPercent(cell.winRate, 0)} win rate with ${fmt(Math.abs(cell.totalPnl), { compact: true })} in losses across ${cell.count} trades.`,
+            metric: `${formatPercent(cell.winRate, 0)} WR`,
         });
     }
 
@@ -143,8 +136,8 @@ function generateInsights(cells: HeatmapCell[], currency: string): TradingInsigh
         insights.push({
             type: 'success',
             title: `Best time: ${dayName} ${timeRange}`,
-            message: `${cell.winRate.toFixed(0)}% win rate with ${formatCurrency(cell.totalPnl, currency)} profit across ${cell.count} trades.`,
-            metric: `+${formatCurrency(cell.totalPnl, currency)}`,
+            message: `${formatPercent(cell.winRate, 0)} win rate with ${fmt(cell.totalPnl, { compact: true })} profit across ${cell.count} trades.`,
+            metric: `+${fmt(cell.totalPnl, { compact: true })}`,
         });
     }
 
@@ -163,8 +156,8 @@ function generateInsights(cells: HeatmapCell[], currency: string): TradingInsigh
         insights.push({
             type: 'warning',
             title: `Challenging day: ${worstDay.day}`,
-            message: `Consider reducing position size or skipping ${worstDay.day}s. Overall ${worstDay.winRate.toFixed(0)}% win rate.`,
-            metric: `${worstDay.winRate.toFixed(0)}% WR`,
+            message: `Consider reducing position size or skipping ${worstDay.day}s. Overall ${formatPercent(worstDay.winRate, 0)} win rate.`,
+            metric: `${formatPercent(worstDay.winRate, 0)} WR`,
         });
     }
 
@@ -173,8 +166,8 @@ function generateInsights(cells: HeatmapCell[], currency: string): TradingInsigh
         insights.push({
             type: 'success',
             title: `Strong day: ${bestDay.day}`,
-            message: `${bestDay.day}s are profitable with ${bestDay.winRate.toFixed(0)}% win rate. Focus trading here.`,
-            metric: `${bestDay.winRate.toFixed(0)}% WR`,
+            message: `${bestDay.day}s are profitable with ${formatPercent(bestDay.winRate, 0)} win rate. Focus trading here.`,
+            metric: `${formatPercent(bestDay.winRate, 0)} WR`,
         });
     }
 
@@ -184,6 +177,7 @@ function generateInsights(cells: HeatmapCell[], currency: string): TradingInsigh
 export function TradingHeatmapWidget({ cells, currency = 'USD' }: TradingHeatmapWidgetProps) {
     const [viewMode, setViewMode] = useState<ViewMode>('pnl');
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    const { formatAmount: fmt } = useCurrency()
     const [hoveredCell, setHoveredCell] = useState<HeatmapCell | null>(null);
 
     // Build 7x24 grid
@@ -196,7 +190,7 @@ export function TradingHeatmapWidget({ cells, currency = 'USD' }: TradingHeatmap
     }, [cells]);
 
     // Generate insights
-    const insights = useMemo(() => generateInsights(cells, currency), [cells, currency]);
+    const insights = useMemo(() => generateInsights(cells, fmt), [cells, fmt]);
 
     const currentView = VIEW_OPTIONS.find(v => v.value === viewMode)!;
 
@@ -297,17 +291,17 @@ export function TradingHeatmapWidget({ cells, currency = 'USD' }: TradingHeatmap
                         <div className="flex justify-between">
                             <span className="text-gray-500">P&L:</span>
                             <span className={hoveredCell.totalPnl >= 0 ? 'text-profit' : 'text-loss'}>
-                                {formatCurrency(hoveredCell.totalPnl, currency)}
+                                {fmt(hoveredCell.totalPnl, { compact: true })}
                             </span>
                         </div>
                         <div className="flex justify-between">
                             <span className="text-gray-500">Win Rate:</span>
-                            <span>{hoveredCell.winRate.toFixed(1)}%</span>
+                            <span>{formatPercent(hoveredCell.winRate, 1)}</span>
                         </div>
                         <div className="flex justify-between">
                             <span className="text-gray-500">Avg P&L:</span>
                             <span className={hoveredCell.avgPnl >= 0 ? 'text-profit' : 'text-loss'}>
-                                {formatCurrency(hoveredCell.avgPnl, currency)}
+                                {fmt(hoveredCell.avgPnl, { compact: true })}
                             </span>
                         </div>
                         <div className="flex justify-between">

@@ -10,6 +10,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { CheckCircle2, XCircle, Minus, TrendingUp, TrendingDown, HelpCircle } from 'lucide-react';
+import { formatPercent } from '@/lib/formatNumber';
 
 interface ComplianceWidgetProps {
     accountId?: string | null;
@@ -107,12 +108,12 @@ export default function ComplianceWidget({ accountId, strategyId }: ComplianceWi
                 {improves ? (
                     <div className="flex items-center gap-1 text-green-400 text-sm">
                         <TrendingUp className="w-4 h-4" />
-                        <span>+{fullVsNoneDiff.toFixed(0)}% win rate</span>
+                        <span>+{formatPercent(fullVsNoneDiff, 0)} win rate</span>
                     </div>
                 ) : fullVsNoneDiff < -5 ? (
                     <div className="flex items-center gap-1 text-red-400 text-sm">
                         <TrendingDown className="w-4 h-4" />
-                        <span>{fullVsNoneDiff.toFixed(0)}% win rate</span>
+                        <span>{formatPercent(fullVsNoneDiff, 0)} win rate</span>
                     </div>
                 ) : null}
             </div>
@@ -121,7 +122,7 @@ export default function ComplianceWidget({ accountId, strategyId }: ComplianceWi
             <div className="mb-6 p-3 bg-white/5 rounded-lg">
                 <div className="flex justify-between items-center mb-2">
                     <span className="text-xs text-gray-500 uppercase tracking-wider">Completion Rate</span>
-                    <span className="text-sm font-medium text-white">{data.overall.completionRate.toFixed(0)}%</span>
+                    <span className="text-sm font-medium text-white">{formatPercent(data.overall.completionRate, 0)}</span>
                 </div>
                 <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                     <div 
@@ -130,7 +131,7 @@ export default function ComplianceWidget({ accountId, strategyId }: ComplianceWi
                     />
                 </div>
                 <div className="mt-1 text-xs text-gray-500">
-                    {data.overall.totalTrades} total trades • Avg {data.overall.avgCompletionPct.toFixed(0)}% completion
+                    {data.overall.totalTrades} total trades • Avg {formatPercent(data.overall.avgCompletionPct, 0)} completion
                 </div>
             </div>
 
@@ -175,7 +176,7 @@ export default function ComplianceWidget({ accountId, strategyId }: ComplianceWi
                 }`}>
                     {improves ? (
                         <>
-                            📈 Completing your checklist appears to improve your win rate by <strong>+{fullVsNoneDiff.toFixed(0)}%</strong>
+                            📈 Completing your checklist appears to improve your win rate by <strong>+{formatPercent(fullVsNoneDiff, 0)}</strong>
                         </>
                     ) : (
                         <>
@@ -224,7 +225,7 @@ function CompletionRow({
                 <div>
                     <div className="text-xs text-gray-500">Win Rate</div>
                     <div className={`text-sm font-medium ${winRate >= 50 ? 'text-green-400' : 'text-red-400'}`}>
-                        {winRate.toFixed(0)}%
+                        {formatPercent(winRate, 0)}
                     </div>
                 </div>
                 <div>

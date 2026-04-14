@@ -5,6 +5,7 @@
 
 import prisma from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { formatDateKey } from '@/lib/formatTime';
 
 
 interface BenchmarkPoint {
@@ -109,7 +110,7 @@ async function getBenchmarkData(
   startDate: Date,
   endDate: Date
 ): Promise<BenchmarkData> {
-  const cacheKey = `${symbol}-${startDate.toISOString().split('T')[0]}-${endDate.toISOString().split('T')[0]}`;
+  const cacheKey = `${symbol}-${formatDateKey(startDate)}-${formatDateKey(endDate)}`;
   
   // Check cache
   const cached = benchmarkCache.get(cacheKey);

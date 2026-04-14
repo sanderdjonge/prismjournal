@@ -1,5 +1,7 @@
 'use client';
 
+import { formatPercent } from '@/lib/formatNumber';
+
 /**
  * ExcursionBar — proportional horizontal bar visualising MAE / exit point / MFE.
  *
@@ -116,7 +118,7 @@ export function ExcursionBar({ mae, mfe, exitDistFromEntry, pipLabel = 'pts' }: 
                                 ? 'text-amber-400'
                                 : 'text-red-400'
                     }>
-                        Exit: {exitEfficiency.toFixed(1)}%
+                        Exit: {formatPercent(exitEfficiency, 1)}
                     </span>
                 )}
                 <span className="text-green-400/80">

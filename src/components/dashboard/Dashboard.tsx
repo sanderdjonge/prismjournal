@@ -10,6 +10,7 @@ import { ChallengeProgressWidget } from '@/components/challenges/ChallengeProgre
 import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
 import { cn } from '@/lib/cn';
 import { useCurrency } from '@/lib/currency';
+import { formatPercent } from '@/lib/formatNumber';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useSettings } from '@/hooks/useSettings';
@@ -155,7 +156,7 @@ export default function Dashboard() {
                     </div>
                     <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                         <MetricRow label="Total P&L" value={formatPnl(stats.totalPnl)} variant={stats.totalPnl >= 0 ? 'profit' : 'loss'} />
-                        <MetricRow label="Win Rate" value={`${stats.winRate.toFixed(1)}%`} subValue={`${Math.round(stats.winRate / 100 * stats.totalTrades)}W / ${stats.totalTrades - Math.round(stats.winRate / 100 * stats.totalTrades)}L`} variant={stats.winRate >= 50 ? 'profit' : 'loss'} />
+                        <MetricRow label="Win Rate" value={formatPercent(stats.winRate, 1)} subValue={`${Math.round(stats.winRate / 100 * stats.totalTrades)}W / ${stats.totalTrades - Math.round(stats.winRate / 100 * stats.totalTrades)}L`} variant={stats.winRate >= 50 ? 'profit' : 'loss'} />
                         <MetricRow label="Profit Factor" value={stats.profitFactor > 0 ? stats.profitFactor.toFixed(2) : '—'} />
                         <MetricRow label="Avg R-Multiple" value={`${stats.avgRMultiple >= 0 ? '+' : ''}${stats.avgRMultiple.toFixed(2)}R`} variant={stats.avgRMultiple >= 0 ? 'profit' : 'loss'} />
                         <MetricRow label="Expectancy" value={`${stats.expectancy >= 0 ? '+' : '-'}${symbol}${Math.abs(stats.expectancy).toFixed(2)}`} variant={stats.expectancy >= 0 ? 'profit' : 'loss'} />

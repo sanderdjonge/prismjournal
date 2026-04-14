@@ -14,6 +14,7 @@ import {
 import { useCurrency } from '@/lib/currency';
 import { useTiltmeterHistory } from '@/hooks/useTiltmeter';
 import { getChartColor } from '@/lib/chart-colors';
+import { formatDateKey } from '@/lib/formatTime';
 
 type DataPoint = {
     time: string;
@@ -128,7 +129,7 @@ export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-
     );
     // currentBalance = total cumulative P&L (last data point); the curve starts conceptually at 0
     const currentBalance = data.length > 0 ? data[data.length - 1].value : 0;
-    const totalPnL = currentBalance;
+    const totalPnl = currentBalance;
 
     // Calculate dynamic Y-axis domain to make variations more visible
     // Use tight percentage-based padding to emphasize curve variations
@@ -215,7 +216,7 @@ export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-
             const dateKey = currentDate.toDateString();
             if (dataMap.has(dateKey)) {
                 filledData.push({
-                    time: currentDate.toISOString().split('T')[0],
+                    time: formatDateKey(currentDate),
                     value: dataMap.get(dateKey)!
                 });
             } else {
@@ -237,7 +238,7 @@ export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-
                 // Use linear interpolation
                 const interpolatedValue = (prevValue + nextValue) / 2;
                 filledData.push({
-                    time: currentDate.toISOString().split('T')[0],
+                    time: formatDateKey(currentDate),
                     value: interpolatedValue
                 });
             }
@@ -256,7 +257,7 @@ export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-
             if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
                 return date;
             }
-            return new Date(date).toISOString().split('T')[0];
+            return formatDateKey(date);
         };
         
         // Create a map of tiltmeter scores by date
@@ -295,8 +296,8 @@ export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-
 
                 <div className="text-right">
                     <p className="text-xs text-gray-500">Total P&L</p>
-                    <p className={`text-sm font-mono font-bold ${totalPnL >= 0 ? 'text-profit' : 'text-loss'}`}>
-                        {formatPnl(totalPnL)}
+                    <p className={`text-sm font-mono font-bold ${totalPnl >= 0 ? 'text-profit' : 'text-loss'}`}>
+                        {formatPnl(totalPnl)}
                     </p>
                     {/* Tiltmeter loading/error indicator */}
                     {showTiltmeter && (

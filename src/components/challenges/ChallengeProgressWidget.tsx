@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Target, Plus, X, ChevronRight, AlertTriangle, CheckCircle2, XCircle, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { formatDateKey } from '@/lib/formatTime';
+import { useCurrency } from '@/lib/currency';
 import { useChallenges, useCreateChallenge, type TradingChallenge, type ChallengeRule } from '@/hooks/useChallenges';
 import { ChallengeDetailModal } from './ChallengeDetailModal';
 
@@ -17,11 +19,12 @@ const RULE_LABELS: Record<string, string> = {
 };
 
 function RuleBadge({ rule }: { rule: ChallengeRule }) {
+    const { formatAmount: fmt } = useCurrency()
     const label = RULE_LABELS[rule.type] || rule.type;
     let valueDisplay = '';
     
     if (rule.type === 'MAX_DAILY_LOSS' || rule.type === 'MAX_DRAWDOWN') {
-        valueDisplay = `$${rule.value}`;
+        valueDisplay = fmt(Number(rule.value));
     } else if (rule.type === 'MIN_RR' || rule.type === 'WIN_RATE_TARGET') {
         valueDisplay = `${rule.value}${rule.type === 'WIN_RATE_TARGET' ? '%' : ''}`;
     } else if (rule.type === 'MAX_TRADES_PER_DAY') {
@@ -125,7 +128,7 @@ function CreateChallengeModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
             name,
             description: description || undefined,
             rules,
-            startDate: new Date().toISOString().split('T')[0],
+            startDate: formatDateKey(new Date()),
         }, {
             onSuccess: () => {
                 onClose();

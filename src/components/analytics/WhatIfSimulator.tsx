@@ -8,6 +8,8 @@ import {
     Settings2
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { formatPercent } from '@/lib/formatNumber';
+import { getCurrencySymbol } from '@/lib/currency';
 import { useWhatIf, useWhatIfMulti, WhatIfFilters, WhatIfResult, SimulationResult } from '@/hooks/useWhatIf';
 import { useSettings } from '@/hooks/useSettings';
 import {
@@ -75,7 +77,7 @@ function MetricCard({
     const formatValue = (val: number) => {
         if (format === 'percent') return val.toFixed(1) + '%';
         if (format === 'currency') {
-            const symbol = currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : '$';
+            const symbol = getCurrencySymbol(currency);
             return symbol + val.toFixed(2);
         }
         return val.toFixed(2);
@@ -338,16 +340,11 @@ export function WhatIfSimulator() {
         return count;
     }, [filters]);
     
-    // Currency symbol helper
-    const getCurrencySymbol = () => {
-        if (displayCurrency === 'EUR') return '€';
-        if (displayCurrency === 'GBP') return '£';
-        return '$';
-    };
-    
+    const currencySymbol = getCurrencySymbol(displayCurrency)
+
     // Helper to get display value for each filter type
     const getFilterDisplayValue = (id: string): string | null => {
-        const symbol = getCurrencySymbol();
+        const symbol = currencySymbol;
         switch (id) {
             case 'duration':
                 const min = filters.time?.minDurationHours;
@@ -379,7 +376,7 @@ export function WhatIfSimulator() {
                 if (filters.risk?.riskPerTrade !== undefined) return `${filters.risk.riskPerTrade}%`;
                 return null;
             case 'trailingStop':
-                if (filters.risk?.trailingPercent !== undefined) return `${(filters.risk.trailingPercent * 100).toFixed(0)}%`;
+                if (filters.risk?.trailingPercent !== undefined) return formatPercent(filters.risk.trailingPercent * 100, 0);
                 return null;
             case 'volatility':
                 if (filters.market?.maxVolatility !== undefined) return `≤${filters.market.maxVolatility}`;
@@ -689,13 +686,13 @@ export function WhatIfSimulator() {
                     {/* Psychology filters */}
                     {filters.psychology?.dailyLossLimit !== undefined && (
                         <FilterChip
-                            label={`Daily Limit: ${getCurrencySymbol()}${filters.psychology.dailyLossLimit}`}
+                            label={`Daily Limit: ${currencySymbol}${filters.psychology.dailyLossLimit}`}
                             onRemove={() => setFilters({ ...filters, psychology: { ...filters.psychology, dailyLossLimit: undefined } })}
                         />
                     )}
                     {filters.psychology?.weeklyLossLimit !== undefined && (
                         <FilterChip
-                            label={`Weekly Limit: ${getCurrencySymbol()}${filters.psychology.weeklyLossLimit}`}
+                            label={`Weekly Limit: ${currencySymbol}${filters.psychology.weeklyLossLimit}`}
                             onRemove={() => setFilters({ ...filters, psychology: { ...filters.psychology, weeklyLossLimit: undefined } })}
                         />
                     )}
@@ -720,7 +717,7 @@ export function WhatIfSimulator() {
                     )}
                     {filters.risk?.trailingPercent !== undefined && (
                         <FilterChip
-                            label={`Trail: ${(filters.risk.trailingPercent * 100).toFixed(0)}% retrace`}
+                            label={`Trail: ${formatPercent(filters.risk.trailingPercent * 100, 0)} retrace`}
                             onRemove={() => setFilters({ ...filters, risk: { ...filters.risk, trailingPercent: undefined } })}
                         />
                     )}

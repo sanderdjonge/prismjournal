@@ -1,4 +1,5 @@
 import { User } from '@prisma/client';
+import { formatPercent } from '@/lib/formatNumber';
 
 interface WidgetTemplateData {
     user: {
@@ -192,7 +193,7 @@ export function generateWidgetHtml(data: WidgetTemplateData): string {
       ${showWinRate ? `
       <div class="stat">
         <span class="stat-label">Win Rate</span>
-        <span class="stat-value neutral">${stats.winRate.toFixed(1)}%</span>
+        <span class="stat-value neutral">${formatPercent(stats.winRate, 1)}</span>
       </div>
       ` : ''}
       <div class="stat">

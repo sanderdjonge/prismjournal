@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { apiFetch } from '@/lib/api/client'
 import { queryKeys } from '@/lib/query-keys'
+import { STALE_TIME } from '@/constants/queryConfig'
 
 interface ComplianceStats {
   totalTrades: number
@@ -25,6 +26,6 @@ export function useComplianceStats(
       if (accountId) params.set('accountId', accountId)
       return apiFetch(`/api/analytics/compliance?${params}`)
     },
-    staleTime: 60_000,
+    staleTime: STALE_TIME.MEDIUM,
   })
 }

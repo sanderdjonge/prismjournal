@@ -9,6 +9,8 @@
 
 import React, { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
+import { formatPercent } from '@/lib/formatNumber';
+import { useCurrency } from '@/lib/currency';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 
@@ -39,6 +41,7 @@ export function ChallengeCalendar({
 }: ChallengeCalendarProps) {
     const [currentMonth, setCurrentMonth] = useState(initialMonth || new Date());
     const [selectedDay, setSelectedDay] = useState<DailyData | null>(null);
+    const { formatAmount: fmt, symbol: currencySymbol } = useCurrency()
 
     const monthStart = dayjs(currentMonth).startOf('month');
     const daysInMonth = monthStart.daysInMonth();
@@ -115,7 +118,7 @@ export function ChallengeCalendar({
                         <span className="text-loss">{monthStats.lossDays} loss {monthStats.lossDays === 1 ? 'day' : 'days'}</span>
                         <span className="text-gray-600">·</span>
                         <span className={monthStats.pnl >= 0 ? 'text-profit' : 'text-loss'}>
-                            {monthStats.pnl >= 0 ? '+' : ''}${monthStats.pnl.toFixed(0)} profit
+                            {monthStats.pnl >= 0 ? '+' : ''}{fmt(monthStats.pnl, { compact: true })} profit
                         </span>
                     </div>
                 </div>
@@ -158,12 +161,12 @@ export function ChallengeCalendar({
                                 ${isSelected ? 'ring-1 ring-white' : ''}
                                 hover:opacity-80 cursor-pointer
                             `}
-                            title={cell.data ? `$${cell.data.pnl.toFixed(2)} (${cell.data.pnlPercent.toFixed(1)}%)` : 'No trades'}
+                            title={cell.data ? `${fmt(cell.data.pnl)} (${formatPercent(cell.data.pnlPercent, 1)})` : 'No trades'}
                         >
                             <span className="text-xs font-medium leading-none">{cell.day}</span>
                             {cell.data && (
                                 <span className="text-[10px] font-bold leading-none mt-0.5">
-                                    {cell.data.pnl >= 0 ? '+' : ''}{cell.data.pnlPercent.toFixed(1)}%
+                                    {cell.data.pnl >= 0 ? '+' : ''}{formatPercent(cell.data.pnlPercent, 1)}
                                 </span>
                             )}
                         </button>
@@ -213,13 +216,13 @@ export function ChallengeCalendar({
                                 <div>
                                     <span className="text-gray-500">Daily P&L:</span>
                                     <span className={`ml-1 font-bold ${selectedDay.pnl >= 0 ? 'text-profit' : 'text-loss'}`}>
-                                        {selectedDay.pnl >= 0 ? '+' : ''}${selectedDay.pnl.toFixed(2)}
+                                        {selectedDay.pnl >= 0 ? '+' : ''}{fmt(selectedDay.pnl)}
                                     </span>
                                 </div>
                                 <div>
                                     <span className="text-gray-500">Daily loss used:</span>
                                     <span className={`ml-1 font-bold ${selectedDay.dailyLossUsedPercent > 80 ? 'text-yellow-400' : 'text-white'}`}>
-                                        {selectedDay.dailyLossUsedPercent.toFixed(0)}% of limit
+                                        {formatPercent(selectedDay.dailyLossUsedPercent, 0)} of limit
                                     </span>
                                 </div>
                             </div>

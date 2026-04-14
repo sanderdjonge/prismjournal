@@ -1,5 +1,7 @@
 import prisma from '@/lib/prisma'
 import { calculateProfitFactor, serializeProfitFactor, calculateMaxDrawdownPercent } from '@/lib/analytics'
+import { formatPercent } from '@/lib/formatNumber'
+import { formatDateKey } from '@/lib/formatTime'
 import type { WeeklyDigestData } from '@/lib/email'
 
 export type DigestData = Omit<WeeklyDigestData, 'email' | 'dashboardUrl'>
@@ -62,7 +64,7 @@ export async function computeWeeklyDigestData(accountId: string, userId: string)
   const winCount = wins.length
   const lossCount = losses.length
 
-  const netPnl = trades.reduce((sum, t) => sum + (t.pnl || 0), 0)
+  const totalPnl = trades.reduce((sum, t) => sum + (t.pnl || 0), 0)
   const winRate = totalTrades > 0 ? (winCount / totalTrades) * 100 : 0
 
   const prevWinCount = prevWeekTrades.filter(t => (t.pnl || 0) > 0).length
@@ -81,14 +83,14 @@ export async function computeWeeklyDigestData(accountId: string, userId: string)
     : 0
 
   const accountBalance = latestSnapshot?.equity || latestSnapshot?.balance || 10000
-  const returnOnEquity = (netPnl / accountBalance) * 100
+  const returnOnEquity = (totalPnl / accountBalance) * 100
 
   const dailyPnlMap = new Map<string, number>()
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
   trades.forEach(trade => {
     if (trade.exitTime) {
-      const dayKey = trade.exitTime.toISOString().split('T')[0]
+      const dayKey = formatDateKey(trade.exitTime)
       dailyPnlMap.set(dayKey, (dailyPnlMap.get(dayKey) || 0) + (trade.pnl || 0))
     }
   })
@@ -134,7 +136,7 @@ export async function computeWeeklyDigestData(accountId: string, userId: string)
     userName: user?.name || undefined,
     weekStart,
     weekEnd,
-    netPnl,
+    totalPnl,
     returnOnEquity,
     totalTrades,
     winCount,
@@ -155,20 +157,20 @@ export async function computeWeeklyDigestData(accountId: string, userId: string)
 }
 
 export function formatTelegramDigest(data: DigestData): string {
-  const pnlEmoji = data.netPnl >= 0 ? '🟢' : '🔴'
-  const pnlSign = data.netPnl >= 0 ? '+' : ''
+  const pnlEmoji = data.totalPnl >= 0 ? '🟢' : '🔴'
+  const pnlSign = data.totalPnl >= 0 ? '+' : ''
 
   let message = `<b>📊 Weekly Digest</b>\n\n`
 
-  message += `${pnlEmoji} <b>Net P&L: ${pnlSign}$${data.netPnl.toFixed(2)}</b>\n`
-  message += `📈 Return: ${data.returnOnEquity.toFixed(2)}%\n\n`
+  message += `${pnlEmoji} <b>Net P&L: ${pnlSign}$${data.totalPnl.toFixed(2)}</b>\n`
+  message += `📈 Return: ${formatPercent(data.returnOnEquity, 2)}\n\n`
 
   message += `<b>Trade Stats</b>\n`
   message += `• Total Trades: ${data.totalTrades}\n`
-  message += `• Win Rate: ${data.winRate.toFixed(1)}%`
+  message += `• Win Rate: ${formatPercent(data.winRate, 1)}`
   if (data.winRateChange !== null) {
     const changeEmoji = data.winRateChange >= 0 ? '📈' : '📉'
-    message += ` ${changeEmoji} ${data.winRateChange >= 0 ? '+' : ''}${data.winRateChange.toFixed(1)}%`
+    message += ` ${changeEmoji} ${data.winRateChange >= 0 ? '+' : ''}${formatPercent(data.winRateChange, 1)}`
   }
   message += `\n`
   message += `• Profit Factor: ${data.profitFactor.toFixed(2)}\n`

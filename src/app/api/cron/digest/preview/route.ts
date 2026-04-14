@@ -3,6 +3,7 @@ import { withAuth } from '@/lib/api/withAuth'
 import prisma from '@/lib/prisma'
 import { formatProfitFactor } from '@/lib/analytics'
 import { computeWeeklyDigestData, type DigestData } from '@/lib/services/digest-computation'
+import { formatPercent } from '@/lib/formatNumber'
 
 export const GET = withAuth(async (_req, _ctx, session) => {
     const userId = session.user.id
@@ -37,8 +38,8 @@ function generatePreviewHtml(data: DigestData): string {
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     }
 
-    const pnlColor = data.netPnl >= 0 ? '#4ade80' : '#f87171'
-    const pnlPrefix = data.netPnl >= 0 ? '+' : ''
+    const pnlColor = data.totalPnl >= 0 ? '#4ade80' : '#f87171'
+    const pnlPrefix = data.totalPnl >= 0 ? '+' : ''
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -87,8 +88,8 @@ function generatePreviewHtml(data: DigestData): string {
 
     <div class="pnl-hero">
         <p class="pnl-label">Net P&L This Week</p>
-        <p class="pnl-value" style="color: ${pnlColor}">${pnlPrefix}$${Math.abs(data.netPnl).toFixed(2)}</p>
-        <p class="pnl-return ${data.returnOnEquity >= 0 ? 'positive' : 'negative'}">${data.returnOnEquity >= 0 ? '▲' : '▼'} ${Math.abs(data.returnOnEquity).toFixed(2)}% return on equity</p>
+        <p class="pnl-value" style="color: ${pnlColor}">${pnlPrefix}$${Math.abs(data.totalPnl).toFixed(2)}</p>
+        <p class="pnl-return ${data.returnOnEquity >= 0 ? 'positive' : 'negative'}">${data.returnOnEquity >= 0 ? '▲' : '▼'} ${formatPercent(Math.abs(data.returnOnEquity), 2)} return on equity</p>
     </div>
 
     <div class="stats-grid">
@@ -99,8 +100,8 @@ function generatePreviewHtml(data: DigestData): string {
         </div>
         <div class="stat-card">
             <p class="stat-label">Win Rate</p>
-            <p class="stat-value">${data.winRate.toFixed(1)}%</p>
-            ${data.winRateChange !== null ? `<p class="stat-change ${data.winRateChange >= 0 ? 'positive' : 'negative'}">${data.winRateChange >= 0 ? '▲' : '▼'} ${Math.abs(data.winRateChange).toFixed(1)}% vs last week</p>` : '<p class="stat-change" style="color: #64748b">First week tracked</p>'}
+            <p class="stat-value">${formatPercent(data.winRate, 1)}</p>
+            ${data.winRateChange !== null ? `<p class="stat-change ${data.winRateChange >= 0 ? 'positive' : 'negative'}">${data.winRateChange >= 0 ? '▲' : '▼'} ${formatPercent(Math.abs(data.winRateChange), 1)} vs last week</p>` : '<p class="stat-change" style="color: #64748b">First week tracked</p>'}
         </div>
         <div class="stat-card">
             <p class="stat-label">Profit Factor</p>

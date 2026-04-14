@@ -3,6 +3,7 @@ import logger from '@/lib/logger';
 import { notifyRuleViolation } from '@/lib/notifications';
 import { updateTradingDaysCount, autoAdvancePhaseIfNeeded } from '@/lib/prop-firm/challenge-service';
 import { cleanupExpiredCards } from '@/lib/services/share-card.service';
+import { formatPercent } from '@/lib/formatNumber';
 import { RuleType, ViolationSeverity } from '@prisma/client';
 
 let running = false;
@@ -125,14 +126,14 @@ export async function runDailySnapshot(): Promise<void> {
                     };
 
                     if (isDailyLimitBreached)
-                        await notifyViolation(RuleType.DAILY_LOSS_LIMIT, ViolationSeverity.BREACH, dailyLossLimit, dailyLossUsed, `Daily loss limit breached: ${dailyLossUsed.toFixed(2)}% of ${dailyLossLimit}%`);
+                        await notifyViolation(RuleType.DAILY_LOSS_LIMIT, ViolationSeverity.BREACH, dailyLossLimit, dailyLossUsed, `Daily loss limit breached: ${formatPercent(dailyLossUsed, 2)} of ${formatPercent(dailyLossLimit, 2)}`);
                     else if (dailyLossPercentOfLimit >= 80)
-                        await notifyViolation(RuleType.DAILY_LOSS_LIMIT, ViolationSeverity.WARNING, dailyLossLimit, dailyLossUsed, `Approaching daily loss limit: ${dailyLossUsed.toFixed(2)}% of ${dailyLossLimit}%`);
+                        await notifyViolation(RuleType.DAILY_LOSS_LIMIT, ViolationSeverity.WARNING, dailyLossLimit, dailyLossUsed, `Approaching daily loss limit: ${formatPercent(dailyLossUsed, 2)} of ${formatPercent(dailyLossLimit, 2)}`);
 
                     if (isMaxDrawdownBreached)
-                        await notifyViolation(RuleType.MAX_DRAWDOWN, ViolationSeverity.BREACH, account.propFirm.maxDrawdown, currentDrawdown, `Max drawdown breached: ${currentDrawdown.toFixed(2)}% of ${account.propFirm.maxDrawdown}%`);
+                        await notifyViolation(RuleType.MAX_DRAWDOWN, ViolationSeverity.BREACH, account.propFirm.maxDrawdown, currentDrawdown, `Max drawdown breached: ${formatPercent(currentDrawdown, 2)} of ${formatPercent(account.propFirm.maxDrawdown, 2)}`);
                     else if (currentDrawdown >= account.propFirm.maxDrawdown * 0.8)
-                        await notifyViolation(RuleType.MAX_DRAWDOWN, ViolationSeverity.WARNING, account.propFirm.maxDrawdown, currentDrawdown, `Approaching max drawdown: ${currentDrawdown.toFixed(2)}% of ${account.propFirm.maxDrawdown}%`);
+                        await notifyViolation(RuleType.MAX_DRAWDOWN, ViolationSeverity.WARNING, account.propFirm.maxDrawdown, currentDrawdown, `Approaching max drawdown: ${formatPercent(currentDrawdown, 2)} of ${formatPercent(account.propFirm.maxDrawdown, 2)}`);
 
                     await autoAdvancePhaseIfNeeded(account.id);
                 }

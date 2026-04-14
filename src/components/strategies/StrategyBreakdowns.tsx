@@ -2,6 +2,7 @@
 
 import { useCurrency } from '@/lib/currency'
 import { cn } from '@/lib/cn'
+import { formatPercent } from '@/lib/formatNumber'
 
 interface BreakdownsProps {
   bySymbol: Array<{ symbol: string; winRate: number; pnl: number; count: number }>
@@ -31,7 +32,7 @@ export function StrategyBreakdowns({ bySymbol, byDirection, byTimeOfDay, byDayOf
                 <span className="text-gray-300 font-mono">{s.symbol}</span>
                 <div className="text-right">
                   <span className={cn('font-bold', s.winRate >= 50 ? 'text-profit' : 'text-loss')}>
-                    {s.winRate.toFixed(0)}%
+                    {formatPercent(s.winRate, 0)}
                   </span>
                   <span className="text-gray-600 ml-2">{formatAmount(s.pnl)}</span>
                 </div>
@@ -52,7 +53,7 @@ export function StrategyBreakdowns({ bySymbol, byDirection, byTimeOfDay, byDayOf
               <span className="text-gray-300">{label}</span>
               <div className="text-right">
                 <span className={cn('font-bold', data.winRate >= 50 ? 'text-profit' : 'text-loss')}>
-                  {data.winRate.toFixed(0)}%
+                  {formatPercent(data.winRate, 0)}
                 </span>
                 <span className="text-gray-600 ml-2">{formatAmount(data.pnl)}</span>
                 <span className="text-gray-700 ml-1">({data.count})</span>
@@ -70,7 +71,7 @@ export function StrategyBreakdowns({ bySymbol, byDirection, byTimeOfDay, byDayOf
               <span className="text-gray-300">{t.period}</span>
               <div className="text-right">
                 <span className={cn('font-bold', t.winRate >= 50 ? 'text-profit' : 'text-loss')}>
-                  {t.winRate.toFixed(0)}%
+                  {formatPercent(t.winRate, 0)}
                 </span>
                 <span className="text-gray-600 ml-2">{formatAmount(t.pnl)}</span>
               </div>
@@ -87,7 +88,7 @@ export function StrategyBreakdowns({ bySymbol, byDirection, byTimeOfDay, byDayOf
               <span className="text-gray-300">{DAY_LABELS[d.day]}</span>
               <div className="text-right">
                 <span className={cn('font-bold', d.winRate >= 50 ? 'text-profit' : 'text-loss')}>
-                  {d.winRate.toFixed(0)}%
+                  {formatPercent(d.winRate, 0)}
                 </span>
                 <span className="text-gray-600 ml-2">{formatAmount(d.pnl)}</span>
               </div>

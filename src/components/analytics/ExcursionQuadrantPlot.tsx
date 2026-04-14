@@ -6,6 +6,7 @@ import { X, Filter } from 'lucide-react';
 import type { QuadrantTrade } from '@/hooks/useExcursionTrades';
 import type { JournalTrade } from '@/app/journal/page';
 import TradeViewModal from '@/components/journal/TradeViewModal';
+import { formatPercent } from '@/lib/formatNumber';
 
 // ---------------------------------------------------------------------------
 // Pure calculation helpers (exported for unit testing)
@@ -359,7 +360,7 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                             : null;
                         const slMsg = initialStopDist != null && initialStopDist > 0
                             ? effectiveMae >= initialStopDist
-                                ? `Stop hit — price moved ${((effectiveMae / initialStopDist) * 100).toFixed(0)}% of stop distance`
+                                ? `Stop hit — price moved ${formatPercent((effectiveMae / initialStopDist) * 100, 0)} of stop distance`
                                 : 'Stop never threatened'
                             : hovered.closeReason === 'SL'
                                 ? 'Stopped out (SL hit)'
@@ -386,7 +387,7 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                                 <div className="my-2 h-px bg-border-subtle" />
                                 <Row label="Max against you (MAE)" value={`-${(hovered.mae ?? 0).toFixed(4)} pts`} color="text-loss" />
                                 {slMsg && <Row label="Your stop" value={slMsg} />}
-                                <Row label="Exit efficiency" value={`${hovered.eff.toFixed(1)}%`} />
+                                <Row label="Exit efficiency" value={formatPercent(hovered.eff, 1)} />
                                 <Row label="P&L" value={`${pnlSign}${hovered.pnl.toFixed(2)}`} color={isWin ? 'text-profit' : 'text-loss'} />
                                 <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest" style={{ background: zone.color + '22', color: zone.color, border: `1px solid ${zone.color}44` }}>
                                     {zone.label}

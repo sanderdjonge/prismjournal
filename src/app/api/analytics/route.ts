@@ -134,8 +134,8 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
 
     const pnlValues = trades.map(t => ({ pnl: t.pnl ?? 0 }));
     const profitFactor = calculateProfitFactorFromTrades(pnlValues);
-    const netPnl = trades.reduce((s, t) => s + (t.pnl ?? 0), 0);
-    const expectancy = trades.length > 0 ? Math.round((netPnl / trades.length) * 100) / 100 : 0;
+    const totalPnl = trades.reduce((s, t) => s + (t.pnl ?? 0), 0);
+    const expectancy = trades.length > 0 ? Math.round((totalPnl / trades.length) * 100) / 100 : 0;
 
     const rrTrades = trades.filter(t => t.entryPrice && t.exitPrice && t.stopLoss && t.stopLoss !== 0);
     let avgRR = 0;

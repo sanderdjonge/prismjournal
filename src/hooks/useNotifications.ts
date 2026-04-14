@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiFetch, apiPatch, apiDelete } from '@/lib/api/client'
 import { queryKeys } from '@/lib/query-keys'
+import { STALE_TIME } from '@/constants/queryConfig'
 
 interface Notification {
   id: string
@@ -15,7 +16,7 @@ export function useNotifications() {
   return useQuery<{ notifications: Notification[] }>({
     queryKey: queryKeys.notifications.all,
     queryFn: () => apiFetch('/api/notifications'),
-    staleTime: 30_000,
+    staleTime: STALE_TIME.DEFAULT,
     refetchInterval: 60_000,
   })
 }

@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAllUserAccounts } from '@/lib/getAccount';
 import { calculateProfitFactorFromTrades, calculateMaxDrawdownPercent } from '@/lib/analytics';
-import { formatDistanceToNow } from '@/lib/formatTime';
+import { formatDistanceToNow, formatDateKey } from '@/lib/formatTime';
 import { withAuth } from '@/lib/api/withAuth';
 import { cacheGet, cacheSet } from '@/lib/api/cache';
 import { ok } from '@/lib/api/responses';
@@ -85,13 +85,13 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
         let running = 0;
         for (const t of allClosedTrades) {
             running += (t.pnl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
-            const key = t.exitTime!.toISOString().split('T')[0];
+            const key = formatDateKey(t.exitTime!);
             byDay.set(key, running);
         }
         equityData = Array.from(byDay.entries())
             .map(([time, value]) => ({ time, value }))
             .sort((a, b) => a.time.localeCompare(b.time));
-        const startKey = startDate.toISOString().split('T')[0];
+        const startKey = formatDateKey(startDate);
         if (equityData[0]?.time !== startKey) {
             equityData.unshift({ time: startKey, value: 0 });
         }
@@ -104,13 +104,13 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
         let running = 0;
         for (const t of allTimeClosedTrades) {
             running += (t.pnl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
-            const key = t.exitTime!.toISOString().split('T')[0];
+            const key = formatDateKey(t.exitTime!);
             byDay.set(key, running);
         }
         allTimeEquityData = Array.from(byDay.entries())
             .map(([time, value]) => ({ time, value }))
             .sort((a, b) => a.time.localeCompare(b.time));
-        const firstDate = allTimeClosedTrades[0]?.exitTime?.toISOString().split('T')[0];
+        const firstDate = allTimeClosedTrades[0]?.exitTime ? formatDateKey(allTimeClosedTrades[0].exitTime) : undefined;
         if (firstDate && allTimeEquityData[0]?.time !== firstDate) {
             allTimeEquityData.unshift({ time: firstDate, value: 0 });
         }

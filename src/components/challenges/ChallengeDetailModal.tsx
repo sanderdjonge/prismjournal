@@ -4,6 +4,8 @@ import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Target, X, CheckCircle2, XCircle, AlertTriangle, Calendar, TrendingUp, Trash2, Edit2, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { formatPercent } from '@/lib/formatNumber';
+import { useCurrency } from '@/lib/currency';
 import { useChallenge, useDeleteChallenge, useUpdateChallenge, useBackfillChallenge, type ChallengeRule, type ChallengeEvaluation } from '@/hooks/useChallenges';
 import { useState } from 'react';
 
@@ -17,11 +19,12 @@ const RULE_LABELS: Record<string, string> = {
 };
 
 function RuleBadge({ rule }: { rule: ChallengeRule }) {
+    const { formatAmount: fmt } = useCurrency()
     const label = RULE_LABELS[rule.type] || rule.type;
     let valueDisplay = '';
     
     if (rule.type === 'MAX_DAILY_LOSS' || rule.type === 'MAX_DRAWDOWN') {
-        valueDisplay = `$${rule.value}`;
+        valueDisplay = fmt(Number(rule.value));
     } else if (rule.type === 'MIN_RR' || rule.type === 'WIN_RATE_TARGET') {
         valueDisplay = `${rule.value}${rule.type === 'WIN_RATE_TARGET' ? '%' : ''}`;
     } else if (rule.type === 'MAX_TRADES_PER_DAY') {
@@ -232,7 +235,7 @@ export function ChallengeDetailModal({
                                             challenge.stats.successRate >= 80 ? "text-profit" : 
                                             challenge.stats.successRate >= 50 ? "text-primary" : "text-loss"
                                         )}>
-                                            {challenge.stats.successRate.toFixed(0)}%
+                                            {formatPercent(challenge.stats.successRate, 0)}
                                         </div>
                                         <div className="text-[9px] text-gray-500 uppercase tracking-wide">Success</div>
                                     </div>

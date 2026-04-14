@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { apiFetch, apiPost, apiPatch, apiDelete } from '@/lib/api/client'
 import { queryKeys } from '@/lib/query-keys'
+import { STALE_TIME } from '@/constants/queryConfig'
 
 export interface TradeFilters {
   q?: string
@@ -35,7 +36,7 @@ export function useTrades(filters: TradeFilters = {}) {
     queryKey: queryKeys.trades.list(filters),
     queryFn: () => fetchTrades(filters),
     placeholderData: keepPreviousData,
-    staleTime: 30_000,
+    staleTime: STALE_TIME.DEFAULT,
   })
 }
 

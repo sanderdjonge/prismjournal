@@ -8,6 +8,7 @@
 import prisma from '@/lib/prisma';
 import logger from '@/lib/logger';
 import { createNotification } from '@/lib/notifications';
+import { formatPercent } from '@/lib/formatNumber';
 import { sendTelegramMessage } from '@/lib/telegram';
 
 interface DailyLossStatus {
@@ -152,14 +153,14 @@ export async function sendDailyLossAlertIfNeeded(
         });
 
         // Send notification
-        const message = `⚠️ <b>Daily Loss Alert</b>\n\nYou've used ${status.usagePercent.toFixed(1)}% of your daily loss limit.\n\n<b>Current Loss:</b> $${status.currentLoss.toFixed(2)}\n<b>Limit:</b> $${status.lossLimit.toFixed(2)}\n<b>Remaining:</b> $${status.remaining.toFixed(2)}`;
+        const message = `⚠️ <b>Daily Loss Alert</b>\n\nYou've used ${formatPercent(status.usagePercent, 1)} of your daily loss limit.\n\n<b>Current Loss:</b> $${status.currentLoss.toFixed(2)}\n<b>Limit:</b> $${status.lossLimit.toFixed(2)}\n<b>Remaining:</b> $${status.remaining.toFixed(2)}`;
 
         // Store notification
         await createNotification({
             userId,
             type: 'RULE_VIOLATION',
             title: '⚠️ Daily Loss Alert',
-            message: `You've used ${status.usagePercent.toFixed(1)}% of your daily loss limit. $${status.remaining.toFixed(2)} remaining.`,
+            message: `You've used ${formatPercent(status.usagePercent, 1)} of your daily loss limit. $${status.remaining.toFixed(2)} remaining.`,
             sendTelegram: alertConfig?.enableRisk ?? false,
             telegramId: alertConfig?.telegramId,
         });

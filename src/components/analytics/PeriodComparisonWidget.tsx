@@ -10,6 +10,7 @@
 import React, { useState } from 'react';
 import { ChevronDown, TrendingUp, TrendingDown, Minus, RefreshCw } from 'lucide-react';
 import { usePeriodComparison, ComparisonPreset, getComparisonRanges } from '@/hooks/usePeriodComparison';
+import { formatPercent } from '@/lib/formatNumber';
 
 interface PeriodComparisonWidgetProps {
     accountId: string | null;
@@ -27,7 +28,7 @@ function formatMetric(value: number | null, format: 'number' | 'percent' | 'curr
     
     switch (format) {
         case 'percent':
-            return `${value.toFixed(1)}%`;
+            return formatPercent(value, 1);
         case 'currency':
             return `${currency}${value.toFixed(2)}`;
         default:
@@ -46,7 +47,7 @@ function DeltaIndicator({ delta }: { delta: number | null }) {
         <div className={`flex items-center gap-1 ${color}`}>
             <Icon className="w-4 h-4" />
             <span className="text-sm font-medium">
-                {isPositive ? '+' : ''}{delta.toFixed(1)}%
+                {isPositive ? '+' : ''}{formatPercent(delta, 1)}
             </span>
         </div>
     );

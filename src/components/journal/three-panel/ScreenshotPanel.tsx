@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { ImageOff } from 'lucide-react';
 import { computeDuration } from './TradeListPanel';
 import type { JournalTrade } from '@/app/journal/page';
+import { formatPercent } from '@/lib/formatNumber';
 
 interface MediaItem {
     id: string;
@@ -173,7 +174,7 @@ export function ScreenshotPanel({ trade }: ScreenshotPanelProps) {
                     {[
                         { val: rr ?? '—', lbl: 'R Multiple', color: trade.pnl >= 0 ? 'text-profit' : 'text-loss' },
                         { val: duration ?? '—', lbl: 'Hold Time', color: 'text-white' },
-                        { val: eff != null ? `${eff.toFixed(0)}%` : '—', lbl: 'Efficiency', color: 'text-white' },
+                        { val: eff != null ? formatPercent(eff, 0) : '—', lbl: 'Efficiency', color: 'text-white' },
                         { val: trade.closeReason ?? '—', lbl: 'Close Reason', color: 'text-white' },
                     ].map(({ val, lbl, color }) => (
                         <div key={lbl} className="flex flex-col items-center gap-[3px]">
