@@ -24,6 +24,8 @@
   --glass-bg: rgba(255, 255, 255, 0.03);
   --glass-border: rgba(255, 255, 255, 0.08);
   --card-bg: rgba(0, 0, 0, 0.4);
+  --surface-solid: rgba(10, 10, 15, 0.97);
+  --border-solid: rgba(255, 255, 255, 0.12);
 
   --text-primary: #ffffff;
   --text-secondary: #9ca3af;
@@ -380,4 +382,21 @@ body {
 
 .animate-fade-in {
   animation: fade-in 0.3s ease-out forwards;
+}
+
+/* Native <select> dropdown solid background */
+select option {
+  background-color: #0a0a0f;
+  color: #e5e7eb;
+}
+
+:root.light select option {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+/* Ensure select elements have solid backgrounds */
+select[class*="bg-surface-card"],
+select[class*="bg-white/"] {
+  background-color: var(--surface-solid) !important;
 }

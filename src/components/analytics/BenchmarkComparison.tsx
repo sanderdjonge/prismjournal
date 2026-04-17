@@ -14,7 +14,7 @@ import {
 import { useBenchmark } from '@/hooks/useBenchmark';
 import { TrendingUp, TrendingDown, Minus, Loader2 } from 'lucide-react';
 import { getChartColor } from '@/lib/chart-colors';
-import { formatPercent } from '@/lib/formatNumber';
+import { formatPercent, fmtDecimals } from '@/lib/formatNumber';
 import { formatDateKey } from '@/lib/formatTime';
 
 interface BenchmarkComparisonProps {
@@ -164,10 +164,10 @@ export default function BenchmarkComparison({ accountId, className = '' }: Bench
                                         <div className="glass-card p-3 border-primary/20 bg-black/80 backdrop-blur-md">
                                             <p className="text-[10px] text-gray-500 mb-1">{label}</p>
                                             <p className="text-sm font-bold text-primary">
-                                                You: {isNaN(accountNum) ? 'N/A' : accountNum.toFixed(1)}
+                                                You: {isNaN(accountNum) ? 'N/A' : fmtDecimals(accountNum, 1)}
                                             </p>
                                             <p className="text-sm font-bold text-blue-400">
-                                                SPY: {isNaN(spyNum) ? 'N/A' : spyNum.toFixed(1)}
+                                                SPY: {isNaN(spyNum) ? 'N/A' : fmtDecimals(spyNum, 1)}
                                             </p>
                                         </div>
                                     );

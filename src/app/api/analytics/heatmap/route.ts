@@ -5,8 +5,8 @@ import prisma from '@/lib/prisma';
 
 const heatmapQuerySchema = z.object({
     accountId: z.string().optional(),
-    from: z.string().datetime().optional(),
-    to: z.string().datetime().optional(),
+    from: z.string().optional(),
+    to: z.string().optional(),
 });
 
 export interface HeatmapCell {
@@ -44,7 +44,11 @@ export const GET = withAuth(async (req, _ctx, session) => {
     if (from || to) {
         where.entryTime = {};
         if (from) (where.entryTime as Record<string, unknown>).gte = new Date(from);
-        if (to) (where.entryTime as Record<string, unknown>).lte = new Date(to);
+        if (to) {
+            const toDate = new Date(to);
+            toDate.setDate(toDate.getDate() + 1);
+            (where.entryTime as Record<string, unknown>).lt = toDate;
+        }
     }
 
     const trades = await prisma.trade.findMany({

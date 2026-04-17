@@ -1,6 +1,7 @@
 'use client'
 
 import { useComplianceStats } from '@/hooks/useComplianceStats'
+import { useCurrency } from '@/lib/currency'
 
 interface Props {
   periodDays?: number
@@ -10,6 +11,7 @@ interface Props {
 
 export default function ComplianceWidget({ periodDays = 30, strategyId, accountId }: Props) {
   const { data: stats, isLoading } = useComplianceStats(periodDays, strategyId, accountId)
+  const { formatAmount } = useCurrency()
 
   if (isLoading) {
     return (
@@ -60,7 +62,7 @@ export default function ComplianceWidget({ periodDays = 30, strategyId, accountI
             Deviating from your plan cost you
           </div>
           <div className="text-lg font-bold text-loss">
-            ${stats.costOfViolations.toFixed(2)}
+            {formatAmount(stats.costOfViolations)}
           </div>
         </div>
       )}

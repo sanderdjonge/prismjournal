@@ -154,7 +154,11 @@ export default function TradeEditModal({ trade, isOpen, onClose, onSaved }: Trad
                 accountId: editAccountId || undefined,
             })
 
-            await apiPatch(`/api/trades/${trade.id}/tags`, { tagIds: selectedTagIds })
+            await fetch(`/api/trades/${trade.id}/tags`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tagIds: selectedTagIds }),
+            })
 
             if (screenshots.length > 0) {
                 for (let i = 0; i < screenshots.length; i++) {

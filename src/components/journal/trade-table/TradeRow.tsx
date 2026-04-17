@@ -3,6 +3,7 @@
 import React from 'react';
 import { Eye, Pencil } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { fmtDecimals } from '@/lib/formatNumber';
 import type { Trade, Column } from './types';
 import { calcRR } from '@/lib/tradeCalculations';
 import { CloseReasonBadge } from '../../ui/CloseReasonBadge';
@@ -79,17 +80,17 @@ export function TradeRow({ trade, columns, onView, onEdit, isSelected = false, o
                         </span>
                     )}
                     {col.id === 'volume' && (
-                        <span className="text-xs font-bold text-white/80">{trade.volume.toFixed(2)}</span>
+                        <span className="text-xs font-bold text-white/80">{fmtDecimals(trade.volume, 2)}</span>
                     )}
                     {col.id === 'sl' && (
-                        <span className="text-xs text-gray-500">{trade.stopLoss ? trade.stopLoss.toFixed(2) : '—'}</span>
+                        <span className="text-xs text-gray-500">{trade.stopLoss ? fmtDecimals(trade.stopLoss, 2) : '—'}</span>
                     )}
                     {col.id === 'tp' && (
-                        <span className="text-xs text-gray-500">{trade.takeProfit ? trade.takeProfit.toFixed(2) : '—'}</span>
+                        <span className="text-xs text-gray-500">{trade.takeProfit ? fmtDecimals(trade.takeProfit, 2) : '—'}</span>
                     )}
                     {col.id === 'result' && (
                         <span className={`font-black text-xs ${trade.pnl >= 0 ? 'text-profit' : 'text-loss'}`}>
-                            {trade.pnl >= 0 ? '+' : ''}{trade.pnl.toFixed(2)}
+                            {trade.pnl >= 0 ? '+' : ''}{fmtDecimals(trade.pnl, 2)}
                         </span>
                     )}
                     {col.id === 'rr' && (

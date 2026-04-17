@@ -12,6 +12,11 @@ type ViewMode = 'pnl' | 'winRate' | 'count' | 'expectedValue';
 interface TradingHeatmapWidgetProps {
     cells: HeatmapCell[];
     currency?: string;
+    monthLabel?: string;
+    onPrevMonth?: () => void;
+    onNextMonth?: () => void;
+    onPrevYear?: () => void;
+    onNextYear?: () => void;
 }
 
 interface TradingInsight {
@@ -174,7 +179,7 @@ function generateInsights(cells: HeatmapCell[], fmt: (amount: number | null | un
     return insights.slice(0, 4); // Limit to 4 insights
 }
 
-export function TradingHeatmapWidget({ cells, currency = 'USD' }: TradingHeatmapWidgetProps) {
+export function TradingHeatmapWidget({ cells, currency = 'USD', monthLabel, onPrevMonth, onNextMonth, onPrevYear, onNextYear }: TradingHeatmapWidgetProps) {
     const [viewMode, setViewMode] = useState<ViewMode>('pnl');
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const { formatAmount: fmt } = useCurrency()
@@ -201,7 +206,20 @@ export function TradingHeatmapWidget({ cells, currency = 'USD' }: TradingHeatmap
                     <h3 className="text-sm font-semibold text-gray-100">Trading Heatmap</h3>
                     <p className="text-xs text-gray-500">Day x Hour performance patterns</p>
                 </div>
-                <div className="relative">
+                <div className="flex items-center gap-3">
+                    {/* Month/Year navigation */}
+                    {monthLabel && (
+                        <div className="flex items-center gap-1.5">
+                            {onPrevMonth && <button onClick={onPrevMonth} className="w-6 h-6 flex items-center justify-center rounded-md bg-white/[0.06] border border-white/10 text-gray-400 hover:bg-white/10 transition-colors text-xs">‹</button>}
+                            <span className="text-xs font-bold text-gray-200 min-w-[100px] text-center">{monthLabel}</span>
+                            {onNextMonth && <button onClick={onNextMonth} className="w-6 h-6 flex items-center justify-center rounded-md bg-white/[0.06] border border-white/10 text-gray-400 hover:bg-white/10 transition-colors text-xs">›</button>}
+                            <div className="w-px h-4 bg-white/10 mx-1" />
+                            {onPrevYear && <button onClick={onPrevYear} className="w-5 h-5 flex items-center justify-center rounded bg-white/[0.06] border border-white/10 text-gray-500 hover:bg-white/10 transition-colors text-[10px]">‹</button>}
+                            {onNextYear && <button onClick={onNextYear} className="w-5 h-5 flex items-center justify-center rounded bg-white/[0.06] border border-white/10 text-gray-500 hover:bg-white/10 transition-colors text-[10px]">›</button>}
+                        </div>
+                    )}
+                    {/* View mode dropdown */}
+                    <div className="relative">
                     <button
                         onClick={() => setDropdownOpen(!dropdownOpen)}
                         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-xs font-medium text-gray-300"
@@ -212,7 +230,7 @@ export function TradingHeatmapWidget({ cells, currency = 'USD' }: TradingHeatmap
                     {dropdownOpen && (
                         <>
                             <div className="fixed inset-0 z-10" onClick={() => setDropdownOpen(false)} />
-                            <div className="absolute right-0 top-full mt-1 z-20 min-w-[120px] py-1 rounded-lg bg-black/95 border border-white/10 shadow-xl">
+                            <div className="absolute right-0 top-full mt-1 z-20 min-w-[120px] py-1 rounded-lg bg-[var(--surface-solid)] border border-white/10 shadow-xl">
                                 {VIEW_OPTIONS.map((option) => (
                                     <button
                                         key={option.value}
@@ -232,9 +250,10 @@ export function TradingHeatmapWidget({ cells, currency = 'USD' }: TradingHeatmap
                                 ))}
                             </div>
                         </>
-                    )}
+                     )}
+                 </div>
                 </div>
-            </div>
+             </div>
 
             {/* Heatmap Grid */}
             <div className="overflow-x-auto">

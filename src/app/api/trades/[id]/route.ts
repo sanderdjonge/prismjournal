@@ -15,7 +15,13 @@ export const GET = withAuth(async (_req, ctx, session) => {
         include: {
             account: { select: { id: true, name: true } },
             strategy: { select: { id: true, name: true } },
-            tags: { select: { id: true, name: true, color: true } },
+            tags: {
+                include: {
+                    tag: {
+                        select: { id: true, name: true, color: true },
+                    },
+                },
+            },
         },
     });
     if (!trade) {
@@ -55,7 +61,7 @@ export const GET = withAuth(async (_req, ctx, session) => {
         closeReason: trade.closeReason,
         strategy: trade.strategy?.name ?? null,
         accountName: trade.account?.name ?? null,
-        tags: trade.tags,
+        tags: trade.tags.map(tt => tt.tag),
         media: media.map(m => ({
             id: m.id,
             url: `/api/media/${m.id}/file`,

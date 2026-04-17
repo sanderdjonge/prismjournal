@@ -4,7 +4,7 @@ import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import dayjs from 'dayjs';
 import { useCurrency } from '@/lib/currency';
 import { cn } from '@/lib/cn';
-import { formatPercent } from '@/lib/formatNumber';
+import { formatPercent, fmtDecimals } from '@/lib/formatNumber';
 import { useEconomicEvents, useEventsByDate, type EconomicEvent } from '@/hooks/useEconomicEvents';
 import { EventBadge, EventDot } from './EventBadge';
 
@@ -289,7 +289,7 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
                             <span className="text-gray-500 text-[10px]">{metricOpen ? '▲' : '▼'}</span>
                         </button>
                         {metricOpen && (
-                            <div className="absolute top-full left-0 mt-1 bg-black/95 border border-white/10 rounded-lg py-1 z-50 min-w-[120px] shadow-xl">
+                            <div className="absolute top-full left-0 mt-1 bg-[var(--surface-solid)] border border-white/10 rounded-lg py-1 z-50 min-w-[120px] shadow-xl">
                                 {(['pnl', 'pct', 'rr'] as const)
                                     .filter(m => m !== 'pct' || (accountBalance != null && accountBalance !== 0))
                                     .map(m => (
@@ -427,7 +427,7 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
 
                                                 {/* Hover Tooltip */}
                                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover/day:opacity-100 pointer-events-none transition-opacity duration-200 z-50">
-                                                    <div className="bg-black/95 border border-white/20 rounded-lg px-3 py-2 shadow-xl whitespace-nowrap">
+                                                    <div className="bg-[var(--surface-solid)] border border-white/20 rounded-lg px-3 py-2 shadow-xl whitespace-nowrap">
                                                         <p className="text-[10px] font-bold text-white">{viewDate.date(day.date).format('MMM D, YYYY')}</p>
                                                         <p className={cn("text-xs font-black mt-1", style.text)}>
                                                             {day.trades === 0 ? 'No trades' : `${day.trades} trade${day.trades > 1 ? 's' : ''} · ${formatMetricValue(metricVal)}`}
@@ -450,7 +450,7 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
                                                         )}
                                                     </div>
                                                     <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1">
-                                                        <div className="w-2 h-2 bg-black/95 border-r border-b border-white/20 transform rotate-45 -translate-y-1/2" />
+                                                        <div className="w-2 h-2 bg-[var(--surface-solid)] border-r border-b border-white/20 transform rotate-45 -translate-y-1/2" />
                                                     </div>
                                                 </div>
                                             </div>
@@ -486,7 +486,7 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
                                                 </div>
                                                 {weekWinRate !== null && (
                                                     <span className={cn("text-[8px] font-black mt-0.5", weekWinRate >= 50 ? "text-profit" : "text-loss")}>
-                                                        {weekWinRate}%
+                                                        {fmtDecimals(weekWinRate, 1)}%
                                                     </span>
                                                 )}
                                             </>
@@ -530,7 +530,7 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
                                         {monthlyLosses > 0 && <span className="text-[8px] font-black text-loss">{monthlyLosses}L</span>}
                                     </div>
                                     <span className={cn("text-[8px] font-black mt-0.5", monthlyWinRate >= 50 ? "text-profit" : "text-loss")}>
-                                        {monthlyWinRate}%
+                                        {fmtDecimals(monthlyWinRate, 1)}%
                                     </span>
                                 </>
                             ) : (

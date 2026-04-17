@@ -48,7 +48,7 @@ export default function AccountSwitcher() {
             </button>
 
             {isOpen && (
-                <div className="absolute top-full left-0 mt-2 w-64 glass-card bg-black/90 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden z-50 shadow-xl">
+                <div className="absolute top-full left-0 mt-2 w-64 glass-card bg-[var(--surface-solid)] backdrop-blur-md border border-white/10 rounded-xl overflow-hidden z-50 shadow-xl">
                     {/* All Accounts Option */}
                     <button
                         onClick={() => {

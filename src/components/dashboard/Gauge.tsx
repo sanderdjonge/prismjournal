@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/cn';
+import { fmtDecimals } from '@/lib/formatNumber';
 
 interface GaugeProps {
     value: number;
@@ -103,7 +104,7 @@ export default function Gauge({
                 {/* Center Value */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center pt-2">
                     <span className="text-3xl font-black text-white tracking-tighter">
-                        {value}{max === 100 ? '%' : ''}
+                        {fmtDecimals(value)}{max === 100 ? '%' : ''}
                     </span>
                     {subLabel && (
                         <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500 mt-0.5">

@@ -6,6 +6,22 @@ import {
   TradeData,
   normalizeFilters,
 } from './what-if/types';
+import {
+  applyDurationFilter,
+  applyMarketSessionFilter,
+} from './what-if/filters/time-filters';
+import {
+  applyDailyLossLimit,
+  applyWeeklyLossLimit,
+  applyStreakBreak,
+  applyBigLossCooldown,
+} from './what-if/filters/psychology-filters';
+import {
+  applyMaeMfeStopOptimization,
+  applyPositionSizing,
+  applyTrailingStop,
+  applyPartialExit,
+} from './what-if/filters/risk-filters';
 import type { EquityPointDetailed } from '@/types/trade'
 
 export type { EquityPointDetailed as EquityPoint } from '@/types/trade'
@@ -123,11 +139,9 @@ function calculateMetrics(trades: TradeData[]): SimulationResult {
  * Apply filters to trades and return filtered subset
  */
 function applyFilters(trades: TradeData[], filters: WhatIfFilters): TradeData[] {
-    // Normalize legacy flat filters to nested structure
     const normalized = normalizeFilters(filters);
     
-    return trades.filter(trade => {
-        // Time filters
+    let filtered = trades.filter(trade => {
         if (normalized.time?.excludeDays?.length) {
             const dayOfWeek = new Date(trade.entryTime).getDay();
             if (normalized.time.excludeDays.includes(dayOfWeek)) {
@@ -142,7 +156,6 @@ function applyFilters(trades: TradeData[], filters: WhatIfFilters): TradeData[] 
             }
         }
 
-        // R:R filters
         if (filters.minRR !== undefined && trade.rMultiple !== null && trade.rMultiple < filters.minRR) {
             return false;
         }
@@ -150,7 +163,6 @@ function applyFilters(trades: TradeData[], filters: WhatIfFilters): TradeData[] 
             return false;
         }
 
-        // Profit filters
         if (filters.minProfit !== undefined && trade.pnl !== null && trade.pnl < filters.minProfit) {
             return false;
         }
@@ -158,20 +170,75 @@ function applyFilters(trades: TradeData[], filters: WhatIfFilters): TradeData[] 
             return false;
         }
 
-        // Symbol filter
         if (filters.symbols?.length) {
             if (!filters.symbols.includes(trade.symbol)) {
                 return false;
             }
         }
 
-        // Direction filter
         if (filters.direction && trade.direction !== filters.direction) {
             return false;
         }
 
         return true;
     });
+
+    if (normalized.time?.minDurationHours !== undefined || normalized.time?.maxDurationHours !== undefined) {
+        filtered = applyDurationFilter(filtered, {
+            minHours: normalized.time.minDurationHours,
+            maxHours: normalized.time.maxDurationHours,
+        });
+    }
+
+    if (normalized.time?.marketSession?.length) {
+        filtered = applyMarketSessionFilter(filtered, normalized.time.marketSession);
+    }
+
+    if (normalized.psychology?.dailyLossLimit !== undefined) {
+        filtered = applyDailyLossLimit(filtered, normalized.psychology.dailyLossLimit);
+    }
+
+    if (normalized.psychology?.weeklyLossLimit !== undefined) {
+        filtered = applyWeeklyLossLimit(filtered, normalized.psychology.weeklyLossLimit);
+    }
+
+    if (normalized.psychology?.stopAfterLosses !== undefined) {
+        filtered = applyStreakBreak(filtered, normalized.psychology.stopAfterLosses);
+    }
+
+    if (normalized.psychology?.avoidAfterBigLoss !== undefined) {
+        filtered = applyBigLossCooldown(filtered, normalized.psychology.avoidAfterBigLoss);
+    }
+
+    if (normalized.risk?.maeMultiplier !== undefined || normalized.risk?.mfeMultiplier !== undefined) {
+        const maeR = normalized.risk?.maeMultiplier !== undefined ? -normalized.risk.maeMultiplier : undefined;
+        const mfeRatio = normalized.risk?.mfeMultiplier !== undefined ? normalized.risk.mfeMultiplier : undefined;
+        filtered = applyMaeMfeStopOptimization(filtered, {
+            newStopR: maeR ?? -2,
+            targetRatio: mfeRatio,
+        });
+    }
+
+    if (normalized.risk?.riskPerTrade !== undefined) {
+        filtered = applyPositionSizing(filtered, {
+            originalRiskPercent: 1.0,
+            newRiskPercent: normalized.risk.riskPerTrade,
+        });
+    }
+
+    if (normalized.risk?.trailingPercent !== undefined) {
+        filtered = applyTrailingStop(filtered, {
+            trailPercent: normalized.risk.trailingPercent,
+        });
+    }
+
+    if (normalized.risk?.partialExitAt !== undefined) {
+        filtered = applyPartialExit(filtered, {
+            exitSchedule: [normalized.risk.partialExitAt],
+        });
+    }
+
+    return filtered;
 }
 
 /**

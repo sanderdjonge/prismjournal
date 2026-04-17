@@ -130,7 +130,7 @@ export default function TopNav() {
                         <ChevronDown size={14} className="text-text-muted hidden md:block" />
 
                         {isProfileOpen && (
-                            <div className="absolute top-full right-0 mt-2 w-56 glass-card backdrop-blur-md border border-border-color rounded-xl overflow-hidden z-50">
+                            <div className="absolute top-full right-0 mt-2 w-56 border rounded-xl overflow-hidden z-50" style={{ backgroundColor: 'var(--surface-solid)', borderColor: 'var(--border-solid)' }}>
                                 {isAdmin && (
                                     <Link
                                         href="/admin"

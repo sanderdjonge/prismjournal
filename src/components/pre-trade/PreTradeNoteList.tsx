@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowUpRight, ArrowDownRight, Clock, Link2, MoreVertical, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { fmtDecimals } from '@/lib/formatNumber';
 import { formatDistanceToNow, formatShortDate } from '@/lib/formatTime';
 import { Spinner } from '@/components/ui/Spinner';
 
@@ -193,7 +194,7 @@ export function PreTradeNoteList({
                                                         setOpenMenuId(null);
                                                     }}
                                                 />
-                                                <div className="absolute right-0 top-full mt-1 z-20 py-1 bg-black/95 border border-white/10 rounded-lg shadow-xl min-w-[140px]">
+                                                <div className="absolute right-0 top-full mt-1 z-20 py-1 bg-[var(--surface-solid)] border border-white/10 rounded-lg shadow-xl min-w-[140px]">
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
@@ -243,7 +244,7 @@ export function PreTradeNoteList({
                                             note.trade.pnl >= 0 ? "text-profit" : "text-loss"
                                         )}>
                                             {note.trade.pnl >= 0 ? '+' : ''}
-                                            {note.trade.pnl.toFixed(2)}
+                                            {fmtDecimals(note.trade.pnl, 2)}
                                         </span>
                                     )}
                                 </div>

@@ -2,6 +2,7 @@
 
 import { usePrismScore } from '@/hooks/usePrismScore';
 import { cn } from '@/lib/cn';
+import { fmtDecimals } from '@/lib/formatNumber';
 
 interface Props {
     accountId: string | null;
@@ -84,7 +85,7 @@ function CompactScoreGauge({ score }: { score: number }) {
             )}
             {/* Center score */}
             <text x={cx} y={cy - 4} textAnchor="middle" fill={color} fontSize={22} fontWeight={900} fontFamily="inherit">
-                {score}
+                {fmtDecimals(score, 1)}
             </text>
             <text x={cx} y={cy + 10} textAnchor="middle" fill="var(--text-muted)" fontSize={7} fontWeight={600} fontFamily="inherit">
                 / 100
@@ -116,11 +117,11 @@ function TrendBarChart({ data }: { data: Array<{ score: number; week: string }> 
                                 opacity: isLast ? 1 : 0.5,
                                 boxShadow: isLast ? `0 0 6px ${color}60` : 'none',
                             }}
-                            title={`${entry.week}: ${entry.score}`}
+                            title={`${entry.week}: ${fmtDecimals(entry.score, 1)}`}
                         >
                             {/* Tooltip on hover */}
                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 bg-gray-900 rounded text-[8px] text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
-                                {entry.week}: {entry.score}
+                                {entry.week}: {fmtDecimals(entry.score, 1)}
                             </div>
                         </div>
                     );
@@ -187,7 +188,7 @@ export default function PrismScoreWidget({ accountId }: Props) {
                                     <span className="text-[9px] text-gray-500 cursor-help" title={COMPONENT_LABELS[key]}>
                                         {COMPONENT_LABELS[key]}
                                     </span>
-                                    <span className="text-[9px] font-bold" style={{ color: barColor }}>{val}</span>
+                                    <span className="text-[9px] font-bold" style={{ color: barColor }}>{fmtDecimals(val, 1)}</span>
                                 </div>
                                 <div className="h-1 bg-white/5 rounded-full overflow-hidden">
                                     <div

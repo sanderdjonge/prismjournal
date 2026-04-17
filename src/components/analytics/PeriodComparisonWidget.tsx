@@ -10,7 +10,7 @@
 import React, { useState } from 'react';
 import { ChevronDown, TrendingUp, TrendingDown, Minus, RefreshCw } from 'lucide-react';
 import { usePeriodComparison, ComparisonPreset, getComparisonRanges } from '@/hooks/usePeriodComparison';
-import { formatPercent } from '@/lib/formatNumber';
+import { formatPercent, fmtDecimals } from '@/lib/formatNumber';
 
 interface PeriodComparisonWidgetProps {
     accountId: string | null;
@@ -30,9 +30,9 @@ function formatMetric(value: number | null, format: 'number' | 'percent' | 'curr
         case 'percent':
             return formatPercent(value, 1);
         case 'currency':
-            return `${currency}${value.toFixed(2)}`;
+            return `${currency}${fmtDecimals(value, 2)}`;
         default:
-            return value.toFixed(2);
+            return fmtDecimals(value, 2);
     }
 }
 
@@ -81,7 +81,7 @@ export default function PeriodComparisonWidget({ accountId }: PeriodComparisonWi
                                 className="fixed inset-0 z-40"
                                 onClick={() => setShowDropdown(false)}
                             />
-                            <div className="absolute right-0 top-full mt-1 z-50 bg-surface-card border border-white/10 rounded-lg shadow-xl overflow-hidden min-w-[200px]">
+                            <div className="absolute right-0 top-full mt-1 z-50 bg-[var(--surface-solid)] border border-white/10 rounded-lg shadow-xl overflow-hidden min-w-[200px]">
                                 {PRESETS.map((p) => (
                                     <button
                                         key={p.value}

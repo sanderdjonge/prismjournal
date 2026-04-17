@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useTiltmeterScore } from '@/hooks/useTiltmeter'
+import { fmtDecimals } from '@/lib/formatNumber'
 
 interface Props {
   periodDays?: number
@@ -68,7 +69,7 @@ export default function TiltmeterWidget({ periodDays = 30, strategyId, accountId
               {tilt.text}
             </span>
             <span className="text-sm text-text-secondary">
-              {data.score}/100
+              {fmtDecimals(data.score, 1)}/100
             </span>
           </div>
           <div className="text-xs text-text-muted mt-1">
@@ -146,7 +147,7 @@ export default function TiltmeterWidget({ periodDays = 30, strategyId, accountId
                     />
                   </div>
                   <span className="text-[10px] text-text-muted">
-                    impact: {info.weightedScore.toFixed(1)}
+                    impact: {fmtDecimals(info.weightedScore, 1)}
                   </span>
                 </div>
               </div>

@@ -9,7 +9,7 @@
 
 import React from 'react';
 import { TrendingUp, HelpCircle, CheckCircle2, Circle } from 'lucide-react';
-import { formatPercent } from '@/lib/formatNumber';
+import { formatPercent, fmtDecimals } from '@/lib/formatNumber';
 
 interface ScalingLevel {
     level: number;
@@ -171,14 +171,14 @@ export function ScalingProgressWidget({
                 <div className="grid grid-cols-2 gap-4">
                     <div>
                         <div className="text-xs text-gray-500 uppercase tracking-wider">Original Size</div>
-                        <div className="text-lg font-bold text-white">${accountSize.toLocaleString()}</div>
+                        <div className="text-lg font-bold text-white">${fmtDecimals(accountSize, 2)}</div>
                     </div>
                     <div>
                         <div className="text-xs text-gray-500 uppercase tracking-wider">
                             {currentLevel > 0 ? 'Scaled Size' : 'Target After Level 1'}
                         </div>
                         <div className="text-lg font-bold text-green-400">
-                            ${scaledAccountSize.toLocaleString()}
+                            ${fmtDecimals(scaledAccountSize, 2)}
                         </div>
                     </div>
                 </div>

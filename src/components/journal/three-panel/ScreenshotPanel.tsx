@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { ImageOff } from 'lucide-react';
 import { computeDuration } from './TradeListPanel';
 import type { JournalTrade } from '@/app/journal/page';
-import { formatPercent } from '@/lib/formatNumber';
+import { formatPercent, fmtDecimals } from '@/lib/formatNumber';
 
 import type { MediaItem } from '@/types/trade'
 
@@ -73,7 +73,7 @@ export function ScreenshotPanel({ trade }: ScreenshotPanelProps) {
     const duration = trade ? computeDuration(trade.entryTime, trade.exitTime) : null;
 
     const rr = trade?.rMultiple != null
-        ? `R:${trade.rMultiple.toFixed(2)}`
+        ? `R:${fmtDecimals(trade.rMultiple, 2)}`
         : null;
 
     const eff = (trade?.mae && trade?.mfe && trade.mae > 0 && trade.mfe > 0 && trade.exit && trade.exit > 0)

@@ -1,10 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import EquityChart from '@/components/dashboard/EquityChart';
 import Gauge from '@/components/dashboard/Gauge';
 import { TrendingUp, ArrowDownLeft, Activity, Target, BarChart3, Zap } from 'lucide-react';
 import { useCurrency } from '@/lib/currency';
-import { formatPercent } from '@/lib/formatNumber';
+import { formatPercent, fmtDecimals } from '@/lib/formatNumber';
 import { useAccounts } from '@/hooks/useAccounts';
 import { usePerformance } from '@/hooks/usePerformance';
 import { useAnalytics } from '@/hooks/useAnalytics';
@@ -16,6 +17,7 @@ import { TradingHeatmapWidget } from '@/components/analytics/TradingHeatmapWidge
 import {
     ResponsiveContainer, ComposedChart, Line, XAxis, YAxis, Tooltip,
 } from 'recharts';
+import dayjs from 'dayjs';
 
 const MONTH_LABELS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
 
@@ -46,16 +48,38 @@ export function PerformanceContent() {
     const expectancyData = analyticsData.expectancyData;
     const sessionData = analyticsData.sessionData;
 
-    // Get heatmap data
+    // Heatmap date range with month/year navigation
+    const now = dayjs();
+    const [heatmapMonth, setHeatmapMonth] = useState(now.month());
+    const [heatmapYear, setHeatmapYear] = useState(now.year());
+
+    const heatmapFrom = dayjs().year(heatmapYear).month(heatmapMonth).startOf('month').format('YYYY-MM-DD');
+    const heatmapTo = dayjs().year(heatmapYear).month(heatmapMonth).endOf('month').format('YYYY-MM-DD');
+
     const { data: heatmapData } = useHeatmap({
         accountId: getParam('account') || undefined,
+        from: heatmapFrom,
+        to: heatmapTo,
     });
+
+    const prevMonth = () => {
+        if (heatmapMonth === 0) { setHeatmapMonth(11); setHeatmapYear(y => y - 1); }
+        else setHeatmapMonth(m => m - 1);
+    };
+    const nextMonth = () => {
+        if (heatmapMonth === 11) { setHeatmapMonth(0); setHeatmapYear(y => y + 1); }
+        else setHeatmapMonth(m => m + 1);
+    };
+    const prevYear = () => setHeatmapYear(y => y - 1);
+    const nextYear = () => setHeatmapYear(y => y + 1);
+
+    const heatmapLabel = dayjs().year(heatmapYear).month(heatmapMonth).format('MMMM YYYY');
 
     const STATS = [
         { id: 'stat_pnl', label: 'Net P&L', val: formatPnl(data.totalPnl), status: data.totalPnl >= 0 ? 'text-profit' : 'text-loss', icon: TrendingUp },
         { id: 'stat_dd', label: 'Max Drawdown', val: formatPercent(data.maxDrawdown, 2), status: 'text-loss', icon: ArrowDownLeft },
-        { id: 'stat_sharpe', label: 'Sharpe Ratio', val: data.sharpe !== null ? data.sharpe.toFixed(2) : 'N/A', status: 'text-primary', icon: Activity },
-        { id: 'stat_pf', label: 'Profit Factor', val: data.profitFactor.toFixed(2), status: 'text-profit', icon: Target },
+        { id: 'stat_sharpe', label: 'Sharpe Ratio', val: data.sharpe !== null ? fmtDecimals(data.sharpe, 2) : 'N/A', status: 'text-primary', icon: Activity },
+        { id: 'stat_pf', label: 'Profit Factor', val: fmtDecimals(data.profitFactor, 2), status: 'text-profit', icon: Target },
     ];
 
     const monthlyReturns = data.monthlyReturns.length > 0
@@ -179,8 +203,15 @@ export function PerformanceContent() {
                 <TradingHoursWidget data={sessionData} />
 
                 {/* Trading Heatmap */}
-                {heatmapData && heatmapData.cells.length > 0 && (
-                    <TradingHeatmapWidget cells={heatmapData.cells} />
+                {heatmapData && (
+                    <TradingHeatmapWidget
+                        cells={heatmapData.cells}
+                        monthLabel={heatmapLabel}
+                        onPrevMonth={prevMonth}
+                        onNextMonth={nextMonth}
+                        onPrevYear={prevYear}
+                        onNextYear={nextYear}
+                    />
                 )}
             </div>
 
