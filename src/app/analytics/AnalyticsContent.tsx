@@ -6,6 +6,7 @@ import {
 } from 'recharts';
 import { Target, ArrowDownLeft } from 'lucide-react';
 import { useCurrency } from '@/lib/currency';
+import { fmtDecimals } from '@/lib/formatNumber';
 import { useAccounts } from '@/hooks/useAccounts';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useExcursionTrades } from '@/hooks/useExcursionTrades';
@@ -140,7 +141,7 @@ export function AnalyticsContent() {
                                                     <p className={d.profit >= 0 ? 'text-profit' : 'text-loss'}>
                                                         P&L: {d.profit >= 0 ? '+' : ''}{formatAmount(d.profit)}
                                                     </p>
-                                                    <p className="text-gray-400">Win rate: {d.winRate}%</p>
+                                                    <p className="text-gray-400">Win rate: {fmtDecimals(d.winRate, 1)}%</p>
                                                 </div>
                                             );
                                         }}

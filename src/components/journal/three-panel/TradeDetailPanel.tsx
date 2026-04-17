@@ -7,7 +7,8 @@ import { useUpdateTrade } from '@/hooks/useTrades'
 import { useTags, useCreateTag } from '@/hooks/useTags'
 import { useStrategies } from '@/hooks/useStrategies'
 import { useCurrency } from '@/lib/currency'
-import { apiFetch, apiPatch } from '@/lib/api/client'
+import { fmtDecimals } from '@/lib/formatNumber'
+import { apiFetch } from '@/lib/api/client'
 import { ExcursionBar } from '@/components/journal/ExcursionBar'
 import { computeDuration, deriveListZone } from './TradeListPanel'
 import { MOOD_OPTIONS, COMPLIANCE_OPTIONS } from '@/constants/tradeConfig'
@@ -190,7 +191,11 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
 
     const handleSaveTags = async (tagIds: string[]) => {
         try {
-            await apiPatch(`/api/trades/${trade.id}/tags`, { tagIds })
+            await fetch(`/api/trades/${trade.id}/tags`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tagIds }),
+            })
             toast.success('Tags updated')
         } catch (err) {
             toast.error('Failed to update tags')
@@ -275,7 +280,7 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                             <span className={`text-[9px] font-black uppercase tracking-[0.08em] px-[5px] py-[1px] rounded-[3px] ${
                                 trade.type === 'LONG' ? 'bg-profit/15 text-profit' : 'bg-loss/15 text-loss'
                             }`}>{trade.type}</span>
-                            <span className="text-[9px] font-semibold text-gray-600">{trade.volume.toFixed(2)} lots</span>
+                            <span className="text-[9px] font-semibold text-gray-600">{fmtDecimals(trade.volume, 2)} lots</span>
                         </div>
                     </div>
                     <div className="text-right">
@@ -320,7 +325,7 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                         <span className="text-[11px] font-semibold text-gray-300">{duration ?? '—'}</span>
                     </Cell>
                     <Cell label="Volume">
-                        <span className="text-[11px] font-semibold text-gray-300">{trade.volume.toFixed(2)}</span>
+                        <span className="text-[11px] font-semibold text-gray-300">{fmtDecimals(trade.volume, 2)}</span>
                     </Cell>
                 </div>
 
@@ -413,7 +418,7 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                             <ChevronDown size={12} className={`transition-transform ${showStrategyDropdown ? 'rotate-180' : ''}`} />
                         </button>
                         {showStrategyDropdown && (
-                            <div className="absolute z-20 w-full mt-1 bg-surface-card border border-border-glass rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                            <div className="absolute z-20 w-full mt-1 bg-[var(--surface-solid)] border border-border-glass rounded-lg shadow-xl max-h-48 overflow-y-auto">
                                 <button
                                     onClick={() => handleStrategyChange(null)}
                                     className={`w-full text-left px-3 py-2 text-[11px] hover:bg-white/[0.05] transition-colors ${!selectedStrategyId ? 'text-primary' : 'text-gray-400'}`}

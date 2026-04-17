@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Eye, TrendingUp, TrendingDown, Zap, Brain, FileText, CheckCircle2, XCircle, Meh, ImageOff, Share2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { fmtDecimals } from '@/lib/formatNumber';
 import type { JournalTrade } from '@/app/journal/page';
 import { MOOD_CONFIG } from '@/constants/tradeConfig';
 import { Lightbox } from './trade-analysis';
@@ -186,7 +187,7 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                                     </p>
                                     <p className="text-[10px] text-gray-500">
                                         P&L: <span className={trade.pnl >= 0 ? 'text-profit' : 'text-loss'}>
-                                            {trade.pnl >= 0 ? '+' : ''}{trade.pnl.toFixed(2)}
+                                            {trade.pnl >= 0 ? '+' : ''}{fmtDecimals(trade.pnl, 2)}
                                         </span>
                                     </p>
                                 </div>

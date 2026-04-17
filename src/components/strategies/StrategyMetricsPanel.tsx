@@ -3,7 +3,7 @@
 import { TrendingUp, TrendingDown, Target, AlertTriangle, DollarSign, BarChart3, Activity, Percent } from 'lucide-react'
 import { useCurrency } from '@/lib/currency'
 import { cn } from '@/lib/cn'
-import { formatPercent } from '@/lib/formatNumber'
+import { formatPercent, fmtDecimals } from '@/lib/formatNumber'
 
 interface MetricsPanelProps {
   winRate: number
@@ -39,13 +39,13 @@ export function StrategyMetricsPanel({
     },
     {
       label: 'Avg R',
-      value: avgR.toFixed(2),
+      value: fmtDecimals(avgR, 2),
       icon: Target,
       color: avgR >= 0 ? 'text-profit' : 'text-loss',
     },
     {
       label: 'Profit Factor',
-      value: profitFactor >= 999 ? '∞' : profitFactor.toFixed(2),
+      value: profitFactor >= 999 ? '∞' : fmtDecimals(profitFactor, 2),
       icon: BarChart3,
       color: profitFactor >= 1 ? 'text-profit' : 'text-loss',
     },
@@ -58,14 +58,14 @@ export function StrategyMetricsPanel({
     {
       label: 'Best Trade',
       value: bestTrade ? formatAmount(bestTrade.pnl) : '—',
-      sub: bestTrade?.r ? `${bestTrade.r.toFixed(2)}R` : undefined,
+      sub: bestTrade?.r ? `${fmtDecimals(bestTrade.r, 2)}R` : undefined,
       icon: TrendingUp,
       color: 'text-profit',
     },
     {
       label: 'Worst Trade',
       value: worstTrade ? formatAmount(worstTrade.pnl) : '—',
-      sub: worstTrade?.r ? `${worstTrade.r.toFixed(2)}R` : undefined,
+      sub: worstTrade?.r ? `${fmtDecimals(worstTrade.r, 2)}R` : undefined,
       icon: TrendingDown,
       color: 'text-loss',
     },

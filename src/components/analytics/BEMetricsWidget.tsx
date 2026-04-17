@@ -2,6 +2,7 @@
 
 import { useBEMetrics } from '@/hooks/useBEMetrics';
 import { ShieldCheck, AlertTriangle, TrendingUp } from 'lucide-react';
+import { fmtDecimals } from '@/lib/formatNumber';
 
 interface Props {
     accountId?: string | null;
@@ -90,11 +91,11 @@ export default function BEMetricsWidget({ accountId }: Props) {
                 <div className="bg-black/30 rounded-xl p-4 border border-white/5 space-y-1">
                     <p className="text-[8px] font-black uppercase tracking-widest text-gray-500">Avg R Captured</p>
                     <p className="text-2xl font-black tracking-tighter" style={{ color: effColor }}>
-                        {avgRCaptured.toFixed(2)}R
+                        {fmtDecimals(avgRCaptured, 2)}R
                     </p>
                     {avgRPotential > 0 && (
                         <p className="text-[8px] text-gray-600 font-medium leading-tight">
-                            vs {avgRPotential.toFixed(2)}R potential
+                            vs {fmtDecimals(avgRPotential, 2)}R potential
                         </p>
                     )}
                 </div>
@@ -119,7 +120,7 @@ export default function BEMetricsWidget({ accountId }: Props) {
                         />
                     </div>
                     <p className="text-[8px] text-gray-600 font-medium">
-                        {avgRCaptured.toFixed(2)}R captured out of {avgRPotential.toFixed(2)}R average potential
+                        {fmtDecimals(avgRCaptured, 2)}R captured out of {fmtDecimals(avgRPotential, 2)}R average potential
                     </p>
                 </div>
             )}

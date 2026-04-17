@@ -10,7 +10,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { CheckCircle2, XCircle, Minus, TrendingUp, TrendingDown, HelpCircle } from 'lucide-react';
-import { formatPercent } from '@/lib/formatNumber';
+import { formatPercent, fmtDecimals } from '@/lib/formatNumber';
 import type { ComplianceMetrics } from '@/types/analytics'
 
 interface ComplianceWidgetProps {
@@ -203,13 +203,13 @@ function CompletionRow({
                 <div>
                     <div className="text-xs text-gray-500">Avg R</div>
                     <div className={`text-sm font-medium ${avgRR >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                        {avgRR >= 0 ? '+' : ''}{avgRR.toFixed(2)}R
+                        {avgRR >= 0 ? '+' : ''}{fmtDecimals(avgRR, 2)}R
                     </div>
                 </div>
                 <div>
                     <div className="text-xs text-gray-500">P&L</div>
                     <div className={`text-sm font-medium ${totalPnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                        ${totalPnl.toFixed(0)}
+                        ${fmtDecimals(totalPnl, 2)}
                     </div>
                 </div>
             </div>

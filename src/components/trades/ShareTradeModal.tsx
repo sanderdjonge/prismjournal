@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Share2, Image, TrendingUp, Loader2, Check, Copy } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { fmtDecimals } from '@/lib/formatNumber';
 
 interface ShareTradeModalProps {
     isOpen: boolean;
@@ -148,7 +149,7 @@ export function ShareTradeModal({ isOpen, onClose, tradeId, symbol, direction, p
                                 <div>
                                     <h2 className="text-lg font-bold text-white">Share Trade</h2>
                                     <p className="text-sm text-gray-500">
-                                        {symbol} {direction} • {isProfit ? '+' : ''}{pnl.toFixed(2)}
+                                        {symbol} {direction} • {isProfit ? '+' : ''}{fmtDecimals(pnl, 2)}
                                     </p>
                                 </div>
                             </div>

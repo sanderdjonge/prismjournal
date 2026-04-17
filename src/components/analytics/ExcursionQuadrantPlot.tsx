@@ -6,7 +6,7 @@ import { X, Filter } from 'lucide-react';
 import type { QuadrantTrade } from '@/hooks/useExcursionTrades';
 import type { JournalTrade } from '@/app/journal/page';
 import TradeViewModal from '@/components/journal/TradeViewModal';
-import { formatPercent } from '@/lib/formatNumber';
+import { formatPercent, fmtDecimals } from '@/lib/formatNumber';
 
 // ---------------------------------------------------------------------------
 // Pure calculation helpers (exported for unit testing)
@@ -295,7 +295,7 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                         {[0, 1, 2, 3, 4].map(i => {
                             const v = (maxMae / 4) * i;
                             const x = scaleX(v);
-                            return <text key={i} x={x} y={MT + CH + 16} fill="var(--text-muted)" fontSize={10} textAnchor="middle" fontFamily="sans-serif" fontWeight={700}>{v.toFixed(1)}</text>;
+                            return <text key={i} x={x} y={MT + CH + 16} fill="var(--text-muted)" fontSize={10} textAnchor="middle" fontFamily="sans-serif" fontWeight={700}>{fmtDecimals(v, 1)}</text>;
                         })}
 
                         {/* Axis labels */}
@@ -379,16 +379,16 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                             >
                                 <p className="text-xs font-black text-text-primary uppercase tracking-wide mb-0.5">{hovered.symbol}</p>
                                 {exitDate && <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-2.5">{exitDate}</p>}
-                                <Row label="Captured" value={`${hovered.exitDistFromEntry != null && hovered.exitDistFromEntry >= 0 ? '+' : ''}${hovered.exitDistFromEntry?.toFixed(4) ?? '—'} pts`} color={isWin ? 'text-profit' : 'text-loss'} />
-                                <Row label="Best available (MFE)" value={`+${hovered.mfe?.toFixed(4) ?? '—'} pts`} />
+                                <Row label="Captured" value={`${hovered.exitDistFromEntry != null && hovered.exitDistFromEntry >= 0 ? '+' : ''}${hovered.exitDistFromEntry != null ? fmtDecimals(hovered.exitDistFromEntry, 2) : '—'} pts`} color={isWin ? 'text-profit' : 'text-loss'} />
+                                <Row label="Best available (MFE)" value={`+${hovered.mfe != null ? fmtDecimals(hovered.mfe, 2) : '—'} pts`} />
                                 {hovered.mfe != null && hovered.exitDistFromEntry != null && (
-                                    <Row label="Left on table" value={`${(hovered.mfe - hovered.exitDistFromEntry).toFixed(4)} pts`} color="text-warning" />
+                                    <Row label="Left on table" value={`${fmtDecimals(hovered.mfe - hovered.exitDistFromEntry, 2)} pts`} color="text-warning" />
                                 )}
                                 <div className="my-2 h-px bg-border-subtle" />
-                                <Row label="Max against you (MAE)" value={`-${(hovered.mae ?? 0).toFixed(4)} pts`} color="text-loss" />
+                                <Row label="Max against you (MAE)" value={`-${fmtDecimals(hovered.mae ?? 0, 2)} pts`} color="text-loss" />
                                 {slMsg && <Row label="Your stop" value={slMsg} />}
                                 <Row label="Exit efficiency" value={formatPercent(hovered.eff, 1)} />
-                                <Row label="P&L" value={`${pnlSign}${hovered.pnl.toFixed(2)}`} color={isWin ? 'text-profit' : 'text-loss'} />
+                                <Row label="P&L" value={`${pnlSign}${fmtDecimals(hovered.pnl, 2)}`} color={isWin ? 'text-profit' : 'text-loss'} />
                                 <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest" style={{ background: zone.color + '22', color: zone.color, border: `1px solid ${zone.color}44` }}>
                                     {zone.label}
                                 </div>

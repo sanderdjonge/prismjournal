@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { fmtDecimals } from '@/lib/formatNumber';
 
 import { useCurrency } from '@/lib/currency'
 
@@ -99,7 +100,7 @@ export function TradingHoursWidget({ data, currency = 'USD' }: TradingHoursWidge
                     </div>
                     {hour.count > 0 && (
                         <div className="text-gray-400 text-[9px] mt-0.5">
-                            {hour.winRate}% WR
+                            {fmtDecimals(hour.winRate, 1)}% WR
                         </div>
                     )}
                 </>
@@ -109,7 +110,7 @@ export function TradingHoursWidget({ data, currency = 'USD' }: TradingHoursWidge
             return (
                 <>
                     <div className="text-white font-bold">{timeStr}</div>
-                    <div className="text-primary mt-1">{hour.winRate}% Win Rate</div>
+                    <div className="text-primary mt-1">{fmtDecimals(hour.winRate, 1)}% Win Rate</div>
                     <div className="text-gray-400 text-[9px] mt-0.5">
                         {hour.wins}W / {hour.losses}L
                     </div>
@@ -134,7 +135,7 @@ export function TradingHoursWidget({ data, currency = 'USD' }: TradingHoursWidge
             <>
                 <div className="text-white font-bold">{timeStr}</div>
                 <div className={cn('mt-1 font-bold', hour.avgRR >= 0 ? 'text-profit' : 'text-loss')}>
-                    {hour.avgRR.toFixed(2)}R
+                    {fmtDecimals(hour.avgRR, 2)}R
                 </div>
                 <div className="text-gray-400 text-[9px] mt-0.5">
                     {hour.count} trade{hour.count !== 1 ? 's' : ''}
@@ -162,7 +163,7 @@ export function TradingHoursWidget({ data, currency = 'USD' }: TradingHoursWidge
                     {dropdownOpen && (
                         <>
                             <div className="fixed inset-0 z-10" onClick={() => setDropdownOpen(false)} />
-                            <div className="absolute right-0 top-full mt-1 z-20 min-w-[100px] py-1 rounded-lg bg-black/95 border border-white/10 shadow-xl">
+                            <div className="absolute right-0 top-full mt-1 z-20 min-w-[100px] py-1 rounded-lg bg-[var(--surface-solid)] border border-white/10 shadow-xl">
                                 {VIEW_OPTIONS.map((option) => (
                                     <button
                                         key={option.value}

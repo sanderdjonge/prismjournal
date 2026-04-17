@@ -117,7 +117,7 @@ export default function NotificationCenter({ className }: NotificationCenterProp
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-surface-card border border-border-glass rounded-xl shadow-2xl z-50 overflow-hidden">
+        <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 border rounded-xl shadow-2xl z-50 overflow-hidden" style={{ backgroundColor: 'var(--surface-solid)', borderColor: 'var(--border-solid)' }}>
           <div className="flex items-center justify-between px-4 py-3 border-b border-border-color">
             <h3 className="text-sm font-bold text-text-primary uppercase tracking-wide">
               Notifications
@@ -154,7 +154,7 @@ export default function NotificationCenter({ className }: NotificationCenterProp
                     key={notification.id}
                     className={cn(
                       'px-4 py-3 hover:bg-surface-elevated transition-colors group',
-                      !notification.isRead && 'bg-accent-bg'
+                      !notification.isRead && 'bg-[rgba(139,92,246,0.06)] border-l-2 border-l-primary'
                     )}
                   >
                     <div className="flex items-start gap-3">

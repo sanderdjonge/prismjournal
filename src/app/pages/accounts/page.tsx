@@ -729,6 +729,29 @@ function AccountsContent() {
                                 >
                                     <Download size={14} /> Download PrismSync.mq5
                                 </a>
+
+                                <div className="mt-4 p-4 rounded-xl border border-primary/20 bg-primary/5">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-primary/20 text-primary">Beta</span>
+                                        <span className="text-xs font-bold text-white">PrismTrade EA v4.0</span>
+                                    </div>
+                                    <p className="text-[11px] text-gray-400 leading-relaxed mb-2">
+                                        Visual trading toolbar with <span className="text-white">drag-and-drop SL/TP</span>, <span className="text-white">risk management</span>, and <span className="text-white">trade execution from chart</span>.
+                                    </p>
+                                    <div className="flex items-start gap-2 mb-3">
+                                        <AlertTriangle size={12} className="text-yellow-500/70 mt-0.5 shrink-0" />
+                                        <p className="text-[10px] text-yellow-500/60 leading-relaxed">
+                                            Do not run both PrismSync and PrismTrade on the same account simultaneously. Same setup steps (2-4) apply.
+                                        </p>
+                                    </div>
+                                    <a
+                                        href="/api/account/bridge/download-trade-ea"
+                                        download="PrismTrade.mq5"
+                                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white font-bold uppercase tracking-[0.15em] text-[10px] hover:bg-white/10 active:scale-95 transition-all"
+                                    >
+                                        <Download size={12} /> Download PrismTrade.mq5
+                                    </a>
+                                </div>
                             </div>
                         </div>
 

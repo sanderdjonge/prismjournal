@@ -23,7 +23,7 @@ import {
     PieChart,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { formatPercent as formatPercentUtil } from '@/lib/formatNumber';
+import { formatPercent as formatPercentUtil, fmtDecimals } from '@/lib/formatNumber';
 import { ChallengeCalendar } from '@/components/prop-firm/ChallengeCalendar';
 import type { AnalyticsData } from '@/hooks/useAnalytics'
 import { toast } from 'sonner';
@@ -580,7 +580,7 @@ function PropFirmAccountContent() {
                                                     analytics.profitFactor >= 1.5 ? "text-profit" :
                                                     analytics.profitFactor >= 1 ? "text-yellow-400" : "text-loss"
                                                 )}>
-                                                    {analytics.profitFactor.toFixed(2)}
+                                                    {fmtDecimals(analytics.profitFactor, 2)}
                                                 </p>
                                             </div>
                                             <div className="text-center p-2 rounded-lg bg-black/20 border border-white/5">
@@ -599,7 +599,7 @@ function PropFirmAccountContent() {
                                                     analytics.avgRR >= 1 ? "text-profit" :
                                                     analytics.avgRR >= 0.5 ? "text-yellow-400" : "text-loss"
                                                 )}>
-                                                    {analytics.avgRR.toFixed(2)}
+                                                    {fmtDecimals(analytics.avgRR, 2)}
                                                 </p>
                                             </div>
                                             <div className="text-center p-2 rounded-lg bg-black/20 border border-white/5">
@@ -627,7 +627,7 @@ function PropFirmAccountContent() {
                                                                 symbol.winRate >= 40 ? "bg-yellow-500/20 text-yellow-400" :
                                                                 "bg-loss/20 text-loss"
                                                             )}>
-                                                                {symbol.winRate}%
+                                                                {fmtDecimals(symbol.winRate, 1)}%
                                                             </span>
                                                         </div>
                                                         <span className={cn(
@@ -939,11 +939,11 @@ function PropFirmAccountContent() {
                                                                 {index + 1}
                                                             </div>
                                                             <span className="text-sm text-gray-300">
-                                                                {level.profit}% profit
+                                                                {fmtDecimals(level.profit, 1)}% profit
                                                             </span>
                                                         </div>
                                                         <span className="text-sm font-bold text-profit">
-                                                            +{level.balanceIncrease}%
+                                                            +{fmtDecimals(level.balanceIncrease, 1)}%
                                                         </span>
                                                     </div>
                                                 ))}

@@ -2,6 +2,7 @@
 
 import type { JournalTrade } from '@/app/journal/page';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { fmtDecimals } from '@/lib/formatNumber';
 
 // ── Exported utilities (tested in __tests__/tradeListUtils.test.ts) ─────────
 
@@ -110,7 +111,7 @@ export function TradeListPanel({ trades, selectedId, onSelect }: TradeListPanelP
                                     </div>
 
                                     <span className={`font-mono text-[12px] font-bold flex-shrink-0 ${isWin ? 'text-profit' : 'text-loss'}`}>
-                                        {pnlSign}${Math.abs(t.pnl).toFixed(0)}
+                                        {pnlSign}${fmtDecimals(Math.abs(t.pnl), 2)}
                                     </span>
                                 </div>
                             </div>

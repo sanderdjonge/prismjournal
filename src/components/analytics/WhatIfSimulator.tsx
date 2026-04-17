@@ -8,7 +8,7 @@ import {
     Settings2
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { formatPercent } from '@/lib/formatNumber';
+import { formatPercent, fmtDecimals } from '@/lib/formatNumber';
 import { getCurrencySymbol } from '@/lib/currency';
 import { useWhatIf, useWhatIfMulti, WhatIfFilters, WhatIfResult, SimulationResult } from '@/hooks/useWhatIf';
 import { useSettings } from '@/hooks/useSettings';
@@ -78,9 +78,9 @@ function MetricCard({
         if (format === 'percent') return val.toFixed(1) + '%';
         if (format === 'currency') {
             const symbol = getCurrencySymbol(currency);
-            return symbol + val.toFixed(2);
+            return symbol + fmtDecimals(val, 2);
         }
-        return val.toFixed(2);
+        return fmtDecimals(val, 2);
     };
     
     return (
@@ -157,7 +157,7 @@ function ComparisonSummary({ result, currency }: { result: WhatIfResult; currenc
                 </div>
                 <p className="text-xs mt-1 opacity-80">
                     {difference.tradesRemoved} trades removed • 
-                    P&L difference: {difference.pnlDifference >= 0 ? '+' : ''}{difference.pnlDifference.toFixed(2)}
+                    P&L difference: {difference.pnlDifference >= 0 ? '+' : ''}{fmtDecimals(difference.pnlDifference, 2)}
                 </p>
             </div>
         </div>
@@ -259,7 +259,7 @@ function AdvancedFilterPopover({ type, filters, onChange, onClose, currency = 'U
   };
   
   return (
-    <div className="absolute z-50 top-full left-0 mt-1 p-3 bg-surface-card border border-white/10 rounded-lg shadow-xl min-w-[280px]">
+    <div className="absolute z-50 top-full left-0 mt-1 p-3 bg-[var(--surface-solid)] border border-white/10 rounded-lg shadow-xl min-w-[280px]">
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Configure Filter</span>
         <button onClick={onClose} className="text-gray-500 hover:text-white">

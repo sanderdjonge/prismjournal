@@ -89,7 +89,7 @@ export function AddFilterPicker({
     <div
       role="dialog"
       aria-label="Add filter"
-      className="w-56 rounded-xl bg-surface-card border border-border-color shadow-2xl overflow-hidden"
+      className="w-56 rounded-xl bg-[var(--surface-solid)] border border-border-color shadow-2xl overflow-hidden"
     >
       {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2.5 border-b border-white/5">
