@@ -80,18 +80,18 @@ export default function StrategiesClient({ strategies: initialStrategies }: Prop
   }
 
   function getTiltmeterColor(score: number): string {
-    if (score <= 20) return 'text-green-400';
-    if (score <= 40) return 'text-green-300';
-    if (score <= 60) return 'text-yellow-400';
-    if (score <= 80) return 'text-orange-400';
+    if (score <= 10) return 'text-green-400';
+    if (score <= 25) return 'text-green-300';
+    if (score <= 50) return 'text-yellow-400';
+    if (score <= 75) return 'text-orange-400';
     return 'text-red-400';
   }
 
   function getTiltmeterEmoji(score: number): string {
-    if (score <= 20) return '🧘';
-    if (score <= 40) return '😌';
-    if (score <= 60) return '😐';
-    if (score <= 80) return '😤';
+    if (score <= 10) return '🧘';
+    if (score <= 25) return '😌';
+    if (score <= 50) return '😐';
+    if (score <= 75) return '😤';
     return '🤯';
   }
 

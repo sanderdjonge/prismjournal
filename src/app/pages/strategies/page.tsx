@@ -40,8 +40,8 @@ export default async function StrategiesPage() {
         ? Math.round(((totalTrades - tradesWithViolationsCount) / totalTrades) * 100)
         : 100;
 
-      // Calculate tiltmeter (0 violations = 0, 10+ = 100)
-      const tiltmeterScore = Math.min(100, violationCount * 10);
+      const violationRate = totalTrades > 0 ? violationCount / totalTrades : 0;
+      const tiltmeterScore = totalTrades === 0 ? 0 : Math.min(100, Math.round(violationRate * 100));
 
       return {
         id: s.id,
