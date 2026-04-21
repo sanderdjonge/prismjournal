@@ -87,6 +87,27 @@ const YAHOO_INTERVAL_MS: Record<string, number> = {
     '60m': 3_600_000, '1h': 3_600_000, '1d': 86_400_000, '1wk': 604_800_000,
 };
 
+let cachedCrumb: { crumb: string; expires: number } | null = null;
+
+async function getYahooCrumb(): Promise<string | null> {
+    if (cachedCrumb && Date.now() < cachedCrumb.expires) return cachedCrumb.crumb;
+    try {
+        const res = await fetch('https://query1.finance.yahoo.com/v8/finance/chart/^GSPC?range=1d&interval=1d', {
+            headers: { 'User-Agent': 'Mozilla/5.0' },
+            signal: AbortSignal.timeout(10_000),
+        });
+        const setCookie = res.headers.getSetCookie?.() ?? [];
+        const cookieHeader = setCookie.join('; ');
+        const body = await res.text();
+        const match = body.match(/"crumb":"([^"]+)"/);
+        if (!match) return null;
+        cachedCrumb = { crumb: match[1], expires: Date.now() + 3_600_000 };
+        return cachedCrumb.crumb;
+    } catch {
+        return null;
+    }
+}
+
 async function fetchOhlcYahoo(yahooSymbol: string, interval: string, outputsize: number, endDate?: string): Promise<OhlcBar[]> {
     const yahooInterval = YAHOO_INTERVAL_MAP[interval] ?? '1d';
     const msPerBar = YAHOO_INTERVAL_MS[yahooInterval] ?? 86_400_000;
@@ -94,10 +115,12 @@ async function fetchOhlcYahoo(yahooSymbol: string, interval: string, outputsize:
     const period2 = endDate
         ? Math.floor(new Date(endDate).getTime() / 1000)
         : Math.floor(Date.now() / 1000);
-    // Request 2× bars to account for market-hours gaps (weekends, overnight sessions)
-    const lookbackMultiplier = ["1m", "5m", "15m", "30m", "60m", "1h"].includes(yahooInterval) ? 5 : 2; const period1 = period2 - Math.floor((outputsize * msPerBar * lookbackMultiplier) / 1000);
+    const lookbackMultiplier = ["1m", "5m", "15m", "30m", "60m", "1h"].includes(yahooInterval) ? 5 : 2;
+    const period1 = period2 - Math.floor((outputsize * msPerBar * lookbackMultiplier) / 1000);
 
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?interval=${yahooInterval}&period1=${period1}&period2=${period2}`;
+    const crumb = await getYahooCrumb();
+    const crumbParam = crumb ? `&crumb=${encodeURIComponent(crumb)}` : '';
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?interval=${yahooInterval}&period1=${period1}&period2=${period2}${crumbParam}`;
 
     const res = await fetch(url, {
         signal: AbortSignal.timeout(15_000),
@@ -116,16 +139,17 @@ async function fetchOhlcYahoo(yahooSymbol: string, interval: string, outputsize:
     };
 
     if (data.chart.error) throw new Error(`Yahoo Finance error: ${data.chart.error.description}`);
-    if (!data.chart.result?.[0]) throw new Error(`No data from Yahoo Finance for ${yahooSymbol}`);
 
-    const result = data.chart.result[0];
-    const { timestamp, indicators } = result;
-    const quote = indicators.quote[0];
+    const result = data.chart.result?.[0];
+    if (!result?.timestamp || result.timestamp.length === 0) return [];
+
+    const quote = result.indicators?.quote?.[0];
+    if (!quote) return [];
 
     const bars: OhlcBar[] = [];
-    for (let i = 0; i < timestamp.length; i++) {
+    for (let i = 0; i < result.timestamp.length; i++) {
         if (quote.open[i] == null || quote.close[i] == null) continue;
-        const dt = new Date(timestamp[i] * 1000);
+        const dt = new Date(result.timestamp[i] * 1000);
         bars.push({
             datetime: dt.toISOString().replace('T', ' ').slice(0, 19),
             open:  String(quote.open[i]),
@@ -135,7 +159,7 @@ async function fetchOhlcYahoo(yahooSymbol: string, interval: string, outputsize:
         });
     }
 
-    if (bars.length === 0) throw new Error(`No valid bars from Yahoo Finance for ${yahooSymbol}`);
+    if (bars.length === 0) return [];
     return bars.slice(-outputsize);
 }
 
@@ -277,23 +301,7 @@ function buildChartOption(bars: OhlcBar[], entryPrice: number, timezone: string,
     };
 }
 
-export async function renderCandlestickChart(options: ChartRenderOptions): Promise<Buffer> {
-    const { symbol, interval, entryPrice, exitPrice, stopLoss, takeProfit, barsOfContext, timezone, endDate } = options;
-
-    // Try Twelve Data first; fall back to Yahoo Finance for symbols restricted to paid plans.
-    let bars: OhlcBar[];
-    try {
-        bars = await fetchOhlc(symbol, interval, barsOfContext, endDate);
-    } catch (tdErr) {
-        const yahooSymbol = toYahooSymbol(symbol);
-        if (!yahooSymbol) throw tdErr;
-        logger.warn({ symbol, yahooSymbol }, '[chart-renderer] Twelve Data unavailable, falling back to Yahoo Finance');
-        bars = await fetchOhlcYahoo(yahooSymbol, interval, barsOfContext, endDate);
-    }
-
-    // Sanity check: if the entry price is outside 10× the OHLC range, Twelve Data
-    // returned data for a different instrument (e.g. free-tier index restriction).
-    // Discard rather than produce a broken chart.
+function validatePriceRange(bars: OhlcBar[], entryPrice: number, symbol: string): void {
     const dataMin = Math.min(...bars.map(b => +b.low));
     const dataMax = Math.max(...bars.map(b => +b.high));
     if (entryPrice < dataMin / 10 || entryPrice > dataMax * 10) {
@@ -301,6 +309,38 @@ export async function renderCandlestickChart(options: ChartRenderOptions): Promi
             new Error(`Price mismatch: entry ${entryPrice} outside OHLC range ${dataMin}–${dataMax} for ${symbol}`),
             { code: 'PRICE_MISMATCH' },
         );
+    }
+}
+
+export async function renderCandlestickChart(options: ChartRenderOptions): Promise<Buffer> {
+    const { symbol, interval, entryPrice, exitPrice, stopLoss, takeProfit, barsOfContext, timezone, endDate } = options;
+
+    // Try Twelve Data first; fall back to Yahoo Finance for symbols restricted to paid plans.
+    let bars: OhlcBar[];
+    try {
+        bars = await fetchOhlc(symbol, interval, barsOfContext, endDate);
+        validatePriceRange(bars, entryPrice, symbol);
+    } catch (tdErr) {
+        const yahooSymbol = toYahooSymbol(symbol);
+        logger.warn({ symbol, yahooSymbol, tdErr: String(tdErr) }, '[chart-renderer] Twelve Data failed, attempting Yahoo Finance fallback');
+        if (!yahooSymbol) throw tdErr;
+        try {
+            bars = await fetchOhlcYahoo(yahooSymbol, interval, barsOfContext, endDate);
+            if (bars.length === 0 && interval !== '1day' && interval !== '1week') {
+                logger.warn({ symbol, yahooSymbol, interval }, '[chart-renderer] Yahoo intraday returned 0 bars, falling back to daily');
+                bars = await fetchOhlcYahoo(yahooSymbol, '1day', barsOfContext, endDate);
+            }
+        } catch (yahooErr) {
+            logger.error({ symbol, yahooSymbol, yahooErr: String(yahooErr) }, '[chart-renderer] Yahoo Finance fallback also failed');
+            throw tdErr;
+        }
+        if (bars.length > 0) {
+            logger.info({ symbol, yahooSymbol, interval }, '[chart-renderer] Yahoo Finance fallback succeeded');
+        }
+    }
+
+    if (bars.length === 0) {
+        throw new Error(`No chart data available for ${symbol} ${interval}`);
     }
 
     const option = buildChartOption(bars, entryPrice, timezone, stopLoss, takeProfit, exitPrice);

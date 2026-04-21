@@ -57,7 +57,6 @@ export const GET = withAuth(async (request: NextRequest, ctx: Record<string, unk
             where: { accountId: { in: accountIds } },
             orderBy: { timestamp: 'asc' },
         }),
-        // Get closed trades from startDate for equity curve
         prisma.trade.findMany({
             where: {
                 accountId: { in: accountIds },
@@ -66,6 +65,15 @@ export const GET = withAuth(async (request: NextRequest, ctx: Record<string, unk
             },
             orderBy: { exitTime: 'asc' },
             select: { exitTime: true, pnl: true, commission: true, swap: true },
+        }),
+        prisma.trade.findMany({
+            where: {
+                accountId: { in: accountIds },
+                pnl: { not: null },
+                exitTime: { not: null },
+            },
+            orderBy: { exitTime: 'asc' },
+            select: { exitTime: true, pnl: true, commission: true, swap: true, entryTime: true },
         }),
     ]);
 
@@ -139,19 +147,34 @@ export const GET = withAuth(async (request: NextRequest, ctx: Record<string, unk
 
     // Monthly return matrix (current year, percentage)
     const currentYear = new Date().getFullYear();
-    const yearTrades = trades.filter(t => t.entryTime.getFullYear() === currentYear);
+    const yearClosedTrades = allClosedTrades.filter(t => t.exitTime!.getFullYear() === currentYear);
     const monthlyPnl = Array(12).fill(0);
-    for (const t of yearTrades) {
-        monthlyPnl[t.entryTime.getMonth()] += t.pnl ?? 0;
+    for (const t of yearClosedTrades) {
+        const netPnl = (t.pnl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
+        monthlyPnl[t.exitTime!.getMonth()] += netPnl;
     }
 
-    // Use latest snapshot balance as base, or fallback to account balance
     const latestSnapshot = snapshots.length > 0 ? snapshots[snapshots.length - 1] : null;
-    const base = latestSnapshot?.balance ?? 0;
-    const monthlyReturnsPct = monthlyPnl.map((pnl, i) => ({
-        month: i,
-        value: base > 0 ? Math.round((pnl / base) * 100 * 10) / 10 : 0,
-    }));
+    const currentBalance = latestSnapshot?.balance ?? 0;
+    const cumulativePnlAll = allClosedTrades.reduce(
+        (sum, t) => sum + (t.pnl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0), 0
+    );
+    const monthStartBalances: number[] = [];
+    let runningCumPnlBeforeMonth = 0;
+    const cumPnlByMonth: number[] = [];
+    for (let m = 0; m < 12; m++) {
+        monthStartBalances[m] = currentBalance - cumulativePnlAll + runningCumPnlBeforeMonth;
+        cumPnlByMonth[m] = monthlyPnl[m];
+        runningCumPnlBeforeMonth += cumPnlByMonth[m];
+    }
+
+    const monthlyReturnsPct = monthlyPnl.map((pnl, i) => {
+        const base = monthStartBalances[i];
+        return {
+            month: i,
+            value: base > 0 ? Math.round((pnl / base) * 100 * 10) / 10 : 0,
+        };
+    });
 
     return NextResponse.json({
         equity: equityData,

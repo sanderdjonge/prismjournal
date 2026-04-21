@@ -92,6 +92,17 @@ export const DELETE = withAdmin(async (req: NextRequest, _ctx: Record<string, un
   try {
     const { searchParams } = new URL(req.url);
     const tokenId = searchParams.get('id');
+    const purge = searchParams.get('purge');
+
+    if (purge === 'expired') {
+      const result = await prisma.inviteToken.deleteMany({
+        where: {
+          usedAt: null,
+          expiresAt: { not: null, lt: new Date() },
+        },
+      });
+      return ok({ deleted: result.count });
+    }
 
     if (!tokenId) {
       return badRequest('Token ID is required');

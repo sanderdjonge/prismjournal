@@ -76,6 +76,8 @@
   --glass-bg: rgba(0, 0, 0, 0.03);
   --glass-border: rgba(0, 0, 0, 0.08);
   --card-bg: rgba(255, 255, 255, 0.9);
+  --surface-solid: rgba(255, 255, 255, 0.97);
+  --border-solid: rgba(0, 0, 0, 0.12);
 
   --text-primary: #0f172a;
   --text-secondary: #475569;
@@ -399,4 +401,15 @@ select option {
 select[class*="bg-surface-card"],
 select[class*="bg-white/"] {
   background-color: var(--surface-solid) !important;
+}
+
+/* Date input calendar icon visibility on dark backgrounds */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(0.7);
+  cursor: pointer;
+}
+
+:root.light input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: none;
+  cursor: pointer;
 }

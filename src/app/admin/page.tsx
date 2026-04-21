@@ -1523,6 +1523,17 @@ function InvitesTab() {
         }
     }
 
+    const purgeExpired = async () => {
+        if (!confirm('Delete all expired unused tokens?')) return
+        try {
+            const data = await apiFetch<{ deleted: number }>(`/api/admin/invite-tokens?purge=expired`, { method: 'DELETE' })
+            toast.success(`Purged ${data.deleted} expired token(s)`)
+            loadTokens()
+        } catch {
+            toast.error('Failed to purge expired tokens')
+        }
+    }
+
     const copyToken = (token: string) => {
         const url = `${window.location.origin}/login?invite=${token}`;
         navigator.clipboard.writeText(url);
@@ -1626,6 +1637,17 @@ function InvitesTab() {
 
             {/* Tokens List */}
             <div className="glass-card border-white/5 bg-white/5 overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+                        {tokens.length} token{tokens.length !== 1 ? 's' : ''}
+                    </span>
+                    <button
+                        onClick={purgeExpired}
+                        className="text-[10px] font-black uppercase tracking-widest text-danger hover:text-danger/80 transition-colors flex items-center gap-1.5"
+                    >
+                        <Trash2 size={12} /> Purge Expired
+                    </button>
+                </div>
                 {loading ? (
                     <div className="flex items-center justify-center py-16">
                         <Loader2 size={24} className="text-primary animate-spin" />
@@ -1644,8 +1666,11 @@ function InvitesTab() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
-                            {tokens.map(token => (
-                                <tr key={token.id} className="hover:bg-white/5 transition-colors">
+                            {tokens.map(token => {
+                                const isExpired = !token.usedAt && token.expiresAt && new Date(token.expiresAt) < new Date()
+                                const isUsed = !!token.usedAt
+                                return (
+                                <tr key={token.id} className={cn("hover:bg-white/5 transition-colors", isExpired && "opacity-50")}>
                                     <td className="px-4 py-2.5">
                                         <code className="text-gray-300 font-mono">{token.token}</code>
                                     </td>
@@ -1659,8 +1684,16 @@ function InvitesTab() {
                                             <span className="text-gray-600">Unused</span>
                                         )}
                                     </td>
-                                    <td className="px-4 py-2.5 text-gray-500">
-                                        {token.expiresAt ? formatShortDate(token.expiresAt) : 'Never'}
+                                    <td className="px-4 py-2.5">
+                                        {isUsed ? (
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest bg-accent/10 text-accent border border-accent/20">Used</span>
+                                        ) : isExpired ? (
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest bg-danger/10 text-danger border border-danger/20">Expired {formatShortDate(token.expiresAt!)}</span>
+                                        ) : token.expiresAt ? (
+                                            <span className="text-gray-500">{formatShortDate(token.expiresAt)}</span>
+                                        ) : (
+                                            <span className="text-gray-600">Never</span>
+                                        )}
                                     </td>
                                     <td className="px-4 py-2.5">
                                         <div className="flex gap-2">
@@ -1679,7 +1712,8 @@ function InvitesTab() {
                                         </div>
                                     </td>
                                 </tr>
-                            ))}
+                                )
+                            })}
                         </tbody>
                     </table>
                 )}

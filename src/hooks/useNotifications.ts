@@ -25,7 +25,9 @@ export function useMarkNotificationsRead() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (ids?: string[]) =>
-      apiPatch('/api/notifications', { ids }),
+      ids
+        ? apiPatch('/api/notifications', { ids })
+        : apiPatch('/api/notifications', { markAll: true }),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.notifications.all }),
   })
 }
@@ -33,7 +35,14 @@ export function useMarkNotificationsRead() {
 export function useDeleteNotification() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id?: string) => apiDelete(`/api/notifications${id ? `?id=${id}` : '?all=true'}`),
+    mutationFn: (id?: string) =>
+      id
+        ? apiDelete(`/api/notifications?id=${id}`)
+        : apiFetch('/api/notifications', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ clearAll: true }),
+          }),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.notifications.all }),
   })
 }
