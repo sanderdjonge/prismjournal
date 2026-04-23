@@ -45,6 +45,10 @@ export const queryKeys = {
     all: ['heatmap'] as const,
     detail: (filters?: Record<string, unknown>) => [...queryKeys.heatmap.all, filters] as const,
   },
+  'daily-calendar': {
+    all: ['daily-calendar'] as const,
+    detail: (filters?: Record<string, unknown>) => [...queryKeys['daily-calendar'].all, filters] as const,
+  },
   symbolAnalytics: {
     all: ['symbolAnalytics'] as const,
     detail: (accountId?: string | null) => [...queryKeys.symbolAnalytics.all, accountId] as const,

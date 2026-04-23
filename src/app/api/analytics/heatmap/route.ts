@@ -36,7 +36,6 @@ export const GET = withAuth(async (req, _ctx, session) => {
     const userId = session.user.id;
 
     const where: Record<string, unknown> = {
-        exitTime: { not: null },
         account: { userId },
     };
 
@@ -55,6 +54,7 @@ export const GET = withAuth(async (req, _ctx, session) => {
         where,
         select: {
             entryTime: true,
+            exitTime: true,
             pnl: true,
         },
     });
@@ -63,7 +63,7 @@ export const GET = withAuth(async (req, _ctx, session) => {
     const cellMap = new Map<string, HeatmapCell>();
 
     for (const trade of trades) {
-        const day = trade.entryTime.getDay() || 7; // Convert Sunday (0) to 7
+        const day = trade.entryTime.getDay() || 7;
         const hour = trade.entryTime.getHours();
         const key = `${day}-${hour}`;
 
@@ -79,19 +79,23 @@ export const GET = withAuth(async (req, _ctx, session) => {
         };
 
         cell.count++;
-        cell.totalPnl += trade.pnl ?? 0;
-        if ((trade.pnl ?? 0) >= 0) cell.wins++;
-        else cell.losses++;
+        if (trade.exitTime) {
+            cell.totalPnl += trade.pnl ?? 0;
+            if ((trade.pnl ?? 0) >= 0) cell.wins++;
+            else cell.losses++;
+        }
 
         cellMap.set(key, cell);
     }
 
-    // Calculate derived fields
-    const cells = Array.from(cellMap.values()).map(cell => ({
-        ...cell,
-        avgPnl: cell.count > 0 ? cell.totalPnl / cell.count : 0,
-        winRate: cell.count > 0 ? (cell.wins / cell.count) * 100 : 0,
-    }));
+    const cells = Array.from(cellMap.values()).map(cell => {
+        const closedCount = cell.wins + cell.losses;
+        return {
+            ...cell,
+            avgPnl: closedCount > 0 ? cell.totalPnl / closedCount : 0,
+            winRate: closedCount > 0 ? (cell.wins / closedCount) * 100 : 0,
+        };
+    });
 
     return NextResponse.json({ cells });
 });

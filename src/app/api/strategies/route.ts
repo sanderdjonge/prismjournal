@@ -37,7 +37,8 @@ export const GET = withAuth(async (
                 ? Math.round(((totalTrades - tradesWithViolationsCount) / totalTrades) * 100)
                 : 100;
 
-            const tiltmeterScore = Math.min(100, violationCount * 10);
+            const violationRate = totalTrades > 0 ? violationCount / totalTrades : 0;
+            const tiltmeterScore = totalTrades === 0 ? 0 : Math.min(100, Math.round(violationRate * 100));
 
             return {
                 ...strategy,

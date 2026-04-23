@@ -27,11 +27,14 @@ export default function Providers({ children }: { children: React.ReactNode }) {
                         {children}
                         <Toaster
                             position="bottom-right"
+                            closeButton
                             toastOptions={{
-                                style: {
-                                    background: '#0d1117',
-                                    border: '1px solid rgba(255,255,255,0.08)',
-                                    color: '#ffffff',
+                                classNames: {
+                                    toast: '!bg-[var(--surface-solid)] !text-[var(--text-primary)] !border-[var(--border-solid)]',
+                                    description: '!text-[var(--text-secondary)]',
+                                    actionButton: '!bg-primary !text-black',
+                                    cancelButton: '!bg-[var(--surface-elevated)] !text-[var(--text-secondary)]',
+                                    closeButton: '!bg-[var(--surface-elevated)] !text-[var(--text-secondary)] !border-[var(--border-color)]',
                                 },
                             }}
                         />

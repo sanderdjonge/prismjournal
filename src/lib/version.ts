@@ -9,9 +9,9 @@ export const APP_VERSION = pkg.version; // e.g. "2.17.0"
  * Build date — update this whenever you bump the version.
  * Format: YYYY-MM-DD
  */
-export const BUILD_DATE = '2026-04-17';
+export const BUILD_DATE = '2026-04-21';
 
-export const BUILD_NOTES = 'Fix trade save error (Prisma tags query), integrate all what-if simulator filters (time/psychology/risk)';
+export const BUILD_NOTES = 'Fix tiltmeter score calculation (now violation-rate based), add daily P&L calendar to performance page, fix date picker calendar icon visibility';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {

@@ -63,7 +63,7 @@ function CompactScoreGauge({ score }: { score: number }) {
             <circle
                 cx={cx} cy={cy} r={r}
                 fill="none"
-                stroke="rgba(255,255,255,0.08)"
+                stroke="var(--border-color)"
                 strokeWidth={stroke}
                 strokeLinecap="round"
                 strokeDasharray={`${arcLength} ${circumference}`}
@@ -99,8 +99,8 @@ function TrendBarChart({ data }: { data: Array<{ score: number; week: string }> 
     if (!data || data.length === 0) return null;
 
     return (
-        <div className="mt-3 pt-3 border-t border-white/5">
-            <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-2">12-Week Trend</p>
+        <div className="mt-3 pt-3 border-t border-border-color">
+            <p className="text-[9px] font-black uppercase tracking-widest text-text-muted mb-2">12-Week Trend</p>
             <div className="flex items-end gap-1 h-12">
                 {data.map((entry, i) => {
                     const isLast = i === data.length - 1;
@@ -120,7 +120,7 @@ function TrendBarChart({ data }: { data: Array<{ score: number; week: string }> 
                             title={`${entry.week}: ${fmtDecimals(entry.score, 1)}`}
                         >
                             {/* Tooltip on hover */}
-                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 bg-gray-900 rounded text-[8px] text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 rounded text-[8px] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10" style={{ backgroundColor: 'var(--surface-solid)', color: 'var(--text-primary)', border: '1px solid var(--border-solid)' }}>
                                 {entry.week}: {fmtDecimals(entry.score, 1)}
                             </div>
                         </div>
@@ -137,8 +137,8 @@ export default function PrismScoreWidget({ accountId }: Props) {
     if (isLoading) {
         return (
             <div className="glass-card p-4 animate-pulse">
-                <div className="h-4 w-28 bg-white/5 rounded mb-3" />
-                <div className="h-20 bg-white/5 rounded" />
+                <div className="h-4 w-28 rounded mb-3" style={{ backgroundColor: 'var(--surface-elevated)' }} />
+                <div className="h-20 rounded" style={{ backgroundColor: 'var(--surface-elevated)' }} />
             </div>
         );
     }
@@ -190,7 +190,7 @@ export default function PrismScoreWidget({ accountId }: Props) {
                                     </span>
                                     <span className="text-[9px] font-bold" style={{ color: barColor }}>{fmtDecimals(val, 1)}</span>
                                 </div>
-                                <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                                <div className="h-1 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--surface-elevated)' }}>
                                     <div
                                         className="h-full rounded-full transition-all duration-700"
                                         style={{ width: `${val}%`, background: barColor }}

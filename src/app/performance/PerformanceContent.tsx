@@ -10,10 +10,12 @@ import { useAccounts } from '@/hooks/useAccounts';
 import { usePerformance } from '@/hooks/usePerformance';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useHeatmap } from '@/hooks/useHeatmap';
+import { useDailyCalendar } from '@/hooks/useDailyCalendar';
 import { useFilters, FilterConfig } from '@/hooks/useFilters';
 import { FilterChipBar } from '@/components/filters/FilterChipBar';
 import { TradingHoursWidget } from '@/components/analytics/TradingHoursWidget';
 import { TradingHeatmapWidget } from '@/components/analytics/TradingHeatmapWidget';
+import TradeCalendar from '@/components/dashboard/TradeCalendar';
 import {
     ResponsiveContainer, ComposedChart, Line, XAxis, YAxis, Tooltip,
 } from 'recharts';
@@ -57,6 +59,12 @@ export function PerformanceContent() {
     const heatmapTo = dayjs().year(heatmapYear).month(heatmapMonth).endOf('month').format('YYYY-MM-DD');
 
     const { data: heatmapData } = useHeatmap({
+        accountId: getParam('account') || undefined,
+        from: heatmapFrom,
+        to: heatmapTo,
+    });
+
+    const { data: dailyCalendarData } = useDailyCalendar({
         accountId: getParam('account') || undefined,
         from: heatmapFrom,
         to: heatmapTo,
@@ -213,6 +221,14 @@ export function PerformanceContent() {
                         onNextYear={nextYear}
                     />
                 )}
+            </div>
+
+            {/* Daily P&L Calendar */}
+            <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl overflow-hidden">
+                <TradeCalendar
+                    data={dailyCalendarData?.days ?? []}
+                    accountBalance={data.equity.length > 0 ? data.equity[data.equity.length - 1].value : undefined}
+                />
             </div>
 
             {/* Monthly Return Matrix */}

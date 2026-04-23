@@ -79,12 +79,25 @@ export const DELETE = withAuth(async (req, _ctx, session) => {
   try {
     const userId = session.user.id;
 
-    const body = await req.json();
-    const { ids, clearAll } = body;
+    const { searchParams } = new URL(req.url);
+    const queryId = searchParams.get('id');
+
+    let body: Record<string, unknown> = {};
+    try {
+      body = await req.json();
+    } catch {
+      // No JSON body — fall through to query param
+    }
+
+    const { ids, clearAll } = body as { ids?: string[]; clearAll?: boolean };
 
     if (clearAll) {
       await prisma.notification.deleteMany({
         where: { userId },
+      });
+    } else if (queryId) {
+      await prisma.notification.deleteMany({
+        where: { id: queryId, userId },
       });
     } else if (ids && Array.isArray(ids)) {
       await prisma.notification.deleteMany({

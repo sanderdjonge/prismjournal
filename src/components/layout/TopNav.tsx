@@ -123,7 +123,7 @@ export default function TopNav() {
                             onClick={() => setIsProfileOpen(!isProfileOpen)}
                             className="w-10 h-10 rounded-full border-2 border-primary/20 p-0.5 overflow-hidden group hover:border-primary transition-all"
                         >
-                            <div className="w-full h-full rounded-full bg-gradient-to-br from-gray-800 to-black flex items-center justify-center">
+                            <div className="w-full h-full rounded-full bg-surface-elevated flex items-center justify-center">
                                 <User size={18} className="text-text-secondary group-hover:text-primary" />
                             </div>
                         </button>
