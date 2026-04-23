@@ -11,7 +11,7 @@ export const APP_VERSION = pkg.version; // e.g. "2.17.0"
  */
 export const BUILD_DATE = '2026-04-23';
 
-export const BUILD_NOTES = 'Security: sanitize seed credentials, expand publishignore, update README for GitHub mirror';
+export const BUILD_NOTES = 'Security hardening: timing-safe cron auth, CSRF protection, CSP tightening, storage validation, session maxAge, HTML escaping';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {

@@ -8,9 +8,13 @@ const nextConfig: NextConfig = {
     formats: ['image/avif', 'image/webp'],
   },
   async headers() {
+    // Security note (6.5): connect-src 'self' restricts browser-side fetch to same
+    // origin. All external API calls (Twelve Data, Nebul AI, Resend) go through
+    // server-side API routes, so this is safe. Update if client-side external
+    // fetches are ever needed.
     const csp = process.env.NODE_ENV === 'development'
       ? "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';"
-      : "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';";
+      : "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';";
     return [
       {
         source: '/(.*)',

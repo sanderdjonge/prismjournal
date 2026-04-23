@@ -440,6 +440,14 @@ export async function sendMddAlertEmail(
 /**
  * Send a broadcast/announcement email to a single user
  */
+function escapeHtml(str: string): string {
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
 export async function sendBroadcastEmail(
   email: string,
   title: string,
@@ -453,7 +461,7 @@ export async function sendBroadcastEmail(
 
   const accentColor = type === 'SUCCESS' ? '#4ade80' : type === 'WARNING' ? '#fbbf24' : '#818cf8';
   const typeLabel = type === 'SUCCESS' ? '✅ Announcement' : type === 'WARNING' ? '⚠️ Important Notice' : 'ℹ️ Announcement';
-  const messageHtml = message.replace(/\n/g, '<br>');
+  const messageHtml = escapeHtml(message).replace(/\n/g, '<br>');
 
   try {
     const { data: result, error } = await resend.emails.send({
@@ -468,7 +476,7 @@ export async function sendBroadcastEmail(
           </div>
           <div style="background-color:#1a1a2e;border:1px solid ${accentColor}33;border-left:4px solid ${accentColor};border-radius:8px;padding:24px;margin-bottom:20px;">
             <p style="margin:0 0 4px;font-size:11px;color:${accentColor};text-transform:uppercase;letter-spacing:1px;">${typeLabel}</p>
-            <h2 style="margin:8px 0 16px;font-size:20px;color:#e2e8f0;">${title}</h2>
+            <h2 style="margin:8px 0 16px;font-size:20px;color:#e2e8f0;">${escapeHtml(title)}</h2>
             <p style="margin:0;font-size:15px;color:#94a3b8;line-height:1.6;">${messageHtml}</p>
           </div>
           <hr style="border:none;border-top:1px solid #2d2d44;margin:24px 0;">

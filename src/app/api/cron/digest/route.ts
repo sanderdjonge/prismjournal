@@ -1,19 +1,15 @@
-import { headers } from 'next/headers'
+import { NextRequest } from 'next/server'
 import prisma from '@/lib/prisma'
 import { sendWeeklyDigestEmail } from '@/lib/email'
 import { sendTelegramMessage } from '@/lib/telegram'
 import { computeWeeklyDigestData, formatTelegramDigest } from '@/lib/services/digest-computation'
-import { ok, unauthorized, internalError } from '@/lib/api/responses'
+import { ok, internalError } from '@/lib/api/responses'
+import { verifyCronSecret } from '@/lib/api/verifyCronSecret'
 import logger from '@/lib/logger'
 
-export async function POST() {
-  const headersList = await headers()
-  const authHeader = headersList.get('authorization')
-  const cronSecret = process.env.CRON_SECRET
-
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
-    return unauthorized()
-  }
+export async function POST(request: NextRequest) {
+  const cronCheck = verifyCronSecret(request);
+  if (cronCheck) return cronCheck;
 
   try {
     const currentHour = new Date().getUTCHours()
@@ -88,14 +84,9 @@ export async function POST() {
   }
 }
 
-export async function GET() {
-  const headersList = await headers()
-  const authHeader = headersList.get('authorization')
-  const cronSecret = process.env.CRON_SECRET
-
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
-    return unauthorized()
-  }
+export async function GET(request: NextRequest) {
+  const cronCheck = verifyCronSecret(request);
+  if (cronCheck) return cronCheck;
 
   const count = await prisma.alertConfig.count({
     where: {

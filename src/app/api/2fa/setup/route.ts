@@ -39,7 +39,6 @@ export const POST = withAuth(async (request: NextRequest, _ctx, session) => {
     });
 
     return NextResponse.json({
-        secret,
         provisioning_uri: provisioningUri
     });
 });

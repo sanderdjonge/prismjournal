@@ -62,6 +62,16 @@ export async function GET(
             };
         });
 
+        const allowedStats = Array.isArray(user.publicProfileStats) ? user.publicProfileStats as string[] : [];
+
+        const performance: Record<string, unknown> = {
+            totalTrades: closedTrades.length,
+        };
+        if (allowedStats.includes('winRate')) performance.winRate = winRate.toFixed(1);
+        if (allowedStats.includes('profitFactor')) performance.profitFactor = formatProfitFactor(profitFactor);
+        if (allowedStats.includes('totalPnl')) performance.totalPnl = totalPnl.toFixed(2);
+        if (allowedStats.includes('equityCurve')) performance.equityCurve = equityCurve;
+
         return ok({
             profile: {
                 id: profileId,
@@ -69,13 +79,7 @@ export async function GET(
                 stats: user.publicProfileStats,
                 memberSince: user.createdAt,
             },
-            performance: {
-                totalTrades: closedTrades.length,
-                winRate: winRate.toFixed(1),
-                profitFactor: formatProfitFactor(profitFactor),
-                totalPnl: totalPnl.toFixed(2),
-                equityCurve,
-            },
+            performance,
         });
     } catch (error) {
         logger.error({ err: error }, '[public-profile] Error');

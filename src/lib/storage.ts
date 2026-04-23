@@ -24,9 +24,17 @@ export async function ensureStorageDir(): Promise<void> {
     }
 }
 
-// Generate unique filename
+const ALLOWED_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif']);
+
+function assertSafeFilename(filename: string): void {
+    if (!/^[\w.-]+$/.test(filename) || filename.includes('..')) {
+        throw new Error('Invalid filename');
+    }
+}
+
 export function generateFilename(originalName: string): string {
-    const ext = path.extname(originalName).toLowerCase() || '.png';
+    const rawExt = path.extname(originalName).toLowerCase();
+    const ext = ALLOWED_EXTENSIONS.has(rawExt) ? rawExt : '.png';
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(2, 8);
     return `${timestamp}-${random}${ext}`;
@@ -34,6 +42,7 @@ export function generateFilename(originalName: string): string {
 
 // Save file to storage
 export async function saveFile(buffer: Buffer, filename: string): Promise<string> {
+    assertSafeFilename(filename);
     await ensureStorageDir();
     const filepath = path.join(SCREENSHOTS_DIR, filename);
     await fs.promises.writeFile(filepath, buffer);
@@ -42,6 +51,7 @@ export async function saveFile(buffer: Buffer, filename: string): Promise<string
 
 // Delete file from storage
 export async function deleteFile(filename: string): Promise<void> {
+    assertSafeFilename(filename);
     const filepath = path.join(SCREENSHOTS_DIR, filename);
     try {
         await unlink(filepath);

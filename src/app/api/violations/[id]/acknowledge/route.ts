@@ -5,8 +5,7 @@ import prisma from '@/lib/prisma';
 // Acknowledge a rule violation
 export const POST = withAuth(async (req, ctx, session) => {
     const userId = session.user.id;
-    const params = ctx.params as { id: string };
-    const violationId = params.id;
+    const { id: violationId } = await (ctx as { params: Promise<{ id: string }> }).params;
 
     // Parse request body
     let body: { acknowledged: boolean; notes?: string };

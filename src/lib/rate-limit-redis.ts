@@ -4,6 +4,11 @@
  * Uses INCR + EXPIRE for atomic fixed-window counting in Redis.
  * Falls back to an in-process Map when Redis is unavailable or REDIS_URL is unset,
  * so the app stays functional if Redis is down (fail-open).
+ *
+ * Security note (6.3): This limiter fails open (returns null) when Redis is
+ * unavailable. This is a deliberate availability-over-security trade-off —
+ * the app stays functional during Redis outages. In-memory fallback provides
+ * basic protection per-instance.
  */
 
 import { NextResponse } from 'next/server';
