@@ -25,7 +25,7 @@ export function ScreenshotUploader({ screenshots, uploading, onUpload, onLightbo
         const ref = timeframe === 'M5' ? entryRef : contextRef;
 
         return (
-            <div className="aspect-video glass-card border-white/10 flex flex-col items-center justify-center gap-2 text-gray-600 hover:text-white group hover:bg-white/5 transition-all relative overflow-hidden">
+            <div className="aspect-video glass-card border-border-color flex flex-col items-center justify-center gap-2 text-text-muted hover:text-text-primary group hover:bg-surface-hover transition-all relative overflow-hidden">
                 <input
                     ref={ref} 
                     type="file" 
@@ -46,7 +46,7 @@ export function ScreenshotUploader({ screenshots, uploading, onUpload, onLightbo
                         />
                         <button
                             onClick={(e) => { e.stopPropagation(); ref.current?.click(); }}
-                            className="absolute top-2 right-2 w-7 h-7 rounded-lg bg-black/60 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-black/80 transition-all opacity-0 group-hover:opacity-100 z-10"
+                            className="absolute top-2 right-2 w-7 h-7 rounded-lg bg-black/60 border border-border-color flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-black/80 transition-all opacity-0 group-hover:opacity-100 z-10"
                             title="Replace screenshot"
                         >
                             <Upload size={12} />
@@ -69,14 +69,14 @@ export function ScreenshotUploader({ screenshots, uploading, onUpload, onLightbo
 
     return (
         <section>
-            <h3 className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 border-b border-white/5 pb-2 mb-3 flex items-center gap-2">
+            <h3 className="text-[9px] font-black uppercase tracking-[0.3em] text-text-muted border-b border-border-subtle pb-2 mb-3 flex items-center gap-2">
                 <ImageIcon size={12} /> Execution Evidence
             </h3>
             <div className="grid grid-cols-2 gap-3">
                 <UploadSlot timeframe="M5" label="M5 Entry Chart" />
                 <UploadSlot timeframe="H1" label="H1 Context Chart" />
             </div>
-            <p className="text-[8px] text-gray-600 font-bold uppercase tracking-widest mt-2 text-center">
+            <p className="text-[8px] text-text-muted font-bold uppercase tracking-widest mt-2 text-center">
                 Click to upload · PNG, JPG, WEBP
             </p>
         </section>

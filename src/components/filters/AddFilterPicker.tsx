@@ -92,18 +92,18 @@ export function AddFilterPicker({
       className="w-56 rounded-xl bg-[var(--surface-solid)] border border-border-color shadow-2xl overflow-hidden"
     >
       {/* Header */}
-      <div className="flex items-center gap-2 px-3 py-2.5 border-b border-white/5">
+      <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border-subtle">
         {step === 2 && (
           <button
             type="button"
             onClick={() => setStep(1)}
-            className="text-gray-500 hover:text-white transition-colors"
+            className="text-text-muted hover:text-text-primary transition-colors"
             aria-label="Back to filter list"
           >
             <ChevronLeft size={14} />
           </button>
         )}
-        <span className="text-[9px] font-black uppercase tracking-widest text-gray-500">
+        <span className="text-[9px] font-black uppercase tracking-widest text-text-muted">
           {step === 1 ? 'Add Filter' : selectedConfig?.label}
         </span>
       </div>
@@ -121,8 +121,8 @@ export function AddFilterPicker({
                 disabled={disabled}
                 className={`w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest transition-colors ${
                   disabled
-                    ? 'text-gray-700 cursor-not-allowed'
-                    : 'text-gray-300 hover:bg-white/5 hover:text-white'
+                    ? 'text-text-muted cursor-not-allowed'
+                    : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary'
                 }`}
               >
                 {cfg.label}
@@ -143,7 +143,7 @@ export function AddFilterPicker({
                   type="button"
                   key={opt.value}
                   onClick={() => { onAdd(selectedId!, opt.value); onClose() }}
-                  className="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-white/5 border border-white/10 text-gray-300 hover:bg-primary/20 hover:border-primary/40 hover:text-primary transition-all"
+                  className="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-surface-elevated border border-border-color text-text-secondary hover:bg-primary/20 hover:border-primary/40 hover:text-primary transition-all"
                 >
                   {opt.label}
                 </button>
@@ -159,14 +159,14 @@ export function AddFilterPicker({
                 placeholder="Search..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-bold text-white placeholder:text-gray-600 outline-none focus:border-primary/50"
+                className="w-full bg-surface-elevated border border-border-color rounded-lg px-2 py-1.5 text-[10px] font-bold text-text-primary placeholder:text-text-muted outline-none focus:border-primary/50"
               />
               <div className="max-h-40 overflow-y-auto space-y-0.5">
                 {filteredOptions.length === 0 && (
-                  <p className="text-[10px] text-gray-600 py-2 text-center">No options</p>
+                  <p className="text-[10px] text-text-muted py-2 text-center">No options</p>
                 )}
                 {filteredOptions.map(opt => (
-                  <label key={opt.value} className="flex items-center gap-2 px-1 py-1.5 rounded hover:bg-white/5 cursor-pointer">
+                  <label key={opt.value} className="flex items-center gap-2 px-1 py-1.5 rounded hover:bg-surface-hover cursor-pointer">
                     <input
                       type="checkbox"
                       checked={selectedMulti.includes(opt.value)}
@@ -177,7 +177,7 @@ export function AddFilterPicker({
                       }}
                       className="accent-primary"
                     />
-                    <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">{opt.label}</span>
+                    <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">{opt.label}</span>
                   </label>
                 ))}
               </div>
@@ -198,13 +198,13 @@ export function AddFilterPicker({
                 type="date"
                 value={dateFrom}
                 onChange={e => { setDateFrom(e.target.value); setDateError('') }}
-                className="w-full bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-bold text-white outline-none focus:border-primary/50 [color-scheme:dark]"
+                className="w-full bg-surface-elevated border border-border-color rounded-lg px-2 py-1.5 text-[10px] font-bold text-text-primary outline-none focus:border-primary/50 [color-scheme:dark]"
               />
               <input
                 type="date"
                 value={dateTo}
                 onChange={e => { setDateTo(e.target.value); setDateError('') }}
-                className="w-full bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-bold text-white outline-none focus:border-primary/50 [color-scheme:dark]"
+                className="w-full bg-surface-elevated border border-border-color rounded-lg px-2 py-1.5 text-[10px] font-bold text-text-primary outline-none focus:border-primary/50 [color-scheme:dark]"
               />
               {dateError && (
                 <p className="text-[9px] text-red-400 font-bold">{dateError}</p>
@@ -229,7 +229,7 @@ export function AddFilterPicker({
                 onChange={e => setTextValue(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') handleApplyText() }}
                 placeholder="Search..."
-                className="w-full bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-bold text-white placeholder:text-gray-600 outline-none focus:border-primary/50"
+                className="w-full bg-surface-elevated border border-border-color rounded-lg px-2 py-1.5 text-[10px] font-bold text-text-primary placeholder:text-text-muted outline-none focus:border-primary/50"
                 autoFocus
               />
               <button

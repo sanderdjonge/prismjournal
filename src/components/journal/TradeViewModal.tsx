@@ -91,20 +91,20 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                         className="fixed inset-0 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 w-full md:max-w-4xl md:max-h-[90vh] glass-card bg-surface border-border-subtle z-[101] shadow-2xl flex flex-col overflow-hidden md:rounded-2xl"
                     >
                         {/* Header */}
-                        <div className="p-6 border-b border-border-subtle flex items-center justify-between bg-white/[0.02]">
+                        <div className="p-6 border-b border-border-subtle flex items-center justify-between bg-surface-elevated">
                             <div className="flex items-center gap-4">
                                 <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary">
                                     <Eye size={20} />
                                 </div>
                                 <div>
                                     <h2 className="text-xl font-black text-white tracking-tighter uppercase italic">View Trade</h2>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Read-Only Trade Details</p>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">Read-Only Trade Details</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={() => setShareModalOpen(true)}
-                                    className="px-4 py-2 rounded-lg bg-white/5 text-gray-400 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all flex items-center gap-1.5"
+                                    className="px-4 py-2 rounded-lg bg-surface-elevated text-text-muted text-[10px] font-black uppercase tracking-widest hover:bg-surface-hover hover:text-text-primary transition-all flex items-center gap-1.5"
                                     title="Share trade"
                                 >
                                     <Share2 size={12} />
@@ -116,7 +116,7 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                                 >
                                     Edit
                                 </button>
-                                <button onClick={onClose} className="w-9 h-9 rounded-full hover:bg-white/5 flex items-center justify-center text-gray-500 hover:text-white transition-all">
+                                <button onClick={onClose} className="w-9 h-9 rounded-full hover:bg-surface-hover flex items-center justify-center text-text-muted hover:text-text-primary transition-all">
                                     <X size={18} />
                                 </button>
                             </div>
@@ -125,8 +125,8 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                         <div className="flex-1 overflow-y-auto p-6 no-scrollbar space-y-6">
                             {/* Account badge */}
                             {(trade as { accountName?: string }).accountName && (
-                                <div className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-xl">
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-500">Account:</span>
+                                <div className="flex items-center gap-2 px-3 py-2 bg-surface-elevated border border-border-color rounded-xl">
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-text-muted">Account:</span>
                                     <span className="text-xs font-bold text-white">{(trade as { accountName?: string }).accountName}</span>
                                 </div>
                             )}
@@ -134,13 +134,13 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                             {/* Row 1: Instrument + Side + Volume */}
                             <div className="grid grid-cols-3 gap-4">
                                 <div className="space-y-1.5">
-                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1">Instrument</label>
-                                    <div className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm font-bold text-white font-mono uppercase">
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-text-muted px-1">Instrument</label>
+                                    <div className="w-full bg-surface-elevated border border-border-color rounded-xl p-3 text-sm font-bold text-white font-mono uppercase">
                                         {trade.symbol}
                                     </div>
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1">Direction</label>
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-text-muted px-1">Direction</label>
                                     <div className={cn(
                                         "flex items-center justify-center gap-2 p-3 rounded-xl h-[46px]",
                                         trade.type === 'LONG' ? "bg-profit/10 text-profit" : "bg-loss/10 text-loss"
@@ -150,8 +150,8 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                                     </div>
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1">Volume (Lots)</label>
-                                    <div className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm font-bold text-white">
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-text-muted px-1">Volume (Lots)</label>
+                                    <div className="w-full bg-surface-elevated border border-border-color rounded-xl p-3 text-sm font-bold text-white">
                                         {trade.volume.toFixed(2)}
                                     </div>
                                 </div>
@@ -160,21 +160,21 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                             {/* Row 2: Entry / Exit */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
-                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1">Entry Price</label>
-                                    <div className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm font-bold text-white">
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-text-muted px-1">Entry Price</label>
+                                    <div className="w-full bg-surface-elevated border border-border-color rounded-xl p-3 text-sm font-bold text-white">
                                         {trade.entry.toFixed(5)}
                                     </div>
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1">Exit Price</label>
-                                    <div className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm font-bold text-white">
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-text-muted px-1">Exit Price</label>
+                                    <div className="w-full bg-surface-elevated border border-border-color rounded-xl p-3 text-sm font-bold text-white">
                                         {trade.exit?.toFixed(5) || '—'}
                                     </div>
                                 </div>
                             </div>
 
                             {/* Trade Status */}
-                            <div className="flex items-center gap-3 p-3 bg-white/[0.02] rounded-xl border border-border-subtle">
+                            <div className="flex items-center gap-3 p-3 bg-surface-elevated rounded-xl border border-border-subtle">
                                 <div className={cn(
                                     "w-6 h-6 rounded-lg flex items-center justify-center",
                                     isClosed ? "bg-profit text-black" : "bg-secondary/20 text-secondary"
@@ -185,7 +185,7 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                                     <p className="text-xs font-bold text-white">
                                         {isClosed ? 'Trade Closed' : 'Trade Open'}
                                     </p>
-                                    <p className="text-[10px] text-gray-500">
+                                    <p className="text-[10px] text-text-muted">
                                         P&L: <span className={trade.pnl >= 0 ? 'text-profit' : 'text-loss'}>
                                             {trade.pnl >= 0 ? '+' : ''}{fmtDecimals(trade.pnl, 2)}
                                         </span>
@@ -193,7 +193,7 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                                 </div>
                                 {isClosed && (
                                     <div className="flex flex-col items-end gap-1">
-                                        <span className="text-[9px] font-black uppercase tracking-widest text-gray-500">Closed By</span>
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-text-muted">Closed By</span>
                                         <CloseReasonBadge reason={(trade as { closeReason?: string | null }).closeReason} />
                                     </div>
                                 )}
@@ -202,7 +202,7 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                             {/* Row 3: TP / SL */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
-                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1 flex items-center gap-1.5">
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-text-muted px-1 flex items-center gap-1.5">
                                         <TrendingUp size={10} className="text-profit" /> Take Profit
                                     </label>
                                     <div className="w-full bg-profit/5 border border-profit/10 rounded-xl p-3 text-sm font-bold text-white">
@@ -210,7 +210,7 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                                     </div>
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1 flex items-center gap-1.5">
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-text-muted px-1 flex items-center gap-1.5">
                                         <TrendingDown size={10} className="text-loss" /> Stop Loss
                                     </label>
                                     <div className="w-full bg-loss/5 border border-loss/10 rounded-xl p-3 text-sm font-bold text-white">
@@ -218,8 +218,8 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                                     </div>
                                     {/* Show initial SL if different from current SL */}
                                     {trade.initialStopLoss != null && trade.initialStopLoss !== trade.stopLoss && (
-                                        <div className="text-[10px] text-gray-400 mt-1 px-1 flex items-center gap-1">
-                                            <span className="text-gray-500">Initial:</span>
+                                        <div className="text-[10px] text-text-muted mt-1 px-1 flex items-center gap-1">
+                                            <span className="text-text-muted">Initial:</span>
                                             <span className="font-mono">{trade.initialStopLoss.toFixed(5)}</span>
                                         </div>
                                     )}
@@ -229,8 +229,8 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                             {/* Exit Efficiency */}
                             {isClosed && (
                                 <div className="space-y-1.5">
-                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1">Exit Efficiency</label>
-                                    <div className="bg-white/[0.03] border border-border-subtle rounded-xl p-3">
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-text-muted px-1">Exit Efficiency</label>
+                                    <div className="bg-surface-elevated border border-border-subtle rounded-xl p-3">
                                         <ExcursionBar
                                             mae={trade.mae}
                                             mfe={trade.mfe}
@@ -250,21 +250,21 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                             <div className="pt-4 border-t border-border-subtle grid grid-cols-2 gap-6">
                                 <div className="space-y-4">
                                     <div className="space-y-1.5">
-                                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1 flex items-center gap-1.5">
+                                        <label className="text-[9px] font-black uppercase tracking-widest text-text-muted px-1 flex items-center gap-1.5">
                                             <Zap size={10} /> Strategy
                                         </label>
-                                        <div className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm font-bold text-white">
+                                        <div className="w-full bg-surface-elevated border border-border-color rounded-xl p-3 text-sm font-bold text-white">
                                             {trade.strategy || '—'}
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1">Plan Compliance</label>
+                                        <label className="text-[9px] font-black uppercase tracking-widest text-text-muted px-1">Plan Compliance</label>
                                         <div className="flex gap-3">
                                             <div className={cn(
                                                 "flex-1 p-3 rounded-xl border flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest",
                                                 trade.planCompliance === 'FOLLOWED'
                                                     ? "bg-profit/10 border-profit/40 text-profit"
-                                                    : "bg-white/5 border-transparent text-gray-600"
+                                                    : "bg-surface-elevated border-transparent text-text-muted"
                                             )}>
                                                 <CheckCircle2 size={14} /> Followed
                                             </div>
@@ -272,7 +272,7 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                                                 "flex-1 p-3 rounded-xl border flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest",
                                                 trade.planCompliance === 'DEVIATED'
                                                     ? "bg-loss/10 border-loss/40 text-loss"
-                                                    : "bg-white/5 border-transparent text-gray-600"
+                                                    : "bg-surface-elevated border-transparent text-text-muted"
                                             )}>
                                                 <XCircle size={14} /> Deviated
                                             </div>
@@ -281,12 +281,12 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                                 </div>
                                 <div className="space-y-4">
                                     <div className="space-y-1.5">
-                                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1 flex items-center gap-1.5">
+                                        <label className="text-[9px] font-black uppercase tracking-widest text-text-muted px-1 flex items-center gap-1.5">
                                             <Brain size={10} /> Psychological State
                                         </label>
                                         <div className={cn(
                                             "p-3 rounded-xl border flex items-center gap-3",
-                                            moodConfig.bg, "border-white/20"
+                                            moodConfig.bg, "border-border-color"
                                         )}>
                                             <MoodIcon size={18} className={moodConfig.color} />
                                             <span className="text-[10px] font-black uppercase tracking-widest text-white">
@@ -295,10 +295,10 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                                         </div>
                                     </div>
                                     <div className="space-y-1.5">
-                                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1 flex items-center gap-1.5">
+                                        <label className="text-[9px] font-black uppercase tracking-widest text-text-muted px-1 flex items-center gap-1.5">
                                             <FileText size={10} /> Notes
                                         </label>
-                                        <div className="w-full h-20 bg-white/5 border border-white/10 rounded-xl p-3 text-xs text-gray-300 overflow-y-auto">
+                                        <div className="w-full h-20 bg-surface-elevated border border-border-color rounded-xl p-3 text-xs text-text-secondary overflow-y-auto">
                                             {trade.notes || 'No notes'}
                                         </div>
                                     </div>
@@ -308,18 +308,18 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                             {/* Screenshots Section */}
                             {loadingMedia ? (
                                 <div className="flex items-center justify-center py-8">
-                                    <Spinner size="sm" className="border-white/20 border-t-primary" />
+                                    <Spinner size="sm" className="border-border-color border-t-primary" />
                                 </div>
                             ) : media.length > 0 ? (
                                 <div className="space-y-3">
-                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1">
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-text-muted px-1">
                                         Screenshots
                                     </label>
                                     <div className="grid grid-cols-5 gap-2">
                                         {media.map((item) => (
                                             <div
                                                 key={item.id}
-                                                className="relative aspect-square rounded-lg overflow-hidden bg-white/5 group cursor-pointer"
+                                                className="relative aspect-square rounded-lg overflow-hidden bg-surface-elevated group cursor-pointer"
                                                 onClick={() => setLightboxUrl(item.url)}
                                             >
                                                 <img
@@ -338,17 +338,17 @@ export default function TradeViewModal({ trade, isOpen, onClose, onEdit }: Trade
                                     </div>
                                 </div>
                             ) : (
-                                <div className="flex items-center justify-center gap-2 py-6 text-gray-500">
+                                <div className="flex items-center justify-center gap-2 py-6 text-text-muted">
                                     <ImageOff size={14} />
                                     <span className="text-[10px] font-black uppercase tracking-widest">No Screenshots</span>
                                 </div>
                             )}
                         </div>
 
-                        <div className="p-4 border-t border-border-subtle flex justify-end gap-3 bg-white/[0.02]">
+                        <div className="p-4 border-t border-border-subtle flex justify-end gap-3 bg-surface-elevated">
                             <button
                                 onClick={onClose}
-                                className="px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white font-black uppercase tracking-widest text-[10px] hover:bg-white/10 transition-all"
+                                className="px-6 py-2.5 rounded-xl bg-surface-elevated border border-border-color text-white font-black uppercase tracking-widest text-[10px] hover:bg-surface-hover transition-all"
                             >
                                 Close
                             </button>

@@ -30,7 +30,7 @@ export function StrategyRuleBreakdown({ data }: RuleBreakdownProps) {
 
   if (data.length === 0) {
     return (
-      <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
+      <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-6">
         <h3 className="text-sm font-semibold text-gray-100 mb-4">Rule Compliance</h3>
         <div className="flex items-center gap-2 text-profit">
           <CheckCircle size={16} />
@@ -47,12 +47,12 @@ export function StrategyRuleBreakdown({ data }: RuleBreakdownProps) {
   }
 
   return (
-    <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
+    <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-6">
       <h3 className="text-sm font-semibold text-gray-100 mb-4">Rule Compliance Breakdown</h3>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-gray-500 border-b border-white/10">
+            <tr className="text-left text-text-muted border-b border-border-color">
               <th className="pb-3 font-medium">Rule</th>
               <th className="pb-3 font-medium text-right">Violations</th>
               <th className="pb-3 font-medium text-right">P&L Impact</th>
@@ -66,15 +66,15 @@ export function StrategyRuleBreakdown({ data }: RuleBreakdownProps) {
               const label = RULE_TYPE_LABELS[rule.ruleType] || rule.ruleType
 
               return (
-                <tr key={rule.ruleId} className="border-b border-white/5 last:border-0">
+                <tr key={rule.ruleId} className="border-b border-border-subtle last:border-0">
                   <td className="py-3 text-gray-200">{label}</td>
-                  <td className="py-3 text-right text-gray-400">
+                  <td className="py-3 text-right text-text-muted">
                     {rule.violationCount}
-                    <span className="text-xs text-gray-600 ml-1">({formatPercent(rule.violationPercent, 0)})</span>
+                    <span className="text-xs text-text-muted ml-1">({formatPercent(rule.violationPercent, 0)})</span>
                   </td>
                   <td className={cn(
                     'py-3 text-right font-mono',
-                    (rule.pnlImpact ?? 0) >= 0 ? 'text-gray-400' : 'text-loss'
+                    (rule.pnlImpact ?? 0) >= 0 ? 'text-text-muted' : 'text-loss'
                   )}>
                     {rule.pnlImpact !== null ? formatAmount(rule.pnlImpact) : '—'}
                   </td>

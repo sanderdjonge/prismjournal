@@ -84,23 +84,23 @@ export function StrategyMetricsPanel({
   ]
 
   return (
-    <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
+    <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-gray-100">Performance Metrics</h3>
-        <span className="text-xs text-gray-500">{tradeCount} trades</span>
+        <span className="text-xs text-text-muted">{tradeCount} trades</span>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {metrics.map((metric) => {
           const Icon = metric.icon
           return (
             <div key={metric.label} className="space-y-1">
-              <div className="flex items-center gap-1.5 text-gray-500 text-[10px] font-black uppercase tracking-widest">
+              <div className="flex items-center gap-1.5 text-text-muted text-[10px] font-black uppercase tracking-widest">
                 <Icon size={10} />
                 <span>{metric.label}</span>
               </div>
               <div className={cn('text-lg font-bold', metric.color)}>
                 {metric.value}
-                {metric.sub && <span className="text-xs text-gray-500 ml-1">{metric.sub}</span>}
+                {metric.sub && <span className="text-xs text-text-muted ml-1">{metric.sub}</span>}
               </div>
             </div>
           )

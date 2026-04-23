@@ -37,7 +37,7 @@ export default function ForgotPasswordPage() {
   };
 
   const inputClass =
-    'w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm font-bold text-white outline-none focus:border-primary/50 transition-all placeholder:text-gray-600';
+    'w-full bg-surface-elevated border border-border-color rounded-xl p-4 text-sm font-bold text-text-primary outline-none focus:border-primary/50 transition-all placeholder:text-text-muted';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-950 to-black flex items-center justify-center p-6 relative overflow-hidden">
@@ -57,7 +57,7 @@ export default function ForgotPasswordPage() {
         </div>
 
         {/* Card */}
-        <div className="glass-card bg-black/40 backdrop-blur-md border border-white/5 rounded-2xl p-8">
+        <div className="glass-card bg-surface-elevated backdrop-blur-md border border-border-subtle rounded-2xl p-8">
           {success ? (
             <div className="text-center">
               <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -66,12 +66,12 @@ export default function ForgotPasswordPage() {
                 </svg>
               </div>
               <h2 className="text-xl font-bold text-white mb-2">Check Your Email</h2>
-              <p className="text-gray-400 text-sm mb-6">
+              <p className="text-text-muted text-sm mb-6">
                 If an account with that email exists, we've sent a password reset link.
               </p>
               <a
                 href="/login"
-                className="inline-block px-6 py-3 bg-white/10 rounded-xl text-white font-semibold text-sm hover:bg-white/20 transition-all"
+                className="inline-block px-6 py-3 bg-surface-hover rounded-xl text-white font-semibold text-sm hover:bg-surface-hover transition-all"
               >
                 Back to Sign In
               </a>
@@ -80,14 +80,14 @@ export default function ForgotPasswordPage() {
             <>
               <div className="text-center mb-8">
                 <h2 className="text-xl font-bold text-white mb-2">Forgot Password?</h2>
-                <p className="text-gray-400 text-sm">
+                <p className="text-text-muted text-sm">
                   Enter your email and we'll send you a link to reset your password.
                 </p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-gray-600 mb-2">
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">
                     Email
                   </label>
                   <input
@@ -120,7 +120,7 @@ export default function ForgotPasswordPage() {
               <div className="mt-6 text-center">
                 <a
                   href="/login"
-                  className="text-gray-400 text-sm hover:text-white transition-colors"
+                  className="text-text-muted text-sm hover:text-text-primary transition-colors"
                 >
                   ← Back to Sign In
                 </a>
@@ -130,7 +130,7 @@ export default function ForgotPasswordPage() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-gray-700 text-[10px] font-bold uppercase tracking-widest mt-8">
+        <p className="text-center text-text-muted text-[10px] font-bold uppercase tracking-widest mt-8">
           PrismJournal &copy; {new Date().getFullYear()}
         </p>
       </div>

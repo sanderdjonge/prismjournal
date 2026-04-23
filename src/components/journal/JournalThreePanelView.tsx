@@ -37,7 +37,7 @@ export function JournalThreePanelView({ trades }: JournalThreePanelViewProps) {
             {selectedTrade ? (
                 <TradeDetailPanel trade={selectedTrade} />
             ) : (
-                <div className="flex flex-col items-center justify-center border-l border-white/[0.06] text-gray-600" style={{ width: 340 }}>
+                <div className="flex flex-col items-center justify-center border-l border-border-subtle text-text-muted" style={{ width: 340 }}>
                     <span className="text-[9px] font-black uppercase tracking-widest">Select a trade to view details</span>
                 </div>
             )}

@@ -35,7 +35,7 @@ export default function BenchmarkComparison({ accountId, className = '' }: Bench
 
     if (isLoading) {
         return (
-            <div className={`glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6 ${className}`}>
+            <div className={`glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-6 ${className}`}>
                 <div className="flex items-center justify-center h-48">
                     <Loader2 className="w-8 h-8 text-primary animate-spin" />
                 </div>
@@ -69,14 +69,14 @@ export default function BenchmarkComparison({ accountId, className = '' }: Bench
     };
 
     return (
-        <div className={`glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-4 ${className}`}>
+        <div className={`glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-4 ${className}`}>
             {/* Header */}
             <div className="flex justify-between items-start mb-4">
                 <div>
                     <h4 className="text-sm font-semibold text-gray-100">
                         Benchmark Comparison
                     </h4>
-                    <p className="text-xs text-gray-500">vs S&P 500 (SPY)</p>
+                    <p className="text-xs text-text-muted">vs S&P 500 (SPY)</p>
                 </div>
                 <div className="text-right">
                     {comparison.outperformingSPY !== null && (
@@ -101,20 +101,20 @@ export default function BenchmarkComparison({ accountId, className = '' }: Bench
 
             {/* Stats Row */}
             <div className="grid grid-cols-3 gap-4 mb-4">
-                <div className="text-center p-2 rounded-lg bg-white/5">
-                    <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">Your Return</p>
+                <div className="text-center p-2 rounded-lg bg-surface-elevated">
+                    <p className="text-[10px] uppercase tracking-wider text-text-muted mb-1">Your Return</p>
                     <p className={`text-sm font-bold font-mono ${account.returnPercent >= 0 ? 'text-profit' : 'text-loss'}`}>
                         {account.returnPercent >= 0 ? '+' : ''}{formatPercent(account.returnPercent, 1)}
                     </p>
                 </div>
-                <div className="text-center p-2 rounded-lg bg-white/5">
-                    <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">SPY Return</p>
+                <div className="text-center p-2 rounded-lg bg-surface-elevated">
+                    <p className="text-[10px] uppercase tracking-wider text-text-muted mb-1">SPY Return</p>
                     <p className="text-sm font-bold font-mono text-blue-400">
                         {spy.returnPercent >= 0 ? '+' : ''}{formatPercent(spy.returnPercent, 1)}
                     </p>
                 </div>
-                <div className="text-center p-2 rounded-lg bg-white/5">
-                    <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">Difference</p>
+                <div className="text-center p-2 rounded-lg bg-surface-elevated">
+                    <p className="text-[10px] uppercase tracking-wider text-text-muted mb-1">Difference</p>
                     <p className={`text-sm font-bold font-mono ${(comparison.spyDifferencePercent ?? 0) >= 0 ? 'text-profit' : 'text-loss'}`}>
                         {(comparison.spyDifferencePercent ?? 0) >= 0 ? '+' : ''}{formatPercent(comparison.spyDifferencePercent ?? 0, 1)}
                     </p>
@@ -162,7 +162,7 @@ export default function BenchmarkComparison({ accountId, className = '' }: Bench
                                     const spyNum = typeof spyVal === 'number' ? spyVal : parseFloat(String(spyVal));
                                     return (
                                         <div className="glass-card p-3 border-primary/20 bg-black/80 backdrop-blur-md">
-                                            <p className="text-[10px] text-gray-500 mb-1">{label}</p>
+                                            <p className="text-[10px] text-text-muted mb-1">{label}</p>
                                             <p className="text-sm font-bold text-primary">
                                                 You: {isNaN(accountNum) ? 'N/A' : fmtDecimals(accountNum, 1)}
                                             </p>
@@ -201,11 +201,11 @@ export default function BenchmarkComparison({ accountId, className = '' }: Bench
             <div className="flex justify-center gap-6 mt-2">
                 <div className="flex items-center gap-1">
                     <div className="w-3 h-0.5 bg-primary rounded" />
-                    <span className="text-[10px] text-gray-500">Your Account</span>
+                    <span className="text-[10px] text-text-muted">Your Account</span>
                 </div>
                 <div className="flex items-center gap-1">
                     <div className="w-3 h-0.5 bg-blue-400 rounded" style={{ borderStyle: 'dashed' }} />
-                    <span className="text-[10px] text-gray-500">S&P 500</span>
+                    <span className="text-[10px] text-text-muted">S&P 500</span>
                 </div>
             </div>
         </div>

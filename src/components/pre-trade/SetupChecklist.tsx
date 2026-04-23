@@ -108,7 +108,7 @@ export const SetupChecklist = forwardRef<SetupChecklistRef, SetupChecklistProps>
 
     if (items.length === 0) {
         return (
-            <div className="text-xs text-gray-500 text-center py-4">
+            <div className="text-xs text-text-muted text-center py-4">
                 No setup checklist defined for this strategy
             </div>
         );
@@ -118,7 +118,7 @@ export const SetupChecklist = forwardRef<SetupChecklistRef, SetupChecklistProps>
         <div className="space-y-3">
             {/* Progress Bar */}
             <div className="flex items-center gap-3">
-                <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                <div className="flex-1 h-1.5 bg-surface-elevated rounded-full overflow-hidden">
                     <div
                         className={cn(
                             "h-full transition-all duration-300",
@@ -127,7 +127,7 @@ export const SetupChecklist = forwardRef<SetupChecklistRef, SetupChecklistProps>
                         style={{ width: `${completionPct}%` }}
                     />
                 </div>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-text-muted">
                     {checkedCount}/{totalCount}
                 </span>
             </div>
@@ -143,8 +143,8 @@ export const SetupChecklist = forwardRef<SetupChecklistRef, SetupChecklistProps>
                             "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg transition-colors text-left",
                             readOnly
                                 ? "cursor-default"
-                                : "hover:bg-white/5 cursor-pointer",
-                            item.checked && "bg-white/[0.02]"
+                                : "hover:bg-surface-hover cursor-pointer",
+                            item.checked && "bg-surface-elevated"
                         )}
                     >
                         {/* Checkbox */}
@@ -153,7 +153,7 @@ export const SetupChecklist = forwardRef<SetupChecklistRef, SetupChecklistProps>
                                 "w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0",
                                 item.checked
                                     ? "bg-profit/20 border-profit text-profit"
-                                    : "border-white/20 text-transparent"
+                                    : "border-border-color text-transparent"
                             )}
                         >
                             {item.checked ? <Check size={12} /> : <Square size={12} />}
@@ -163,7 +163,7 @@ export const SetupChecklist = forwardRef<SetupChecklistRef, SetupChecklistProps>
                         <span
                             className={cn(
                                 "text-xs transition-colors flex-1",
-                                item.checked ? "text-gray-300" : "text-gray-400"
+                                item.checked ? "text-text-secondary" : "text-text-muted"
                             )}
                         >
                             {item.label}

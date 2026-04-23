@@ -81,13 +81,13 @@ export function ScreenshotPanel({ trade }: ScreenshotPanelProps) {
         : null;
 
     return (
-        <div className="flex-1 min-w-0 flex flex-col min-h-0 bg-black/40">
+        <div className="flex-1 min-w-0 flex flex-col min-h-0 bg-surface-elevated">
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] flex-shrink-0">
-                <span className="text-[9px] font-black uppercase tracking-[0.22em] text-gray-500">Chart</span>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle flex-shrink-0">
+                <span className="text-[9px] font-black uppercase tracking-[0.22em] text-text-muted">Chart</span>
                 <div className="flex items-center gap-2">
                     {/* OPEN / CLOSE event toggle */}
-                    <div className="flex gap-[2px] bg-black/30 border border-white/[0.08] rounded-[7px] p-[2px]">
+                    <div className="flex gap-[2px] bg-black/30 border border-border-subtle rounded-[7px] p-[2px]">
                         {(['OPEN', 'CLOSE'] as const).map(ev => (
                             <button
                                 key={ev}
@@ -95,8 +95,8 @@ export function ScreenshotPanel({ trade }: ScreenshotPanelProps) {
                                 onClick={() => setSelectedEvent(ev)}
                                 className={`px-2 py-[2px] rounded-[5px] text-[9px] font-black uppercase tracking-[0.12em] transition-all ${
                                     selectedEvent === ev
-                                        ? 'bg-white/[0.08] text-white'
-                                        : 'text-gray-600 hover:text-gray-400'
+                                        ? 'bg-surface-hover text-text-primary'
+                                        : 'text-text-muted hover:text-text-muted'
                                 }`}
                             >
                                 {ev}
@@ -113,7 +113,7 @@ export function ScreenshotPanel({ trade }: ScreenshotPanelProps) {
                                 className={`px-2 py-[3px] rounded-[5px] text-[10px] font-black uppercase tracking-[0.12em] transition-all ${
                                     selectedTf === tf
                                         ? 'bg-primary/[0.12] text-primary'
-                                        : 'text-gray-600 hover:text-white hover:bg-white/[0.05]'
+                                        : 'text-text-muted hover:text-text-primary hover:bg-surface-hover'
                                 }`}
                             >
                                 {tf}
@@ -126,7 +126,7 @@ export function ScreenshotPanel({ trade }: ScreenshotPanelProps) {
             {/* Screenshot area */}
             <div className="flex-1 min-h-0 relative overflow-hidden flex items-center justify-center">
                 {loading && (
-                    <div className="text-[9px] font-black uppercase tracking-widest text-gray-700 animate-pulse">
+                    <div className="text-[9px] font-black uppercase tracking-widest text-text-muted animate-pulse">
                         Loading…
                     </div>
                 )}
@@ -138,7 +138,7 @@ export function ScreenshotPanel({ trade }: ScreenshotPanelProps) {
                 )}
 
                 {!loading && !error && !activeShot && (
-                    <div className="flex flex-col items-center gap-3 text-gray-700">
+                    <div className="flex flex-col items-center gap-3 text-text-muted">
                         <ImageOff size={28} strokeWidth={1.5} />
                         <span className="text-[9px] font-black uppercase tracking-[0.2em]">
                             {media.length === 0
@@ -156,7 +156,7 @@ export function ScreenshotPanel({ trade }: ScreenshotPanelProps) {
                             alt={`${trade?.symbol} ${activeShot.event} ${activeShot.timeframe}`}
                             className="w-full h-full object-contain"
                         />
-                        <div className="absolute bottom-3 left-3 text-[9px] font-black uppercase tracking-[0.15em] text-gray-500 bg-black/60 border border-white/[0.08] rounded-[5px] px-2 py-1">
+                        <div className="absolute bottom-3 left-3 text-[9px] font-black uppercase tracking-[0.15em] text-text-muted bg-black/60 border border-border-subtle rounded-[5px] px-2 py-1">
                             📷 Auto-captured at trade {selectedEvent.toLowerCase()}
                         </div>
                     </>
@@ -165,7 +165,7 @@ export function ScreenshotPanel({ trade }: ScreenshotPanelProps) {
 
             {/* Footer stats bar */}
             {trade && (
-                <div className="flex items-center justify-around px-4 py-3 border-t border-white/[0.06] flex-shrink-0">
+                <div className="flex items-center justify-around px-4 py-3 border-t border-border-subtle flex-shrink-0">
                     {[
                         { val: rr ?? '—', lbl: 'R Multiple', color: trade.pnl >= 0 ? 'text-profit' : 'text-loss' },
                         { val: duration ?? '—', lbl: 'Hold Time', color: 'text-white' },
@@ -174,7 +174,7 @@ export function ScreenshotPanel({ trade }: ScreenshotPanelProps) {
                     ].map(({ val, lbl, color }) => (
                         <div key={lbl} className="flex flex-col items-center gap-[3px]">
                             <span className={`font-mono text-[12px] font-bold ${color}`}>{val}</span>
-                            <span className="text-[7px] font-black uppercase tracking-[0.18em] text-gray-600">{lbl}</span>
+                            <span className="text-[7px] font-black uppercase tracking-[0.18em] text-text-muted">{lbl}</span>
                         </div>
                     ))}
                 </div>

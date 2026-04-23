@@ -73,7 +73,7 @@ function ResetPasswordContent() {
   };
 
   const inputClass =
-    'w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm font-bold text-white outline-none focus:border-primary/50 transition-all placeholder:text-gray-600';
+    'w-full bg-surface-elevated border border-border-color rounded-xl p-4 text-sm font-bold text-text-primary outline-none focus:border-primary/50 transition-all placeholder:text-text-muted';
 
   if (tokenValid === false) {
     return (
@@ -91,14 +91,14 @@ function ResetPasswordContent() {
             </p>
           </div>
 
-          <div className="glass-card bg-black/40 backdrop-blur-md border border-white/5 rounded-2xl p-8 text-center">
+          <div className="glass-card bg-surface-elevated backdrop-blur-md border border-border-subtle rounded-2xl p-8 text-center">
             <div className="w-16 h-16 bg-danger/20 rounded-full flex items-center justify-center mx-auto mb-6">
               <svg className="w-8 h-8 text-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </div>
             <h2 className="text-xl font-bold text-white mb-2">Invalid Link</h2>
-            <p className="text-gray-400 text-sm mb-6">
+            <p className="text-text-muted text-sm mb-6">
               This password reset link is invalid or has expired. Please request a new one.
             </p>
             <a
@@ -131,7 +131,7 @@ function ResetPasswordContent() {
         </div>
 
         {/* Card */}
-        <div className="glass-card bg-black/40 backdrop-blur-md border border-white/5 rounded-2xl p-8">
+        <div className="glass-card bg-surface-elevated backdrop-blur-md border border-border-subtle rounded-2xl p-8">
           {success ? (
             <div className="text-center">
               <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -140,7 +140,7 @@ function ResetPasswordContent() {
                 </svg>
               </div>
               <h2 className="text-xl font-bold text-white mb-2">Password Reset!</h2>
-              <p className="text-gray-400 text-sm mb-6">
+              <p className="text-text-muted text-sm mb-6">
                 Your password has been reset successfully. You can now sign in with your new password.
               </p>
               <a
@@ -154,14 +154,14 @@ function ResetPasswordContent() {
             <>
               <div className="text-center mb-8">
                 <h2 className="text-xl font-bold text-white mb-2">Reset Your Password</h2>
-                <p className="text-gray-400 text-sm">
+                <p className="text-text-muted text-sm">
                   Enter a new password for your account.
                 </p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-gray-600 mb-2">
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">
                     New Password
                   </label>
                   <input
@@ -173,13 +173,13 @@ function ResetPasswordContent() {
                     className={inputClass}
                     autoComplete="new-password"
                   />
-                  <p className="text-gray-500 text-[10px] mt-1">
+                  <p className="text-text-muted text-[10px] mt-1">
                     Min 8 chars, 1 uppercase, 1 lowercase, 1 number
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-gray-600 mb-2">
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">
                     Confirm Password
                   </label>
                   <input
@@ -213,7 +213,7 @@ function ResetPasswordContent() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-gray-700 text-[10px] font-bold uppercase tracking-widest mt-8">
+        <p className="text-center text-text-muted text-[10px] font-bold uppercase tracking-widest mt-8">
           PrismJournal &copy; {new Date().getFullYear()}
         </p>
       </div>

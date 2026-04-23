@@ -35,7 +35,7 @@ function RuleBadge({ rule }: { rule: ChallengeRule }) {
     }
     
     return (
-        <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 text-gray-400">
+        <span className="text-[9px] px-1.5 py-0.5 rounded bg-surface-elevated text-text-muted">
             {label}: {valueDisplay}
         </span>
     );
@@ -49,7 +49,7 @@ function ChallengeCard({ challenge, onClick }: { challenge: TradingChallenge; on
     return (
         <motion.button
             onClick={onClick}
-            className="w-full text-left p-3 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.05] transition-colors"
+            className="w-full text-left p-3 rounded-lg bg-surface-elevated border border-border-subtle hover:bg-surface-hover transition-colors"
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
         >
@@ -57,18 +57,18 @@ function ChallengeCard({ challenge, onClick }: { challenge: TradingChallenge; on
                 <div className="flex items-center gap-2">
                     <div className={cn(
                         "w-6 h-6 rounded-full flex items-center justify-center",
-                        challenge.isActive ? "bg-primary/20 text-primary" : "bg-gray-700 text-gray-500"
+                        challenge.isActive ? "bg-primary/20 text-primary" : "bg-gray-700 text-text-muted"
                     )}>
                         <Target size={14} />
                     </div>
                     <div>
                         <div className="text-sm font-semibold text-white">{challenge.name}</div>
-                        <div className="text-[9px] text-gray-500 uppercase tracking-wide">
+                        <div className="text-[9px] text-text-muted uppercase tracking-wide">
                             {challenge.isActive ? 'Active' : 'Inactive'}
                         </div>
                     </div>
                 </div>
-                <ChevronRight size={14} className="text-gray-600" />
+                <ChevronRight size={14} className="text-text-muted" />
             </div>
             
             {/* Rules */}
@@ -77,13 +77,13 @@ function ChallengeCard({ challenge, onClick }: { challenge: TradingChallenge; on
                     <RuleBadge key={i} rule={rule} />
                 ))}
                 {challenge.rules.length > 3 && (
-                    <span className="text-[9px] text-gray-500">+{challenge.rules.length - 3} more</span>
+                    <span className="text-[9px] text-text-muted">+{challenge.rules.length - 3} more</span>
                 )}
             </div>
             
             {/* Progress bar */}
             <div className="flex items-center gap-2">
-                <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                <div className="flex-1 h-1.5 bg-surface-elevated rounded-full overflow-hidden">
                     <motion.div
                         className={cn(
                             "h-full rounded-full",
@@ -94,7 +94,7 @@ function ChallengeCard({ challenge, onClick }: { challenge: TradingChallenge; on
                         transition={{ duration: 0.5 }}
                     />
                 </div>
-                <span className="text-[10px] font-medium text-gray-400">
+                <span className="text-[10px] font-medium text-text-muted">
                     {challenge.daysPassed}/{challenge.totalDays}
                 </span>
             </div>
@@ -164,17 +164,17 @@ function CreateChallengeModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
                                 </div>
                                 <div>
                                     <h2 className="text-base font-bold text-white">New Challenge</h2>
-                                    <p className="text-[10px] text-gray-500">Define rules and track progress</p>
+                                    <p className="text-[10px] text-text-muted">Define rules and track progress</p>
                                 </div>
                             </div>
-                            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/5 text-gray-400">
+                            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-surface-hover text-text-muted">
                                 <X size={16} />
                             </button>
                         </div>
                         
                         <div className="flex-1 p-4 space-y-4 overflow-y-auto">
                             <div>
-                                <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1.5 block">
+                                <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1.5 block">
                                     Challenge Name
                                 </label>
                                 <input
@@ -182,25 +182,25 @@ function CreateChallengeModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
                                     value={name}
                                     onChange={e => setName(e.target.value)}
                                     placeholder="e.g., $200/day max loss"
-                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary/40"
+                                    className="w-full bg-surface-elevated border border-border-color rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary/40"
                                 />
                             </div>
                             
                             <div>
-                                <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1.5 block">
+                                <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1.5 block">
                                     Description (optional)
                                 </label>
                                 <textarea
                                     value={description}
                                     onChange={e => setDescription(e.target.value)}
                                     placeholder="What's the goal?"
-                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary/40 resize-none h-16"
+                                    className="w-full bg-surface-elevated border border-border-color rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary/40 resize-none h-16"
                                 />
                             </div>
                             
                             <div>
                                 <div className="flex items-center justify-between mb-2">
-                                    <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                                    <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
                                         Rules
                                     </label>
                                     <button
@@ -214,11 +214,11 @@ function CreateChallengeModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
                                 
                                 <div className="space-y-2">
                                     {rules.map((rule, i) => (
-                                        <div key={i} className="flex items-center gap-2 p-2 bg-white/[0.03] rounded-lg">
+                                        <div key={i} className="flex items-center gap-2 p-2 bg-surface-elevated rounded-lg">
                                             <select
                                                 value={rule.type}
                                                 onChange={e => updateRule(i, { type: e.target.value as ChallengeRule['type'] })}
-                                                className="flex-1 bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-white focus:outline-none"
+                                                className="flex-1 bg-surface-elevated border border-border-color rounded px-2 py-1 text-xs text-white focus:outline-none"
                                             >
                                                 {Object.entries(RULE_LABELS).map(([value, label]) => (
                                                     <option key={value} value={value}>{label}</option>
@@ -228,18 +228,18 @@ function CreateChallengeModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
                                                 type="number"
                                                 value={rule.value as number}
                                                 onChange={e => updateRule(i, { value: parseFloat(e.target.value) || 0 })}
-                                                className="w-20 bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-white text-center focus:outline-none"
+                                                className="w-20 bg-surface-elevated border border-border-color rounded px-2 py-1 text-xs text-white text-center focus:outline-none"
                                             />
                                             <button
                                                 onClick={() => removeRule(i)}
-                                                className="p-1 text-gray-500 hover:text-loss"
+                                                className="p-1 text-text-muted hover:text-loss"
                                             >
                                                 <X size={12} />
                                             </button>
                                         </div>
                                     ))}
                                     {rules.length === 0 && (
-                                        <div className="text-center py-4 text-gray-600 text-xs">
+                                        <div className="text-center py-4 text-text-muted text-xs">
                                             No rules added yet. Click "Add Rule" to start.
                                         </div>
                                     )}
@@ -250,7 +250,7 @@ function CreateChallengeModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
                         <div className="p-4 border-t border-border-subtle flex justify-end gap-2">
                             <button
                                 onClick={onClose}
-                                className="px-4 py-2 text-xs font-medium text-gray-400 hover:text-white transition-colors"
+                                className="px-4 py-2 text-xs font-medium text-text-muted hover:text-text-primary transition-colors"
                             >
                                 Cancel
                             </button>
@@ -278,11 +278,11 @@ export function ChallengeProgressWidget() {
     
     return (
         <>
-            <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-4">
+            <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-4">
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                         <Target className="text-primary" size={16} />
-                        <span className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">
+                        <span className="text-[10px] font-black uppercase tracking-[0.18em] text-text-muted">
                             Challenges
                         </span>
                     </div>
@@ -295,13 +295,13 @@ export function ChallengeProgressWidget() {
                 </div>
                 
                 {isLoading ? (
-                    <div className="flex items-center justify-center py-8 text-gray-600">
+                    <div className="flex items-center justify-center py-8 text-text-muted">
                         <Spinner size="sm" />
                     </div>
                 ) : activeChallenges.length === 0 ? (
                     <div className="text-center py-6">
-                        <Target size={24} className="mx-auto text-gray-700 mb-2" />
-                        <p className="text-xs text-gray-600">No active challenges</p>
+                        <Target size={24} className="mx-auto text-text-muted mb-2" />
+                        <p className="text-xs text-text-muted">No active challenges</p>
                         <button
                             onClick={() => setIsCreateOpen(true)}
                             className="text-[10px] text-primary hover:text-primary/80 mt-2"

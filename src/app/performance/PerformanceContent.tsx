@@ -99,7 +99,7 @@ export function PerformanceContent() {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-1">
                 <div>
                     <h1 className="text-4xl font-black text-white tracking-tighter uppercase italic">Performance Ledger</h1>
-                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 mt-2">
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-text-muted mt-2">
                         Deep Audit of Equity Evolution & Edge Stability
                     </p>
                 </div>
@@ -121,10 +121,10 @@ export function PerformanceContent() {
             {/* Top Row: Equity Chart + Expectancy Gauge */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Equity Curve */}
-                <div className="lg:col-span-2 glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
+                <div className="lg:col-span-2 glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-6">
                     <div className="mb-4">
                         <h3 className="text-sm font-semibold text-gray-100">Master Equity Curve</h3>
-                        <p className="text-xs text-gray-500">Account balance over time</p>
+                        <p className="text-xs text-text-muted">Account balance over time</p>
                     </div>
                     <div className="h-[250px]">
                         <EquityChart data={data.equity} showHeader={false} />
@@ -132,7 +132,7 @@ export function PerformanceContent() {
                 </div>
 
                 {/* Expectancy Gauge */}
-                <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6 flex flex-col items-center justify-center">
+                <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-6 flex flex-col items-center justify-center">
                     <Gauge
                         value={Math.abs(data.expectancy)}
                         max={Math.max(Math.abs(data.expectancy) * 2, 1000)}
@@ -140,13 +140,13 @@ export function PerformanceContent() {
                         subLabel="Value Per Trade"
                         variant="secondary"
                     />
-                    <div className="mt-4 pt-4 border-t border-white/5 w-full space-y-2">
+                    <div className="mt-4 pt-4 border-t border-border-subtle w-full space-y-2">
                         <div className="flex justify-between items-center">
-                            <span className="text-[8px] font-black uppercase text-gray-600 tracking-widest">Avg. Win</span>
+                            <span className="text-[8px] font-black uppercase text-text-muted tracking-widest">Avg. Win</span>
                             <span className="text-[10px] font-bold text-profit">{formatAmount(data.avgWin, { showSign: true })}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                            <span className="text-[8px] font-black uppercase text-gray-600 tracking-widest">Avg. Loss</span>
+                            <span className="text-[8px] font-black uppercase text-text-muted tracking-widest">Avg. Loss</span>
                             <span className="text-[10px] font-bold text-loss">-{formatAmount(data.avgLoss)}</span>
                         </div>
                     </div>
@@ -156,8 +156,8 @@ export function PerformanceContent() {
             {/* Stats Row */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {STATS.map(stat => (
-                    <div key={stat.id} className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-5 flex flex-col justify-center space-y-1">
-                        <div className="flex justify-between items-center text-gray-500">
+                    <div key={stat.id} className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-5 flex flex-col justify-center space-y-1">
+                        <div className="flex justify-between items-center text-text-muted">
                             <span className="text-[8px] font-black uppercase tracking-widest">{stat.label}</span>
                             <stat.icon size={12} />
                         </div>
@@ -169,11 +169,11 @@ export function PerformanceContent() {
             {/* Edge Evolution & Trading Hours - 2 columns */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Edge Evolution */}
-                <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
+                <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-6">
                     <div className="flex items-center justify-between mb-6">
                         <div>
                             <h3 className="text-sm font-semibold text-gray-100">Edge Evolution</h3>
-                            <p className="text-xs text-gray-500">Expectancy trend over time</p>
+                            <p className="text-xs text-text-muted">Expectancy trend over time</p>
                         </div>
                         <Zap size={14} className="text-primary/40" />
                     </div>
@@ -189,8 +189,8 @@ export function PerformanceContent() {
                                             if (!active || !payload?.length) return null;
                                             const d = payload[0].payload;
                                             return (
-                                                <div className="bg-black/90 border border-white/10 rounded-lg px-3 py-2 text-[10px] font-black space-y-1">
-                                                    <p className="text-gray-400">Trade #{d.trade}</p>
+                                                <div className="bg-black/90 border border-border-color rounded-lg px-3 py-2 text-[10px] font-black space-y-1">
+                                                    <p className="text-text-muted">Trade #{d.trade}</p>
                                                     <p className={d.val >= 0 ? 'text-profit' : 'text-loss'}>
                                                         Avg P&L: {d.val >= 0 ? '+' : ''}{formatAmount(d.val)}
                                                     </p>
@@ -202,7 +202,7 @@ export function PerformanceContent() {
                                 </ComposedChart>
                             </ResponsiveContainer>
                         ) : (
-                            <div className="flex items-center justify-center h-full text-gray-700 text-[10px] font-black uppercase tracking-widest">Need more trades</div>
+                            <div className="flex items-center justify-center h-full text-text-muted text-[10px] font-black uppercase tracking-widest">Need more trades</div>
                         )}
                     </div>
                 </div>
@@ -224,7 +224,7 @@ export function PerformanceContent() {
             </div>
 
             {/* Daily P&L Calendar */}
-            <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl overflow-hidden">
+            <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl overflow-hidden">
                 <TradeCalendar
                     data={dailyCalendarData?.days ?? []}
                     accountBalance={data.equity.length > 0 ? data.equity[data.equity.length - 1].value : undefined}
@@ -232,17 +232,17 @@ export function PerformanceContent() {
             </div>
 
             {/* Monthly Return Matrix */}
-            <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6 overflow-hidden">
+            <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-6 overflow-hidden">
                 <div className="mb-6 flex items-center gap-2">
-                    <BarChart3 size={14} className="text-gray-500" />
+                    <BarChart3 size={14} className="text-text-muted" />
                     <div>
                         <h3 className="text-sm font-semibold text-gray-100">Monthly Return Matrix</h3>
-                        <p className="text-xs text-gray-500">Performance by month</p>
+                        <p className="text-xs text-text-muted">Performance by month</p>
                     </div>
                 </div>
                 <div className="grid grid-cols-12 gap-1.5 text-center">
                     {MONTH_LABELS.map((m, i) => (
-                        <div key={i} className="text-[8px] font-black text-gray-700 uppercase mb-1">{m}</div>
+                        <div key={i} className="text-[8px] font-black text-text-muted uppercase mb-1">{m}</div>
                     ))}
                     {monthlyReturns.map((r, i) => (
                         <div

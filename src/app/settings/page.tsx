@@ -590,7 +590,7 @@ function SettingsContent() {
                                 "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 border font-bold uppercase tracking-widest text-[10px]",
                                 activeTab === tab.id
                                     ? "bg-primary/10 text-primary border-primary/20 shadow-[0_0_15px_rgba(0,242,255,0.1)]"
-                                    : "text-gray-500 hover:text-white hover:bg-white/5 border-transparent"
+                                    : "text-text-muted hover:text-text-primary hover:bg-surface-hover border-transparent"
                             )}
                         >
                             <tab.icon size={16} />
@@ -600,22 +600,22 @@ function SettingsContent() {
                 </aside>
 
                 {/* Content Area */}
-                <main className="flex-1 glass-card bg-surface-card backdrop-blur-md p-4 md:p-6 lg:p-10 border-white/5 min-h-[600px] flex flex-col">
+                <main className="flex-1 glass-card bg-surface-card backdrop-blur-md p-4 md:p-6 lg:p-10 border-border-subtle min-h-[600px] flex flex-col">
 
                     {activeTab === 'preferences' && (
                         <div className="space-y-10 animate-fade-in">
                             <div>
                                 <h3 className="text-2xl font-black text-white tracking-tighter uppercase italic mb-2">Preferences</h3>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Tailor the Prism interface to your regional requirements</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">Tailor the Prism interface to your regional requirements</p>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-600 px-1">Base Account Currency</label>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-1">Base Account Currency</label>
                                     <select
                                         value={currency}
                                         onChange={(e) => setCurrency(e.target.value)}
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm font-bold text-white outline-none focus:border-primary/50 transition-all appearance-none"
+                                        className="w-full bg-surface-elevated border border-border-color rounded-xl p-4 text-sm font-bold text-text-primary outline-none focus:border-primary/50 transition-all appearance-none"
                                     >
                                         {CURRENCY_OPTIONS.map((o) => (
                                             <option key={o.value} value={o.value}>{o.label}</option>
@@ -623,11 +623,11 @@ function SettingsContent() {
                                     </select>
                                 </div>
                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-600 px-1">System Timezone</label>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-1">System Timezone</label>
                                     <select
                                         value={timezone}
                                         onChange={(e) => setTimezone(e.target.value)}
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm font-bold text-white outline-none focus:border-primary/50 transition-all appearance-none"
+                                        className="w-full bg-surface-elevated border border-border-color rounded-xl p-4 text-sm font-bold text-text-primary outline-none focus:border-primary/50 transition-all appearance-none"
                                     >
                                         {TIMEZONE_OPTIONS.map((o) => (
                                             <option key={o.value} value={o.value}>{o.label}</option>
@@ -635,11 +635,11 @@ function SettingsContent() {
                                     </select>
                                 </div>
                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-600 px-1">Date Format</label>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-1">Date Format</label>
                                     <select
                                         value={dateFormat}
                                         onChange={(e) => setDateFormat(e.target.value)}
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm font-bold text-white outline-none focus:border-primary/50 transition-all appearance-none"
+                                        className="w-full bg-surface-elevated border border-border-color rounded-xl p-4 text-sm font-bold text-text-primary outline-none focus:border-primary/50 transition-all appearance-none"
                                     >
                                         {DATE_FORMAT_OPTIONS.map((o) => (
                                             <option key={o.value} value={o.value}>{o.label}</option>
@@ -654,25 +654,25 @@ function SettingsContent() {
                         <div className="space-y-10 animate-fade-in">
                             <div>
                                 <h3 className="text-2xl font-black text-white tracking-tighter uppercase italic mb-2">Notification Matrix</h3>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Configure how and when the system communicates critical events</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">Configure how and when the system communicates critical events</p>
                             </div>
 
                             {/* Telegram Connection */}
                             <div className="space-y-4">
-                                <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 border-b border-white/5 pb-2">Telegram Connection</h4>
-                                <div className="glass-card p-6 border-white/5 bg-white/5 space-y-4">
-                                    <p className="text-xs text-gray-400 leading-relaxed">
+                                <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-text-muted border-b border-border-subtle pb-2">Telegram Connection</h4>
+                                <div className="glass-card p-6 border-border-subtle bg-surface-elevated space-y-4">
+                                    <p className="text-xs text-text-muted leading-relaxed">
                                         Open <a href="https://t.me/prismjournal_bot" target="_blank" rel="noopener" className="text-primary font-bold hover:underline">@prismjournal_bot</a> in Telegram, send <span className="font-mono text-white">/start</span> to get your Chat ID, then paste it below.
                                     </p>
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">Telegram Chat ID</label>
+                                        <label className="text-[9px] font-black uppercase tracking-widest text-text-muted">Telegram Chat ID</label>
                                         <div className="flex items-center gap-2">
                                             <input
                                                 type="text"
                                                 value={notifs.telegramId}
                                                 onChange={(e) => setNotifs(prev => ({ ...prev, telegramId: e.target.value }))}
                                                 placeholder="e.g. 123456789"
-                                                className="flex-1 glass-card px-4 py-3 border-white/5 bg-surface-card font-mono text-sm text-white outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                                className="flex-1 glass-card px-4 py-3 border-border-subtle bg-surface-card font-mono text-sm text-white outline-none focus:border-primary/50 transition-all placeholder:text-text-muted"
                                             />
                                             <button
                                                 onClick={async () => {
@@ -685,7 +685,7 @@ function SettingsContent() {
                                                     finally { setTestingSend(false); setTimeout(() => setTestResult(null), 3000); }
                                                 }}
                                                 disabled={testingSend || !notifs.telegramId}
-                                                className="px-4 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all disabled:opacity-40 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-gray-500 hover:text-white"
+                                                className="px-4 py-3 rounded-xl border border-border-color hover:bg-surface-hover transition-all disabled:opacity-40 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-text-muted hover:text-text-primary"
                                                 title="Send test message"
                                             >
                                                 {testingSend ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
@@ -700,20 +700,20 @@ function SettingsContent() {
 
                             {/* Email Notifications */}
                             <div className="space-y-4">
-                                <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 border-b border-white/5 pb-2">Email Notifications</h4>
-                                <div className="glass-card p-6 border-white/5 bg-white/5 space-y-4">
-                                    <p className="text-xs text-gray-400 leading-relaxed">
+                                <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-text-muted border-b border-border-subtle pb-2">Email Notifications</h4>
+                                <div className="glass-card p-6 border-border-subtle bg-surface-elevated space-y-4">
+                                    <p className="text-xs text-text-muted leading-relaxed">
                                         Configure your email address to receive weekly performance digests and drawdown alerts.
                                     </p>
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">Email Address</label>
+                                        <label className="text-[9px] font-black uppercase tracking-widest text-text-muted">Email Address</label>
                                         <div className="flex items-center gap-2">
                                             <input
                                                 type="email"
                                                 value={notifs.email}
                                                 onChange={(e) => setNotifs(prev => ({ ...prev, email: e.target.value }))}
                                                 placeholder="your@email.com"
-                                                className="flex-1 glass-card px-4 py-3 border-white/5 bg-surface-card text-sm text-white outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                                className="flex-1 glass-card px-4 py-3 border-border-subtle bg-surface-card text-sm text-white outline-none focus:border-primary/50 transition-all placeholder:text-text-muted"
                                             />
                                             <button
                                                 onClick={async () => {
@@ -726,7 +726,7 @@ function SettingsContent() {
                                                     finally { setTestingEmail(false); setTimeout(() => setEmailTestResult(null), 3000); }
                                                 }}
                                                 disabled={testingEmail || !notifs.email}
-                                                className="px-4 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all disabled:opacity-40 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-gray-500 hover:text-white"
+                                                className="px-4 py-3 rounded-xl border border-border-color hover:bg-surface-hover transition-all disabled:opacity-40 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-text-muted hover:text-text-primary"
                                                 title="Send test email"
                                             >
                                                 {testingEmail ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
@@ -742,7 +742,7 @@ function SettingsContent() {
                                         <div className="flex items-center justify-between py-2">
                                             <div>
                                                 <h5 className="text-sm font-bold text-white">Performance Digest Email</h5>
-                                                <p className="text-[10px] text-gray-500">Receive a summary of your trading performance by email</p>
+                                                <p className="text-[10px] text-text-muted">Receive a summary of your trading performance by email</p>
                                             </div>
                                             <div className="flex items-center gap-3">
                                                 <a
@@ -756,7 +756,7 @@ function SettingsContent() {
                                                     onClick={() => setNotifs((prev) => ({ ...prev, enableWeeklyDigestEmail: !prev.enableWeeklyDigestEmail }))}
                                                     className={cn(
                                                         "w-12 h-6 rounded-full transition-all relative shrink-0",
-                                                        notifs.enableWeeklyDigestEmail ? "bg-primary/40" : "bg-white/10"
+                                                        notifs.enableWeeklyDigestEmail ? "bg-primary/40" : "bg-surface-hover"
                                                     )}
                                                 >
                                                     <div className={cn(
@@ -767,10 +767,10 @@ function SettingsContent() {
                                             </div>
                                         </div>
                                         {notifs.enableWeeklyDigestEmail && (
-                                            <div className="ml-0 pl-4 border-l border-white/5 space-y-3 pb-2">
+                                            <div className="ml-0 pl-4 border-l border-border-subtle space-y-3 pb-2">
                                                 <div className="flex items-center gap-4">
                                                     <div className="space-y-1">
-                                                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">Frequency</label>
+                                                        <label className="text-[9px] font-black uppercase tracking-widest text-text-muted">Frequency</label>
                                                         <div className="flex gap-2">
                                                             {(['DAILY', 'WEEKLY'] as const).map((f) => (
                                                                 <button
@@ -781,7 +781,7 @@ function SettingsContent() {
                                                                         "px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-wide transition-all",
                                                                         notifs.digestFrequency === f
                                                                             ? "bg-primary/10 border-primary/30 text-primary"
-                                                                            : "bg-surface-elevated border-white/10 text-gray-500 hover:text-white"
+                                                                            : "bg-surface-elevated border-border-color text-text-muted hover:text-text-primary"
                                                                     )}
                                                                 >
                                                                     {f === 'DAILY' ? 'Daily' : 'Weekly (Mon)'}
@@ -790,11 +790,11 @@ function SettingsContent() {
                                                         </div>
                                                     </div>
                                                     <div className="space-y-1">
-                                                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">Send at</label>
+                                                        <label className="text-[9px] font-black uppercase tracking-widest text-text-muted">Send at</label>
                                                         <select
                                                             value={notifs.digestSendHour}
                                                             onChange={(e) => setNotifs(prev => ({ ...prev, digestSendHour: parseInt(e.target.value) }))}
-                                                            className="px-3 py-1.5 bg-surface-card border border-white/10 rounded-lg text-white text-xs outline-none focus:border-primary/50 transition-all"
+                                                            className="px-3 py-1.5 bg-surface-card border border-border-color rounded-lg text-white text-xs outline-none focus:border-primary/50 transition-all"
                                                         >
                                                             {Array.from({ length: 24 }, (_, utcHour) => {
                                                                 // Convert UTC hour to user's local time for display
@@ -822,13 +822,13 @@ function SettingsContent() {
                                         <div className="flex items-center justify-between py-2">
                                             <div>
                                                 <h5 className="text-sm font-bold text-white">Drawdown Email Alerts</h5>
-                                                <p className="text-[10px] text-gray-500">Get email alerts when drawdown exceeds threshold</p>
+                                                <p className="text-[10px] text-text-muted">Get email alerts when drawdown exceeds threshold</p>
                                             </div>
                                             <button
                                                 onClick={() => setNotifs((prev) => ({ ...prev, enableMddEmailAlerts: !prev.enableMddEmailAlerts }))}
                                                 className={cn(
                                                     "w-12 h-6 rounded-full transition-all relative shrink-0",
-                                                    notifs.enableMddEmailAlerts ? "bg-primary/40" : "bg-white/10"
+                                                    notifs.enableMddEmailAlerts ? "bg-primary/40" : "bg-surface-hover"
                                                 )}
                                             >
                                                 <div className={cn(
@@ -843,18 +843,18 @@ function SettingsContent() {
 
                             {/* Alert Toggles */}
                             <div className="space-y-4">
-                                <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 border-b border-white/5 pb-2">Alert Types</h4>
+                                <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-text-muted border-b border-border-subtle pb-2">Alert Types</h4>
                                 {notifRows.map((row) => (
-                                    <div key={row.key} className="glass-card p-6 border-white/5 bg-white/5 flex items-center justify-between group hover:bg-white/[0.08] transition-all">
+                                    <div key={row.key} className="glass-card p-6 border-border-subtle bg-surface-elevated flex items-center justify-between group hover:bg-surface-hover transition-all">
                                         <div>
                                             <h4 className="text-sm font-black text-white uppercase tracking-tight">{row.label}</h4>
-                                            <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mt-1">{row.desc}</p>
+                                            <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-1">{row.desc}</p>
                                         </div>
                                         <button
                                             onClick={() => setNotifs((prev) => ({ ...prev, [row.key]: !prev[row.key] as boolean }))}
                                             className={cn(
                                                 "w-12 h-6 rounded-full transition-all relative shrink-0",
-                                                notifs[row.key] ? "bg-primary/40" : "bg-white/10"
+                                                notifs[row.key] ? "bg-primary/40" : "bg-surface-hover"
                                             )}
                                         >
                                             <div className={cn(
@@ -868,10 +868,10 @@ function SettingsContent() {
 
                             {/* Drawdown Threshold */}
                             <div className="space-y-4">
-                                <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 border-b border-white/5 pb-2">Risk Thresholds</h4>
-                                <div className="glass-card p-6 border-white/5 bg-white/5 space-y-3">
-                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">Max Drawdown Alert (%)</label>
-                                    <p className="text-[10px] text-gray-500">Get alerted when your equity drawdown exceeds this percentage</p>
+                                <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-text-muted border-b border-border-subtle pb-2">Risk Thresholds</h4>
+                                <div className="glass-card p-6 border-border-subtle bg-surface-elevated space-y-3">
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-text-muted">Max Drawdown Alert (%)</label>
+                                    <p className="text-[10px] text-text-muted">Get alerted when your equity drawdown exceeds this percentage</p>
                                     <input
                                         type="number"
                                         step="0.5"
@@ -880,7 +880,7 @@ function SettingsContent() {
                                         value={notifs.mddThreshold}
                                         onChange={(e) => setNotifs(prev => ({ ...prev, mddThreshold: e.target.value }))}
                                         placeholder="e.g. 5"
-                                        className="w-32 glass-card px-4 py-3 border-white/5 bg-surface-card font-mono text-sm text-white outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                        className="w-32 glass-card px-4 py-3 border-border-subtle bg-surface-card font-mono text-sm text-white outline-none focus:border-primary/50 transition-all placeholder:text-text-muted"
                                     />
                                 </div>
                             </div>
@@ -891,13 +891,13 @@ function SettingsContent() {
                         <div className="space-y-10 animate-fade-in">
                             <div>
                                 <h3 className="text-2xl font-black text-white tracking-tighter uppercase italic mb-2">Security Settings</h3>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Protect your account with two-factor authentication</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">Protect your account with two-factor authentication</p>
                             </div>
 
                             {/* 2FA Section */}
                             <div className="space-y-4">
-                                <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 border-b border-white/5 pb-2">Two-Factor Authentication</h4>
-                                <div className="glass-card p-6 border-white/5 bg-white/5 space-y-4">
+                                <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-text-muted border-b border-border-subtle pb-2">Two-Factor Authentication</h4>
+                                <div className="glass-card p-6 border-border-subtle bg-surface-elevated space-y-4">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-4">
                                             <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -905,7 +905,7 @@ function SettingsContent() {
                                             </div>
                                             <div>
                                                 <h5 className="text-sm font-bold text-white">Authenticator App</h5>
-                                                <p className="text-[10px] text-gray-500">
+                                                <p className="text-[10px] text-text-muted">
                                                     {twoFAEnabled 
                                                         ? '2FA is currently enabled on your account'
                                                         : 'Use an authenticator app to generate one-time codes'}
@@ -916,7 +916,7 @@ function SettingsContent() {
                                             "px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest",
                                             twoFAEnabled 
                                                 ? "bg-accent/10 text-accent" 
-                                                : "bg-white/10 text-gray-500"
+                                                : "bg-surface-hover text-text-muted"
                                         )}>
                                             {twoFAEnabled ? 'Enabled' : 'Disabled'}
                                         </div>
@@ -949,27 +949,27 @@ function SettingsContent() {
                                     )}
 
                                     {show2FASetup && twoFAQrCode && (
-                                        <div className="space-y-4 pt-4 border-t border-white/10">
+                                        <div className="space-y-4 pt-4 border-t border-border-color">
                                             <div className="flex flex-col items-center gap-4">
                                                 <div className="p-4 bg-white rounded-xl">
                                                     <img src={twoFAQrCode} alt="2FA QR Code" className="w-40 h-40" />
                                                 </div>
-                                                <p className="text-[10px] text-gray-500 text-center">
+                                                <p className="text-[10px] text-text-muted text-center">
                                                     Scan this QR code with your authenticator app
                                                 </p>
-                                                <div className="text-xs font-mono text-gray-400 bg-surface-card px-3 py-1.5 rounded-lg">
+                                                <div className="text-xs font-mono text-text-muted bg-surface-card px-3 py-1.5 rounded-lg">
                                                     Secret: {twoFASecret}
                                                 </div>
                                             </div>
 
                                             <div className="space-y-2">
-                                                <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">Verification Code</label>
+                                                <label className="text-[9px] font-black uppercase tracking-widest text-text-muted">Verification Code</label>
                                                 <input
                                                     type="text"
                                                     value={twoFACode}
                                                     onChange={(e) => setTwoFACode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                                                     placeholder="Enter 6-digit code"
-                                                    className="w-full glass-card px-4 py-3 border-white/5 bg-surface-card font-mono text-lg text-white text-center tracking-[0.5em] outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                                    className="w-full glass-card px-4 py-3 border-border-subtle bg-surface-card font-mono text-lg text-white text-center tracking-[0.5em] outline-none focus:border-primary/50 transition-all placeholder:text-text-muted"
                                                 />
                                             </div>
 
@@ -985,7 +985,7 @@ function SettingsContent() {
                                                         setTwoFACode('');
                                                         setTwoFAError(null);
                                                     }}
-                                                    className="flex-1 p-3 rounded-xl border border-white/10 text-gray-500 text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all"
+                                                    className="flex-1 p-3 rounded-xl border border-border-color text-text-muted text-[10px] font-black uppercase tracking-widest hover:bg-surface-hover transition-all"
                                                 >
                                                     Cancel
                                                 </button>
@@ -1030,8 +1030,8 @@ function SettingsContent() {
                                     )}
 
                                     {showDisable2FA && (
-                                        <div className="space-y-4 pt-4 border-t border-white/10">
-                                            <p className="text-xs text-gray-400">
+                                        <div className="space-y-4 pt-4 border-t border-border-color">
+                                            <p className="text-xs text-text-muted">
                                                 Enter your password to disable 2FA
                                             </p>
                                             <input
@@ -1039,7 +1039,7 @@ function SettingsContent() {
                                                 value={disable2FAPassword}
                                                 onChange={(e) => setDisable2FAPassword(e.target.value)}
                                                 placeholder="Enter your password"
-                                                className="w-full glass-card px-4 py-3 border-white/5 bg-surface-card text-sm text-white outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                                className="w-full glass-card px-4 py-3 border-border-subtle bg-surface-card text-sm text-white outline-none focus:border-primary/50 transition-all placeholder:text-text-muted"
                                             />
                                             {twoFAError && <p className="text-danger text-[10px]">{twoFAError}</p>}
                                             <div className="flex gap-3">
@@ -1049,7 +1049,7 @@ function SettingsContent() {
                                                         setDisable2FAPassword('');
                                                         setTwoFAError(null);
                                                     }}
-                                                    className="flex-1 p-3 rounded-xl border border-white/10 text-gray-500 text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all"
+                                                    className="flex-1 p-3 rounded-xl border border-border-color text-text-muted text-[10px] font-black uppercase tracking-widest hover:bg-surface-hover transition-all"
                                                 >
                                                     Cancel
                                                 </button>
@@ -1089,18 +1089,18 @@ function SettingsContent() {
 
                             {/* Password Section */}
                             <div className="space-y-4">
-                                <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 border-b border-white/5 pb-2">Password</h4>
-                                <div className="glass-card p-6 border-white/5 bg-white/5 flex items-center justify-between">
+                                <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-text-muted border-b border-border-subtle pb-2">Password</h4>
+                                <div className="glass-card p-6 border-border-subtle bg-surface-elevated flex items-center justify-between">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center">
-                                            <Key size={24} className="text-gray-400" />
+                                        <div className="w-12 h-12 rounded-xl bg-surface-elevated flex items-center justify-center">
+                                            <Key size={24} className="text-text-muted" />
                                         </div>
                                         <div>
                                             <h5 className="text-sm font-bold text-white">Change Password</h5>
-                                            <p className="text-[10px] text-gray-500">Update your account password</p>
+                                            <p className="text-[10px] text-text-muted">Update your account password</p>
                                         </div>
                                     </div>
-                                    <button className="px-4 py-2 rounded-xl border border-white/10 text-gray-500 text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all">
+                                    <button className="px-4 py-2 rounded-xl border border-border-color text-text-muted text-[10px] font-black uppercase tracking-widest hover:bg-surface-hover transition-all">
                                         Change
                                     </button>
                                 </div>
@@ -1112,28 +1112,28 @@ function SettingsContent() {
                         <div className="space-y-8 animate-fade-in">
                             <div>
                                 <h3 className="text-2xl font-black text-white tracking-tighter uppercase italic mb-2">Tag Management</h3>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Organize your trades with custom tags</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">Organize your trades with custom tags</p>
                             </div>
 
                             {/* Add new tag */}
-                            <div className="glass-card p-6 border-white/5 bg-white/5">
-                                <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 mb-4">Create New Tag</h4>
+                            <div className="glass-card p-6 border-border-subtle bg-surface-elevated">
+                                <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-text-muted mb-4">Create New Tag</h4>
                                 <div className="flex items-center gap-4">
                                     <input
                                         type="text"
                                         value={newTagName}
                                         onChange={(e) => setNewTagName(e.target.value)}
                                         placeholder="Tag name"
-                                        className="flex-1 px-4 py-2 bg-surface-card border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                        className="flex-1 px-4 py-2 bg-surface-card border border-border-color rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-text-muted"
                                     />
                                     <div className="flex items-center gap-2">
                                         <input
                                             type="color"
                                             value={newTagColor}
                                             onChange={(e) => setNewTagColor(e.target.value)}
-                                            className="w-10 h-10 rounded-lg border border-white/10 cursor-pointer"
+                                            className="w-10 h-10 rounded-lg border border-border-color cursor-pointer"
                                         />
-                                        <span className="text-[10px] font-mono text-gray-500">{newTagColor}</span>
+                                        <span className="text-[10px] font-mono text-text-muted">{newTagColor}</span>
                                     </div>
                                     <button
                                         onClick={async () => {
@@ -1160,15 +1160,15 @@ function SettingsContent() {
                             </div>
 
                             {/* Tags list */}
-                            <div className="glass-card p-6 border-white/5 bg-white/5">
-                                <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 mb-4">Your Tags</h4>
+                            <div className="glass-card p-6 border-border-subtle bg-surface-elevated">
+                                <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-text-muted mb-4">Your Tags</h4>
                                 
                                 {tagsLoading ? (
                                     <div className="flex items-center justify-center py-8">
                                         <Loader2 className="w-6 h-6 animate-spin text-primary" />
                                     </div>
                                 ) : tags.length === 0 ? (
-                                    <div className="text-center py-8 text-gray-500">
+                                    <div className="text-center py-8 text-text-muted">
                                         <Tag size={32} className="mx-auto mb-2 opacity-50" />
                                         <p className="text-sm">No tags yet. Create your first tag above.</p>
                                     </div>
@@ -1177,7 +1177,7 @@ function SettingsContent() {
                                         {tags.map((tag) => (
                                             <div
                                                 key={tag.id}
-                                                className="flex items-center justify-between p-3 rounded-lg border border-white/5 hover:border-white/10 transition-all"
+                                                className="flex items-center justify-between p-3 rounded-lg border border-border-subtle hover:border-border-color transition-all"
                                             >
                                                 {editingTagId === tag.id ? (
                                                     <>
@@ -1186,13 +1186,13 @@ function SettingsContent() {
                                                                 type="text"
                                                                 value={editingTagName}
                                                                 onChange={(e) => setEditingTagName(e.target.value)}
-                                                                className="flex-1 px-3 py-1 bg-surface-card border border-white/10 rounded text-white text-sm outline-none focus:border-primary/50"
+                                                                className="flex-1 px-3 py-1 bg-surface-card border border-border-color rounded text-white text-sm outline-none focus:border-primary/50"
                                                             />
                                                             <input
                                                                 type="color"
                                                                 value={editingTagColor}
                                                                 onChange={(e) => setEditingTagColor(e.target.value)}
-                                                                className="w-8 h-8 rounded border border-white/10 cursor-pointer"
+                                                                className="w-8 h-8 rounded border border-border-color cursor-pointer"
                                                             />
                                                         </div>
                                                         <div className="flex items-center gap-2 ml-4">
@@ -1212,7 +1212,7 @@ function SettingsContent() {
                                                             </button>
                                                             <button
                                                                 onClick={() => setEditingTagId(null)}
-                                                                className="p-2 rounded-lg border border-white/10 text-gray-400 hover:bg-white/5 transition-all"
+                                                                className="p-2 rounded-lg border border-border-color text-text-muted hover:bg-surface-hover transition-all"
                                                             >
                                                                 <X size={14} />
                                                             </button>
@@ -1226,7 +1226,7 @@ function SettingsContent() {
                                                                 style={{ backgroundColor: tag.color }}
                                                             />
                                                             <span className="text-white font-medium">{tag.name}</span>
-                                                            <span className="text-[10px] text-gray-500 font-mono">
+                                                            <span className="text-[10px] text-text-muted font-mono">
                                                                 {tag.tradeCount} trade{tag.tradeCount !== 1 ? 's' : ''}
                                                             </span>
                                                         </div>
@@ -1237,7 +1237,7 @@ function SettingsContent() {
                                                                     setEditingTagName(tag.name);
                                                                     setEditingTagColor(tag.color);
                                                                 }}
-                                                                className="p-2 rounded-lg border border-white/10 text-gray-400 hover:bg-white/5 hover:text-white transition-all"
+                                                                className="p-2 rounded-lg border border-border-color text-text-muted hover:bg-surface-hover hover:text-text-primary transition-all"
                                                                 title="Edit"
                                                             >
                                                                 <Edit2 size={14} />
@@ -1252,7 +1252,7 @@ function SettingsContent() {
                                                                         // error handled
                                                                     }
                                                                 }}
-                                                                className="p-2 rounded-lg border border-white/10 text-gray-400 hover:bg-loss/10 hover:border-loss/30 hover:text-loss transition-all"
+                                                                className="p-2 rounded-lg border border-border-color text-text-muted hover:bg-loss/10 hover:border-loss/30 hover:text-loss transition-all"
                                                                 title="Delete"
                                                             >
                                                                 <Trash2 size={14} />
@@ -1272,21 +1272,21 @@ function SettingsContent() {
                         <div className="space-y-8 animate-fade-in">
                             <div>
                                 <h3 className="text-2xl font-black text-white tracking-tighter uppercase italic mb-2">Public Profile & Widget</h3>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Share your trading stats with an embeddable performance card</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">Share your trading stats with an embeddable performance card</p>
                             </div>
 
                             {profileLoading ? (
-                                <div className="flex items-center gap-3 text-gray-500">
+                                <div className="flex items-center gap-3 text-text-muted">
                                     <Loader2 size={16} className="animate-spin" />
                                     <span className="text-[10px] font-black uppercase tracking-widest">Loading…</span>
                                 </div>
                             ) : (
                                 <div className="space-y-6">
                                     {/* Enable toggle */}
-                                    <div className="flex items-center justify-between p-5 bg-white/[0.03] border border-white/[0.06] rounded-xl">
+                                    <div className="flex items-center justify-between p-5 bg-surface-elevated border border-border-subtle rounded-xl">
                                         <div>
                                             <p className="text-sm font-bold text-white">Enable Public Profile</p>
-                                            <p className="text-[10px] text-gray-500 mt-0.5">Generates a shareable widget image with your trading stats</p>
+                                            <p className="text-[10px] text-text-muted mt-0.5">Generates a shareable widget image with your trading stats</p>
                                         </div>
                                         <button
                                             onClick={() => handleToggleProfile(!profileEnabled)}
@@ -1296,7 +1296,7 @@ function SettingsContent() {
                                         >
                                             {profileEnabled
                                                 ? <ToggleRight size={36} className="text-primary" />
-                                                : <ToggleLeft size={36} className="text-gray-600" />}
+                                                : <ToggleLeft size={36} className="text-text-muted" />}
                                         </button>
                                     </div>
 
@@ -1304,7 +1304,7 @@ function SettingsContent() {
                                         <>
                                             {/* Stat toggles */}
                                             <div>
-                                                <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-3">Visible on Widget</p>
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-3">Visible on Widget</p>
                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                                     {([
                                                         { key: 'showWinRate', label: 'Win Rate' },
@@ -1319,7 +1319,7 @@ function SettingsContent() {
                                                                 'flex items-center gap-3 p-4 rounded-xl border font-bold text-[10px] uppercase tracking-widest transition-all text-left disabled:opacity-50',
                                                                 profileStats[key]
                                                                     ? 'bg-primary/10 border-primary/30 text-primary'
-                                                                    : 'bg-white/[0.03] border-white/[0.06] text-gray-500 hover:bg-white/[0.05]'
+                                                                    : 'bg-surface-elevated border-border-subtle text-text-muted hover:bg-surface-hover'
                                                             )}
                                                         >
                                                             {profileStats[key] ? <CheckCircle size={14} /> : <Eye size={14} />}
@@ -1333,17 +1333,17 @@ function SettingsContent() {
                                             {profileId && (
                                                 <div className="space-y-4">
                                                     <div className="flex items-center justify-between">
-                                                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Widget Preview</p>
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">Widget Preview</p>
                                                         <button
                                                             onClick={() => setWidgetPreviewKey(k => k + 1)}
-                                                            className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-gray-500 hover:text-white transition-colors"
+                                                            className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-text-muted hover:text-text-primary transition-colors"
                                                         >
                                                             <RefreshCw size={11} /> Refresh
                                                         </button>
                                                     </div>
 
                                                     {/* Preview image — 300×200 rendered at 1:1 */}
-                                                    <div className="inline-block rounded-xl overflow-hidden border border-white/10">
+                                                    <div className="inline-block rounded-xl overflow-hidden border border-border-color">
                                                         <img
                                                             key={widgetPreviewKey}
                                                             src={`/api/public/${profileId}/widget.png?t=${widgetPreviewKey}`}
@@ -1354,12 +1354,12 @@ function SettingsContent() {
 
                                                     {/* Widget URL */}
                                                     <div className="space-y-2">
-                                                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Widget URL</p>
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">Widget URL</p>
                                                         <div className="flex gap-2">
                                                             <input
                                                                 readOnly
                                                                 value={getWidgetUrl()}
-                                                                className="flex-1 bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3 text-xs font-mono text-gray-300 outline-none select-all"
+                                                                className="flex-1 bg-surface-elevated border border-border-subtle rounded-xl px-4 py-3 text-xs font-mono text-text-secondary outline-none select-all"
                                                             />
                                                             <button
                                                                 onClick={async () => {
@@ -1367,28 +1367,28 @@ function SettingsContent() {
                                                                     setUrlCopied(true);
                                                                     setTimeout(() => setUrlCopied(false), 2000);
                                                                 }}
-                                                                className="px-4 py-3 bg-white/[0.05] border border-white/[0.06] rounded-xl hover:bg-white/10 transition-colors"
+                                                                className="px-4 py-3 bg-surface-hover border border-border-subtle rounded-xl hover:bg-surface-hover transition-colors"
                                                                 title="Copy URL"
                                                             >
-                                                                {urlCopied ? <Check size={14} className="text-primary" /> : <Copy size={14} className="text-gray-400" />}
+                                                                {urlCopied ? <Check size={14} className="text-primary" /> : <Copy size={14} className="text-text-muted" />}
                                                             </button>
                                                             <a
                                                                 href={getWidgetUrl()}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
-                                                                className="px-4 py-3 bg-white/[0.05] border border-white/[0.06] rounded-xl hover:bg-white/10 transition-colors"
+                                                                className="px-4 py-3 bg-surface-hover border border-border-subtle rounded-xl hover:bg-surface-hover transition-colors"
                                                                 title="Open in new tab"
                                                             >
-                                                                <ExternalLink size={14} className="text-gray-400" />
+                                                                <ExternalLink size={14} className="text-text-muted" />
                                                             </a>
                                                         </div>
                                                     </div>
 
                                                     {/* Embed code */}
                                                     <div className="space-y-2">
-                                                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">HTML Embed Code</p>
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">HTML Embed Code</p>
                                                         <div className="relative">
-                                                            <pre className="bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3 text-[11px] font-mono text-gray-400 overflow-x-auto whitespace-pre-wrap">
+                                                            <pre className="bg-surface-elevated border border-border-subtle rounded-xl px-4 py-3 text-[11px] font-mono text-text-muted overflow-x-auto whitespace-pre-wrap">
 {`<a href="https://prismjournal.app" target="_blank">
   <img src="${getWidgetUrl()}"
        alt="My Trading Performance"
@@ -1402,13 +1402,13 @@ function SettingsContent() {
                                                                     setEmbedCopied(true);
                                                                     setTimeout(() => setEmbedCopied(false), 2000);
                                                                 }}
-                                                                className="absolute top-3 right-3 p-1.5 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
+                                                                className="absolute top-3 right-3 p-1.5 bg-surface-hover rounded-lg hover:bg-surface-hover transition-colors"
                                                                 title="Copy embed code"
                                                             >
-                                                                {embedCopied ? <Check size={12} className="text-primary" /> : <Copy size={12} className="text-gray-400" />}
+                                                                {embedCopied ? <Check size={12} className="text-primary" /> : <Copy size={12} className="text-text-muted" />}
                                                             </button>
                                                         </div>
-                                                        <p className="text-[9px] text-gray-600 uppercase tracking-wider">Widget updates automatically every 24 hours via daily cron</p>
+                                                        <p className="text-[9px] text-text-muted uppercase tracking-wider">Widget updates automatically every 24 hours via daily cron</p>
                                                     </div>
                                                 </div>
                                             )}
@@ -1420,7 +1420,7 @@ function SettingsContent() {
                     )}
 
                     {showSaveButton && (
-                        <div className="mt-auto pt-10 flex items-center gap-4 border-t border-white/5">
+                        <div className="mt-auto pt-10 flex items-center gap-4 border-t border-border-subtle">
                             <button
                                 onClick={handleSave}
                                 disabled={saving}
@@ -1440,8 +1440,8 @@ function SettingsContent() {
             </div>
 
             {/* Version footer */}
-            <div className="mt-16 pt-6 border-t border-white/5 text-center">
-                <p className="text-[11px] text-gray-600 font-mono tracking-widest uppercase">
+            <div className="mt-16 pt-6 border-t border-border-subtle text-center">
+                <p className="text-[11px] text-text-muted font-mono tracking-widest uppercase">
                     PrismJournal v{APP_VERSION} — {versionToPhase(APP_VERSION)}
                 </p>
             </div>

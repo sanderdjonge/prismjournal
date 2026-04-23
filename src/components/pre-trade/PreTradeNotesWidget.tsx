@@ -15,7 +15,7 @@ export function PreTradeNotesWidget({ className }: PreTradeNotesWidgetProps) {
 
     return (
         <div className={cn(
-            "glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6",
+            "glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-6",
             className
         )}>
             {/* Header */}
@@ -41,7 +41,7 @@ export function PreTradeNotesWidget({ className }: PreTradeNotesWidgetProps) {
                     <div className="relative">
                         <button
                             onClick={() => setShowForm(false)}
-                            className="absolute -top-2 -right-2 p-1 text-gray-500 hover:text-gray-300 bg-black/50 rounded-full z-10"
+                            className="absolute -top-2 -right-2 p-1 text-text-muted hover:text-text-secondary bg-black/50 rounded-full z-10"
                         >
                             <X size={14} />
                         </button>

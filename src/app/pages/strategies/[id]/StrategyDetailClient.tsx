@@ -153,7 +153,7 @@ export default function StrategyDetailClient() {
   if (!strategy) {
     return (
       <DashboardShell>
-        <div className="p-6 text-gray-400">Strategy not found</div>
+        <div className="p-6 text-text-muted">Strategy not found</div>
       </DashboardShell>
     );
   }
@@ -165,7 +165,7 @@ export default function StrategyDetailClient() {
         <div>
           <Link
             href="/pages/strategies"
-            className="inline-flex items-center gap-2 text-gray-400 hover:text-primary transition-colors mb-4 text-sm"
+            className="inline-flex items-center gap-2 text-text-muted hover:text-primary transition-colors mb-4 text-sm"
           >
             <ArrowLeft size={16} />
             <span>Back to Strategies</span>
@@ -177,13 +177,13 @@ export default function StrategyDetailClient() {
                 type="text"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                className="text-2xl font-bold bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white w-full max-w-md focus:border-primary/50 focus:outline-none"
+                className="text-2xl font-bold bg-surface-elevated border border-border-color rounded-xl px-4 py-2 text-white w-full max-w-md focus:border-primary/50 focus:outline-none"
                 placeholder="Strategy name"
               />
               <textarea
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
-                className="w-full max-w-md bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm focus:border-primary/50 focus:outline-none resize-none"
+                className="w-full max-w-md bg-surface-elevated border border-border-color rounded-xl px-4 py-2 text-white text-sm focus:border-primary/50 focus:outline-none resize-none"
                 placeholder="Description (optional)"
                 rows={2}
               />
@@ -202,7 +202,7 @@ export default function StrategyDetailClient() {
                     setEditName(strategy.name);
                     setEditDescription(strategy.description || '');
                   }}
-                  className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm font-bold text-gray-400 hover:text-white transition-colors"
+                  className="px-4 py-2 bg-surface-elevated hover:bg-surface-hover border border-border-color rounded-lg text-sm font-bold text-text-muted hover:text-text-primary transition-colors"
                 >
                   Cancel
                 </button>
@@ -213,7 +213,7 @@ export default function StrategyDetailClient() {
               <div>
                 <h1 className="text-2xl font-bold text-white">{strategy.name}</h1>
                 {strategy.description && (
-                  <p className="text-gray-400 text-sm mt-1">{strategy.description}</p>
+                  <p className="text-text-muted text-sm mt-1">{strategy.description}</p>
                 )}
               </div>
               <div className="flex gap-2">
@@ -227,7 +227,7 @@ export default function StrategyDetailClient() {
                 </button>
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm text-gray-400 hover:text-white transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-elevated hover:bg-surface-hover border border-border-color rounded-lg text-sm text-text-muted hover:text-text-primary transition-colors"
                 >
                   <Edit2 size={14} />
                   Rename
@@ -241,7 +241,7 @@ export default function StrategyDetailClient() {
                 </button>
               </div>
               {reevaluateResult && (
-                <p className="text-sm text-gray-400 mt-2">
+                <p className="text-sm text-text-muted mt-2">
                   ✓ Evaluated {reevaluateResult.evaluated} trades, found {reevaluateResult.violations} violations
                 </p>
               )}
@@ -285,30 +285,30 @@ export default function StrategyDetailClient() {
         )}
 
         {analytics && !analyticsLoading && analytics.tradeCount === 0 && (
-          <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
-            <p className="text-gray-400 text-sm">No closed trades assigned to this strategy yet. Assign trades from the Journal page to see analytics.</p>
+          <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-6">
+            <p className="text-text-muted text-sm">No closed trades assigned to this strategy yet. Assign trades from the Journal page to see analytics.</p>
           </div>
         )}
 
         {analyticsLoading && (
           <div className="animate-pulse space-y-4">
-            <div className="h-32 bg-white/5 rounded-2xl" />
-            <div className="h-64 bg-white/5 rounded-2xl" />
+            <div className="h-32 bg-surface-elevated rounded-2xl" />
+            <div className="h-64 bg-surface-elevated rounded-2xl" />
           </div>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Column - Rules + Checklist */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
+            <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-6">
               <StrategyRulesEditor strategyId={strategy.id} />
             </div>
-            <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
+            <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-sm font-semibold text-gray-100">Entry Checklist</h3>
-                    <p className="text-xs text-gray-500">Select a reusable checklist for this strategy</p>
+                    <p className="text-xs text-text-muted">Select a reusable checklist for this strategy</p>
                   </div>
                   {isSavingChecklist && <Loader2 size={14} className="animate-spin text-primary" />}
                 </div>
@@ -319,7 +319,7 @@ export default function StrategyDetailClient() {
                     value={strategy.checklistId ?? ''}
                     onChange={(e) => handleChecklistChange(e.target.value || null)}
                     disabled={isSavingChecklist}
-                    className="w-full appearance-none px-3 py-2 pr-8 bg-white/[0.03] border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-primary/50 disabled:opacity-50 cursor-pointer"
+                    className="w-full appearance-none px-3 py-2 pr-8 bg-surface-elevated border border-border-color rounded-lg text-sm text-white focus:outline-none focus:border-primary/50 disabled:opacity-50 cursor-pointer"
                   >
                     <option value="">None</option>
                     {(checklistsData?.checklists ?? []).map((cl) => (
@@ -328,15 +328,15 @@ export default function StrategyDetailClient() {
                       </option>
                     ))}
                   </select>
-                  <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+                  <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
                 </div>
 
                 {/* Read-only preview of selected checklist items */}
                 {strategy.checklist && strategy.checklist.items.length > 0 && (
                   <div className="space-y-1.5">
-                    <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">Items in this checklist</p>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">Items in this checklist</p>
                     {strategy.checklist.items.map((item) => (
-                      <div key={item.id} className="flex items-center gap-2 text-xs text-gray-400">
+                      <div key={item.id} className="flex items-center gap-2 text-xs text-text-muted">
                         <span className="w-1 h-1 rounded-full bg-gray-600 shrink-0" />
                         <span className="flex-1">{item.label}</span>
                         {item.required && (
@@ -352,24 +352,24 @@ export default function StrategyDetailClient() {
 
           {/* Sidebar with widgets */}
           <div className="space-y-6">
-            <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
+            <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-6">
               <ComplianceWidget periodDays={30} strategyId={strategy.id} />
             </div>
-            <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
+            <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-6">
               <TiltmeterWidget periodDays={30} strategyId={strategy.id} />
             </div>
             
             {/* Quick Stats */}
-            <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
-              <h3 className="text-sm font-black uppercase tracking-widest text-gray-500 mb-4">Strategy Stats</h3>
+            <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-6">
+              <h3 className="text-sm font-black uppercase tracking-widest text-text-muted mb-4">Strategy Stats</h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-400 text-sm">Total Trades</span>
+                  <span className="text-text-muted text-sm">Total Trades</span>
                   <span className="font-mono text-white">{strategy._count.trades}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400 text-sm">Created</span>
-                  <span className="text-gray-400 text-sm">{formatShortDate(strategy.createdAt)}</span>
+                  <span className="text-text-muted text-sm">Created</span>
+                  <span className="text-text-muted text-sm">{formatShortDate(strategy.createdAt)}</span>
                 </div>
               </div>
             </div>
@@ -378,20 +378,20 @@ export default function StrategyDetailClient() {
 
         {/* Recent Trades */}
         {strategy.trades && strategy.trades.length > 0 && (
-          <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
-            <h3 className="text-sm font-black uppercase tracking-widest text-gray-500 mb-4">Recent Closed Trades</h3>
+          <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-6">
+            <h3 className="text-sm font-black uppercase tracking-widest text-text-muted mb-4">Recent Closed Trades</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-gray-500 border-b border-white/10">
+                  <tr className="text-left text-text-muted border-b border-border-color">
                     <th className="pb-3 font-medium">Date</th>
                     <th className="pb-3 font-medium">P&L</th>
                   </tr>
                 </thead>
                 <tbody>
                   {strategy.trades.map(trade => (
-                    <tr key={trade.id} className="border-b border-white/5 last:border-0">
-                      <td className="py-3 text-gray-400">
+                    <tr key={trade.id} className="border-b border-border-subtle last:border-0">
+                      <td className="py-3 text-text-muted">
                         {trade.exitTime ? formatShortDate(trade.exitTime) : '—'}
                       </td>
                       <td className={`py-3 font-mono ${trade.pnl && trade.pnl >= 0 ? 'text-profit' : 'text-loss'}`}>
@@ -411,13 +411,13 @@ export default function StrategyDetailClient() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
           <div className="glass-card w-full max-w-md mx-4 p-6 border-loss/30">
             <h2 className="text-xl font-bold text-white mb-2">Delete Strategy?</h2>
-            <p className="text-gray-400 text-sm mb-6">
+            <p className="text-text-muted text-sm mb-6">
               This will permanently delete "{strategy?.name}". Trades linked to this strategy will be unlinked but not deleted.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-colors text-sm font-bold text-gray-400 hover:text-white"
+                className="flex-1 px-4 py-3 bg-surface-elevated hover:bg-surface-hover border border-border-color rounded-xl transition-colors text-sm font-bold text-text-muted hover:text-text-primary"
               >
                 Cancel
               </button>

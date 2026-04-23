@@ -37,7 +37,7 @@ function formatMetric(value: number | null, format: 'number' | 'percent' | 'curr
 }
 
 function DeltaIndicator({ delta }: { delta: number | null }) {
-    if (delta === null) return <Minus className="w-4 h-4 text-gray-500" />;
+    if (delta === null) return <Minus className="w-4 h-4 text-text-muted" />;
     
     const isPositive = delta > 0;
     const color = isPositive ? 'text-profit' : 'text-loss';
@@ -62,14 +62,14 @@ export default function PeriodComparisonWidget({ accountId }: PeriodComparisonWi
     const ranges = getComparisonRanges(preset);
 
     return (
-        <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
+        <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-6">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-bold text-white">Period Comparison</h3>
                 <div className="relative">
                     <button
                         onClick={() => setShowDropdown(!showDropdown)}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm text-gray-300 hover:bg-white/10 transition-colors"
+                        className="flex items-center gap-2 px-3 py-1.5 bg-surface-elevated border border-border-color rounded-lg text-sm text-text-secondary hover:bg-surface-hover transition-colors"
                     >
                         {PRESETS.find(p => p.value === preset)?.label}
                         <ChevronDown className="w-4 h-4" />
@@ -81,7 +81,7 @@ export default function PeriodComparisonWidget({ accountId }: PeriodComparisonWi
                                 className="fixed inset-0 z-40"
                                 onClick={() => setShowDropdown(false)}
                             />
-                            <div className="absolute right-0 top-full mt-1 z-50 bg-[var(--surface-solid)] border border-white/10 rounded-lg shadow-xl overflow-hidden min-w-[200px]">
+                            <div className="absolute right-0 top-full mt-1 z-50 bg-[var(--surface-solid)] border border-border-color rounded-lg shadow-xl overflow-hidden min-w-[200px]">
                                 {PRESETS.map((p) => (
                                     <button
                                         key={p.value}
@@ -89,8 +89,8 @@ export default function PeriodComparisonWidget({ accountId }: PeriodComparisonWi
                                             setPreset(p.value);
                                             setShowDropdown(false);
                                         }}
-                                        className={`w-full px-4 py-2 text-left text-sm hover:bg-white/5 transition-colors ${
-                                            preset === p.value ? 'text-indigo-400' : 'text-gray-300'
+                                        className={`w-full px-4 py-2 text-left text-sm hover:bg-surface-hover transition-colors ${
+                                            preset === p.value ? 'text-indigo-400' : 'text-text-secondary'
                                         }`}
                                     >
                                         {p.label}
@@ -105,20 +105,20 @@ export default function PeriodComparisonWidget({ accountId }: PeriodComparisonWi
             {/* Period Labels */}
             <div className="grid grid-cols-3 gap-4 mb-4">
                 <div className="text-center">
-                    <span className="text-xs text-gray-500 uppercase tracking-wider">{ranges.period1.label}</span>
+                    <span className="text-xs text-text-muted uppercase tracking-wider">{ranges.period1.label}</span>
                 </div>
                 <div className="text-center">
-                    <span className="text-xs text-gray-500 uppercase tracking-wider">Change</span>
+                    <span className="text-xs text-text-muted uppercase tracking-wider">Change</span>
                 </div>
                 <div className="text-center">
-                    <span className="text-xs text-gray-500 uppercase tracking-wider">{ranges.period2.label}</span>
+                    <span className="text-xs text-text-muted uppercase tracking-wider">{ranges.period2.label}</span>
                 </div>
             </div>
 
             {/* Content */}
             {isLoading ? (
                 <div className="flex items-center justify-center py-8">
-                    <RefreshCw className="w-6 h-6 text-gray-500 animate-spin" />
+                    <RefreshCw className="w-6 h-6 text-text-muted animate-spin" />
                 </div>
             ) : error ? (
                 <div className="text-center py-8 text-red-400">
@@ -202,13 +202,13 @@ function MetricRow({
     const isNegative = value1 !== null && value2 !== null && value1 < value2;
     
     return (
-        <div className="grid grid-cols-3 gap-4 items-center py-2 border-b border-white/5 last:border-0">
+        <div className="grid grid-cols-3 gap-4 items-center py-2 border-b border-border-subtle last:border-0">
             {/* Period 1 Value */}
             <div className="text-center">
                 <span className={`text-lg font-semibold ${
-                    value1 === null ? 'text-gray-500' :
+                    value1 === null ? 'text-text-muted' :
                     value1 > 0 ? 'text-profit' : 
-                    value1 < 0 ? 'text-loss' : 'text-gray-300'
+                    value1 < 0 ? 'text-loss' : 'text-text-secondary'
                 }`}>
                     {formatMetric(value1, format)}
                 </span>
@@ -222,9 +222,9 @@ function MetricRow({
             {/* Period 2 Value */}
             <div className="text-center">
                 <span className={`text-lg font-semibold ${
-                    value2 === null ? 'text-gray-500' :
+                    value2 === null ? 'text-text-muted' :
                     value2 > 0 ? 'text-profit' : 
-                    value2 < 0 ? 'text-loss' : 'text-gray-300'
+                    value2 < 0 ? 'text-loss' : 'text-text-secondary'
                 }`}>
                     {formatMetric(value2, format)}
                 </span>

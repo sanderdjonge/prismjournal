@@ -98,10 +98,10 @@ export function TradeEntryDetails({
     const allStrategies = [...DEFAULT_STRATEGIES, ...customStrategies.map(s => s.name)];
 
     return (
-        <div className="pt-4 border-t border-white/5 grid grid-cols-2 gap-6">
+        <div className="pt-4 border-t border-border-subtle grid grid-cols-2 gap-6">
             <div className="space-y-4">
                 <div className="space-y-1.5">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1 flex items-center gap-1.5">
+                    <label className="text-[9px] font-black uppercase tracking-widest text-text-muted px-1 flex items-center gap-1.5">
                         <Zap size={10} /> Strategy
                     </label>
                     
@@ -110,7 +110,7 @@ export function TradeEntryDetails({
                             <select 
                                 value={strategy} 
                                 onChange={e => onStrategyChange(e.target.value)}
-                                className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm font-bold text-white outline-none focus:border-primary/50 transition-all appearance-none"
+                                className="w-full bg-surface-elevated border border-border-color rounded-xl p-3 text-sm font-bold text-text-primary outline-none focus:border-primary/50 transition-all appearance-none"
                                 disabled={!strategiesData}
                             >
                                 {DEFAULT_STRATEGIES.map(s => (
@@ -127,13 +127,13 @@ export function TradeEntryDetails({
                             <button
                                 type="button"
                                 onClick={() => setShowNewStrategy(true)}
-                                className="w-full p-2 rounded-lg border border-dashed border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-primary hover:border-primary/30 transition-all flex items-center justify-center gap-1.5"
+                                className="w-full p-2 rounded-lg border border-dashed border-border-color text-[10px] font-bold uppercase tracking-widest text-text-muted hover:text-primary hover:border-primary/30 transition-all flex items-center justify-center gap-1.5"
                             >
                                 <Plus size={12} /> Create Custom Strategy
                             </button>
                         </div>
                     ) : (
-                        <div className="space-y-2 p-3 bg-white/5 rounded-xl border border-white/10">
+                        <div className="space-y-2 p-3 bg-surface-elevated rounded-xl border border-border-color">
                             <div className="flex items-center justify-between">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-primary">New Strategy</span>
                                 <button
@@ -144,7 +144,7 @@ export function TradeEntryDetails({
                                         setNewStrategyDesc('');
                                         setError('');
                                     }}
-                                    className="text-gray-500 hover:text-white"
+                                    className="text-text-muted hover:text-text-primary"
                                 >
                                     <X size={14} />
                                 </button>
@@ -155,14 +155,14 @@ export function TradeEntryDetails({
                                 value={newStrategyName}
                                 onChange={e => setNewStrategyName(e.target.value)}
                                 placeholder="Strategy name..."
-                                className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-xs font-bold text-white outline-none focus:border-primary/50"
+                                className="w-full bg-surface-elevated border border-border-color rounded-lg p-2 text-xs font-bold text-text-primary outline-none focus:border-primary/50"
                             />
                             <input
                                 type="text"
                                 value={newStrategyDesc}
                                 onChange={e => setNewStrategyDesc(e.target.value)}
                                 placeholder="Description (optional)..."
-                                className="w-full bg-white/5 border border-white/10 rounded-lg p-2 text-xs font-bold text-white outline-none focus:border-primary/50"
+                                className="w-full bg-surface-elevated border border-border-color rounded-lg p-2 text-xs font-bold text-text-primary outline-none focus:border-primary/50"
                             />
                             {error && <p className="text-danger text-[10px]">{error}</p>}
                             <button
@@ -178,7 +178,7 @@ export function TradeEntryDetails({
                     )}
                 </div>
                 <div className="space-y-2">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1">Plan Compliance</label>
+                    <label className="text-[9px] font-black uppercase tracking-widest text-text-muted px-1">Plan Compliance</label>
                     <div className="flex gap-3">
                         <button 
                             type="button"
@@ -187,7 +187,7 @@ export function TradeEntryDetails({
                                 "flex-1 p-3 rounded-xl border flex items-center justify-center gap-2 transition-all text-[10px] font-black uppercase tracking-widest",
                                 compliance === true
                                     ? "bg-profit/10 border-profit/40 text-profit"
-                                    : "bg-white/5 border-transparent text-gray-500 hover:text-gray-300"
+                                    : "bg-surface-elevated border-transparent text-text-muted hover:text-text-secondary"
                             )}
                         >
                             <CheckCircle2 size={14} /> Followed
@@ -199,7 +199,7 @@ export function TradeEntryDetails({
                                 "flex-1 p-3 rounded-xl border flex items-center justify-center gap-2 transition-all text-[10px] font-black uppercase tracking-widest",
                                 compliance === false
                                     ? "bg-loss/10 border-loss/40 text-loss"
-                                    : "bg-white/5 border-transparent text-gray-500 hover:text-gray-300"
+                                    : "bg-surface-elevated border-transparent text-text-muted hover:text-text-secondary"
                             )}
                         >
                             <XCircle size={14} /> Deviated
@@ -209,7 +209,7 @@ export function TradeEntryDetails({
             </div>
             <div className="space-y-4">
                 <div className="space-y-1.5">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1 flex items-center gap-1.5">
+                    <label className="text-[9px] font-black uppercase tracking-widest text-text-muted px-1 flex items-center gap-1.5">
                         <Brain size={10} /> Psychological State
                     </label>
                     <div className="flex gap-2">
@@ -221,8 +221,8 @@ export function TradeEntryDetails({
                                 className={cn(
                                     "flex-1 p-3 rounded-xl border flex flex-col items-center gap-1 transition-all",
                                     mood === m.id 
-                                        ? cn(m.bg, "border-white/20 scale-105") 
-                                        : "bg-white/5 border-transparent opacity-40 grayscale hover:opacity-100 hover:grayscale-0"
+                                        ? cn(m.bg, "border-border-color scale-105") 
+                                        : "bg-surface-elevated border-transparent opacity-40 grayscale hover:opacity-100 hover:grayscale-0"
                                 )}
                             >
                                 <m.icon size={18} className={m.color} />
@@ -232,13 +232,13 @@ export function TradeEntryDetails({
                     </div>
                 </div>
                 <div className="space-y-1.5">
-                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1 flex items-center gap-1.5">
+                    <label className="text-[9px] font-black uppercase tracking-widest text-text-muted px-1 flex items-center gap-1.5">
                         <FileText size={10} /> Notes
                     </label>
                     <textarea 
                         value={notes} 
                         onChange={e => onNotesChange(e.target.value)}
-                        className="w-full h-20 bg-white/5 border border-white/10 rounded-xl p-3 text-xs font-bold text-white outline-none focus:border-primary/50 transition-all resize-none"
+                        className="w-full h-20 bg-surface-elevated border border-border-color rounded-xl p-3 text-xs font-bold text-text-primary outline-none focus:border-primary/50 transition-all resize-none"
                         placeholder="Market context, entry rationale..." 
                     />
                 </div>

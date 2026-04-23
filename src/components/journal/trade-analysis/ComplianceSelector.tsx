@@ -13,19 +13,19 @@ interface ComplianceSelectorProps {
 export function ComplianceSelector({ value, onChange, strategy }: ComplianceSelectorProps) {
     return (
         <section>
-            <h3 className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 border-b border-white/5 pb-2 mb-4 flex items-center gap-2">
+            <h3 className="text-[9px] font-black uppercase tracking-[0.3em] text-text-muted border-b border-border-subtle pb-2 mb-4 flex items-center gap-2">
                 <ClipboardCheck size={12} className="text-primary" /> Execution Quality
             </h3>
             <div className="grid grid-cols-2 gap-3 mb-3">
-                <div className="glass-card p-4 bg-white/5 space-y-1">
-                    <label className="text-[8px] font-black uppercase tracking-widest text-gray-600">Strategy</label>
+                <div className="glass-card p-4 bg-surface-elevated space-y-1">
+                    <label className="text-[8px] font-black uppercase tracking-widest text-text-muted">Strategy</label>
                     <div className="text-xs font-bold text-white uppercase italic">{strategy ?? '—'}</div>
                 </div>
-                <div className="glass-card p-4 bg-white/5 space-y-1">
-                    <label className="text-[8px] font-black uppercase tracking-widest text-gray-600">Compliance</label>
+                <div className="glass-card p-4 bg-surface-elevated space-y-1">
+                    <label className="text-[8px] font-black uppercase tracking-widest text-text-muted">Compliance</label>
                     <div className={cn(
                         "flex items-center gap-1.5 text-xs font-black uppercase",
-                        value === 'FOLLOWED' ? "text-profit" : value === 'DEVIATED' ? "text-loss" : "text-gray-500"
+                        value === 'FOLLOWED' ? "text-profit" : value === 'DEVIATED' ? "text-loss" : "text-text-muted"
                     )}>
                         {value === 'FOLLOWED' && <><CheckCircle2 size={12} /> Followed</>}
                         {value === 'DEVIATED' && <><XCircle size={12} /> Deviated</>}
@@ -40,7 +40,7 @@ export function ComplianceSelector({ value, onChange, strategy }: ComplianceSele
                         "flex-1 p-2.5 rounded-xl border flex items-center justify-center gap-1.5 transition-all text-[9px] font-black uppercase tracking-widest",
                         value === 'FOLLOWED'
                             ? "bg-profit/10 border-profit/40 text-profit"
-                            : "bg-white/5 border-transparent text-gray-500 hover:text-gray-300"
+                            : "bg-surface-elevated border-transparent text-text-muted hover:text-text-secondary"
                     )}
                 >
                     <CheckCircle2 size={12} /> Followed
@@ -51,7 +51,7 @@ export function ComplianceSelector({ value, onChange, strategy }: ComplianceSele
                         "flex-1 p-2.5 rounded-xl border flex items-center justify-center gap-1.5 transition-all text-[9px] font-black uppercase tracking-widest",
                         value === 'DEVIATED'
                             ? "bg-loss/10 border-loss/40 text-loss"
-                            : "bg-white/5 border-transparent text-gray-500 hover:text-gray-300"
+                            : "bg-surface-elevated border-transparent text-text-muted hover:text-text-secondary"
                     )}
                 >
                     <XCircle size={12} /> Deviated

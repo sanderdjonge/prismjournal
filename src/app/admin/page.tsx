@@ -437,7 +437,7 @@ export default function AdminPage() {
                     <p className="text-danger text-sm font-bold">{usersError}</p>
                     <button
                         onClick={() => router.push('/')}
-                        className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm font-bold hover:bg-white/10 transition-all"
+                        className="px-4 py-2 rounded-xl bg-surface-elevated border border-border-color text-sm font-bold hover:bg-surface-hover transition-all"
                     >
                         Go to Dashboard
                     </button>
@@ -456,19 +456,19 @@ export default function AdminPage() {
                     </div>
                     <div>
                         <h1 className="text-3xl font-black text-white tracking-tighter uppercase italic">Admin Portal</h1>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">System Administration & Management</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">System Administration & Management</p>
                     </div>
                 </div>
                 
                 {/* Tabs */}
-                <div className="flex gap-2 border-b border-white/10 pb-2">
+                <div className="flex gap-2 border-b border-border-color pb-2">
                     <button
                         onClick={() => setActiveTab('users')}
                         className={cn(
                             "flex items-center gap-2 px-4 py-2 rounded-t-lg text-sm font-bold transition-all",
                             activeTab === 'users'
-                                ? "bg-white/10 text-white border-b-2 border-primary"
-                                : "text-gray-500 hover:text-white hover:bg-white/5"
+                                ? "bg-surface-hover text-white border-b-2 border-primary"
+                                : "text-text-muted hover:text-text-primary hover:bg-surface-hover"
                         )}
                     >
                         <Users size={16} />
@@ -479,8 +479,8 @@ export default function AdminPage() {
                         className={cn(
                             "flex items-center gap-2 px-4 py-2 rounded-t-lg text-sm font-bold transition-all",
                             activeTab === 'infrastructure'
-                                ? "bg-white/10 text-white border-b-2 border-primary"
-                                : "text-gray-500 hover:text-white hover:bg-white/5"
+                                ? "bg-surface-hover text-white border-b-2 border-primary"
+                                : "text-text-muted hover:text-text-primary hover:bg-surface-hover"
                         )}
                     >
                         <Server size={16} />
@@ -491,8 +491,8 @@ export default function AdminPage() {
                         className={cn(
                             "flex items-center gap-2 px-4 py-2 rounded-t-lg text-sm font-bold transition-all",
                             activeTab === 'backups'
-                                ? "bg-white/10 text-white border-b-2 border-primary"
-                                : "text-gray-500 hover:text-white hover:bg-white/5"
+                                ? "bg-surface-hover text-white border-b-2 border-primary"
+                                : "text-text-muted hover:text-text-primary hover:bg-surface-hover"
                         )}
                     >
                         <Database size={16} />
@@ -503,8 +503,8 @@ export default function AdminPage() {
                         className={cn(
                             "flex items-center gap-2 px-4 py-2 rounded-t-lg text-sm font-bold transition-all",
                             activeTab === 'broadcast'
-                                ? "bg-white/10 text-white border-b-2 border-primary"
-                                : "text-gray-500 hover:text-white hover:bg-white/5"
+                                ? "bg-surface-hover text-white border-b-2 border-primary"
+                                : "text-text-muted hover:text-text-primary hover:bg-surface-hover"
                         )}
                     >
                         <Send size={16} />
@@ -515,8 +515,8 @@ export default function AdminPage() {
                         className={cn(
                             "flex items-center gap-2 px-4 py-2 rounded-t-lg text-sm font-bold transition-all",
                             activeTab === 'auditlog'
-                                ? "bg-white/10 text-white border-b-2 border-primary"
-                                : "text-gray-500 hover:text-white hover:bg-white/5"
+                                ? "bg-surface-hover text-white border-b-2 border-primary"
+                                : "text-text-muted hover:text-text-primary hover:bg-surface-hover"
                         )}
                     >
                         <ScrollText size={16} />
@@ -527,8 +527,8 @@ export default function AdminPage() {
                         className={cn(
                             "flex items-center gap-2 px-4 py-2 rounded-t-lg text-sm font-bold transition-all",
                             activeTab === 'invites'
-                                ? "bg-white/10 text-white border-b-2 border-primary"
-                                : "text-gray-500 hover:text-white hover:bg-white/5"
+                                ? "bg-surface-hover text-white border-b-2 border-primary"
+                                : "text-text-muted hover:text-text-primary hover:bg-surface-hover"
                         )}
                     >
                         <Mail size={16} />
@@ -541,43 +541,43 @@ export default function AdminPage() {
                     <div className="space-y-6">
                         {/* Stats */}
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <div className="glass-card p-5 border-white/5 bg-white/5">
+                            <div className="glass-card p-5 border-border-subtle bg-surface-elevated">
                                 <div className="flex items-center gap-3">
                                     <Users size={20} className="text-primary" />
                                     <div>
                                         <p className="text-lg font-black text-white">
                                             <span className="text-accent">{activeCount}</span>
-                                            <span className="text-gray-500 mx-1">/</span>
+                                            <span className="text-text-muted mx-1">/</span>
                                             <span>{users.length}</span>
                                         </p>
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">Active / Total Users</p>
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">Active / Total Users</p>
                                     </div>
                                 </div>
                             </div>
-                            <div className="glass-card p-5 border-white/5 bg-white/5">
+                            <div className="glass-card p-5 border-border-subtle bg-surface-elevated">
                                 <div className="flex items-center gap-3">
                                     <UserX size={20} className="text-danger" />
                                     <div>
                                         <p className="text-2xl font-black text-white">{inactiveCount}</p>
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">Inactive</p>
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">Inactive</p>
                                     </div>
                                 </div>
                             </div>
-                            <div className="glass-card p-5 border-white/5 bg-white/5">
+                            <div className="glass-card p-5 border-border-subtle bg-surface-elevated">
                                 <div className="flex items-center gap-3">
                                     <Crown size={20} className="text-yellow-500" />
                                     <div>
                                         <p className="text-2xl font-black text-white">{adminCount}</p>
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">Admins</p>
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">Admins</p>
                                     </div>
                                 </div>
                             </div>
-                            <div className="glass-card p-5 border-white/5 bg-white/5">
+                            <div className="glass-card p-5 border-border-subtle bg-surface-elevated">
                                 <div className="flex items-center gap-3">
                                     <Key size={20} className="text-primary" />
                                     <div>
                                         <p className="text-2xl font-black text-white">{twoFACount}</p>
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">2FA Enabled</p>
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">2FA Enabled</p>
                                     </div>
                                 </div>
                             </div>
@@ -586,21 +586,21 @@ export default function AdminPage() {
                         {/* Search & Filter */}
                         <div className="flex gap-3 items-center">
                             <div className="relative flex-1">
-                                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
                                 <input
                                     type="text"
                                     placeholder="Search users by name, email, or username..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder:text-gray-500 focus:outline-none focus:border-primary/50"
+                                    className="w-full pl-10 pr-4 py-2 rounded-xl bg-surface-elevated border border-border-color text-white text-sm placeholder:text-text-muted focus:outline-none focus:border-primary/50"
                                 />
                             </div>
-                            <div className="flex bg-white/5 rounded-xl p-1 shrink-0">
+                            <div className="flex bg-surface-elevated rounded-xl p-1 shrink-0">
                                 <button
                                     onClick={() => setShowInactive(false)}
                                     className={cn(
                                         "px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                                        !showInactive ? "bg-accent/20 text-accent" : "text-gray-500 hover:text-gray-300"
+                                        !showInactive ? "bg-accent/20 text-accent" : "text-text-muted hover:text-text-secondary"
                                     )}
                                 >
                                     Active ({activeCount})
@@ -609,7 +609,7 @@ export default function AdminPage() {
                                     onClick={() => setShowInactive(true)}
                                     className={cn(
                                         "px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                                        showInactive ? "bg-white/10 text-white" : "text-gray-500 hover:text-gray-300"
+                                        showInactive ? "bg-surface-hover text-white" : "text-text-muted hover:text-text-secondary"
                                     )}
                                 >
                                     All ({users.length})
@@ -625,8 +625,8 @@ export default function AdminPage() {
                         )}
 
                         {/* Users Table */}
-                        <div className="glass-card border-white/5 bg-black/40 overflow-hidden">
-                            <div className="p-5 border-b border-white/5 flex items-center justify-between">
+                        <div className="glass-card border-border-subtle bg-surface-elevated overflow-hidden">
+                            <div className="p-5 border-b border-border-subtle flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <h2 className="text-lg font-black text-white uppercase tracking-tight">User Registry</h2>
                                     {selectedUsers.size > 0 && (
@@ -645,7 +645,7 @@ export default function AdminPage() {
                                             Delete ({selectedUsers.size})
                                         </button>
                                     )}
-                                    <span className="text-xs text-gray-500">{filteredUsers.length} of {users.length} users</span>
+                                    <span className="text-xs text-text-muted">{filteredUsers.length} of {users.length} users</span>
                                 </div>
                             </div>
 
@@ -663,7 +663,7 @@ export default function AdminPage() {
                                         </button>
                                         <button
                                             onClick={() => setConfirmBulkDelete(false)}
-                                            className="px-4 py-1.5 rounded-lg bg-white/5 text-gray-400 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all"
+                                            className="px-4 py-1.5 rounded-lg bg-surface-elevated text-text-muted text-[10px] font-black uppercase tracking-widest hover:bg-surface-hover transition-all"
                                         >
                                             Cancel
                                         </button>
@@ -674,29 +674,29 @@ export default function AdminPage() {
                             <div className="overflow-x-auto">
                                 <table className="w-full">
                                     <thead>
-                                        <tr className="border-b border-white/5 bg-white/[0.02]">
+                                        <tr className="border-b border-border-subtle bg-surface-elevated">
                                             <th className="p-4 w-10">
                                                 <input
                                                     type="checkbox"
                                                     checked={selectedUsers.size === filteredUsers.length && filteredUsers.length > 0}
                                                     onChange={toggleSelectAll}
-                                                    className="rounded border-white/20 bg-white/5"
+                                                    className="rounded border-border-color bg-surface-elevated"
                                                 />
                                             </th>
-                                            <th className="text-left p-4 text-[9px] font-black uppercase tracking-widest text-gray-500">User</th>
-                                            <th className="text-left p-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Status</th>
-                                            <th className="text-left p-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Role</th>
-                                            <th className="text-left p-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Security</th>
-                                            <th className="text-left p-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Accounts</th>
-                                            <th className="text-left p-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Joined</th>
-                                            <th className="text-left p-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Last Login</th>
-                                            <th className="text-right p-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Actions</th>
+                                            <th className="text-left p-4 text-[9px] font-black uppercase tracking-widest text-text-muted">User</th>
+                                            <th className="text-left p-4 text-[9px] font-black uppercase tracking-widest text-text-muted">Status</th>
+                                            <th className="text-left p-4 text-[9px] font-black uppercase tracking-widest text-text-muted">Role</th>
+                                            <th className="text-left p-4 text-[9px] font-black uppercase tracking-widest text-text-muted">Security</th>
+                                            <th className="text-left p-4 text-[9px] font-black uppercase tracking-widest text-text-muted">Accounts</th>
+                                            <th className="text-left p-4 text-[9px] font-black uppercase tracking-widest text-text-muted">Joined</th>
+                                            <th className="text-left p-4 text-[9px] font-black uppercase tracking-widest text-text-muted">Last Login</th>
+                                            <th className="text-right p-4 text-[9px] font-black uppercase tracking-widest text-text-muted">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {filteredUsers.map((user) => (
                                             <tr key={user.id} className={cn(
-                                                "border-b border-white/5 hover:bg-white/[0.02] transition-all",
+                                                "border-b border-border-subtle hover:bg-surface-hover transition-all",
                                                 selectedUsers.has(user.id) && "bg-primary/5"
                                             )}>
                                                 <td className="p-4">
@@ -704,7 +704,7 @@ export default function AdminPage() {
                                                         type="checkbox"
                                                         checked={selectedUsers.has(user.id)}
                                                         onChange={() => toggleUserSelect(user.id)}
-                                                        className="rounded border-white/20 bg-white/5"
+                                                        className="rounded border-border-color bg-surface-elevated"
                                                     />
                                                 </td>
                                                 <td className="p-4">
@@ -714,7 +714,7 @@ export default function AdminPage() {
                                                         </div>
                                                         <div>
                                                             <p className="text-sm font-bold text-white">{user.name || 'No name'}</p>
-                                                            <p className="text-[10px] text-gray-500 flex items-center gap-1">
+                                                            <p className="text-[10px] text-text-muted flex items-center gap-1">
                                                                 <Mail size={10} /> {user.email || 'No email'}
                                                             </p>
                                                         </div>
@@ -736,7 +736,7 @@ export default function AdminPage() {
                                                             <Crown size={10} /> Admin
                                                         </span>
                                                     ) : (
-                                                        <span className="px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-white/10 text-gray-500">
+                                                        <span className="px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-surface-hover text-text-muted">
                                                             User
                                                         </span>
                                                     )}
@@ -746,22 +746,22 @@ export default function AdminPage() {
                                                         "px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest",
                                                         user.totpEnabled
                                                             ? "bg-primary/10 text-primary"
-                                                            : "bg-white/10 text-gray-500"
+                                                            : "bg-surface-hover text-text-muted"
                                                     )}>
                                                         {user.totpEnabled ? '2FA On' : '2FA Off'}
                                                     </span>
                                                 </td>
                                                 <td className="p-4">
                                                     <span className="text-sm font-bold text-white">{user._count.accounts}</span>
-                                                    <span className="text-[9px] text-gray-500 block">accounts</span>
+                                                    <span className="text-[9px] text-text-muted block">accounts</span>
                                                 </td>
                                                 <td className="p-4">
-                                                    <span className="text-xs text-gray-500 flex items-center gap-1">
+                                                    <span className="text-xs text-text-muted flex items-center gap-1">
                                                         <Calendar size={10} /> {formatShortDate(user.createdAt)}
                                                     </span>
                                                 </td>
                                                 <td className="p-4">
-                                                    <span className="text-xs text-gray-500 flex items-center gap-1">
+                                                    <span className="text-xs text-text-muted flex items-center gap-1">
                                                         <Clock size={10} /> {user.lastLoginAt ? formatDistanceToNow(user.lastLoginAt) : 'Never'}
                                                     </span>
                                                 </td>
@@ -778,7 +778,7 @@ export default function AdminPage() {
                                                             </button>
                                                             <button
                                                                 onClick={() => setConfirmDelete(null)}
-                                                                className="px-2 py-1 rounded-lg bg-white/5 text-gray-400 text-[9px] font-black uppercase hover:bg-white/10 transition-all"
+                                                                className="px-2 py-1 rounded-lg bg-surface-elevated text-text-muted text-[9px] font-black uppercase hover:bg-surface-hover transition-all"
                                                             >
                                                                 No
                                                             </button>
@@ -804,7 +804,7 @@ export default function AdminPage() {
                                                                     "p-2 rounded-lg transition-all disabled:opacity-50",
                                                                     user.isSuperuser
                                                                         ? "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20"
-                                                                        : "bg-white/5 text-gray-500 hover:bg-white/10"
+                                                                        : "bg-surface-elevated text-text-muted hover:bg-surface-hover"
                                                                 )}
                                                                 title={user.isSuperuser ? 'Remove admin' : 'Make admin'}
                                                             >
@@ -862,7 +862,7 @@ export default function AdminPage() {
                             <button
                                 onClick={loadInfrastructure}
                                 disabled={infraLoading}
-                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all text-sm"
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-elevated text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all text-sm"
                             >
                                 <RefreshCw size={14} className={infraLoading ? 'animate-spin' : ''} />
                                 Refresh
@@ -879,7 +879,7 @@ export default function AdminPage() {
                                 <p className="text-danger text-sm">{infraError}</p>
                                 <button
                                     onClick={loadInfrastructure}
-                                    className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm font-bold hover:bg-white/10 transition-all"
+                                    className="px-4 py-2 rounded-xl bg-surface-elevated border border-border-color text-sm font-bold hover:bg-surface-hover transition-all"
                                 >
                                     Try Again
                                 </button>
@@ -888,39 +888,39 @@ export default function AdminPage() {
                             <>
                                 {/* Health Cards */}
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                    <div className="glass-card p-5 border-white/5 bg-white/5">
+                                    <div className="glass-card p-5 border-border-subtle bg-surface-elevated">
                                         <div className="flex items-center gap-3">
                                             <Activity size={20} className="text-accent" />
                                             <div>
                                                 <p className="text-2xl font-black text-white">{infraData.health.apiLatencyMs}ms</p>
-                                                <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">API Latency</p>
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">API Latency</p>
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="glass-card p-5 border-white/5 bg-white/5">
+                                    <div className="glass-card p-5 border-border-subtle bg-surface-elevated">
                                         <div className="flex items-center gap-3">
                                             <Database size={20} className="text-primary" />
                                             <div>
                                                 <p className="text-2xl font-black text-white">{infraData.health.dbLatencyMs}ms</p>
-                                                <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">DB Latency</p>
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">DB Latency</p>
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="glass-card p-5 border-white/5 bg-white/5">
+                                    <div className="glass-card p-5 border-border-subtle bg-surface-elevated">
                                         <div className="flex items-center gap-3">
                                             <Server size={20} className="text-yellow-500" />
                                             <div>
                                                 <p className="text-2xl font-black text-white">{formatUptime(infraData.health.uptimeSeconds)}</p>
-                                                <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">Uptime</p>
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">Uptime</p>
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="glass-card p-5 border-white/5 bg-white/5">
+                                    <div className="glass-card p-5 border-border-subtle bg-surface-elevated">
                                         <div className="flex items-center gap-3">
                                             <HardDrive size={20} className="text-purple-500" />
                                             <div>
                                                 <p className="text-2xl font-black text-white">{infraData.health.memoryUsedMb}MB</p>
-                                                <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">Memory Used</p>
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">Memory Used</p>
                                             </div>
                                         </div>
                                     </div>
@@ -929,21 +929,21 @@ export default function AdminPage() {
                                 {/* Database & Storage */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     {/* Database */}
-                                    <div className="glass-card border-white/5 bg-black/40 overflow-hidden">
-                                        <div className="p-5 border-b border-white/5 flex items-center gap-3">
+                                    <div className="glass-card border-border-subtle bg-surface-elevated overflow-hidden">
+                                        <div className="p-5 border-b border-border-subtle flex items-center gap-3">
                                             <Database size={18} className="text-primary" />
                                             <h3 className="text-sm font-black text-white uppercase tracking-tight">Database</h3>
                                         </div>
                                         <div className="p-5 space-y-4">
                                             <div className="flex items-center justify-between">
-                                                <span className="text-xs text-gray-500">Total Size</span>
+                                                <span className="text-xs text-text-muted">Total Size</span>
                                                 <span className="text-sm font-bold text-white">{infraData.database.sizeMb} MB</span>
                                             </div>
                                             <div className="space-y-2">
-                                                <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">Table Row Counts</p>
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">Table Row Counts</p>
                                                 {Object.entries(infraData.database.tables).map(([table, count]) => (
                                                     <div key={table} className="flex items-center justify-between">
-                                                        <span className="text-xs text-gray-400 capitalize">{table}</span>
+                                                        <span className="text-xs text-text-muted capitalize">{table}</span>
                                                         <span className="text-sm font-bold text-white">{count.toLocaleString()}</span>
                                                     </div>
                                                 ))}
@@ -952,25 +952,25 @@ export default function AdminPage() {
                                     </div>
                                     
                                     {/* Storage */}
-                                    <div className="glass-card border-white/5 bg-black/40 overflow-hidden">
-                                        <div className="p-5 border-b border-white/5 flex items-center gap-3">
+                                    <div className="glass-card border-border-subtle bg-surface-elevated overflow-hidden">
+                                        <div className="p-5 border-b border-border-subtle flex items-center gap-3">
                                             <HardDrive size={18} className="text-purple-500" />
                                             <h3 className="text-sm font-black text-white uppercase tracking-tight">Storage</h3>
                                         </div>
                                         <div className="p-5 space-y-4">
                                             <div className="flex items-center justify-between">
-                                                <span className="text-xs text-gray-500">Total Size</span>
+                                                <span className="text-xs text-text-muted">Total Size</span>
                                                 <span className="text-sm font-bold text-white">{infraData.storage.totalMb} MB</span>
                                             </div>
                                             <div className="flex items-center justify-between">
-                                                <span className="text-xs text-gray-500">Screenshots</span>
+                                                <span className="text-xs text-text-muted">Screenshots</span>
                                                 <span className="text-sm font-bold text-white">{infraData.storage.screenshots}</span>
                                             </div>
                                             <div className="space-y-2">
-                                                <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">By Type</p>
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">By Type</p>
                                                 {Object.entries(infraData.storage.byType).map(([type, count]) => (
                                                     <div key={type} className="flex items-center justify-between">
-                                                        <span className="text-xs text-gray-400">{type}</span>
+                                                        <span className="text-xs text-text-muted">{type}</span>
                                                         <span className="text-sm font-bold text-white">{count}</span>
                                                     </div>
                                                 ))}
@@ -982,47 +982,47 @@ export default function AdminPage() {
                                 {/* Activity & Errors */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     {/* Activity */}
-                                    <div className="glass-card border-white/5 bg-black/40 overflow-hidden">
-                                        <div className="p-5 border-b border-white/5 flex items-center gap-3">
+                                    <div className="glass-card border-border-subtle bg-surface-elevated overflow-hidden">
+                                        <div className="p-5 border-b border-border-subtle flex items-center gap-3">
                                             <Activity size={18} className="text-accent" />
                                             <h3 className="text-sm font-black text-white uppercase tracking-tight">User Activity (24h)</h3>
                                         </div>
                                         <div className="p-5 space-y-3">
                                             <div className="flex items-center justify-between">
-                                                <span className="text-xs text-gray-500">Active Sessions</span>
+                                                <span className="text-xs text-text-muted">Active Sessions</span>
                                                 <span className="text-sm font-bold text-white">{infraData.activity.activeSessions24h}</span>
                                             </div>
                                             <div className="flex items-center justify-between">
-                                                <span className="text-xs text-gray-500">Logins Today</span>
+                                                <span className="text-xs text-text-muted">Logins Today</span>
                                                 <span className="text-sm font-bold text-white">{infraData.activity.loginsToday}</span>
                                             </div>
                                             <div className="flex items-center justify-between">
-                                                <span className="text-xs text-gray-500">Failed Logins</span>
+                                                <span className="text-xs text-text-muted">Failed Logins</span>
                                                 <span className="text-sm font-bold text-danger">{infraData.activity.failedLogins24h}</span>
                                             </div>
                                         </div>
                                     </div>
                                     
                                     {/* Errors */}
-                                    <div className="glass-card border-white/5 bg-black/40 overflow-hidden">
-                                        <div className="p-5 border-b border-white/5 flex items-center gap-3">
+                                    <div className="glass-card border-border-subtle bg-surface-elevated overflow-hidden">
+                                        <div className="p-5 border-b border-border-subtle flex items-center gap-3">
                                             <AlertTriangle size={18} className="text-danger" />
                                             <h3 className="text-sm font-black text-white uppercase tracking-tight">Error Tracking</h3>
                                         </div>
                                         <div className="p-5 space-y-3">
                                             <div className="flex items-center justify-between">
-                                                <span className="text-xs text-gray-500">Error Rate (24h)</span>
+                                                <span className="text-xs text-text-muted">Error Rate (24h)</span>
                                                 <span className="text-sm font-bold text-white">{formatPercent(infraData.errors.errorRate24h * 100, 2)}</span>
                                             </div>
                                             <div className="flex items-center justify-between">
-                                                <span className="text-xs text-gray-500">Failed Syncs</span>
+                                                <span className="text-xs text-text-muted">Failed Syncs</span>
                                                 <span className="text-sm font-bold text-danger">{infraData.errors.failedSyncs24h}</span>
                                             </div>
                                             {infraData.errors.recentErrors.length > 0 && (
                                                 <div className="space-y-2 mt-4">
-                                                    <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">Recent Errors</p>
+                                                    <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">Recent Errors</p>
                                                     {infraData.errors.recentErrors.slice(0, 5).map((error, i) => (
-                                                        <div key={i} className="text-xs text-gray-400 truncate">
+                                                        <div key={i} className="text-xs text-text-muted truncate">
                                                             <span className="text-danger">{error.action}:</span> {error.details}
                                                         </div>
                                                     ))}
@@ -1046,7 +1046,7 @@ export default function AdminPage() {
                                 <button
                                     onClick={loadBackups}
                                     disabled={backupLoading}
-                                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all text-sm"
+                                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-elevated text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all text-sm"
                                 >
                                     <RefreshCw size={14} className={backupLoading ? 'animate-spin' : ''} />
                                     Refresh
@@ -1076,7 +1076,7 @@ export default function AdminPage() {
                                 <p className="text-danger text-sm">{backupError}</p>
                                 <button
                                     onClick={loadBackups}
-                                    className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm font-bold hover:bg-white/10 transition-all"
+                                    className="px-4 py-2 rounded-xl bg-surface-elevated border border-border-color text-sm font-bold hover:bg-surface-hover transition-all"
                                 >
                                     Try Again
                                 </button>
@@ -1085,32 +1085,32 @@ export default function AdminPage() {
                             <>
                                 {/* Status Cards */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div className="glass-card p-5 border-white/5 bg-white/5">
+                                    <div className="glass-card p-5 border-border-subtle bg-surface-elevated">
                                         <div className="flex items-center gap-3">
                                             <Clock size={20} className="text-primary" />
                                             <div>
                                                 <p className="text-sm font-black text-white">
                                                     {backupData.status.lastBackup ? formatDistanceToNow(backupData.status.lastBackup) : 'Never'}
                                                 </p>
-                                                <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">Last Backup</p>
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">Last Backup</p>
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="glass-card p-5 border-white/5 bg-white/5">
+                                    <div className="glass-card p-5 border-border-subtle bg-surface-elevated">
                                         <div className="flex items-center gap-3">
                                             <Database size={20} className="text-accent" />
                                             <div>
                                                 <p className="text-2xl font-black text-white">{backupData.status.totalBackups}</p>
-                                                <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">Total Backups</p>
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">Total Backups</p>
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="glass-card p-5 border-white/5 bg-white/5">
+                                    <div className="glass-card p-5 border-border-subtle bg-surface-elevated">
                                         <div className="flex items-center gap-3">
                                             <HardDrive size={20} className="text-yellow-500" />
                                             <div>
                                                 <p className="text-2xl font-black text-white">{backupData.status.totalSizeMb} MB</p>
-                                                <p className="text-[9px] font-black uppercase tracking-widest text-gray-500">Total Size</p>
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">Total Size</p>
                                             </div>
                                         </div>
                                     </div>
@@ -1119,32 +1119,32 @@ export default function AdminPage() {
                                 {/* Backup Lists */}
                                 <div className="space-y-6">
                                     {/* Hourly */}
-                                    <div className="glass-card border-white/5 bg-black/40 overflow-hidden">
+                                    <div className="glass-card border-border-subtle bg-surface-elevated overflow-hidden">
                                         <div
-                                            className="p-4 border-b border-white/5 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-all"
+                                            className="p-4 border-b border-border-subtle flex items-center justify-between cursor-pointer hover:bg-surface-hover transition-all"
                                             onClick={() => toggleBackupSection('hourly')}
                                         >
                                             <div className="flex items-center gap-2">
-                                                {collapsedSections.hourly ? <ChevronRight size={16} className="text-gray-500" /> : <ChevronDown size={16} className="text-gray-500" />}
+                                                {collapsedSections.hourly ? <ChevronRight size={16} className="text-text-muted" /> : <ChevronDown size={16} className="text-text-muted" />}
                                                 <Clock size={16} className="text-primary" />
                                                 <h3 className="text-sm font-black text-white uppercase tracking-tight">Hourly Backups</h3>
-                                                <span className="text-xs text-gray-500">({backupData.backups.hourly.length})</span>
+                                                <span className="text-xs text-text-muted">({backupData.backups.hourly.length})</span>
                                             </div>
-                                            <span className="text-xs text-gray-500">Keep: {backupData.config.keepHourly}</span>
+                                            <span className="text-xs text-text-muted">Keep: {backupData.config.keepHourly}</span>
                                         </div>
                                         {!collapsedSections.hourly && (
                                             <div className="divide-y divide-white/5">
                                                 {backupData.backups.hourly.length === 0 ? (
-                                                    <p className="p-4 text-xs text-gray-500 text-center">No hourly backups</p>
+                                                    <p className="p-4 text-xs text-text-muted text-center">No hourly backups</p>
                                                 ) : (
                                                     backupData.backups.hourly.map((backup) => (
-                                                        <div key={backup.name} className="p-4 flex items-center justify-between hover:bg-white/[0.02]">
+                                                        <div key={backup.name} className="p-4 flex items-center justify-between hover:bg-surface-hover">
                                                             <div>
                                                                 <p className="text-sm font-bold text-white">{backup.name}</p>
-                                                                <p className="text-[10px] text-gray-500">{new Date(backup.createdAt).toLocaleString()}</p>
+                                                                <p className="text-[10px] text-text-muted">{new Date(backup.createdAt).toLocaleString()}</p>
                                                             </div>
                                                             <div className="flex items-center gap-4">
-                                                                <span className="text-xs text-gray-400">{backup.sizeMb} MB</span>
+                                                                <span className="text-xs text-text-muted">{backup.sizeMb} MB</span>
                                                             </div>
                                                         </div>
                                                     ))
@@ -1154,32 +1154,32 @@ export default function AdminPage() {
                                     </div>
                                     
                                     {/* Daily */}
-                                    <div className="glass-card border-white/5 bg-black/40 overflow-hidden">
+                                    <div className="glass-card border-border-subtle bg-surface-elevated overflow-hidden">
                                         <div
-                                            className="p-4 border-b border-white/5 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-all"
+                                            className="p-4 border-b border-border-subtle flex items-center justify-between cursor-pointer hover:bg-surface-hover transition-all"
                                             onClick={() => toggleBackupSection('daily')}
                                         >
                                             <div className="flex items-center gap-2">
-                                                {collapsedSections.daily ? <ChevronRight size={16} className="text-gray-500" /> : <ChevronDown size={16} className="text-gray-500" />}
+                                                {collapsedSections.daily ? <ChevronRight size={16} className="text-text-muted" /> : <ChevronDown size={16} className="text-text-muted" />}
                                                 <Calendar size={16} className="text-accent" />
                                                 <h3 className="text-sm font-black text-white uppercase tracking-tight">Daily Backups</h3>
-                                                <span className="text-xs text-gray-500">({backupData.backups.daily.length})</span>
+                                                <span className="text-xs text-text-muted">({backupData.backups.daily.length})</span>
                                             </div>
-                                            <span className="text-xs text-gray-500">Keep: {backupData.config.keepDaily}</span>
+                                            <span className="text-xs text-text-muted">Keep: {backupData.config.keepDaily}</span>
                                         </div>
                                         {!collapsedSections.daily && (
                                             <div className="divide-y divide-white/5">
                                                 {backupData.backups.daily.length === 0 ? (
-                                                    <p className="p-4 text-xs text-gray-500 text-center">No daily backups</p>
+                                                    <p className="p-4 text-xs text-text-muted text-center">No daily backups</p>
                                                 ) : (
                                                     backupData.backups.daily.map((backup) => (
-                                                        <div key={backup.name} className="p-4 flex items-center justify-between hover:bg-white/[0.02]">
+                                                        <div key={backup.name} className="p-4 flex items-center justify-between hover:bg-surface-hover">
                                                             <div>
                                                                 <p className="text-sm font-bold text-white">{backup.name}</p>
-                                                                <p className="text-[10px] text-gray-500">{new Date(backup.createdAt).toLocaleString()}</p>
+                                                                <p className="text-[10px] text-text-muted">{new Date(backup.createdAt).toLocaleString()}</p>
                                                             </div>
                                                             <div className="flex items-center gap-4">
-                                                                <span className="text-xs text-gray-400">{backup.sizeMb} MB</span>
+                                                                <span className="text-xs text-text-muted">{backup.sizeMb} MB</span>
                                                             </div>
                                                         </div>
                                                     ))
@@ -1189,32 +1189,32 @@ export default function AdminPage() {
                                     </div>
                                     
                                     {/* Weekly */}
-                                    <div className="glass-card border-white/5 bg-black/40 overflow-hidden">
+                                    <div className="glass-card border-border-subtle bg-surface-elevated overflow-hidden">
                                         <div
-                                            className="p-4 border-b border-white/5 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-all"
+                                            className="p-4 border-b border-border-subtle flex items-center justify-between cursor-pointer hover:bg-surface-hover transition-all"
                                             onClick={() => toggleBackupSection('weekly')}
                                         >
                                             <div className="flex items-center gap-2">
-                                                {collapsedSections.weekly ? <ChevronRight size={16} className="text-gray-500" /> : <ChevronDown size={16} className="text-gray-500" />}
+                                                {collapsedSections.weekly ? <ChevronRight size={16} className="text-text-muted" /> : <ChevronDown size={16} className="text-text-muted" />}
                                                 <Database size={16} className="text-yellow-500" />
                                                 <h3 className="text-sm font-black text-white uppercase tracking-tight">Weekly Backups</h3>
-                                                <span className="text-xs text-gray-500">({backupData.backups.weekly.length})</span>
+                                                <span className="text-xs text-text-muted">({backupData.backups.weekly.length})</span>
                                             </div>
-                                            <span className="text-xs text-gray-500">Keep: {backupData.config.keepWeekly}</span>
+                                            <span className="text-xs text-text-muted">Keep: {backupData.config.keepWeekly}</span>
                                         </div>
                                         {!collapsedSections.weekly && (
                                             <div className="divide-y divide-white/5">
                                                 {backupData.backups.weekly.length === 0 ? (
-                                                    <p className="p-4 text-xs text-gray-500 text-center">No weekly backups</p>
+                                                    <p className="p-4 text-xs text-text-muted text-center">No weekly backups</p>
                                                 ) : (
                                                     backupData.backups.weekly.map((backup) => (
-                                                        <div key={backup.name} className="p-4 flex items-center justify-between hover:bg-white/[0.02]">
+                                                        <div key={backup.name} className="p-4 flex items-center justify-between hover:bg-surface-hover">
                                                             <div>
                                                                 <p className="text-sm font-bold text-white">{backup.name}</p>
-                                                                <p className="text-[10px] text-gray-500">{new Date(backup.createdAt).toLocaleString()}</p>
+                                                                <p className="text-[10px] text-text-muted">{new Date(backup.createdAt).toLocaleString()}</p>
                                                             </div>
                                                             <div className="flex items-center gap-4">
-                                                                <span className="text-xs text-gray-400">{backup.sizeMb} MB</span>
+                                                                <span className="text-xs text-text-muted">{backup.sizeMb} MB</span>
                                                             </div>
                                                         </div>
                                                     ))
@@ -1233,12 +1233,12 @@ export default function AdminPage() {
                     <div className="space-y-6">
                         <div>
                             <h2 className="text-lg font-black text-white uppercase tracking-tight">Broadcast Notification</h2>
-                            <p className="text-xs text-gray-500 mt-1">Send an in-app notification to all active users.</p>
+                            <p className="text-xs text-text-muted mt-1">Send an in-app notification to all active users.</p>
                         </div>
 
-                        <div className="glass-card border-white/5 bg-black/40 p-6 space-y-5 max-w-xl">
+                        <div className="glass-card border-border-subtle bg-surface-elevated p-6 space-y-5 max-w-xl">
                             <div>
-                                <label className="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-2">Type</label>
+                                <label className="block text-[9px] font-black uppercase tracking-widest text-text-muted mb-2">Type</label>
                                 <div className="flex gap-2">
                                     {(['INFO', 'WARNING', 'SUCCESS'] as const).map(t => (
                                         <button
@@ -1250,7 +1250,7 @@ export default function AdminPage() {
                                                     ? t === 'WARNING' ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
                                                         : t === 'SUCCESS' ? "bg-accent/20 text-accent border border-accent/30"
                                                         : "bg-primary/20 text-primary border border-primary/30"
-                                                    : "bg-white/5 text-gray-500 border border-white/10 hover:bg-white/10"
+                                                    : "bg-surface-elevated text-text-muted border border-border-color hover:bg-surface-hover"
                                             )}
                                         >
                                             {t}
@@ -1260,28 +1260,28 @@ export default function AdminPage() {
                             </div>
 
                             <div>
-                                <label className="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-2">Title</label>
+                                <label className="block text-[9px] font-black uppercase tracking-widest text-text-muted mb-2">Title</label>
                                 <input
                                     type="text"
                                     value={broadcastTitle}
                                     onChange={e => setBroadcastTitle(e.target.value)}
                                     maxLength={100}
                                     placeholder="e.g. Scheduled Maintenance"
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-primary/50"
+                                    className="w-full bg-surface-elevated border border-border-color rounded-xl p-3 text-sm text-white placeholder:text-text-muted focus:outline-none focus:border-primary/50"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-2">Message</label>
+                                <label className="block text-[9px] font-black uppercase tracking-widest text-text-muted mb-2">Message</label>
                                 <textarea
                                     value={broadcastMessage}
                                     onChange={e => setBroadcastMessage(e.target.value)}
                                     maxLength={500}
                                     rows={4}
                                     placeholder="e.g. PrismJournal will be offline on Sunday 02:00–04:00 UTC for maintenance."
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-primary/50 resize-none"
+                                    className="w-full bg-surface-elevated border border-border-color rounded-xl p-3 text-sm text-white placeholder:text-text-muted focus:outline-none focus:border-primary/50 resize-none"
                                 />
-                                <p className="text-[9px] text-gray-600 mt-1 text-right">{broadcastMessage.length}/500</p>
+                                <p className="text-[9px] text-text-muted mt-1 text-right">{broadcastMessage.length}/500</p>
                             </div>
 
                             {broadcastResult && (
@@ -1307,16 +1307,16 @@ export default function AdminPage() {
                 {activeTab === 'auditlog' && (
                     <div className="space-y-4">
                         {/* Filters */}
-                        <div className="glass-card p-4 border-white/5 bg-white/5 flex flex-wrap gap-3 items-end">
+                        <div className="glass-card p-4 border-border-subtle bg-surface-elevated flex flex-wrap gap-3 items-end">
                             <div className="flex items-center gap-2">
-                                <Filter size={14} className="text-gray-500" />
-                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Filters</span>
+                                <Filter size={14} className="text-text-muted" />
+                                <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">Filters</span>
                             </div>
                             <div className="flex-1 min-w-[160px]">
                                 <select
                                     value={auditActionFilter}
                                     onChange={e => { setAuditActionFilter(e.target.value); loadAuditLog(1, e.target.value, auditSearch); }}
-                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-primary/50"
+                                    className="w-full bg-surface-elevated border border-border-color rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-primary/50"
                                 >
                                     <option value="">All actions</option>
                                     {(auditData?.actionTypes ?? []).map(a => (
@@ -1331,7 +1331,7 @@ export default function AdminPage() {
                                     value={auditSearch}
                                     onChange={e => setAuditSearch(e.target.value)}
                                     onKeyDown={e => e.key === 'Enter' && loadAuditLog(1, auditActionFilter, auditSearch)}
-                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder:text-gray-600 outline-none focus:border-primary/50"
+                                    className="w-full bg-surface-elevated border border-border-color rounded-lg px-3 py-2 text-xs text-white placeholder:text-text-muted outline-none focus:border-primary/50"
                                 />
                             </div>
                             <button
@@ -1342,14 +1342,14 @@ export default function AdminPage() {
                                 Refresh
                             </button>
                             {auditData && (
-                                <span className="text-[10px] text-gray-500 font-mono ml-auto">
+                                <span className="text-[10px] text-text-muted font-mono ml-auto">
                                     {auditData.pagination.total.toLocaleString()} entries
                                 </span>
                             )}
                         </div>
 
                         {/* Table */}
-                        <div className="glass-card border-white/5 bg-white/5 overflow-hidden">
+                        <div className="glass-card border-border-subtle bg-surface-elevated overflow-hidden">
                             {auditLoading && !auditData ? (
                                 <div className="flex items-center justify-center py-16">
                                     <Loader2 size={24} className="text-primary animate-spin" />
@@ -1358,18 +1358,18 @@ export default function AdminPage() {
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-xs">
                                         <thead>
-                                            <tr className="border-b border-white/10">
-                                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500 whitespace-nowrap">Time</th>
-                                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500 whitespace-nowrap">Action</th>
-                                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500 whitespace-nowrap">User</th>
-                                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500 whitespace-nowrap">IP</th>
-                                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">Details</th>
+                                            <tr className="border-b border-border-color">
+                                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted whitespace-nowrap">Time</th>
+                                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted whitespace-nowrap">Action</th>
+                                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted whitespace-nowrap">User</th>
+                                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted whitespace-nowrap">IP</th>
+                                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted">Details</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-white/5">
                                             {(auditData?.entries ?? []).length === 0 ? (
                                                 <tr>
-                                                    <td colSpan={5} className="text-center py-12 text-gray-600 text-xs">No audit log entries found.</td>
+                                                    <td colSpan={5} className="text-center py-12 text-text-muted text-xs">No audit log entries found.</td>
                                                 </tr>
                                             ) : (auditData?.entries ?? []).map(entry => {
                                                 const actionColor =
@@ -1382,8 +1382,8 @@ export default function AdminPage() {
                                                     ? entry.details
                                                     : JSON.stringify(entry.details);
                                                 return (
-                                                    <tr key={entry.id} className="hover:bg-white/5 transition-colors">
-                                                        <td className="px-4 py-2.5 text-gray-500 font-mono whitespace-nowrap">
+                                                    <tr key={entry.id} className="hover:bg-surface-hover transition-colors">
+                                                        <td className="px-4 py-2.5 text-text-muted font-mono whitespace-nowrap">
                                                             {new Date(entry.createdAt).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'medium' })}
                                                         </td>
                                                         <td className="px-4 py-2.5 whitespace-nowrap">
@@ -1393,15 +1393,15 @@ export default function AdminPage() {
                                                         </td>
                                                         <td className="px-4 py-2.5 whitespace-nowrap">
                                                             {entry.userEmail ? (
-                                                                <span className="text-gray-300">{entry.userEmail}</span>
+                                                                <span className="text-text-secondary">{entry.userEmail}</span>
                                                             ) : (
-                                                                <span className="text-gray-600 italic">anonymous</span>
+                                                                <span className="text-text-muted italic">anonymous</span>
                                                             )}
                                                         </td>
-                                                        <td className="px-4 py-2.5 text-gray-500 font-mono whitespace-nowrap">
+                                                        <td className="px-4 py-2.5 text-text-muted font-mono whitespace-nowrap">
                                                             {entry.ipAddress ?? '—'}
                                                         </td>
-                                                        <td className="px-4 py-2.5 text-gray-500 max-w-xs truncate font-mono">
+                                                        <td className="px-4 py-2.5 text-text-muted max-w-xs truncate font-mono">
                                                             {detailsStr}
                                                         </td>
                                                     </tr>
@@ -1419,17 +1419,17 @@ export default function AdminPage() {
                                 <button
                                     onClick={() => loadAuditLog(auditPage - 1, auditActionFilter, auditSearch)}
                                     disabled={auditPage <= 1 || auditLoading}
-                                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-xs font-bold text-gray-400 hover:text-white hover:bg-white/10 transition-all disabled:opacity-30"
+                                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-elevated border border-border-color text-xs font-bold text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all disabled:opacity-30"
                                 >
                                     <ChevronLeft size={14} /> Previous
                                 </button>
-                                <span className="text-[10px] text-gray-500 font-mono">
+                                <span className="text-[10px] text-text-muted font-mono">
                                     Page {auditPage} of {auditData.pagination.totalPages}
                                 </span>
                                 <button
                                     onClick={() => loadAuditLog(auditPage + 1, auditActionFilter, auditSearch)}
                                     disabled={auditPage >= auditData.pagination.totalPages || auditLoading}
-                                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-xs font-bold text-gray-400 hover:text-white hover:bg-white/10 transition-all disabled:opacity-30"
+                                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-elevated border border-border-color text-xs font-bold text-text-muted hover:text-text-primary hover:bg-surface-hover transition-all disabled:opacity-30"
                                 >
                                     Next <ChevronRight size={14} />
                                 </button>
@@ -1544,15 +1544,15 @@ function InvitesTab() {
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-lg font-black text-white uppercase tracking-tight">Invite Tokens</h2>
-                    <p className="text-xs text-gray-500 mt-1">Generate and manage registration invite tokens</p>
+                    <p className="text-xs text-text-muted mt-1">Generate and manage registration invite tokens</p>
                 </div>
             </div>
 
             {/* Invite-Only Mode Toggle */}
-            <div className="glass-card border-white/5 bg-white/5 p-5 flex items-center justify-between">
+            <div className="glass-card border-border-subtle bg-surface-elevated p-5 flex items-center justify-between">
                 <div>
                     <h3 className="text-sm font-bold text-white">Invite-Only Registration</h3>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-text-muted mt-1">
                         When enabled, new users must provide a valid invite token to register.
                         When disabled, anyone can register freely.
                     </p>
@@ -1577,29 +1577,29 @@ function InvitesTab() {
             </div>
 
             {/* Generate Form */}
-            <div className="glass-card border-white/5 bg-white/5 p-5 space-y-4">
+            <div className="glass-card border-border-subtle bg-surface-elevated p-5 space-y-4">
                 <h3 className="text-sm font-bold text-white">Generate New Tokens</h3>
                 <div className="flex flex-wrap gap-4 items-end">
                     <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Count</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Count</label>
                         <input
                             type="number"
                             min={1}
                             max={100}
                             value={newTokenCount}
                             onChange={e => setNewTokenCount(parseInt(e.target.value) || 1)}
-                            className="w-20 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+                            className="w-20 bg-surface-elevated border border-border-color rounded-lg px-3 py-2 text-sm text-white"
                         />
                     </div>
                     <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Expires (days)</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Expires (days)</label>
                         <input
                             type="number"
                             min={1}
                             max={365}
                             value={expiresDays}
                             onChange={e => setExpiresDays(parseInt(e.target.value) || 7)}
-                            className="w-24 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+                            className="w-24 bg-surface-elevated border border-border-color rounded-lg px-3 py-2 text-sm text-white"
                         />
                     </div>
                     <button
@@ -1619,7 +1619,7 @@ function InvitesTab() {
                         <div className="space-y-1">
                             {newTokens.map((token, i) => (
                                 <div key={i} className="flex items-center gap-2">
-                                    <code className="text-xs text-white font-mono flex-1 bg-black/20 px-2 py-1 rounded">
+                                    <code className="text-xs text-white font-mono flex-1 bg-surface-elevated px-2 py-1 rounded">
                                         {window.location.origin}/login?invite={token}
                                     </code>
                                     <button
@@ -1636,9 +1636,9 @@ function InvitesTab() {
             </div>
 
             {/* Tokens List */}
-            <div className="glass-card border-white/5 bg-white/5 overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+            <div className="glass-card border-border-subtle bg-surface-elevated overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border-color">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">
                         {tokens.length} token{tokens.length !== 1 ? 's' : ''}
                     </span>
                     <button
@@ -1653,16 +1653,16 @@ function InvitesTab() {
                         <Loader2 size={24} className="text-primary animate-spin" />
                     </div>
                 ) : tokens.length === 0 ? (
-                    <div className="text-center py-12 text-gray-500 text-xs">No invite tokens yet.</div>
+                    <div className="text-center py-12 text-text-muted text-xs">No invite tokens yet.</div>
                 ) : (
                     <table className="w-full text-xs">
                         <thead>
-                            <tr className="border-b border-white/10">
-                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">Token</th>
-                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">Created By</th>
-                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">Used By</th>
-                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">Expires</th>
-                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-500">Actions</th>
+                            <tr className="border-b border-border-color">
+                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted">Token</th>
+                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted">Created By</th>
+                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted">Used By</th>
+                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted">Expires</th>
+                                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-text-muted">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
@@ -1670,18 +1670,18 @@ function InvitesTab() {
                                 const isExpired = !token.usedAt && token.expiresAt && new Date(token.expiresAt) < new Date()
                                 const isUsed = !!token.usedAt
                                 return (
-                                <tr key={token.id} className={cn("hover:bg-white/5 transition-colors", isExpired && "opacity-50")}>
+                                <tr key={token.id} className={cn("hover:bg-surface-hover transition-colors", isExpired && "opacity-50")}>
                                     <td className="px-4 py-2.5">
-                                        <code className="text-gray-300 font-mono">{token.token}</code>
+                                        <code className="text-text-secondary font-mono">{token.token}</code>
                                     </td>
-                                    <td className="px-4 py-2.5 text-gray-400">
+                                    <td className="px-4 py-2.5 text-text-muted">
                                         {token.creator?.name || token.creator?.email || '—'}
                                     </td>
                                     <td className="px-4 py-2.5">
                                         {token.user ? (
                                             <span className="text-accent">{token.user.name || token.user.email}</span>
                                         ) : (
-                                            <span className="text-gray-600">Unused</span>
+                                            <span className="text-text-muted">Unused</span>
                                         )}
                                     </td>
                                     <td className="px-4 py-2.5">
@@ -1690,9 +1690,9 @@ function InvitesTab() {
                                         ) : isExpired ? (
                                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest bg-danger/10 text-danger border border-danger/20">Expired {formatShortDate(token.expiresAt!)}</span>
                                         ) : token.expiresAt ? (
-                                            <span className="text-gray-500">{formatShortDate(token.expiresAt)}</span>
+                                            <span className="text-text-muted">{formatShortDate(token.expiresAt)}</span>
                                         ) : (
-                                            <span className="text-gray-600">Never</span>
+                                            <span className="text-text-muted">Never</span>
                                         )}
                                     </td>
                                     <td className="px-4 py-2.5">

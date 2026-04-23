@@ -101,7 +101,7 @@ export function SetupChecklistEditor({
             <div className="flex items-center justify-between">
                 <div>
                     <h3 className="text-sm font-semibold text-gray-100">Setup Checklist</h3>
-                    <p className="text-xs text-gray-500">Entry criteria for this strategy</p>
+                    <p className="text-xs text-text-muted">Entry criteria for this strategy</p>
                 </div>
                 {hasChanges && (
                     <button
@@ -127,7 +127,7 @@ export function SetupChecklistEditor({
             {/* Existing Items */}
             <div className="space-y-2">
                 {items.length === 0 ? (
-                    <div className="text-xs text-gray-500 text-center py-4 bg-white/[0.02] rounded-lg border border-white/5">
+                    <div className="text-xs text-text-muted text-center py-4 bg-surface-elevated rounded-lg border border-border-subtle">
                         No checklist items yet. Add criteria to check before entering a trade.
                     </div>
                 ) : (
@@ -141,7 +141,7 @@ export function SetupChecklistEditor({
                                 <button
                                     onClick={() => moveItem(index, 'up')}
                                     disabled={index === 0}
-                                    className="text-gray-600 hover:text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed"
+                                    className="text-text-muted hover:text-text-muted disabled:opacity-30 disabled:cursor-not-allowed"
                                 >
                                     <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
                                         <path d="M5 2L8 6H2L5 2Z" />
@@ -150,7 +150,7 @@ export function SetupChecklistEditor({
                                 <button
                                     onClick={() => moveItem(index, 'down')}
                                     disabled={index === items.length - 1}
-                                    className="text-gray-600 hover:text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed"
+                                    className="text-text-muted hover:text-text-muted disabled:opacity-30 disabled:cursor-not-allowed"
                                 >
                                     <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
                                         <path d="M5 8L2 4H8L5 8Z" />
@@ -163,14 +163,14 @@ export function SetupChecklistEditor({
                                 type="text"
                                 value={item.label}
                                 onChange={(e) => updateItemLabel(item.id, e.target.value)}
-                                className="flex-1 px-3 py-2 bg-white/[0.02] border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-primary/50"
+                                className="flex-1 px-3 py-2 bg-surface-elevated border border-border-color rounded-lg text-sm text-white focus:outline-none focus:border-primary/50"
                                 placeholder="Checklist item"
                             />
 
                             {/* Delete Button */}
                             <button
                                 onClick={() => removeItem(item.id)}
-                                className="p-2 text-gray-600 hover:text-loss opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="p-2 text-text-muted hover:text-loss opacity-0 group-hover:opacity-100 transition-opacity"
                             >
                                 <Trash2 size={14} />
                             </button>
@@ -192,12 +192,12 @@ export function SetupChecklistEditor({
                         }
                     }}
                     placeholder="Add new checklist item..."
-                    className="flex-1 px-3 py-2 bg-white/[0.02] border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary/50"
+                    className="flex-1 px-3 py-2 bg-surface-elevated border border-border-color rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary/50"
                 />
                 <button
                     onClick={addItem}
                     disabled={!newItemLabel.trim()}
-                    className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                    className="px-4 py-2 bg-surface-elevated border border-border-color rounded-lg text-sm text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
                 >
                     <Plus size={14} />
                     Add

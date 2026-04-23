@@ -35,7 +35,7 @@ function RuleBadge({ rule }: { rule: ChallengeRule }) {
     }
     
     return (
-        <span className="text-[10px] px-2 py-1 rounded bg-white/5 text-gray-300 border border-white/10">
+        <span className="text-[10px] px-2 py-1 rounded bg-surface-elevated text-text-secondary border border-border-color">
             {label}: {valueDisplay}
         </span>
     );
@@ -80,7 +80,7 @@ function EvaluationDay({ evaluation, index }: { evaluation: ChallengeEvaluation;
                     </div>
                 )}
             </div>
-            <div className="text-[10px] text-gray-500">
+            <div className="text-[10px] text-text-muted">
                 {evaluation.tradeIds.length} trade{evaluation.tradeIds.length !== 1 ? 's' : ''}
             </div>
         </div>
@@ -156,7 +156,7 @@ export function ChallengeDetailModal({
                                     <div className="flex items-center gap-3">
                                         <div className={cn(
                                             "w-10 h-10 rounded-lg flex items-center justify-center",
-                                            challenge.isActive ? "bg-primary/20 text-primary" : "bg-gray-800 text-gray-500"
+                                            challenge.isActive ? "bg-primary/20 text-primary" : "bg-gray-800 text-text-muted"
                                         )}>
                                             <Target size={20} />
                                         </div>
@@ -165,12 +165,12 @@ export function ChallengeDetailModal({
                                             <div className="flex items-center gap-2">
                                                 <span className={cn(
                                                     "text-[10px] font-bold uppercase tracking-wide",
-                                                    challenge.isActive ? "text-primary" : "text-gray-500"
+                                                    challenge.isActive ? "text-primary" : "text-text-muted"
                                                 )}>
                                                     {challenge.isActive ? 'Active' : 'Inactive'}
                                                 </span>
                                                 {challenge.description && (
-                                                    <span className="text-[10px] text-gray-500">• {challenge.description}</span>
+                                                    <span className="text-[10px] text-text-muted">• {challenge.description}</span>
                                                 )}
                                             </div>
                                         </div>
@@ -187,7 +187,7 @@ export function ChallengeDetailModal({
                                                 </button>
                                                 <button
                                                     onClick={() => setShowDeleteConfirm(false)}
-                                                    className="px-3 py-1.5 bg-white/10 text-white text-xs font-medium rounded-lg hover:bg-white/20"
+                                                    className="px-3 py-1.5 bg-surface-hover text-white text-xs font-medium rounded-lg hover:bg-surface-hover"
                                                 >
                                                     Cancel
                                                 </button>
@@ -197,20 +197,20 @@ export function ChallengeDetailModal({
                                                 <button
                                                     onClick={handleBackfill}
                                                     disabled={backfillMutation.isPending}
-                                                    className="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-primary transition-colors"
+                                                    className="p-2 rounded-lg hover:bg-surface-hover text-text-muted hover:text-primary transition-colors"
                                                     title="Backfill evaluations from historical trades"
                                                 >
                                                     <RefreshCw size={16} className={backfillMutation.isPending ? 'animate-spin' : ''} />
                                                 </button>
                                                 <button
                                                     onClick={() => setShowDeleteConfirm(true)}
-                                                    className="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-loss transition-colors"
+                                                    className="p-2 rounded-lg hover:bg-surface-hover text-text-muted hover:text-loss transition-colors"
                                                 >
                                                     <Trash2 size={16} />
                                                 </button>
                                             </>
                                         )}
-                                        <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/5 text-gray-400">
+                                        <button onClick={onClose} className="p-2 rounded-lg hover:bg-surface-hover text-text-muted">
                                             <X size={18} />
                                         </button>
                                     </div>
@@ -220,15 +220,15 @@ export function ChallengeDetailModal({
                                 <div className="p-4 border-b border-border-subtle grid grid-cols-4 gap-3">
                                     <div className="text-center">
                                         <div className="text-2xl font-bold text-white">{challenge.stats.totalDays}</div>
-                                        <div className="text-[9px] text-gray-500 uppercase tracking-wide">Total Days</div>
+                                        <div className="text-[9px] text-text-muted uppercase tracking-wide">Total Days</div>
                                     </div>
                                     <div className="text-center">
                                         <div className="text-2xl font-bold text-profit">{challenge.stats.passedDays}</div>
-                                        <div className="text-[9px] text-gray-500 uppercase tracking-wide">Passed</div>
+                                        <div className="text-[9px] text-text-muted uppercase tracking-wide">Passed</div>
                                     </div>
                                     <div className="text-center">
                                         <div className="text-2xl font-bold text-loss">{challenge.stats.failedDays}</div>
-                                        <div className="text-[9px] text-gray-500 uppercase tracking-wide">Failed</div>
+                                        <div className="text-[9px] text-text-muted uppercase tracking-wide">Failed</div>
                                     </div>
                                     <div className="text-center">
                                         <div className={cn(
@@ -238,13 +238,13 @@ export function ChallengeDetailModal({
                                         )}>
                                             {formatPercent(challenge.stats.successRate, 0)}
                                         </div>
-                                        <div className="text-[9px] text-gray-500 uppercase tracking-wide">Success</div>
+                                        <div className="text-[9px] text-text-muted uppercase tracking-wide">Success</div>
                                     </div>
                                 </div>
                                 
                                 {/* Rules */}
                                 <div className="px-4 py-3 border-b border-border-subtle">
-                                    <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2">Rules</div>
+                                    <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted mb-2">Rules</div>
                                     <div className="flex flex-wrap gap-2">
                                         {challenge.rules.map((rule, i) => (
                                             <RuleBadge key={i} rule={rule} />
@@ -254,16 +254,16 @@ export function ChallengeDetailModal({
                                 
                                 {/* Evaluation Log */}
                                 <div className="flex-1 overflow-y-auto p-4">
-                                    <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-3 flex items-center gap-2">
+                                    <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted mb-3 flex items-center gap-2">
                                         <Calendar size={12} />
                                         Evaluation Log
                                     </div>
                                     
                                     {challenge.evaluations.length === 0 ? (
                                         <div className="text-center py-8">
-                                            <Calendar size={32} className="mx-auto text-gray-700 mb-2" />
-                                            <p className="text-xs text-gray-600">No evaluations yet</p>
-                                            <p className="text-[10px] text-gray-700 mt-1">Evaluations appear when trades are synced</p>
+                                            <Calendar size={32} className="mx-auto text-text-muted mb-2" />
+                                            <p className="text-xs text-text-muted">No evaluations yet</p>
+                                            <p className="text-[10px] text-text-muted mt-1">Evaluations appear when trades are synced</p>
                                         </div>
                                     ) : (
                                         <div className="space-y-2">
@@ -278,7 +278,7 @@ export function ChallengeDetailModal({
                             </>
                         ) : (
                             <div className="flex items-center justify-center py-20">
-                                <p className="text-gray-500">Challenge not found</p>
+                                <p className="text-text-muted">Challenge not found</p>
                             </div>
                         )}
                     </motion.div>

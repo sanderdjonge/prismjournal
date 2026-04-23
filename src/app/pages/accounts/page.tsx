@@ -101,14 +101,14 @@ function phaseBadge(phase: string | null) {
         Funded: 'bg-profit/20 text-profit',
     };
     return (
-        <span className={cn('px-2 py-0.5 rounded text-[10px] font-black uppercase', colors[phase] ?? 'bg-white/10 text-gray-400')}>
+        <span className={cn('px-2 py-0.5 rounded text-[10px] font-black uppercase', colors[phase] ?? 'bg-surface-hover text-text-muted')}>
             {phase}
         </span>
     );
 }
 
 function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
-    if (!active) return <ChevronUp size={10} className="text-gray-600" />;
+    if (!active) return <ChevronUp size={10} className="text-text-muted" />;
     return dir === 'asc' ? <ChevronUp size={10} className="text-primary" /> : <ChevronDown size={10} className="text-primary" />;
 }
 
@@ -118,15 +118,15 @@ function AccountCard({ account, onClick, onEdit, onArchive }: { account: Account
     const pnlPositive = account.totalPnl >= 0;
 
     return (
-        <div className="glass-card p-5 border-white/5 text-left w-full hover:border-primary/20 hover:bg-white/[0.03] transition-all group">
+        <div className="glass-card p-5 border-border-subtle text-left w-full hover:border-primary/20 hover:bg-surface-hover transition-all group">
             <div className="flex items-start justify-between mb-4">
                 <div>
                     <p className="font-black text-white text-sm">{account.name}</p>
-                    <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">
+                    <p className="text-[10px] text-text-muted uppercase tracking-widest mt-0.5">
                         {account.propFirm?.name ?? 'Manual'}
                     </p>
                     {account.platformAccountId && (
-                        <p className="text-[10px] font-mono text-gray-600 mt-0.5">
+                        <p className="text-[10px] font-mono text-text-muted mt-0.5">
                             #{account.platformAccountId}
                         </p>
                     )}
@@ -135,32 +135,32 @@ function AccountCard({ account, onClick, onEdit, onArchive }: { account: Account
                     {phaseBadge(account.currentPhase)}
                     <button
                         onClick={onClick}
-                        className="p-1.5 rounded-lg hover:bg-white/5 transition-all"
+                        className="p-1.5 rounded-lg hover:bg-surface-hover transition-all"
                         title="View details"
                     >
-                        <ArrowRight size={14} className="text-gray-600 group-hover:text-primary transition-colors" />
+                        <ArrowRight size={14} className="text-text-muted group-hover:text-primary transition-colors" />
                     </button>
                 </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
                 <div>
-                    <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Balance</p>
+                    <p className="text-[10px] text-text-muted uppercase tracking-widest mb-1">Balance</p>
                     <p className="text-sm font-bold text-white">{formatAmount(balance)}</p>
                 </div>
                 <div>
-                    <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">P&L</p>
+                    <p className="text-[10px] text-text-muted uppercase tracking-widest mb-1">P&L</p>
                     <p className={cn('text-sm font-bold', pnlPositive ? 'text-profit' : 'text-loss')}>
                         {formatPnl(account.totalPnl)}
                     </p>
                 </div>
                 <div>
-                    <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Trades</p>
+                    <p className="text-[10px] text-text-muted uppercase tracking-widest mb-1">Trades</p>
                     <p className="text-sm font-bold text-white">{account.tradeCount}</p>
                 </div>
                 <div>
-                    <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Platform</p>
-                    <span className={cn('px-2 py-0.5 rounded text-[10px] font-bold', PLATFORM_COLORS[account.platform] || 'bg-gray-500/20 text-gray-400')}>
+                    <p className="text-[10px] text-text-muted uppercase tracking-widest mb-1">Platform</p>
+                    <span className={cn('px-2 py-0.5 rounded text-[10px] font-bold', PLATFORM_COLORS[account.platform] || 'bg-gray-500/20 text-text-muted')}>
                         {PLATFORM_LABELS[account.platform] || account.platform}
                     </span>
                 </div>
@@ -178,16 +178,16 @@ function AccountCard({ account, onClick, onEdit, onArchive }: { account: Account
                 
                 return (
                     <div className="mt-4">
-                        <div className="flex justify-between text-[10px] text-gray-500 mb-1">
+                        <div className="flex justify-between text-[10px] text-text-muted mb-1">
                             <span className="flex items-center gap-1.5">
                                 Drawdown
-                                <span className="text-[8px] font-black uppercase tracking-widest text-gray-600">
+                                <span className="text-[8px] font-black uppercase tracking-widest text-text-muted">
                                     {account.propFirm.drawdownType === 'TRAILING' ? '(Trail)' : '(Static)'}
                                 </span>
                             </span>
                             <span>{formatPercent(drawdownPct, 2)} / {account.propFirm.maxDrawdown}%</span>
                         </div>
-                        <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-1 bg-surface-elevated rounded-full overflow-hidden">
                             <div
                                 className={`h-full ${barColor} rounded-full transition-all`}
                                 style={{ width: `${barPct}%` }}
@@ -197,7 +197,7 @@ function AccountCard({ account, onClick, onEdit, onArchive }: { account: Account
                 );
             })()}
 
-            <div className="mt-4 pt-3 border-t border-white/5 flex justify-end gap-4">
+            <div className="mt-4 pt-3 border-t border-border-subtle flex justify-end gap-4">
                 <button
                     onClick={(e) => { e.stopPropagation(); onArchive(); }}
                     className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-loss/70 hover:text-loss transition-all"
@@ -206,7 +206,7 @@ function AccountCard({ account, onClick, onEdit, onArchive }: { account: Account
                 </button>
                 <button
                     onClick={(e) => { e.stopPropagation(); onEdit(); }}
-                    className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-all"
+                    className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-text-muted hover:text-text-primary transition-all"
                 >
                     <Edit2 size={12} /> Edit
                 </button>
@@ -524,7 +524,7 @@ function AccountsContent() {
                             <Wallet size={24} className="text-primary" />
                             Trading Accounts
                         </h1>
-                        <p className="text-sm text-gray-400 mt-1">
+                        <p className="text-sm text-text-muted mt-1">
                             {accounts.filter(a => a.isActive).length} active account{accounts.filter(a => a.isActive).length !== 1 ? 's' : ''}
                         </p>
                     </div>
@@ -538,14 +538,14 @@ function AccountsContent() {
                 </div>
 
                 {/* Tabs */}
-                <div className="flex gap-2 border-b border-white/5 pb-2">
+                <div className="flex gap-2 border-b border-border-subtle pb-2">
                     <button
                         onClick={() => setActiveTab('accounts')}
                         className={cn(
                             "px-4 py-2 text-xs font-black uppercase tracking-widest transition-all",
                             activeTab === 'accounts'
                                 ? "text-primary border-b-2 border-primary"
-                                : "text-gray-500 hover:text-white"
+                                : "text-text-muted hover:text-text-primary"
                         )}
                     >
                         <Wallet size={14} className="inline mr-2" />
@@ -557,7 +557,7 @@ function AccountsContent() {
                             "px-4 py-2 text-xs font-black uppercase tracking-widest transition-all",
                             activeTab === 'connect'
                                 ? "text-primary border-b-2 border-primary"
-                                : "text-gray-500 hover:text-white"
+                                : "text-text-muted hover:text-text-primary"
                         )}
                     >
                         <LinkIcon size={14} className="inline mr-2" />
@@ -569,10 +569,10 @@ function AccountsContent() {
                 {activeTab === 'accounts' && (
                     <div className="space-y-8">
                         {accounts.length === 0 && (
-                            <div className="glass-card p-12 border-white/5 text-center">
-                                <Building2 size={48} className="mx-auto text-gray-700 mb-4" />
-                                <p className="text-gray-400 font-bold">No trading accounts yet</p>
-                                <p className="text-xs text-gray-600 mt-1 mb-4">
+                            <div className="glass-card p-12 border-border-subtle text-center">
+                                <Building2 size={48} className="mx-auto text-text-muted mb-4" />
+                                <p className="text-text-muted font-bold">No trading accounts yet</p>
+                                <p className="text-xs text-text-muted mt-1 mb-4">
                                     Create your first account to start tracking your trades
                                 </p>
                                 <button
@@ -600,21 +600,21 @@ function AccountsContent() {
                         )}
 
                         {accounts.length > 1 && (
-                            <div className="glass-card border-white/5 overflow-hidden">
-                                <div className="px-6 py-4 border-b border-white/5">
+                            <div className="glass-card border-border-subtle overflow-hidden">
+                                <div className="px-6 py-4 border-b border-border-subtle">
                                     <h2 className="text-xs font-black uppercase tracking-widest text-white">Account Comparison</h2>
                                 </div>
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-xs">
                                         <thead>
-                                            <tr className="border-b border-white/5">
+                                            <tr className="border-b border-border-subtle">
                                                 {TABLE_COLS.map(col => (
                                                     <th
                                                         key={col.label}
                                                         onClick={col.key ? () => handleSort(col.key!) : undefined}
                                                         className={cn(
-                                                            'px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gray-500',
-                                                            col.key && 'cursor-pointer hover:text-white select-none'
+                                                            'px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-text-muted',
+                                                            col.key && 'cursor-pointer hover:text-text-primary select-none'
                                                         )}
                                                     >
                                                         <span className="flex items-center gap-1">
@@ -630,20 +630,20 @@ function AccountsContent() {
                                                 <tr
                                                     key={account.id}
                                                     onClick={() => goToAccount(account.id)}
-                                                    className="border-b border-white/5 hover:bg-white/[0.02] cursor-pointer transition-colors"
+                                                    className="border-b border-border-subtle hover:bg-surface-hover cursor-pointer transition-colors"
                                                 >
                                                     <td className="px-4 py-3 font-bold text-white">{account.name}</td>
-                                                    <td className="px-4 py-3 text-gray-400">{account.propFirm?.name ?? '—'}</td>
-                                                    <td className="px-4 py-3 text-gray-300">
+                                                    <td className="px-4 py-3 text-text-muted">{account.propFirm?.name ?? '—'}</td>
+                                                    <td className="px-4 py-3 text-text-secondary">
                                                         {account.currentBalance != null ? formatAmount(account.currentBalance) : '—'}
                                                     </td>
-                                                    <td className="px-4 py-3 text-gray-300">{account.tradeCount}</td>
+                                                    <td className="px-4 py-3 text-text-secondary">{account.tradeCount}</td>
                                                     <td className={cn('px-4 py-3 font-bold', account.totalPnl >= 0 ? 'text-profit' : 'text-loss')}>
                                                         {formatPnl(account.totalPnl)}
                                                     </td>
                                                     <td className="px-4 py-3">{phaseBadge(account.currentPhase)}</td>
                                                     <td className="px-4 py-3">
-                                                        <ArrowRight size={14} className="text-gray-600" />
+                                                        <ArrowRight size={14} className="text-text-muted" />
                                                     </td>
                                                 </tr>
                                             ))}
@@ -654,33 +654,33 @@ function AccountsContent() {
                         )}
 
                         {/* Archived Accounts */}
-                        <div className="glass-card border-white/5">
+                        <div className="glass-card border-border-subtle">
                     <button
                         onClick={handleToggleArchived}
                         className="w-full flex items-center justify-between px-6 py-4 text-left"
                     >
                         <div className="flex items-center gap-2">
-                            <Archive size={14} className="text-gray-500" />
-                            <span className="text-xs font-black uppercase tracking-widest text-gray-500">Archived Accounts</span>
+                            <Archive size={14} className="text-text-muted" />
+                            <span className="text-xs font-black uppercase tracking-widest text-text-muted">Archived Accounts</span>
                         </div>
-                        {showArchived ? <ChevronUp size={14} className="text-gray-600" /> : <ChevronDown size={14} className="text-gray-600" />}
+                        {showArchived ? <ChevronUp size={14} className="text-text-muted" /> : <ChevronDown size={14} className="text-text-muted" />}
                     </button>
 
                     {showArchived && (
-                        <div className="border-t border-white/5 px-6 pb-6 pt-4">
+                        <div className="border-t border-border-subtle px-6 pb-6 pt-4">
                             {archivedLoading ? (
                                 <div className="flex justify-center py-6">
-                                    <Loader2 size={20} className="animate-spin text-gray-600" />
+                                    <Loader2 size={20} className="animate-spin text-text-muted" />
                                 </div>
                             ) : archivedAccounts.length === 0 ? (
-                                <p className="text-xs text-gray-600 text-center py-6">No archived accounts</p>
+                                <p className="text-xs text-text-muted text-center py-6">No archived accounts</p>
                             ) : (
                                 <div className="space-y-2">
                                     {archivedAccounts.map(account => (
-                                        <div key={account.id} className="flex items-center justify-between p-4 rounded-xl bg-white/[0.02] border border-white/5">
+                                        <div key={account.id} className="flex items-center justify-between p-4 rounded-xl bg-surface-elevated border border-border-subtle">
                                             <div>
-                                                <p className="text-sm font-bold text-gray-400">{account.name}</p>
-                                                <p className="text-[10px] text-gray-600 uppercase tracking-widest mt-0.5">
+                                                <p className="text-sm font-bold text-text-muted">{account.name}</p>
+                                                <p className="text-[10px] text-text-muted uppercase tracking-widest mt-0.5">
                                                     {account.propFirm?.name ?? 'Own Money'} · {account.tradeCount} trade{account.tradeCount !== 1 ? 's' : ''}
                                                 </p>
                                             </div>
@@ -706,7 +706,7 @@ function AccountsContent() {
                     <div className="space-y-10 animate-fade-in">
                         <div>
                             <h3 className="text-2xl font-black text-white tracking-tighter uppercase italic mb-2">MetaTrader 5 Bridge</h3>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Connect your MT5 terminal to sync trades and equity in real-time</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">Connect your MT5 terminal to sync trades and equity in real-time</p>
                         </div>
 
                         {/* Step 1: Download EA */}
@@ -715,11 +715,11 @@ function AccountsContent() {
                                 <div className="w-7 h-7 rounded-lg bg-primary/20 text-primary flex items-center justify-center text-xs font-black">1</div>
                                 <h4 className="text-sm font-black text-white uppercase tracking-wide">Download the Expert Advisor</h4>
                             </div>
-                            <div className="glass-card p-5 border-white/5 bg-white/5">
-                                <p className="text-xs text-gray-400 leading-relaxed mb-4">
+                            <div className="glass-card p-5 border-border-subtle bg-surface-elevated">
+                                <p className="text-xs text-text-muted leading-relaxed mb-4">
                                     Download <span className="text-white font-bold">PrismSync.mq5</span> and place it in your MT5 data folder:
                                 </p>
-                                <div className="glass-card p-3 border-white/5 bg-black/40 font-mono text-[11px] text-gray-400 mb-4">
+                                <div className="glass-card p-3 border-border-subtle bg-surface-elevated font-mono text-[11px] text-text-muted mb-4">
                                     MT5 {'>'} File {'>'} Open Data Folder {'>'} MQL5 {'>'} Experts
                                 </div>
                                 <a
@@ -735,7 +735,7 @@ function AccountsContent() {
                                         <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-primary/20 text-primary">Beta</span>
                                         <span className="text-xs font-bold text-white">PrismTrade EA v4.0</span>
                                     </div>
-                                    <p className="text-[11px] text-gray-400 leading-relaxed mb-2">
+                                    <p className="text-[11px] text-text-muted leading-relaxed mb-2">
                                         Visual trading toolbar with <span className="text-white">drag-and-drop SL/TP</span>, <span className="text-white">risk management</span>, and <span className="text-white">trade execution from chart</span>.
                                     </p>
                                     <div className="flex items-start gap-2 mb-3">
@@ -747,7 +747,7 @@ function AccountsContent() {
                                     <a
                                         href="/api/account/bridge/download-trade-ea"
                                         download="PrismTrade.mq5"
-                                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white font-bold uppercase tracking-[0.15em] text-[10px] hover:bg-white/10 active:scale-95 transition-all"
+                                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-elevated border border-border-color text-white font-bold uppercase tracking-[0.15em] text-[10px] hover:bg-surface-hover active:scale-95 transition-all"
                                     >
                                         <Download size={12} /> Download PrismTrade.mq5
                                     </a>
@@ -761,11 +761,11 @@ function AccountsContent() {
                                 <div className="w-7 h-7 rounded-lg bg-primary/20 text-primary flex items-center justify-center text-xs font-black">2</div>
                                 <h4 className="text-sm font-black text-white uppercase tracking-wide">Allow WebRequests in MT5</h4>
                             </div>
-                            <div className="glass-card p-5 border-white/5 bg-white/5">
-                                <p className="text-xs text-gray-400 leading-relaxed mb-3">
+                            <div className="glass-card p-5 border-border-subtle bg-surface-elevated">
+                                <p className="text-xs text-text-muted leading-relaxed mb-3">
                                     In MetaTrader 5, go to <span className="text-white font-bold">Tools {'>'} Options {'>'} Expert Advisors</span> and:
                                 </p>
-                                <ul className="space-y-2 text-xs text-gray-400">
+                                <ul className="space-y-2 text-xs text-text-muted">
                                     <li className="flex items-start gap-2">
                                         <span className="text-primary mt-0.5">&#x2022;</span>
                                         Check <span className="text-white font-bold">"Allow WebRequest for listed URL"</span>
@@ -784,63 +784,63 @@ function AccountsContent() {
                                 <div className="w-7 h-7 rounded-lg bg-primary/20 text-primary flex items-center justify-center text-xs font-black">3</div>
                                 <h4 className="text-sm font-black text-white uppercase tracking-wide">Configure the EA</h4>
                             </div>
-                            <div className="glass-card p-5 border-white/5 bg-white/5 space-y-5">
-                                <p className="text-xs text-gray-400 leading-relaxed">
+                            <div className="glass-card p-5 border-border-subtle bg-surface-elevated space-y-5">
+                                <p className="text-xs text-text-muted leading-relaxed">
                                     Drag <span className="text-white font-bold">PrismSync</span> onto any chart. In the EA input parameters, enter the Sync URL and Bridge Key below.
                                 </p>
 
                                 {/* Sync URL */}
                                 <div className="space-y-2">
-                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">Sync URL</label>
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-text-muted">Sync URL</label>
                                     <div className="flex items-center gap-2">
-                                        <div className="flex-1 glass-card px-4 py-3 border-white/5 bg-black/40 font-mono text-sm text-white truncate">
+                                        <div className="flex-1 glass-card px-4 py-3 border-border-subtle bg-surface-elevated font-mono text-sm text-white truncate">
                                             {bridgeInfo?.syncUrl || 'Loading...'}
                                         </div>
                                         <button
                                             onClick={() => bridgeInfo?.syncUrl && handleCopy(bridgeInfo.syncUrl, 'url')}
-                                            className="px-3 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all"
+                                            className="px-3 py-3 rounded-xl border border-border-color hover:bg-surface-hover transition-all"
                                             title="Copy"
                                         >
-                                            {copied === 'url' ? <Check size={16} className="text-primary" /> : <Copy size={16} className="text-gray-500" />}
+                                            {copied === 'url' ? <Check size={16} className="text-primary" /> : <Copy size={16} className="text-text-muted" />}
                                         </button>
                                     </div>
                                 </div>
 
                                 {/* Bridge Key */}
                                 <div className="space-y-2">
-                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">Bridge Key</label>
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-text-muted">Bridge Key</label>
                                     <div className="flex items-center gap-2">
-                                        <div className="flex-1 glass-card px-4 py-3 border-white/5 bg-black/40 font-mono text-sm text-white truncate">
+                                        <div className="flex-1 glass-card px-4 py-3 border-border-subtle bg-surface-elevated font-mono text-sm text-white truncate">
                                             {bridgeInfo?.isHashed ? (
                                                 <span className="text-yellow-400 text-xs">Key not recoverable — click Regenerate to get a new one</span>
                                             ) : bridgeInfo?.bridgeKey ? (
                                                 showKey ? bridgeInfo.bridgeKey : '••••••••••••••••••••••••••••••••'
                                             ) : (
-                                                <span className="text-gray-500">No key set - click Regenerate to create one</span>
+                                                <span className="text-text-muted">No key set - click Regenerate to create one</span>
                                             )}
                                         </div>
                                         <button
                                             onClick={() => setShowKey(!showKey)}
-                                            className="px-3 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all"
+                                            className="px-3 py-3 rounded-xl border border-border-color hover:bg-surface-hover transition-all"
                                             title={showKey ? 'Hide' : 'Reveal'}
                                         >
-                                            {showKey ? <EyeOff size={16} className="text-gray-500" /> : <Eye size={16} className="text-gray-500" />}
+                                            {showKey ? <EyeOff size={16} className="text-text-muted" /> : <Eye size={16} className="text-text-muted" />}
                                         </button>
                                         <button
                                             onClick={() => bridgeInfo?.bridgeKey && handleCopy(bridgeInfo.bridgeKey, 'key')}
                                             disabled={!bridgeInfo?.bridgeKey}
-                                            className="px-3 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all disabled:opacity-50"
+                                            className="px-3 py-3 rounded-xl border border-border-color hover:bg-surface-hover transition-all disabled:opacity-50"
                                             title="Copy"
                                         >
-                                            {copied === 'key' ? <Check size={16} className="text-primary" /> : <Copy size={16} className="text-gray-500" />}
+                                            {copied === 'key' ? <Check size={16} className="text-primary" /> : <Copy size={16} className="text-text-muted" />}
                                         </button>
                                     </div>
                                     <div className="flex items-center justify-between mt-2">
-                                        <p className="text-[9px] text-gray-600">Keep this key secret. It authenticates your MT5 terminal.</p>
+                                        <p className="text-[9px] text-text-muted">Keep this key secret. It authenticates your MT5 terminal.</p>
                                         <button
                                             onClick={handleRegenerate}
                                             disabled={regenerating}
-                                            className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-gray-500 hover:text-white transition-all disabled:opacity-50"
+                                            className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-text-muted hover:text-text-primary transition-all disabled:opacity-50"
                                         >
                                             <RefreshCw size={12} className={regenerating ? 'animate-spin' : ''} /> Regenerate
                                         </button>
@@ -855,8 +855,8 @@ function AccountsContent() {
                                 <div className="w-7 h-7 rounded-lg bg-primary/20 text-primary flex items-center justify-center text-xs font-black">4</div>
                                 <h4 className="text-sm font-black text-white uppercase tracking-wide">Verify Connection</h4>
                             </div>
-                            <div className="glass-card p-5 border-white/5 bg-white/5">
-                                <p className="text-xs text-gray-400 leading-relaxed">
+                            <div className="glass-card p-5 border-border-subtle bg-surface-elevated">
+                                <p className="text-xs text-text-muted leading-relaxed">
                                     Once the EA is running, check the MT5 <span className="text-white font-bold">Experts</span> tab for
                                     <span className="text-primary font-mono"> "PrismSync EA started"</span>. Equity snapshots will sync every 60 seconds
                                     and trades will appear in your journal automatically.
@@ -870,20 +870,20 @@ function AccountsContent() {
             {/* Add Account Modal */}
             {showAddAccount && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-                    <div className="glass-card w-full max-w-lg mx-4 p-6 border-white/10">
+                    <div className="glass-card w-full max-w-lg mx-4 p-6 border-border-color">
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-lg font-black text-white uppercase tracking-tight">Add Trading Account</h3>
                             <button
                                 onClick={() => setShowAddAccount(false)}
-                                className="p-1.5 rounded-lg hover:bg-white/5 transition-all"
+                                className="p-1.5 rounded-lg hover:bg-surface-hover transition-all"
                             >
-                                <X size={18} className="text-gray-400" />
+                                <X size={18} className="text-text-muted" />
                             </button>
                         </div>
 
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                <label className="text-[9px] font-black uppercase tracking-widest text-text-muted">
                                     Account Name *
                                 </label>
                                 <input
@@ -891,19 +891,19 @@ function AccountsContent() {
                                     value={newAccount.name}
                                     onChange={(e) => setNewAccount(prev => ({ ...prev, name: e.target.value }))}
                                     placeholder="e.g., FTMO Challenge, Live Account"
-                                    className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                    className="w-full px-3 py-2 bg-surface-elevated border border-border-color rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-text-muted"
                                 />
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-text-muted">
                                         Platform
                                     </label>
                                     <select
                                         value={newAccount.platform}
                                         onChange={(e) => setNewAccount(prev => ({ ...prev, platform: e.target.value as any }))}
-                                        className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all"
+                                        className="w-full px-3 py-2 bg-surface-elevated border border-border-color rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all"
                                     >
                                         <option value="METATRADER5">MetaTrader 5</option>
                                         <option value="CTRADER">cTrader</option>
@@ -912,7 +912,7 @@ function AccountsContent() {
                                     </select>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-text-muted">
                                         Broker
                                     </label>
                                     <input
@@ -920,13 +920,13 @@ function AccountsContent() {
                                         value={newAccount.broker}
                                         onChange={(e) => setNewAccount(prev => ({ ...prev, broker: e.target.value }))}
                                         placeholder="Optional"
-                                        className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                        className="w-full px-3 py-2 bg-surface-elevated border border-border-color rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-text-muted"
                                     />
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                <label className="text-[9px] font-black uppercase tracking-widest text-text-muted">
                                     Account / Login Number
                                 </label>
                                 <input
@@ -934,12 +934,12 @@ function AccountsContent() {
                                     value={newAccount.platformAccountId}
                                     onChange={(e) => setNewAccount(prev => ({ ...prev, platformAccountId: e.target.value }))}
                                     placeholder="e.g. 123456 (MT5 login)"
-                                    className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                    className="w-full px-3 py-2 bg-surface-elevated border border-border-color rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-text-muted"
                                 />
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                <label className="text-[9px] font-black uppercase tracking-widest text-text-muted">
                                     Account Type
                                 </label>
                                 <div className="grid grid-cols-2 gap-2">
@@ -950,7 +950,7 @@ function AccountsContent() {
                                             "p-3 rounded-lg border text-xs font-bold uppercase tracking-wide transition-all",
                                             newAccount.accountType === 'OWN_MONEY'
                                                 ? "bg-primary/10 border-primary/30 text-primary"
-                                                : "bg-black/20 border-white/10 text-gray-500 hover:text-white"
+                                                : "bg-surface-elevated border-border-color text-text-muted hover:text-text-primary"
                                         )}
                                     >
                                         Own Money
@@ -962,7 +962,7 @@ function AccountsContent() {
                                             "p-3 rounded-lg border text-xs font-bold uppercase tracking-wide transition-all",
                                             newAccount.accountType === 'PROPFIRM'
                                                 ? "bg-purple-500/10 border-purple-500/30 text-purple-400"
-                                                : "bg-black/20 border-white/10 text-gray-500 hover:text-white"
+                                                : "bg-surface-elevated border-border-color text-text-muted hover:text-text-primary"
                                         )}
                                     >
                                         Prop Firm
@@ -972,7 +972,7 @@ function AccountsContent() {
 
                             {newAccount.accountType === 'OWN_MONEY' && (
                                 <div className="space-y-2">
-                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-text-muted">
                                         Account Size
                                     </label>
                                     <input
@@ -980,7 +980,7 @@ function AccountsContent() {
                                         value={newAccount.accountSize}
                                         onChange={(e) => setNewAccount(prev => ({ ...prev, accountSize: e.target.value }))}
                                         placeholder="e.g. 10000"
-                                        className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                        className="w-full px-3 py-2 bg-surface-elevated border border-border-color rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-text-muted"
                                     />
                                 </div>
                             )}
@@ -988,13 +988,13 @@ function AccountsContent() {
                             {newAccount.accountType === 'PROPFIRM' && (
                                 <>
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                        <label className="text-[9px] font-black uppercase tracking-widest text-text-muted">
                                             Prop Firm
                                         </label>
                                         <select
                                             value={newAccount.propFirmId}
                                             onChange={(e) => setNewAccount(prev => ({ ...prev, propFirmId: e.target.value }))}
-                                            className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all"
+                                            className="w-full px-3 py-2 bg-surface-elevated border border-border-color rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all"
                                         >
                                             <option value="">Select a prop firm...</option>
                                             {propFirms.map((firm) => (
@@ -1006,13 +1006,13 @@ function AccountsContent() {
                                     </div>
                                     
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                        <label className="text-[9px] font-black uppercase tracking-widest text-text-muted">
                                             Account Size
                                         </label>
                                         <select
                                             value={newAccount.accountSize}
                                             onChange={(e) => setNewAccount(prev => ({ ...prev, accountSize: e.target.value }))}
-                                            className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all"
+                                            className="w-full px-3 py-2 bg-surface-elevated border border-border-color rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all"
                                         >
                                             <option value="">Select size...</option>
                                             <option value="5000">$5,000</option>
@@ -1027,14 +1027,14 @@ function AccountsContent() {
                                     </div>
                                     {newAccount.accountSize === 'custom' && (
                                         <div className="space-y-2">
-                                            <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                            <label className="text-[9px] font-black uppercase tracking-widest text-text-muted">
                                                 Custom Amount ($)
                                             </label>
                                             <input
                                                 type="number"
                                                 onChange={(e) => setNewAccount(prev => ({ ...prev, accountSize: e.target.value }))}
                                                 placeholder="Enter custom amount"
-                                                className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                                className="w-full px-3 py-2 bg-surface-elevated border border-border-color rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-text-muted"
                                             />
                                         </div>
                                     )}
@@ -1042,13 +1042,13 @@ function AccountsContent() {
                             )}
                             
                             <div className="space-y-2">
-                                <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                <label className="text-[9px] font-black uppercase tracking-widest text-text-muted">
                                     Currency
                                 </label>
                                 <select
                                     value={newAccount.currency}
                                     onChange={(e) => setNewAccount(prev => ({ ...prev, currency: e.target.value }))}
-                                    className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all"
+                                    className="w-full px-3 py-2 bg-surface-elevated border border-border-color rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all"
                                 >
                                     <option value="USD">USD</option>
                                     <option value="EUR">EUR</option>
@@ -1060,7 +1060,7 @@ function AccountsContent() {
                         <div className="flex items-center justify-end gap-3 mt-6">
                             <button
                                 onClick={() => setShowAddAccount(false)}
-                                className="px-4 py-2 rounded-lg border border-white/10 text-gray-400 text-xs font-bold uppercase hover:bg-white/5 transition-all"
+                                className="px-4 py-2 rounded-lg border border-border-color text-text-muted text-xs font-bold uppercase hover:bg-surface-hover transition-all"
                             >
                                 Cancel
                             </button>
@@ -1084,33 +1084,33 @@ function AccountsContent() {
             {/* Edit Account Modal */}
             {editingAccount && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-                    <div className="glass-card w-full max-w-lg mx-4 p-6 border-white/10 max-h-[90vh] overflow-y-auto">
+                    <div className="glass-card w-full max-w-lg mx-4 p-6 border-border-color max-h-[90vh] overflow-y-auto">
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-lg font-black text-white uppercase tracking-tight">Edit Account</h3>
                             <button
                                 onClick={() => setEditingAccount(null)}
-                                className="p-1.5 rounded-lg hover:bg-white/5 transition-all"
+                                className="p-1.5 rounded-lg hover:bg-surface-hover transition-all"
                             >
-                                <X size={18} className="text-gray-400" />
+                                <X size={18} className="text-text-muted" />
                             </button>
                         </div>
 
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                <label className="text-[9px] font-black uppercase tracking-widest text-text-muted">
                                     Account Name *
                                 </label>
                                 <input
                                     type="text"
                                     value={editForm.name}
                                     onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
-                                    className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all"
+                                    className="w-full px-3 py-2 bg-surface-elevated border border-border-color rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all"
                                 />
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-text-muted">
                                         Broker
                                     </label>
                                     <input
@@ -1118,17 +1118,17 @@ function AccountsContent() {
                                         value={editForm.broker}
                                         onChange={(e) => setEditForm(prev => ({ ...prev, broker: e.target.value }))}
                                         placeholder="Optional"
-                                        className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                        className="w-full px-3 py-2 bg-surface-elevated border border-border-color rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-text-muted"
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-text-muted">
                                         Currency
                                     </label>
                                     <select
                                         value={editForm.currency}
                                         onChange={(e) => setEditForm(prev => ({ ...prev, currency: e.target.value }))}
-                                        className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all"
+                                        className="w-full px-3 py-2 bg-surface-elevated border border-border-color rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all"
                                     >
                                         <option value="USD">USD</option>
                                         <option value="EUR">EUR</option>
@@ -1138,7 +1138,7 @@ function AccountsContent() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                <label className="text-[9px] font-black uppercase tracking-widest text-text-muted">
                                     Account / Login Number
                                 </label>
                                 <input
@@ -1146,16 +1146,16 @@ function AccountsContent() {
                                     value={editForm.platformAccountId}
                                     onChange={(e) => setEditForm(prev => ({ ...prev, platformAccountId: e.target.value }))}
                                     placeholder="e.g. 123456 (MT5 login)"
-                                    className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                    className="w-full px-3 py-2 bg-surface-elevated border border-border-color rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-text-muted"
                                 />
                             </div>
 
                             {/* Prop Firm Selection - Always show */}
-                            <div className="pt-4 border-t border-white/10">
-                                <h4 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-4">Prop Firm (Optional)</h4>
+                            <div className="pt-4 border-t border-border-color">
+                                <h4 className="text-xs font-black uppercase tracking-widest text-text-muted mb-4">Prop Firm (Optional)</h4>
                                 
                                 <div className="space-y-2">
-                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                    <label className="text-[9px] font-black uppercase tracking-widest text-text-muted">
                                         Select Prop Firm
                                     </label>
                                     <select
@@ -1175,7 +1175,7 @@ function AccountsContent() {
                                                 })() : prev.profitTarget,
                                             }));
                                         }}
-                                        className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all disabled:opacity-50"
+                                        className="w-full px-3 py-2 bg-surface-elevated border border-border-color rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all disabled:opacity-50"
                                     >
                                         {propFirmsLoading ? (
                                             <option value={editForm.propFirmId}>Loading...</option>
@@ -1194,12 +1194,12 @@ function AccountsContent() {
                             {/* Prop Firm Settings - Show when prop firm selected */}
                             {editForm.propFirmId && (
                                 <>
-                                    <div className="pt-4 border-t border-white/10">
-                                        <h4 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-4">Prop Firm Settings</h4>
+                                    <div className="pt-4 border-t border-border-color">
+                                        <h4 className="text-xs font-black uppercase tracking-widest text-text-muted mb-4">Prop Firm Settings</h4>
 
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-2">
-                                                <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                                <label className="text-[9px] font-black uppercase tracking-widest text-text-muted">
                                                     Account Size
                                                 </label>
                                                 <input
@@ -1207,11 +1207,11 @@ function AccountsContent() {
                                                     value={editForm.accountSize}
                                                     onChange={(e) => setEditForm(prev => ({ ...prev, accountSize: e.target.value }))}
                                                     placeholder="e.g. 10000"
-                                                    className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                                    className="w-full px-3 py-2 bg-surface-elevated border border-border-color rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-text-muted"
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                                <label className="text-[9px] font-black uppercase tracking-widest text-text-muted">
                                                     Profit Split (%)
                                                 </label>
                                                 <input
@@ -1219,18 +1219,18 @@ function AccountsContent() {
                                                     value={editForm.profitSplit}
                                                     onChange={(e) => setEditForm(prev => ({ ...prev, profitSplit: e.target.value }))}
                                                     placeholder="e.g. 80"
-                                                    className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                                    className="w-full px-3 py-2 bg-surface-elevated border border-border-color rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-text-muted"
                                                 />
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="pt-4 border-t border-white/10">
-                                        <h4 className="text-xs font-black uppercase tracking-widest text-gray-500 mb-4">Rule Overrides</h4>
+                                    <div className="pt-4 border-t border-border-color">
+                                        <h4 className="text-xs font-black uppercase tracking-widest text-text-muted mb-4">Rule Overrides</h4>
 
                                         <div className="grid grid-cols-3 gap-4">
                                             <div className="space-y-2">
-                                                <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                                <label className="text-[9px] font-black uppercase tracking-widest text-text-muted">
                                                     Max Daily Loss (%)
                                                 </label>
                                                 <input
@@ -1239,11 +1239,11 @@ function AccountsContent() {
                                                     value={editForm.maxDailyLoss}
                                                     onChange={(e) => setEditForm(prev => ({ ...prev, maxDailyLoss: e.target.value }))}
                                                     placeholder="e.g. 5"
-                                                    className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                                    className="w-full px-3 py-2 bg-surface-elevated border border-border-color rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-text-muted"
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                                <label className="text-[9px] font-black uppercase tracking-widest text-text-muted">
                                                     Max Drawdown (%)
                                                 </label>
                                                 <input
@@ -1252,11 +1252,11 @@ function AccountsContent() {
                                                     value={editForm.maxTotalDrawdown}
                                                     onChange={(e) => setEditForm(prev => ({ ...prev, maxTotalDrawdown: e.target.value }))}
                                                     placeholder="e.g. 10"
-                                                    className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                                    className="w-full px-3 py-2 bg-surface-elevated border border-border-color rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-text-muted"
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <label className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                                                <label className="text-[9px] font-black uppercase tracking-widest text-text-muted">
                                                     Profit Target (%)
                                                 </label>
                                                 <input
@@ -1265,7 +1265,7 @@ function AccountsContent() {
                                                     value={editForm.profitTarget}
                                                     onChange={(e) => setEditForm(prev => ({ ...prev, profitTarget: e.target.value }))}
                                                     placeholder="e.g. 10"
-                                                    className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                                    className="w-full px-3 py-2 bg-surface-elevated border border-border-color rounded-lg text-white text-sm outline-none focus:border-primary/50 transition-all placeholder:text-text-muted"
                                                 />
                                             </div>
                                         </div>
@@ -1274,11 +1274,11 @@ function AccountsContent() {
                             )}
 
                             {/* Auto Chart Screenshots */}
-                            <div className="border-t border-white/5 pt-4">
+                            <div className="border-t border-border-subtle pt-4">
                                 <div className="flex items-center justify-between mb-3">
                                     <div>
-                                        <h4 className="text-xs font-black uppercase tracking-widest text-gray-400">Auto Screenshots</h4>
-                                        <p className="text-[10px] text-gray-600 mt-0.5">Capture chart screenshots when trades sync</p>
+                                        <h4 className="text-xs font-black uppercase tracking-widest text-text-muted">Auto Screenshots</h4>
+                                        <p className="text-[10px] text-text-muted mt-0.5">Capture chart screenshots when trades sync</p>
                                     </div>
                                     <button
                                         type="button"
@@ -1287,7 +1287,7 @@ function AccountsContent() {
                                             screenshotConfig: { ...f.screenshotConfig, enabled: !f.screenshotConfig.enabled }
                                         }))}
                                         className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                            editForm.screenshotConfig.enabled ? 'bg-primary/70' : 'bg-white/10'
+                                            editForm.screenshotConfig.enabled ? 'bg-primary/70' : 'bg-surface-hover'
                                         }`}
                                     >
                                         <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
@@ -1300,7 +1300,7 @@ function AccountsContent() {
                                     <div className="space-y-3">
                                         {/* On Open */}
                                         <div>
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">On Trade Open</p>
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-1.5">On Trade Open</p>
                                             <div className="flex flex-wrap gap-1.5">
                                                 {TIMEFRAME_OPTIONS.map(tf => (
                                                     <button
@@ -1316,7 +1316,7 @@ function AccountsContent() {
                                                         className={`px-2.5 py-1 text-[10px] font-black uppercase rounded-lg border transition-all ${
                                                             editForm.screenshotConfig.openTimeframes.includes(tf)
                                                                 ? 'bg-primary/20 text-primary border-primary/40'
-                                                                : 'bg-white/5 text-gray-500 border-white/10 hover:bg-white/10'
+                                                                : 'bg-surface-elevated text-text-muted border-border-color hover:bg-surface-hover'
                                                         }`}
                                                     >
                                                         {tf}
@@ -1327,7 +1327,7 @@ function AccountsContent() {
 
                                         {/* On Close */}
                                         <div>
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1.5">On Trade Close</p>
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-1.5">On Trade Close</p>
                                             <div className="flex flex-wrap gap-1.5">
                                                 {TIMEFRAME_OPTIONS.map(tf => (
                                                     <button
@@ -1343,7 +1343,7 @@ function AccountsContent() {
                                                         className={`px-2.5 py-1 text-[10px] font-black uppercase rounded-lg border transition-all ${
                                                             editForm.screenshotConfig.closeTimeframes.includes(tf)
                                                                 ? 'bg-primary/20 text-primary border-primary/40'
-                                                                : 'bg-white/5 text-gray-500 border-white/10 hover:bg-white/10'
+                                                                : 'bg-surface-elevated text-text-muted border-border-color hover:bg-surface-hover'
                                                         }`}
                                                     >
                                                         {tf}
@@ -1354,7 +1354,7 @@ function AccountsContent() {
 
                                         {/* Bars of context */}
                                         <div className="flex items-center gap-3">
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 whitespace-nowrap">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-text-muted whitespace-nowrap">
                                                 Bars of context
                                             </span>
                                             <input
@@ -1369,12 +1369,12 @@ function AccountsContent() {
                                                 }))}
                                                 className="flex-1 accent-primary"
                                             />
-                                            <span className="text-[10px] font-bold text-gray-400 w-8 text-right">
+                                            <span className="text-[10px] font-bold text-text-muted w-8 text-right">
                                                 {editForm.screenshotConfig.barsOfContext}
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-3">
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 whitespace-nowrap">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-text-muted whitespace-nowrap">
                                                 Delay bars
                                             </span>
                                             <input
@@ -1389,7 +1389,7 @@ function AccountsContent() {
                                                 }))}
                                                 className="flex-1 accent-primary"
                                             />
-                                            <span className="text-[10px] font-bold text-gray-400 w-8 text-right">
+                                            <span className="text-[10px] font-bold text-text-muted w-8 text-right">
                                                 {editForm.screenshotConfig.screenshotDelayBars}
                                             </span>
                                         </div>
@@ -1399,7 +1399,7 @@ function AccountsContent() {
                             </div>
                         </div>
                         
-                        <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/10">
+                        <div className="flex items-center justify-between mt-6 pt-4 border-t border-border-color">
                             <button
                                 onClick={() => handleArchive(editingAccount.id)}
                                 className="flex items-center gap-2 px-4 py-2 rounded-lg border border-loss/30 text-loss text-xs font-bold uppercase hover:bg-loss/10 transition-all"
@@ -1410,7 +1410,7 @@ function AccountsContent() {
                             <div className="flex items-center gap-3">
                                 <button
                                     onClick={() => setEditingAccount(null)}
-                                    className="px-4 py-2 rounded-lg border border-white/10 text-gray-400 text-xs font-bold uppercase hover:bg-white/5 transition-all"
+                                    className="px-4 py-2 rounded-lg border border-border-color text-text-muted text-xs font-bold uppercase hover:bg-surface-hover transition-all"
                                 >
                                     Cancel
                                 </button>
@@ -1441,13 +1441,13 @@ function AccountsContent() {
                             </div>
                             <div>
                                 <h3 className="text-lg font-black text-white uppercase tracking-tight">Permanently Delete Account</h3>
-                                <p className="text-xs text-gray-400 mt-1">This action cannot be undone.</p>
+                                <p className="text-xs text-text-muted mt-1">This action cannot be undone.</p>
                             </div>
                         </div>
 
                         <div className="p-4 rounded-xl bg-loss/5 border border-loss/20 mb-6 space-y-2">
                             <p className="text-sm font-bold text-loss">⚠ All of the following will be permanently deleted:</p>
-                            <ul className="text-xs text-gray-400 space-y-1 ml-4 list-disc">
+                            <ul className="text-xs text-text-muted space-y-1 ml-4 list-disc">
                                 <li>The account <span className="text-white font-bold">{deleteTarget.name}</span></li>
                                 <li>All <span className="text-white font-bold">{deleteTarget.tradeCount} trade{deleteTarget.tradeCount !== 1 ? 's' : ''}</span> and their journal entries</li>
                                 <li>All screenshots, notes, and analytics data</li>
@@ -1457,7 +1457,7 @@ function AccountsContent() {
                         </div>
 
                         <div className="space-y-2 mb-6">
-                            <label className="text-[10px] font-black tracking-widest text-gray-500 uppercase">
+                            <label className="text-[10px] font-black tracking-widest text-text-muted uppercase">
                                 Type{' '}
                                 <span className="normal-case text-white font-black">{deleteTarget.name}</span>
                                 {' '}to confirm
@@ -1467,7 +1467,7 @@ function AccountsContent() {
                                 value={deleteConfirmText}
                                 onChange={(e) => setDeleteConfirmText(e.target.value)}
                                 placeholder={deleteTarget.name}
-                                className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-white text-sm outline-none focus:border-loss/50 transition-all placeholder:text-gray-700"
+                                className="w-full px-3 py-2 bg-surface-elevated border border-border-color rounded-lg text-white text-sm outline-none focus:border-loss/50 transition-all placeholder:text-text-muted"
                                 autoFocus
                             />
                         </div>
@@ -1475,7 +1475,7 @@ function AccountsContent() {
                         <div className="flex items-center justify-end gap-3">
                             <button
                                 onClick={() => { setDeleteTarget(null); setDeleteConfirmText(''); }}
-                                className="px-4 py-2 rounded-lg border border-white/10 text-gray-400 text-xs font-bold uppercase hover:bg-white/5 transition-all"
+                                className="px-4 py-2 rounded-lg border border-border-color text-text-muted text-xs font-bold uppercase hover:bg-surface-hover transition-all"
                             >
                                 Cancel
                             </button>

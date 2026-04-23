@@ -369,7 +369,7 @@ function JournalContent() {
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                     <div>
                         <h1 className="text-4xl font-black text-white tracking-tighter uppercase italic">The Vault</h1>
-                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 mt-2">
+                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-text-muted mt-2">
                             Trade Journal // {pagination.total} records
                         </p>
                     </div>
@@ -377,13 +377,13 @@ function JournalContent() {
                     <div className="flex gap-3">
                         {/* View Mode Toggle — hidden on mobile (3-panel requires ~900px) */}
                         {!isMobile && (
-                        <div className="flex gap-[2px] bg-white/5 border border-white/10 rounded-xl p-[2px]">
+                        <div className="flex gap-[2px] bg-surface-elevated border border-border-color rounded-xl p-[2px]">
                             <button
                                 onClick={() => handleViewModeChange('table')}
                                 className={`h-9 px-3 rounded-[10px] text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all ${
                                     viewMode === 'table'
-                                        ? 'bg-white/10 text-white'
-                                        : 'text-gray-500 hover:text-white'
+                                        ? 'bg-surface-hover text-text-primary'
+                                        : 'text-text-muted hover:text-text-primary'
                                 }`}
                             >
                                 <LayoutGrid size={14} /> Table
@@ -392,8 +392,8 @@ function JournalContent() {
                                 onClick={() => handleViewModeChange('panel')}
                                 className={`h-9 px-3 rounded-[10px] text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all ${
                                     viewMode === 'panel'
-                                        ? 'bg-white/10 text-white'
-                                        : 'text-gray-500 hover:text-white'
+                                        ? 'bg-surface-hover text-text-primary'
+                                        : 'text-text-muted hover:text-text-primary'
                                 }`}
                             >
                                 <Columns3 size={14} /> Panel
@@ -403,7 +403,7 @@ function JournalContent() {
 
                         <button
                             onClick={handleExportCsv}
-                            className="h-10 px-6 rounded-xl bg-white/5 border border-white/10 text-white font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:bg-white/10 transition-all active:scale-95 shrink-0"
+                            className="h-10 px-6 rounded-xl bg-surface-elevated border border-border-color text-white font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:bg-surface-hover transition-all active:scale-95 shrink-0"
                         >
                             <Download size={14} /> Export CSV
                         </button>
@@ -445,7 +445,7 @@ function JournalContent() {
                             </span>
                             <button
                                 onClick={handleClearSelection}
-                                className="text-gray-500 hover:text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-1"
+                                className="text-text-muted hover:text-text-primary text-[10px] font-black uppercase tracking-widest flex items-center gap-1"
                             >
                                 <X size={12} /> Clear
                             </button>
@@ -460,7 +460,7 @@ function JournalContent() {
                             {isAllSelected && (
                                 <button
                                     onClick={() => { setSelectedIds(new Set()); setIsAllSelected(false); }}
-                                    className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white"
+                                    className="text-[10px] font-black uppercase tracking-widest text-text-muted hover:text-text-primary"
                                 >
                                     Clear selection
                                 </button>
@@ -471,17 +471,17 @@ function JournalContent() {
                                 <div className="relative">
                                     <button
                                         onClick={() => setAccountDropdownOpen(!accountDropdownOpen)}
-                                        className="h-8 px-4 rounded-lg bg-white/5 border border-white/10 text-white font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:bg-white/10 transition-all"
+                                        className="h-8 px-4 rounded-lg bg-surface-elevated border border-border-color text-text-primary font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:bg-surface-hover transition-all"
                                     >
                                         <Wallet size={12} /> Move to Account
                                     </button>
                                     {accountDropdownOpen && (
-                                        <div className="absolute top-full right-0 mt-1 glass-card border-white/10 bg-gray-900/95 rounded-lg overflow-hidden z-[500] min-w-[180px]">
+                                        <div className="absolute top-full right-0 mt-1 border border-border-color bg-[var(--surface-solid)] rounded-lg overflow-hidden z-[500] shadow-xl min-w-[180px]">
                                             {accounts.map((acc) => (
                                                 <button
                                                     key={acc.id}
                                                     onClick={() => handleBulkAccount(acc.id)}
-                                                    className="w-full px-3 py-2 text-left text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 text-gray-300 hover:text-white flex items-center gap-2"
+                                                    className="w-full px-3 py-2 text-left text-[10px] font-bold uppercase tracking-widest hover:bg-surface-hover text-text-secondary hover:text-text-primary flex items-center gap-2"
                                                 >
                                                     {acc.name}
                                                 </button>
@@ -494,14 +494,14 @@ function JournalContent() {
                             <div className="relative">
                                 <button
                                     onClick={() => setTagDropdownOpen(!tagDropdownOpen)}
-                                    className="h-8 px-4 rounded-lg bg-white/5 border border-white/10 text-white font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:bg-white/10 transition-all"
+                                    className="h-8 px-4 rounded-lg bg-surface-elevated border border-border-color text-text-primary font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:bg-surface-hover transition-all"
                                 >
                                     <TagIcon size={12} /> Add Tag
                                 </button>
                                 {tagDropdownOpen && (
-                                    <div className="absolute top-full right-0 mt-1 glass-card border-white/10 bg-gray-900/95 rounded-lg overflow-hidden z-[500] min-w-[150px]">
+                                    <div className="absolute top-full right-0 mt-1 border border-border-color bg-[var(--surface-solid)] rounded-lg overflow-hidden z-[500] shadow-xl min-w-[150px]">
                                         {tags.length === 0 ? (
-                                            <div className="px-3 py-2 text-[10px] text-gray-500">No tags available</div>
+                                            <div className="px-3 py-2 text-[10px] text-text-muted">No tags available</div>
                                         ) : (
                                             tags.map((tag) => (
                                                 <button
@@ -510,7 +510,7 @@ function JournalContent() {
                                                         handleBulkTag(tag.id);
                                                         setTagDropdownOpen(false);
                                                     }}
-                                                    className="w-full px-3 py-2 text-left text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 flex items-center gap-2"
+                                                    className="w-full px-3 py-2 text-left text-[10px] font-bold uppercase tracking-widest hover:bg-surface-hover flex items-center gap-2"
                                                     style={{ color: tag.color || '#00f2ff' }}
                                                 >
                                                     <span
@@ -529,29 +529,29 @@ function JournalContent() {
                                 <button
                                     onClick={() => setStrategyDropdownOpen(!strategyDropdownOpen)}
                                     disabled={isSettingStrategy}
-                                    className="h-8 px-4 rounded-lg bg-white/5 border border-white/10 text-white font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:bg-white/10 transition-all disabled:opacity-50"
+                                    className="h-8 px-4 rounded-lg bg-surface-elevated border border-border-color text-text-primary font-black uppercase tracking-widest text-[10px] flex items-center gap-2 hover:bg-surface-hover transition-all disabled:opacity-50"
                                 >
                                     <Crosshair size={12} /> Set Strategy
                                 </button>
                                 {strategyDropdownOpen && (
-                                    <div className="absolute top-full right-0 mt-1 glass-card border-white/10 bg-gray-900/95 rounded-lg overflow-hidden z-[500] min-w-[180px]">
+                                    <div className="absolute top-full right-0 mt-1 border border-border-color bg-[var(--surface-solid)] rounded-lg overflow-hidden z-[500] shadow-xl min-w-[180px]">
                                         {strategies.length === 0 ? (
-                                            <div className="px-3 py-2 text-[10px] text-gray-500">No strategies available</div>
+                                            <div className="px-3 py-2 text-[10px] text-text-muted">No strategies available</div>
                                         ) : (
                                             <>
                                                 {strategies.map((strategy) => (
                                                     <button
                                                         key={strategy.id}
                                                         onClick={() => handleBulkStrategy(strategy.id)}
-                                                        className="w-full px-3 py-2 text-left text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 text-gray-300 hover:text-white"
+                                                        className="w-full px-3 py-2 text-left text-[10px] font-bold uppercase tracking-widest hover:bg-surface-hover text-text-secondary hover:text-text-primary"
                                                     >
                                                         {strategy.name}
                                                     </button>
                                                 ))}
-                                                <div className="border-t border-white/10 mt-1 pt-1">
+                                                <div className="border-t border-border-color mt-1 pt-1">
                                                     <button
                                                         onClick={() => handleBulkStrategy(null)}
-                                                        className="w-full px-3 py-2 text-left text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 text-gray-500 hover:text-danger"
+                                                        className="w-full px-3 py-2 text-left text-[10px] font-bold uppercase tracking-widest hover:bg-surface-hover text-text-muted hover:text-danger"
                                                     >
                                                         Remove strategy
                                                     </button>
@@ -574,10 +574,10 @@ function JournalContent() {
 
                 {/* Main Content - Table or Panel View */}
                 {viewMode === 'panel' ? (
-                    <div className="glass-card border-white/5 bg-surface-card backdrop-blur-md overflow-hidden">
+                    <div className="glass-card border-border-subtle bg-surface-card backdrop-blur-md overflow-hidden">
                         {isFetching && !data ? (
                             <div className="flex items-center justify-center h-[400px]">
-                                <div className="text-[10px] font-black uppercase tracking-widest text-gray-500 animate-pulse">Loading...</div>
+                                <div className="text-[10px] font-black uppercase tracking-widest text-text-muted animate-pulse">Loading...</div>
                             </div>
                         ) : trades.length === 0 ? (
                             <EmptyState
@@ -597,7 +597,7 @@ function JournalContent() {
                         )}
                     </div>
                 ) : (
-                    <div className="glass-card border-white/5 bg-surface-card backdrop-blur-md overflow-hidden">
+                    <div className="glass-card border-border-subtle bg-surface-card backdrop-blur-md overflow-hidden">
                         {isFetching && !data ? (
                             <div className="divide-y divide-white/5">
                                 {Array.from({ length: 8 }).map((_, i) => (
@@ -633,13 +633,13 @@ function JournalContent() {
                 {/* Pagination - only show in table mode */}
                 {viewMode === 'table' && (pagination.totalPages > 1 || true) && (
                     <div className="flex items-center justify-center gap-4">
-                        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-text-muted">
                             <span>Rows</span>
                             {[10, 25, 50, 100].map(n => (
                                 <button
                                     key={n}
                                     onClick={() => handleLimitChange(n)}
-                                    className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest transition-all ${limit === n ? 'bg-white/15 text-white' : 'hover:bg-white/10 text-gray-500'}`}
+                                    className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest transition-all ${limit === n ? 'bg-surface-hover text-text-primary' : 'hover:bg-surface-hover text-text-muted'}`}
                                 >
                                     {n}
                                 </button>
@@ -650,17 +650,17 @@ function JournalContent() {
                             <button
                                 onClick={() => handlePageChange(page - 1)}
                                 disabled={page === 1}
-                                className="h-8 w-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                className="h-8 w-8 rounded-lg bg-surface-elevated border border-border-color flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                             >
                                 <ChevronLeft size={16} />
                             </button>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">
                                 Page {page} of {pagination.totalPages}
                             </span>
                             <button
                                 onClick={() => handlePageChange(page + 1)}
                                 disabled={page === pagination.totalPages}
-                                className="h-8 w-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                className="h-8 w-8 rounded-lg bg-surface-elevated border border-border-color flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-surface-hover disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                             >
                                 <ChevronRight size={16} />
                             </button>
@@ -697,7 +697,7 @@ function JournalContent() {
 
 export default function JournalPage() {
     return (
-        <Suspense fallback={<div className="flex items-center justify-center h-screen text-gray-500">Loading...</div>}>
+        <Suspense fallback={<div className="flex items-center justify-center h-screen text-text-muted">Loading...</div>}>
             <JournalContent />
         </Suspense>
     );

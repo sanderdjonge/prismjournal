@@ -81,21 +81,21 @@ export default function CalculatorPage() {
                     <h1 className="text-5xl font-black text-white tracking-tighter uppercase italic">
                         Vector Size <span className="text-primary">Calculator</span>
                     </h1>
-                    <p className="text-gray-500 font-bold max-w-lg mx-auto leading-relaxed">
+                    <p className="text-text-muted font-bold max-w-lg mx-auto leading-relaxed">
                         Precision lot size computation based on account equity, risk tolerance, and technical invalidation points.
                     </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
                     {/* Inputs */}
-                    <div className="glass-card p-10 border-white/5 bg-white/5 space-y-8">
+                    <div className="glass-card p-10 border-border-subtle bg-surface-elevated space-y-8">
                         <div className="space-y-6">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 px-1">Instrument Group</label>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-1">Instrument Group</label>
                                 <select
                                     value={pair}
                                     onChange={(e) => setPair(e.target.value)}
-                                    className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-lg font-black text-white outline-none focus:border-primary/50 transition-all appearance-none"
+                                    className="w-full bg-surface-elevated border border-border-color rounded-2xl p-5 text-lg font-black text-white outline-none focus:border-primary/50 transition-all appearance-none"
                                 >
                                     {INSTRUMENTS.map(inst => (
                                         <option key={inst} value={inst}>{inst}</option>
@@ -104,29 +104,29 @@ export default function CalculatorPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 px-1">Account Balance ($)</label>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-1">Account Balance ($)</label>
                                 <input
                                     type="number"
                                     value={balance}
                                     onChange={(e) => setBalance(Number(e.target.value))}
-                                    className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-2xl font-black text-white outline-none focus:border-primary/50 transition-all"
+                                    className="w-full bg-surface-elevated border border-border-color rounded-2xl p-5 text-2xl font-black text-white outline-none focus:border-primary/50 transition-all"
                                 />
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 px-1">Risk Percentage (%)</label>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-1">Risk Percentage (%)</label>
                                 <input
                                     type="number"
                                     step="0.1"
                                     value={riskPercent}
                                     onChange={(e) => setRiskPercent(Number(e.target.value))}
-                                    className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-2xl font-black text-white outline-none focus:border-primary/50 transition-all"
+                                    className="w-full bg-surface-elevated border border-border-color rounded-2xl p-5 text-2xl font-black text-white outline-none focus:border-primary/50 transition-all"
                                 />
                             </div>
 
                             <div className="space-y-3">
                                 <div className="flex items-center gap-3">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 px-1">Stop Loss Input Mode</label>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-1">Stop Loss Input Mode</label>
                                     <button
                                         onClick={() => setInputMode(inputMode === 'pips' ? 'price' : 'pips')}
                                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-elevated border border-border-color text-[10px] font-black uppercase tracking-widest text-text-secondary hover:text-text-primary hover:border-primary/40 transition-all"
@@ -138,36 +138,36 @@ export default function CalculatorPage() {
 
                                 {inputMode === 'pips' ? (
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 px-1">Stop Loss (Pips)</label>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-1">Stop Loss (Pips)</label>
                                         <input
                                             type="number"
                                             value={stopLossPips}
                                             onChange={(e) => setStopLossPips(Number(e.target.value))}
-                                            className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-2xl font-black text-white outline-none focus:border-primary/50 transition-all"
+                                            className="w-full bg-surface-elevated border border-border-color rounded-2xl p-5 text-2xl font-black text-white outline-none focus:border-primary/50 transition-all"
                                         />
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 px-1">Entry Price</label>
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-1">Entry Price</label>
                                             <input
                                                 type="number"
                                                 step="0.00001"
                                                 value={entryPrice || ''}
                                                 onChange={(e) => setEntryPrice(Number(e.target.value))}
                                                 placeholder="0.00"
-                                                className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-2xl font-black text-white outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                                className="w-full bg-surface-elevated border border-border-color rounded-2xl p-5 text-2xl font-black text-white outline-none focus:border-primary/50 transition-all placeholder:text-text-muted"
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 px-1">SL Price</label>
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-1">SL Price</label>
                                             <input
                                                 type="number"
                                                 step="0.00001"
                                                 value={slPrice || ''}
                                                 onChange={(e) => setSlPrice(Number(e.target.value))}
                                                 placeholder="0.00"
-                                                className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-2xl font-black text-white outline-none focus:border-primary/50 transition-all placeholder:text-gray-700"
+                                                className="w-full bg-surface-elevated border border-border-color rounded-2xl p-5 text-2xl font-black text-white outline-none focus:border-primary/50 transition-all placeholder:text-text-muted"
                                             />
                                         </div>
                                     </div>
@@ -193,10 +193,10 @@ export default function CalculatorPage() {
                             )}
                         </div>
 
-                        <div className="glass-card p-10 border-white/5 bg-white/5 space-y-6">
+                        <div className="glass-card p-10 border-border-subtle bg-surface-elevated space-y-6">
                             <div className="flex justify-between items-center">
                                 <div className="space-y-1">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Capital At Risk</p>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">Capital At Risk</p>
                                     <h4 className="text-2xl font-black text-white">{formatAmount(riskAmount)}</h4>
                                 </div>
                                 <div className="w-12 h-12 rounded-xl bg-danger/10 flex items-center justify-center text-danger border border-danger/20">
@@ -204,16 +204,16 @@ export default function CalculatorPage() {
                                 </div>
                             </div>
 
-                            <div className="pt-6 border-t border-white/5 space-y-3">
-                                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-gray-600">
+                            <div className="pt-6 border-t border-border-subtle space-y-3">
+                                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-text-muted">
                                     <span>Pip Value (Approx)</span>
                                     <span className="text-white">{symbol}{pipValue.toFixed(2)}/lot</span>
                                 </div>
-                                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-gray-600">
+                                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-text-muted">
                                     <span>SL Distance</span>
                                     <span className="text-white">{effectivePips > 0 ? fmtDecimals(effectivePips, 1) + ' pips' : '—'}</span>
                                 </div>
-                                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-gray-600">
+                                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-text-muted">
                                     <span>Risk/Reward Ratio</span>
                                     <span className="text-primary">1:3.0 Target</span>
                                 </div>
@@ -223,9 +223,9 @@ export default function CalculatorPage() {
                 </div>
 
                 {/* Footnote */}
-                <div className="flex items-start gap-4 p-8 glass-card border-white/5 bg-white/5 border-dashed">
-                    <Info size={20} className="text-gray-700 shrink-0 mt-1" />
-                    <p className="text-[10px] font-bold text-gray-600 leading-relaxed uppercase tracking-widest">
+                <div className="flex items-start gap-4 p-8 glass-card border-border-subtle bg-surface-elevated border-dashed">
+                    <Info size={20} className="text-text-muted shrink-0 mt-1" />
+                    <p className="text-[10px] font-bold text-text-muted leading-relaxed uppercase tracking-widest">
                         Notice: Calculations are based on standard contract sizes. For indices and crypto, contract specifications may vary by broker terminal. Always verify computed size against your Margin requirements before execution.
                     </p>
                 </div>

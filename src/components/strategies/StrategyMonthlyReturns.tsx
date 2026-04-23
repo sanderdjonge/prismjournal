@@ -16,7 +16,7 @@ export function StrategyMonthlyReturns({ data }: MonthlyReturnsProps) {
 
   if (data.length === 0) {
     return (
-      <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6 h-[300px] flex items-center justify-center">
+      <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-6 h-[300px] flex items-center justify-center">
         <EmptyState title="No data yet" className="py-0" />
       </div>
     )
@@ -31,14 +31,14 @@ export function StrategyMonthlyReturns({ data }: MonthlyReturnsProps) {
   const years = Array.from(yearMap.keys()).sort((a, b) => b - a)
 
   return (
-    <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
+    <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-6">
       <h3 className="text-sm font-semibold text-gray-100 mb-4">Monthly Returns</h3>
       <div className="space-y-3">
         {years.map((year) => {
           const monthData = yearMap.get(year)!
           return (
             <div key={year}>
-              <div className="text-[10px] font-black text-gray-600 mb-1">{year}</div>
+              <div className="text-[10px] font-black text-text-muted mb-1">{year}</div>
               <div className="grid grid-cols-12 gap-1">
                 {MONTH_LABELS.map((label, i) => {
                   const month = i + 1
@@ -52,7 +52,7 @@ export function StrategyMonthlyReturns({ data }: MonthlyReturnsProps) {
                       key={month}
                       className={cn(
                         'aspect-square rounded text-center flex flex-col items-center justify-center text-[8px] font-bold border',
-                        !hasData && 'bg-white/5 border-white/5 text-gray-700',
+                        !hasData && 'bg-surface-elevated border-border-subtle text-text-muted',
                         hasData && isPositive && 'bg-profit/10 border-profit/20 text-profit',
                         hasData && !isPositive && 'bg-loss/10 border-loss/20 text-loss'
                       )}

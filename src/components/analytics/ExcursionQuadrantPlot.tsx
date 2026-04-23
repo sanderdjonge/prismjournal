@@ -119,16 +119,16 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
             t.mae != null && t.mae > 0 && t.mfe != null && t.mfe > 0 && t.exitDistFromEntry != null
         );
         return (
-            <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-4">
+            <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-4">
                 <div className="mb-4">
                     <h3 className="text-sm font-semibold text-gray-100">Exit Quality Analysis</h3>
-                    <p className="text-xs text-gray-500">MAE/MFE quadrant plot</p>
+                    <p className="text-xs text-text-muted">MAE/MFE quadrant plot</p>
                 </div>
                 {availableTags.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-2 mb-4 pb-4 border-b border-white/5">
+                    <div className="flex flex-wrap items-center gap-2 mb-4 pb-4 border-b border-border-subtle">
                         <div className="flex items-center gap-1.5 mr-1">
-                            <Filter size={11} className="text-gray-600" />
-                            <span className="text-[9px] font-black uppercase tracking-widest text-gray-600">Exclude</span>
+                            <Filter size={11} className="text-text-muted" />
+                            <span className="text-[9px] font-black uppercase tracking-widest text-text-muted">Exclude</span>
                         </div>
                         {availableTags.map(tag => {
                             const isExcluded = excludedTagIds.includes(tag.id);
@@ -141,7 +141,7 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                                     className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-widest transition-all border ${
                                         isExcluded
                                             ? 'bg-red-500/20 border-red-500/40 text-red-400'
-                                            : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
+                                            : 'bg-surface-elevated border-border-color text-text-muted hover:bg-surface-hover'
                                     }`}
                                     style={!isExcluded && tag.color ? { borderColor: tag.color + '40', color: tag.color } : {}}
                                 >
@@ -153,14 +153,14 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                         {excludedTagIds.length > 0 && (
                             <button
                                 onClick={() => setExcludedTagIds([])}
-                                className="text-[9px] text-gray-500 hover:text-white font-bold uppercase tracking-widest transition-colors ml-1"
+                                className="text-[9px] text-text-muted hover:text-text-primary font-bold uppercase tracking-widest transition-colors ml-1"
                             >
                                 Clear
                             </button>
                         )}
                     </div>
                 )}
-                <div className="flex items-center justify-center h-48 text-gray-700 text-[10px] font-black uppercase tracking-widest text-center px-8">
+                <div className="flex items-center justify-center h-48 text-text-muted text-[10px] font-black uppercase tracking-widest text-center px-8">
                     {allFiltered
                         ? <>All trades hidden by tag filter —<br />remove an excluded tag to show data</>
                         : <>Sync trades with the updated EA to populate this chart —<br />MAE / MFE data needed for at least 2 closed trades</>
@@ -208,35 +208,35 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                 onEdit={() => { setModalOpen(false); router.push('/journal'); }}
             />
 
-            <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-4">
+            <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-4">
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                     <div>
                         <h3 className="text-sm font-semibold text-gray-100">
                             Exit Quality Analysis
                         </h3>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-text-muted mt-1">
                             Entry risk (X) × Exit efficiency (Y) — click any dot to view trade
                         </p>
                     </div>
                     <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest">
                         <span className="flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full bg-profit inline-block" />
-                            <span className="text-gray-500">Profitable</span>
+                            <span className="text-text-muted">Profitable</span>
                         </span>
                         <span className="flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full bg-loss inline-block" />
-                            <span className="text-gray-500">Loss</span>
+                            <span className="text-text-muted">Loss</span>
                         </span>
                     </div>
                 </div>
 
                 {/* Tag exclusion filter */}
                 {availableTags.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-2 mb-4 pt-3 border-t border-white/5">
+                    <div className="flex flex-wrap items-center gap-2 mb-4 pt-3 border-t border-border-subtle">
                         <div className="flex items-center gap-1.5 mr-1">
-                            <Filter size={11} className="text-gray-600" />
-                            <span className="text-[9px] font-black uppercase tracking-widest text-gray-600">Exclude</span>
+                            <Filter size={11} className="text-text-muted" />
+                            <span className="text-[9px] font-black uppercase tracking-widest text-text-muted">Exclude</span>
                         </div>
                         {availableTags.map(tag => {
                             const isExcluded = excludedTagIds.includes(tag.id);
@@ -249,7 +249,7 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                                     className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-widest transition-all border ${
                                         isExcluded
                                             ? 'bg-red-500/20 border-red-500/40 text-red-400'
-                                            : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
+                                            : 'bg-surface-elevated border-border-color text-text-muted hover:bg-surface-hover'
                                     }`}
                                     style={!isExcluded && tag.color ? { borderColor: tag.color + '40', color: tag.color } : {}}
                                 >
@@ -261,7 +261,7 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                         {excludedTagIds.length > 0 && (
                             <button
                                 onClick={() => setExcludedTagIds([])}
-                                className="text-[9px] text-gray-500 hover:text-white font-bold uppercase tracking-widest transition-colors ml-1"
+                                className="text-[9px] text-text-muted hover:text-text-primary font-bold uppercase tracking-widest transition-colors ml-1"
                             >
                                 Clear
                             </button>
@@ -409,7 +409,7 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
                         >
                             <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: z.color }}>{z.label}</p>
                             <p className="text-base font-black" style={{ color: z.color }}>{zoneCounts[key]}</p>
-                            <p className="text-[10px] text-gray-500 font-medium mt-0.5 leading-tight">{z.desc}</p>
+                            <p className="text-[10px] text-text-muted font-medium mt-0.5 leading-tight">{z.desc}</p>
                         </div>
                     ))}
                 </div>
@@ -424,7 +424,7 @@ export function ExcursionQuadrantPlot({ trades }: ExcursionQuadrantPlotProps) {
 function Row({ label, value, color = 'text-text-primary' }: { label: string; value: string; color?: string }) {
     return (
         <div className="flex items-center justify-between gap-4 mb-1">
-            <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">{label}</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">{label}</span>
             <span className={`text-[12px] font-bold ${color}`}>{value}</span>
         </div>
     );

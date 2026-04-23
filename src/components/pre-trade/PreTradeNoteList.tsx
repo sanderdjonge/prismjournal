@@ -109,7 +109,7 @@ export function PreTradeNoteList({
     if (notes.length === 0) {
         return (
             <div className="text-center py-8">
-                <div className="text-gray-500 text-sm">
+                <div className="text-text-muted text-sm">
                     {status === 'PENDING' 
                         ? 'No pending pre-trade notes'
                         : `No ${status.toLowerCase()} notes`}
@@ -125,7 +125,7 @@ export function PreTradeNoteList({
                     <h3 className="text-sm font-semibold text-gray-100">
                         {status === 'PENDING' ? 'Pending Notes' : `${status.charAt(0) + status.slice(1).toLowerCase()} Notes`}
                     </h3>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-text-muted">
                         {notes.length} note{notes.length !== 1 ? 's' : ''}
                     </span>
                 </div>
@@ -137,8 +137,8 @@ export function PreTradeNoteList({
                         key={note.id}
                         onClick={() => onNoteClick?.(note)}
                         className={cn(
-                            "group relative bg-white/[0.02] border border-white/10 rounded-lg p-3 transition-colors",
-                            "hover:bg-white/[0.04] hover:border-white/20",
+                            "group relative bg-surface-elevated border border-border-color rounded-lg p-3 transition-colors",
+                            "hover:bg-surface-elevated hover:border-border-color",
                             onNoteClick && "cursor-pointer"
                         )}
                     >
@@ -167,7 +167,7 @@ export function PreTradeNoteList({
 
                             {/* Time + Menu */}
                             <div className="flex items-center gap-1">
-                                <span className="text-[10px] text-gray-500 flex items-center gap-1">
+                                <span className="text-[10px] text-text-muted flex items-center gap-1">
                                     <Clock size={10} />
                                     {(() => { const diff = Date.now() - new Date(note.createdAt).getTime(); const mins = Math.floor(diff / 60000); if (mins < 1) return 'just now'; const days = Math.floor(diff / 86400000); return days >= 7 ? formatShortDate(note.createdAt) : formatDistanceToNow(note.createdAt).replace('Just now', 'just now') })()}
                                 </span>
@@ -180,7 +180,7 @@ export function PreTradeNoteList({
                                                 e.stopPropagation();
                                                 setOpenMenuId(openMenuId === note.id ? null : note.id);
                                             }}
-                                            className="p-1 text-gray-500 hover:text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            className="p-1 text-text-muted hover:text-text-secondary opacity-0 group-hover:opacity-100 transition-opacity"
                                         >
                                             <MoreVertical size={14} />
                                         </button>
@@ -194,13 +194,13 @@ export function PreTradeNoteList({
                                                         setOpenMenuId(null);
                                                     }}
                                                 />
-                                                <div className="absolute right-0 top-full mt-1 z-20 py-1 bg-[var(--surface-solid)] border border-white/10 rounded-lg shadow-xl min-w-[140px]">
+                                                <div className="absolute right-0 top-full mt-1 z-20 py-1 bg-[var(--surface-solid)] border border-border-color rounded-lg shadow-xl min-w-[140px]">
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             handleMarkNotRelevant(note.id);
                                                         }}
-                                                        className="w-full px-3 py-1.5 text-left text-xs text-gray-400 hover:text-white hover:bg-white/5 flex items-center gap-2"
+                                                        className="w-full px-3 py-1.5 text-left text-xs text-text-muted hover:text-text-primary hover:bg-surface-hover flex items-center gap-2"
                                                     >
                                                         <X size={12} />
                                                         Not Relevant
@@ -214,7 +214,7 @@ export function PreTradeNoteList({
                         </div>
 
                         {/* Body Preview */}
-                        <p className="text-xs text-gray-400 line-clamp-2 mb-2">
+                        <p className="text-xs text-text-muted line-clamp-2 mb-2">
                             {note.body}
                         </p>
 
@@ -222,12 +222,12 @@ export function PreTradeNoteList({
                         <div className="flex items-center justify-between text-[10px]">
                             <div className="flex items-center gap-3">
                                 {note.plannedEntry && (
-                                    <span className="text-gray-500">
+                                    <span className="text-text-muted">
                                         Entry: {note.plannedEntry}
                                     </span>
                                 )}
                                 {note.account && (
-                                    <span className="text-gray-500">
+                                    <span className="text-text-muted">
                                         {note.account.name}
                                     </span>
                                 )}

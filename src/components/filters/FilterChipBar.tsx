@@ -81,7 +81,7 @@ export function FilterChipBar({
           onClick={() => setIsOpen(v => !v)}
           aria-haspopup="true"
           aria-expanded={isOpen}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-dashed border-white/20 text-gray-500 hover:border-white/40 hover:text-gray-300 transition-all"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-dashed border-border-color text-text-muted hover:border-border-color hover:text-text-secondary transition-all"
         >
           <Plus size={10} />
           Add filter
@@ -106,7 +106,7 @@ export function FilterChipBar({
         <button
           type="button"
           onClick={onClear}
-          className="text-[10px] font-black uppercase tracking-widest text-gray-600 hover:text-gray-300 underline transition-colors"
+          className="text-[10px] font-black uppercase tracking-widest text-text-muted hover:text-text-secondary underline transition-colors"
         >
           Clear all
         </button>

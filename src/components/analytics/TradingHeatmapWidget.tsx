@@ -37,12 +37,12 @@ const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 function getCellColor(cell: HeatmapCell | undefined, mode: ViewMode): string {
-    if (!cell || cell.count === 0) return 'bg-white/5';
+    if (!cell || cell.count === 0) return 'bg-surface-elevated';
 
     if (mode === 'pnl') {
         if (cell.totalPnl > 0) return 'bg-profit';
         if (cell.totalPnl < 0) return 'bg-loss';
-        return 'bg-white/10';
+        return 'bg-surface-hover';
     }
 
     if (mode === 'winRate') {
@@ -61,14 +61,14 @@ function getCellColor(cell: HeatmapCell | undefined, mode: ViewMode): string {
     // expectedValue
     if (cell.avgPnl > 0) return 'bg-profit';
     if (cell.avgPnl < 0) return 'bg-loss';
-    return 'bg-white/10';
+    return 'bg-surface-hover';
 }
 
 function getLegendColors(mode: ViewMode): { color: string; label: string }[] {
     if (mode === 'pnl') {
         return [
             { color: 'bg-loss', label: 'Losing' },
-            { color: 'bg-white/10', label: 'Neutral' },
+            { color: 'bg-surface-hover', label: 'Neutral' },
             { color: 'bg-profit', label: 'Profitable' },
         ];
     }
@@ -92,7 +92,7 @@ function getLegendColors(mode: ViewMode): { color: string; label: string }[] {
     // expectedValue
     return [
         { color: 'bg-loss', label: 'Negative' },
-        { color: 'bg-white/10', label: 'Neutral' },
+        { color: 'bg-surface-hover', label: 'Neutral' },
         { color: 'bg-profit', label: 'Positive' },
     ];
 }
@@ -200,29 +200,29 @@ export function TradingHeatmapWidget({ cells, currency = 'USD', monthLabel, onPr
     const currentView = VIEW_OPTIONS.find(v => v.value === viewMode)!;
 
     return (
-        <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
+        <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">
                 <div>
                     <h3 className="text-sm font-semibold text-gray-100">Trading Heatmap</h3>
-                    <p className="text-xs text-gray-500">Day x Hour performance patterns</p>
+                    <p className="text-xs text-text-muted">Day x Hour performance patterns</p>
                 </div>
                 <div className="flex items-center gap-3">
                     {/* Month/Year navigation */}
                     {monthLabel && (
                         <div className="flex items-center gap-1.5">
-                            {onPrevMonth && <button onClick={onPrevMonth} className="w-6 h-6 flex items-center justify-center rounded-md bg-white/[0.06] border border-white/10 text-gray-400 hover:bg-white/10 transition-colors text-xs">‹</button>}
+                            {onPrevMonth && <button onClick={onPrevMonth} className="w-6 h-6 flex items-center justify-center rounded-md bg-surface-hover border border-border-color text-text-muted hover:bg-surface-hover transition-colors text-xs">‹</button>}
                             <span className="text-xs font-bold text-gray-200 min-w-[100px] text-center">{monthLabel}</span>
-                            {onNextMonth && <button onClick={onNextMonth} className="w-6 h-6 flex items-center justify-center rounded-md bg-white/[0.06] border border-white/10 text-gray-400 hover:bg-white/10 transition-colors text-xs">›</button>}
-                            <div className="w-px h-4 bg-white/10 mx-1" />
-                            {onPrevYear && <button onClick={onPrevYear} className="w-5 h-5 flex items-center justify-center rounded bg-white/[0.06] border border-white/10 text-gray-500 hover:bg-white/10 transition-colors text-[10px]">‹</button>}
-                            {onNextYear && <button onClick={onNextYear} className="w-5 h-5 flex items-center justify-center rounded bg-white/[0.06] border border-white/10 text-gray-500 hover:bg-white/10 transition-colors text-[10px]">›</button>}
+                            {onNextMonth && <button onClick={onNextMonth} className="w-6 h-6 flex items-center justify-center rounded-md bg-surface-hover border border-border-color text-text-muted hover:bg-surface-hover transition-colors text-xs">›</button>}
+                            <div className="w-px h-4 bg-surface-hover mx-1" />
+                            {onPrevYear && <button onClick={onPrevYear} className="w-5 h-5 flex items-center justify-center rounded bg-surface-hover border border-border-color text-text-muted hover:bg-surface-hover transition-colors text-[10px]">‹</button>}
+                            {onNextYear && <button onClick={onNextYear} className="w-5 h-5 flex items-center justify-center rounded bg-surface-hover border border-border-color text-text-muted hover:bg-surface-hover transition-colors text-[10px]">›</button>}
                         </div>
                     )}
                     {/* View mode dropdown */}
                     <div className="relative">
                     <button
                         onClick={() => setDropdownOpen(!dropdownOpen)}
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-xs font-medium text-gray-300"
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface-elevated border border-border-color hover:bg-surface-hover transition-colors text-xs font-medium text-text-secondary"
                     >
                         {currentView.label}
                         <ChevronDown size={12} className={cn('transition-transform', dropdownOpen && 'rotate-180')} />
@@ -230,7 +230,7 @@ export function TradingHeatmapWidget({ cells, currency = 'USD', monthLabel, onPr
                     {dropdownOpen && (
                         <>
                             <div className="fixed inset-0 z-10" onClick={() => setDropdownOpen(false)} />
-                            <div className="absolute right-0 top-full mt-1 z-20 min-w-[120px] py-1 rounded-lg bg-[var(--surface-solid)] border border-white/10 shadow-xl">
+                            <div className="absolute right-0 top-full mt-1 z-20 min-w-[120px] py-1 rounded-lg bg-[var(--surface-solid)] border border-border-color shadow-xl">
                                 {VIEW_OPTIONS.map((option) => (
                                     <button
                                         key={option.value}
@@ -242,7 +242,7 @@ export function TradingHeatmapWidget({ cells, currency = 'USD', monthLabel, onPr
                                             'w-full px-3 py-1.5 text-left text-xs font-medium transition-colors',
                                             viewMode === option.value
                                                 ? 'text-primary bg-primary/10'
-                                                : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                                : 'text-text-muted hover:text-text-primary hover:bg-surface-hover'
                                         )}
                                     >
                                         {option.label}
@@ -261,7 +261,7 @@ export function TradingHeatmapWidget({ cells, currency = 'USD', monthLabel, onPr
                     {/* Hour labels */}
                     <div className="flex mb-1 ml-10">
                         {HOURS.map(hour => (
-                            <div key={hour} className="flex-1 text-center text-[8px] font-bold text-gray-600 tabular-nums">
+                            <div key={hour} className="flex-1 text-center text-[8px] font-bold text-text-muted tabular-nums">
                                 {hour.toString().padStart(2, '0')}
                             </div>
                         ))}
@@ -270,7 +270,7 @@ export function TradingHeatmapWidget({ cells, currency = 'USD', monthLabel, onPr
                     {/* Day rows */}
                     {DAYS.map((day, dayIndex) => (
                         <div key={day} className="flex items-center mb-0.5">
-                            <div className="w-10 text-[9px] font-bold text-gray-500 uppercase tracking-wider">
+                            <div className="w-10 text-[9px] font-bold text-text-muted uppercase tracking-wider">
                                 {day}
                             </div>
                             <div className="flex-1 flex gap-0.5">
@@ -282,7 +282,7 @@ export function TradingHeatmapWidget({ cells, currency = 'USD', monthLabel, onPr
                                         <div
                                             key={hour}
                                             className={cn(
-                                                'flex-1 h-6 rounded-sm transition-colors cursor-default relative border border-white/5',
+                                                'flex-1 h-6 rounded-sm transition-colors cursor-default relative border border-border-subtle',
                                                 getCellColor(cell, viewMode),
                                                 hasData && 'hover:ring-1 hover:ring-white/30'
                                             )}
@@ -299,35 +299,35 @@ export function TradingHeatmapWidget({ cells, currency = 'USD', monthLabel, onPr
 
             {/* Tooltip */}
             {hoveredCell && (
-                <div className="mt-3 p-3 bg-black/60 border border-white/10 rounded-lg text-xs">
+                <div className="mt-3 p-3 bg-black/60 border border-border-color rounded-lg text-xs">
                     <div className="flex items-center gap-2 mb-2">
                         <span className="font-bold text-white">
                             {DAYS[hoveredCell.day - 1]} {hoveredCell.hour.toString().padStart(2, '0')}:00
                         </span>
-                        <span className="text-gray-500">{hoveredCell.count} trades</span>
+                        <span className="text-text-muted">{hoveredCell.count} trades</span>
                     </div>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
                         <div className="flex justify-between">
-                            <span className="text-gray-500">P&L:</span>
+                            <span className="text-text-muted">P&L:</span>
                             <span className={hoveredCell.totalPnl >= 0 ? 'text-profit' : 'text-loss'}>
                                 {fmt(hoveredCell.totalPnl, { compact: true })}
                             </span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-500">Win Rate:</span>
+                            <span className="text-text-muted">Win Rate:</span>
                             <span>{formatPercent(hoveredCell.winRate, 1)}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-500">Avg P&L:</span>
+                            <span className="text-text-muted">Avg P&L:</span>
                             <span className={hoveredCell.avgPnl >= 0 ? 'text-profit' : 'text-loss'}>
                                 {fmt(hoveredCell.avgPnl, { compact: true })}
                             </span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-gray-500">W/L:</span>
+                            <span className="text-text-muted">W/L:</span>
                             <span>
                                 <span className="text-profit">{hoveredCell.wins}</span>
-                                <span className="text-gray-500">/</span>
+                                <span className="text-text-muted">/</span>
                                 <span className="text-loss">{hoveredCell.losses}</span>
                             </span>
                         </div>
@@ -336,7 +336,7 @@ export function TradingHeatmapWidget({ cells, currency = 'USD', monthLabel, onPr
             )}
 
             {/* Legend */}
-            <div className="flex items-center justify-center gap-6 mt-3 text-[9px] font-medium text-gray-400">
+            <div className="flex items-center justify-center gap-6 mt-3 text-[9px] font-medium text-text-muted">
                 {getLegendColors(viewMode).map(({ color, label }) => (
                     <div key={label} className="flex items-center gap-1">
                         <div className={cn('w-3 h-3 rounded-sm', color)} />
@@ -347,10 +347,10 @@ export function TradingHeatmapWidget({ cells, currency = 'USD', monthLabel, onPr
 
             {/* Insights Panel */}
             {insights.length > 0 && (
-                <div className="mt-6 pt-4 border-t border-white/5">
+                <div className="mt-6 pt-4 border-t border-border-subtle">
                     <div className="flex items-center gap-1.5 mb-3">
                         <Lightbulb size={12} className="text-primary" />
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-text-muted">
                             Trading Insights
                         </h4>
                     </div>

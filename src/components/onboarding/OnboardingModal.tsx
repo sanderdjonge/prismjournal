@@ -31,7 +31,7 @@ const STEPS = [
         <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-tr from-[#00f2ff] to-[#7000ff] flex items-center justify-center">
           <span className="font-black text-black text-3xl">P</span>
         </div>
-        <p className="text-gray-400 text-sm">
+        <p className="text-text-muted text-sm">
           Let&apos;s get you set up in just a few steps.
         </p>
       </div>
@@ -44,9 +44,9 @@ const STEPS = [
     icon: Link2,
     content: (
       <div className="space-y-4">
-        <div className="glass-card bg-white/5 border border-white/10 rounded-xl p-4">
+        <div className="glass-card bg-surface-elevated border border-border-color rounded-xl p-4">
           <h4 className="font-bold text-white text-sm mb-2">MT5 Auto-Sync</h4>
-          <p className="text-gray-400 text-xs mb-3">
+          <p className="text-text-muted text-xs mb-3">
             Install our EA on your MT5 terminal to automatically sync all trades.
           </p>
           <Link
@@ -57,9 +57,9 @@ const STEPS = [
             <ArrowRight size={12} />
           </Link>
         </div>
-        <div className="glass-card bg-white/5 border border-white/10 rounded-xl p-4">
+        <div className="glass-card bg-surface-elevated border border-border-color rounded-xl p-4">
           <h4 className="font-bold text-white text-sm mb-2">Manual Entry</h4>
-          <p className="text-gray-400 text-xs">
+          <p className="text-text-muted text-xs">
             You can also manually add trades from the Journal page.
           </p>
         </div>
@@ -75,23 +75,23 @@ const STEPS = [
       <div className="space-y-3">
         <Link
           href="/settings?tab=preferences"
-          className="flex items-center justify-between glass-card bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-all"
+          className="flex items-center justify-between glass-card bg-surface-elevated border border-border-color rounded-xl p-4 hover:bg-surface-hover transition-all"
         >
           <div>
             <h4 className="font-bold text-white text-sm">Currency & Timezone</h4>
-            <p className="text-gray-400 text-xs">Set your base currency and timezone</p>
+            <p className="text-text-muted text-xs">Set your base currency and timezone</p>
           </div>
-          <ArrowRight size={16} className="text-gray-400" />
+          <ArrowRight size={16} className="text-text-muted" />
         </Link>
         <Link
           href="/settings?tab=notifications"
-          className="flex items-center justify-between glass-card bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-all"
+          className="flex items-center justify-between glass-card bg-surface-elevated border border-border-color rounded-xl p-4 hover:bg-surface-hover transition-all"
         >
           <div>
             <h4 className="font-bold text-white text-sm">Notifications</h4>
-            <p className="text-gray-400 text-xs">Configure Telegram and email alerts</p>
+            <p className="text-text-muted text-xs">Configure Telegram and email alerts</p>
           </div>
-          <ArrowRight size={16} className="text-gray-400" />
+          <ArrowRight size={16} className="text-text-muted" />
         </Link>
       </div>
     ),
@@ -103,25 +103,25 @@ const STEPS = [
     icon: BookOpen,
     content: (
       <div className="grid grid-cols-2 gap-3">
-        <div className="glass-card bg-white/5 border border-white/10 rounded-xl p-3 text-center">
+        <div className="glass-card bg-surface-elevated border border-border-color rounded-xl p-3 text-center">
           <TrendingUp size={20} className="mx-auto text-primary mb-2" />
           <h4 className="font-bold text-white text-xs">Dashboard</h4>
-          <p className="text-gray-500 text-[10px]">Track performance</p>
+          <p className="text-text-muted text-[10px]">Track performance</p>
         </div>
-        <div className="glass-card bg-white/5 border border-white/10 rounded-xl p-3 text-center">
+        <div className="glass-card bg-surface-elevated border border-border-color rounded-xl p-3 text-center">
           <BookOpen size={20} className="mx-auto text-secondary mb-2" />
           <h4 className="font-bold text-white text-xs">Journal</h4>
-          <p className="text-gray-500 text-[10px]">Review trades</p>
+          <p className="text-text-muted text-[10px]">Review trades</p>
         </div>
-        <div className="glass-card bg-white/5 border border-white/10 rounded-xl p-3 text-center">
+        <div className="glass-card bg-surface-elevated border border-border-color rounded-xl p-3 text-center">
           <TrendingUp size={20} className="mx-auto text-accent mb-2" />
           <h4 className="font-bold text-white text-xs">Analytics</h4>
-          <p className="text-gray-500 text-[10px]">Deep insights</p>
+          <p className="text-text-muted text-[10px]">Deep insights</p>
         </div>
-        <div className="glass-card bg-white/5 border border-white/10 rounded-xl p-3 text-center">
-          <Settings size={20} className="mx-auto text-gray-400 mb-2" />
+        <div className="glass-card bg-surface-elevated border border-border-color rounded-xl p-3 text-center">
+          <Settings size={20} className="mx-auto text-text-muted mb-2" />
           <h4 className="font-bold text-white text-xs">Strategies</h4>
-          <p className="text-gray-500 text-[10px]">Rule tracking</p>
+          <p className="text-text-muted text-[10px]">Rule tracking</p>
         </div>
       </div>
     ),
@@ -183,26 +183,26 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="p-6 border-b border-white/5 flex items-center justify-between">
+          <div className="p-6 border-b border-border-subtle flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                 <StepIcon size={20} />
               </div>
               <div>
                 <h2 className="text-lg font-black text-white tracking-tight">{step.title}</h2>
-                <p className="text-[10px] text-gray-500">Step {currentStep + 1} of {STEPS.length}</p>
+                <p className="text-[10px] text-text-muted">Step {currentStep + 1} of {STEPS.length}</p>
               </div>
             </div>
             <button
               onClick={handleSkip}
-              className="w-8 h-8 rounded-full hover:bg-white/5 flex items-center justify-center text-gray-500 hover:text-white transition-all"
+              className="w-8 h-8 rounded-full hover:bg-surface-hover flex items-center justify-center text-text-muted hover:text-text-primary transition-all"
             >
               <X size={16} />
             </button>
           </div>
 
           {/* Progress bar */}
-          <div className="h-1 bg-white/5">
+          <div className="h-1 bg-surface-elevated">
             <div
               className="h-full bg-primary transition-all duration-300"
               style={{ width: `${((currentStep + 1) / STEPS.length) * 100}%` }}
@@ -211,20 +211,20 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
 
           {/* Content */}
           <div className="p-6">
-            <p className="text-sm text-gray-400 mb-6">{step.description}</p>
+            <p className="text-sm text-text-muted mb-6">{step.description}</p>
             {step.content}
           </div>
 
           {/* Footer */}
-          <div className="p-6 border-t border-white/5 space-y-4">
+          <div className="p-6 border-t border-border-subtle space-y-4">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={dontShowAgain}
                 onChange={(e) => setDontShowAgain(e.target.checked)}
-                className="w-4 h-4 rounded border-white/20 bg-white/5 text-primary focus:ring-primary/50"
+                className="w-4 h-4 rounded border-border-color bg-surface-elevated text-primary focus:ring-primary/50"
               />
-              <span className="text-xs text-gray-400">Don't show this again</span>
+              <span className="text-xs text-text-muted">Don't show this again</span>
             </label>
             <div className="flex items-center justify-between">
               <div className="flex gap-1.5">
@@ -242,7 +242,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                 {currentStep > 0 && (
                   <button
                     onClick={handlePrev}
-                    className="px-4 py-2 text-xs font-black uppercase text-gray-400 hover:text-white transition-all flex items-center gap-1"
+                    className="px-4 py-2 text-xs font-black uppercase text-text-muted hover:text-text-primary transition-all flex items-center gap-1"
                   >
                     <ArrowLeft size={12} />
                     Back

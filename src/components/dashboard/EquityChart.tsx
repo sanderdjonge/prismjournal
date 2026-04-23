@@ -85,7 +85,7 @@ const CustomTooltip = ({ active, payload, label, symbol, dateFormat = 'DD-MM-YYY
         
         return (
             <div className="glass-card p-4 border-primary/20 bg-black/80 backdrop-blur-md">
-                <p className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1">{formattedLabel}</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-1">{formattedLabel}</p>
                 <p className="text-xl font-black text-primary tracking-tighter">
                     {equityData ? `${symbol}${fmtDecimals(equityData.value, 2)}` : 'N/A'}
                 </p>
@@ -287,7 +287,7 @@ export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-
                     <h4 className="text-sm font-semibold text-gray-100">
                         Equity Evolution
                     </h4>
-                    <p className="text-xs text-gray-500">Account balance over time</p>
+                    <p className="text-xs text-text-muted">Account balance over time</p>
                     <div className="mt-1">
                         <h2 className="text-2xl font-black font-mono tracking-tighter text-white">
                             {formatAmount(currentBalance)}
@@ -296,7 +296,7 @@ export default function EquityChart({ data, className = '', dateFormat = 'DD-MM-
                 </div>
 
                 <div className="text-right">
-                    <p className="text-xs text-gray-500">Total P&L</p>
+                    <p className="text-xs text-text-muted">Total P&L</p>
                     <p className={`text-sm font-mono font-bold ${totalPnl >= 0 ? 'text-profit' : 'text-loss'}`}>
                         {formatPnl(totalPnl)}
                     </p>

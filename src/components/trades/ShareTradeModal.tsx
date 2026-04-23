@@ -143,21 +143,21 @@ export function ShareTradeModal({ isOpen, onClose, tradeId, symbol, direction, p
                         onClick={e => e.stopPropagation()}
                     >
                         {/* Header */}
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-border-color">
                             <div className="flex items-center gap-3">
                                 <Share2 size={20} className="text-primary" />
                                 <div>
                                     <h2 className="text-lg font-bold text-white">Share Trade</h2>
-                                    <p className="text-sm text-gray-500">
+                                    <p className="text-sm text-text-muted">
                                         {symbol} {direction} • {isProfit ? '+' : ''}{fmtDecimals(pnl, 2)}
                                     </p>
                                 </div>
                             </div>
                             <button
                                 onClick={handleClose}
-                                className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                                className="p-2 rounded-lg hover:bg-surface-hover transition-colors"
                             >
-                                <X size={20} className="text-gray-400" />
+                                <X size={20} className="text-text-muted" />
                             </button>
                         </div>
 
@@ -167,14 +167,14 @@ export function ShareTradeModal({ isOpen, onClose, tradeId, symbol, direction, p
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <Image size={18} className="text-gray-500" />
-                                        <span className="text-sm text-gray-300">Include screenshot</span>
+                                        <Image size={18} className="text-text-muted" />
+                                        <span className="text-sm text-text-secondary">Include screenshot</span>
                                     </div>
                                     <button
                                         onClick={() => setIncludeScreenshot(!includeScreenshot)}
                                         className={cn(
                                             "w-10 h-6 rounded-full transition-colors relative",
-                                            includeScreenshot ? "bg-primary" : "bg-white/10"
+                                            includeScreenshot ? "bg-primary" : "bg-surface-hover"
                                         )}
                                     >
                                         <div className={cn(
@@ -186,14 +186,14 @@ export function ShareTradeModal({ isOpen, onClose, tradeId, symbol, direction, p
 
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <TrendingUp size={18} className="text-gray-500" />
-                                        <span className="text-sm text-gray-300">Show Prism Score</span>
+                                        <TrendingUp size={18} className="text-text-muted" />
+                                        <span className="text-sm text-text-secondary">Show Prism Score</span>
                                     </div>
                                     <button
                                         onClick={() => setShowPrismScore(!showPrismScore)}
                                         className={cn(
                                             "w-10 h-6 rounded-full transition-colors relative",
-                                            showPrismScore ? "bg-primary" : "bg-white/10"
+                                            showPrismScore ? "bg-primary" : "bg-surface-hover"
                                         )}
                                     >
                                         <div className={cn(
@@ -205,17 +205,17 @@ export function ShareTradeModal({ isOpen, onClose, tradeId, symbol, direction, p
 
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <Share2 size={18} className="text-gray-500" />
+                                        <Share2 size={18} className="text-text-muted" />
                                         <div>
-                                            <span className="text-sm text-gray-300">Public link</span>
-                                            <p className="text-[10px] text-gray-600">Anyone with the link can view</p>
+                                            <span className="text-sm text-text-secondary">Public link</span>
+                                            <p className="text-[10px] text-text-muted">Anyone with the link can view</p>
                                         </div>
                                     </div>
                                     <button
                                         onClick={() => setIsPublic(!isPublic)}
                                         className={cn(
                                             "w-10 h-6 rounded-full transition-colors relative",
-                                            isPublic ? "bg-green-500" : "bg-white/10"
+                                            isPublic ? "bg-green-500" : "bg-surface-hover"
                                         )}
                                     >
                                         <div className={cn(
@@ -228,7 +228,7 @@ export function ShareTradeModal({ isOpen, onClose, tradeId, symbol, direction, p
 
                             {/* Platform Selection */}
                             <div>
-                                <label className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 block">
+                                <label className="text-xs font-bold uppercase tracking-wider text-text-muted mb-2 block">
                                     Platform
                                 </label>
                                 <div className="grid grid-cols-4 gap-2">
@@ -240,7 +240,7 @@ export function ShareTradeModal({ isOpen, onClose, tradeId, symbol, direction, p
                                                 "px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border",
                                                 platform === p
                                                     ? "bg-primary text-black border-primary"
-                                                    : "bg-white/5 text-gray-400 border-white/10 hover:bg-white/10"
+                                                    : "bg-surface-elevated text-text-muted border-border-color hover:bg-surface-hover"
                                             )}
                                         >
                                             {p}
@@ -252,7 +252,7 @@ export function ShareTradeModal({ isOpen, onClose, tradeId, symbol, direction, p
                             {/* Discord Webhook URL */}
                             {platform === 'discord' && (
                                 <div>
-                                    <label className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 block">
+                                    <label className="text-xs font-bold uppercase tracking-wider text-text-muted mb-2 block">
                                         Discord Webhook URL
                                     </label>
                                     <input
@@ -260,14 +260,14 @@ export function ShareTradeModal({ isOpen, onClose, tradeId, symbol, direction, p
                                         value={discordWebhook}
                                         onChange={e => setDiscordWebhook(e.target.value)}
                                         placeholder="https://discord.com/api/webhooks/..."
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary/40"
+                                        className="w-full bg-surface-elevated border border-border-color rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary/40"
                                     />
                                 </div>
                             )}
 
                             {/* Custom Message */}
                             <div>
-                                <label className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2 block">
+                                <label className="text-xs font-bold uppercase tracking-wider text-text-muted mb-2 block">
                                     Comment on card (optional)
                                 </label>
                                 <textarea
@@ -276,7 +276,7 @@ export function ShareTradeModal({ isOpen, onClose, tradeId, symbol, direction, p
                                     placeholder="Appears on the card image (max 200 chars)..."
                                     rows={2}
                                     maxLength={200}
-                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary/40 resize-none"
+                                    className="w-full bg-surface-elevated border border-border-color rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary/40 resize-none"
                                 />
                             </div>
 
@@ -290,10 +290,10 @@ export function ShareTradeModal({ isOpen, onClose, tradeId, symbol, direction, p
                             {/* Preview */}
                             {cardImageUrl && (
                                 <div className="space-y-3">
-                                    <label className="text-xs font-bold uppercase tracking-wider text-gray-500 block">
+                                    <label className="text-xs font-bold uppercase tracking-wider text-text-muted block">
                                         Preview
                                     </label>
-                                    <div className="rounded-lg overflow-hidden border border-white/10">
+                                    <div className="rounded-lg overflow-hidden border border-border-color">
                                         <img
                                             src={cardImageUrl}
                                             alt="Share card preview"
@@ -305,7 +305,7 @@ export function ShareTradeModal({ isOpen, onClose, tradeId, symbol, direction, p
                         </div>
 
                         {/* Footer */}
-                        <div className="px-6 py-4 border-t border-white/10 flex items-center gap-3">
+                        <div className="px-6 py-4 border-t border-border-color flex items-center gap-3">
                             {!cardImageUrl ? (
                                 <button
                                     onClick={handleGenerateCard}
@@ -352,7 +352,7 @@ export function ShareTradeModal({ isOpen, onClose, tradeId, symbol, direction, p
                                     ) : (
                                         <button
                                             onClick={handleCopyLink}
-                                            className="flex-1 px-4 py-2.5 bg-white/10 text-white font-bold rounded-lg hover:bg-white/20 transition-all flex items-center justify-center gap-2"
+                                            className="flex-1 px-4 py-2.5 bg-surface-hover text-text-primary font-bold rounded-lg hover:bg-surface-hover transition-all flex items-center justify-center gap-2"
                                         >
                                             {copied ? (
                                                 <>
@@ -370,7 +370,7 @@ export function ShareTradeModal({ isOpen, onClose, tradeId, symbol, direction, p
                                     <button
                                         onClick={handleGenerateCard}
                                         disabled={isGenerating}
-                                        className="px-4 py-2.5 bg-white/5 text-gray-300 font-bold rounded-lg hover:bg-white/10 transition-all"
+                                        className="px-4 py-2.5 bg-surface-elevated text-text-secondary font-bold rounded-lg hover:bg-surface-hover transition-all"
                                     >
                                         Regenerate
                                     </button>

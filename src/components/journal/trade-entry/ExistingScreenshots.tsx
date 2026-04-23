@@ -24,7 +24,7 @@ export function ExistingScreenshots({ media, onRemove, readonly = false }: Exist
                 {media.map((item) => (
                     <div
                         key={item.id}
-                        className="relative aspect-square rounded-lg overflow-hidden bg-white/5 group cursor-pointer"
+                        className="relative aspect-square rounded-lg overflow-hidden bg-surface-elevated group cursor-pointer"
                         onClick={() => setLightboxUrl(item.url)}
                     >
                         <img

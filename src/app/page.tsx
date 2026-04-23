@@ -23,8 +23,8 @@ export default async function DashboardPage() {
         {/* Header Section */}
         <header className="flex justify-between items-end mb-4 px-2">
           <div>
-            <h1 className="text-4xl font-bold neon-text tracking-tight uppercase">Intelligence <span className="text-gray-500">Portal</span></h1>
-            <p className="text-gray-500 mt-2 font-medium tracking-wide">Market Pulse // Welcome back, {userName}.</p>
+            <h1 className="text-4xl font-bold neon-text tracking-tight uppercase">Intelligence <span className="text-text-muted">Portal</span></h1>
+            <p className="text-text-muted mt-2 font-medium tracking-wide">Market Pulse // Welcome back, {userName}.</p>
           </div>
         </header>
 
