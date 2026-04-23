@@ -21,7 +21,7 @@ import { cn } from '@/lib/cn';
 import NotificationCenter from './NotificationCenter';
 import AccountSwitcher from './AccountSwitcher';
 import { ThemeToggle } from './ThemeToggle';
-import { APP_VERSION, BUILD_DATE, BUILD_NOTES } from '@/lib/version';
+import { APP_VERSION, BUILD_DATE } from '@/lib/version';
 
 const MENU_ITEMS = [
     { label: 'Dashboard', href: '/' },
@@ -160,7 +160,6 @@ export default function TopNav() {
                                 </button>
                                 <div className="border-t border-border-subtle px-4 py-3">
                                     <p className="text-[9px] font-mono text-text-muted">v{APP_VERSION} &middot; {BUILD_DATE}</p>
-                                    <p className="text-[9px] text-text-muted mt-0.5 leading-tight">{BUILD_NOTES}</p>
                                 </div>
                             </div>
                         )}
