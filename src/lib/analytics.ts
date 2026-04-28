@@ -96,6 +96,20 @@ export function calculateMaxDrawdownPercent(pnlValues: number[]): number {
     return maxDD;
 }
 
+export function calculateMaxDrawdownAbsolute(pnlValues: number[]): number {
+    if (pnlValues.length === 0) return 0;
+    let peak = 0;
+    let maxDD = 0;
+    let runningSum = 0;
+    for (const pnl of pnlValues) {
+        runningSum += pnl;
+        if (runningSum > peak) peak = runningSum;
+        const dd = peak - runningSum;
+        if (dd > maxDD) maxDD = dd;
+    }
+    return maxDD;
+}
+
 /**
  * Calculate max drawdown percentage from a pre-built equity curve.
  * Each point has a numeric `.value` property.

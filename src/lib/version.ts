@@ -9,9 +9,9 @@ export const APP_VERSION = pkg.version; // e.g. "2.17.0"
  * Build date — update this whenever you bump the version.
  * Format: YYYY-MM-DD
  */
-export const BUILD_DATE = '2026-04-23';
+export const BUILD_DATE = '2026-04-28';
 
-export const BUILD_NOTES = 'Security hardening: timing-safe cron auth, CSRF protection, CSP tightening, storage validation, session maxAge, HTML escaping';
+export const BUILD_NOTES = 'Fix dashboard max drawdown: now shows absolute currency amount instead of broken percentage';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {

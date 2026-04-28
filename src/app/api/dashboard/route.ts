@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAllUserAccounts } from '@/lib/getAccount';
-import { calculateProfitFactorFromTrades, calculateMaxDrawdownPercent } from '@/lib/analytics';
+import { calculateProfitFactorFromTrades, calculateMaxDrawdownAbsolute } from '@/lib/analytics';
 import { formatDistanceToNow, formatDateKey } from '@/lib/formatTime';
 import { withAuth } from '@/lib/api/withAuth';
 import { cacheGet, cacheSet } from '@/lib/api/cache';
@@ -130,7 +130,7 @@ export const GET = withAuth(async (request: NextRequest, _ctx: Record<string, un
     const sortedByExit = [...closedTrades].sort((a, b) =>
         (a.exitTime?.getTime() ?? 0) - (b.exitTime?.getTime() ?? 0)
     );
-    const maxDrawdown = calculateMaxDrawdownPercent(sortedByExit.map(t => t.pnl ?? 0));
+    const maxDrawdown = calculateMaxDrawdownAbsolute(sortedByExit.map(t => (t.pnl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0)));
 
     const pnls = closedTrades.map(t => t.pnl ?? 0);
     const bestTrade = pnls.length > 0 ? Math.max(...pnls) : 0;
