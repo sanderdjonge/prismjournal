@@ -733,10 +733,10 @@ function AccountsContent() {
                                 <div className="mt-4 p-4 rounded-xl border border-primary/20 bg-primary/5">
                                     <div className="flex items-center gap-2 mb-2">
                                         <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-primary/20 text-primary">Beta</span>
-                                        <span className="text-xs font-bold text-white">PrismTrade EA v4.0</span>
+                                        <span className="text-xs font-bold text-white">PrismTrade EA v5.4</span>
                                     </div>
                                     <p className="text-[11px] text-text-muted leading-relaxed mb-2">
-                                        Visual trading toolbar with <span className="text-white">drag-and-drop SL/TP</span>, <span className="text-white">risk management</span>, and <span className="text-white">trade execution from chart</span>.
+                                        Full visual trade manager with <span className="text-white">drag-and-drop SL/TP lines</span>, <span className="text-white">market/limit/stop orders</span>, <span className="text-white">auto breakeven</span>, <span className="text-white">trailing stop</span>, <span className="text-white">3-level partial TPs</span>, and <span className="text-white">risk % / lot / USD sizing</span>.
                                     </p>
                                     <div className="flex items-start gap-2 mb-3">
                                         <AlertTriangle size={12} className="text-yellow-500/70 mt-0.5 shrink-0" />

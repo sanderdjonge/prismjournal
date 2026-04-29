@@ -136,8 +136,13 @@ function tooManyRequests(limit: number, retryAfter: number): NextResponse {
 // ── Pre-configured limiters ────────────────────────────────────────────────────
 
 export const Limiters = {
-  register: { name: 'register', limit: 5,   windowMs: 60_000 } as RateLimiterConfig,
-  sync:     { name: 'sync',     limit: parseInt(process.env.RATE_LIMIT_SYNC ?? '600'), windowMs: 60_000 } as RateLimiterConfig,
-  api:      { name: 'api',      limit: parseInt(process.env.RATE_LIMIT_API  ?? '100'), windowMs: 60_000 } as RateLimiterConfig,
-  admin:    { name: 'admin',    limit: 30,  windowMs: 60_000 } as RateLimiterConfig,
+  register:        { name: 'register',        limit: 5,   windowMs: 60_000 } as RateLimiterConfig,
+  sync:            { name: 'sync',            limit: parseInt(process.env.RATE_LIMIT_SYNC ?? '600'), windowMs: 60_000 } as RateLimiterConfig,
+  api:             { name: 'api',             limit: parseInt(process.env.RATE_LIMIT_API  ?? '100'), windowMs: 60_000 } as RateLimiterConfig,
+  admin:           { name: 'admin',           limit: 30,  windowMs: 60_000 } as RateLimiterConfig,
+  twoFaSetup:      { name: '2fa-setup',       limit: 5,   windowMs: 60_000 } as RateLimiterConfig,
+  twoFaVerify:     { name: '2fa-verify',       limit: 5,   windowMs: 60_000 } as RateLimiterConfig,
+  twoFaDisable:    { name: '2fa-disable',      limit: 5,   windowMs: 60_000 } as RateLimiterConfig,
+  forgotPassword:  { name: 'forgot-password',  limit: 3,   windowMs: 60_000 } as RateLimiterConfig,
+  resetPassword:   { name: 'reset-password',   limit: 3,   windowMs: 60_000 } as RateLimiterConfig,
 };

@@ -3,7 +3,7 @@ import { usedTotpCodes, cleanupUsedCodes, pendingTotpSecrets, cleanupPendingSecr
 import { withAuth } from '@/lib/api/withAuth';
 import prisma from '@/lib/prisma';
 import { verifySync } from 'otplib';
-import { authLimiter } from '@/lib/rate-limit';
+import { checkLimit, Limiters } from '@/lib/rate-limit-redis';
 import { validateBody } from '@/lib/validations/common';
 import { z } from 'zod';
 import { badRequest, ok } from '@/lib/api/responses';
@@ -13,7 +13,7 @@ const verify2faSchema = z.object({
 });
 
 export const POST = withAuth(async (request: NextRequest, _ctx, session) => {
-    const rateLimitResult = await authLimiter.check(request, 5);
+    const rateLimitResult = await checkLimit(request, { ...Limiters.register, name: '2fa-verify', limit: 5 });
     if (rateLimitResult) return rateLimitResult;
 
     const validation = await validateBody(request, verify2faSchema);

@@ -23,6 +23,8 @@ import {
   VolatilityConfig,
   NewsEventConfig,
 } from '@/components/what-if/WhatIfFilterChips';
+import { CorrelationHeatmap } from '@/components/analytics/CorrelationHeatmap'
+import { useWhatIfCorrelation } from '@/hooks/useWhatIfCorrelation'
 
 const DAYS = [
     { value: 0, label: 'Sunday' },
@@ -280,6 +282,10 @@ export function WhatIfSimulator() {
     
     const { displayCurrency } = useSettings();
     const { data: result, isLoading, refetch } = useWhatIf(activeFilters);
+    const { data: correlationData } = useWhatIfCorrelation({
+        accountIds: undefined,
+    })
+    const [showCorrelation, setShowCorrelation] = useState(false)
     
     // Close popover when clicking outside
     useEffect(() => {
@@ -390,7 +396,6 @@ export function WhatIfSimulator() {
     };
     
     // Available advanced filter options
-    // Note: Volatility and News Events removed - require external API integration (see ROADMAP.md)
     const advancedFilterOptions = [
         { id: 'duration', label: 'Duration', category: 'time' as const },
         { id: 'marketSession', label: 'Market Session', category: 'time' as const },
@@ -400,9 +405,8 @@ export function WhatIfSimulator() {
         { id: 'bigLossCooldown', label: 'Big Loss Cooldown', category: 'psychology' as const },
         { id: 'positionSizing', label: 'Position Sizing', category: 'risk' as const },
         { id: 'trailingStop', label: 'Trailing Stop', category: 'risk' as const },
-        // TODO: Re-enable when external API integration complete
-        // { id: 'volatility', label: 'Volatility Filter', category: 'market' as const },
-        // { id: 'newsEvent', label: 'News Events', category: 'market' as const },
+        { id: 'volatility', label: 'Volatility Filter', category: 'market' as const },
+        { id: 'newsEvent', label: 'News Events', category: 'market' as const },
     ];
     
     const categoryColors = {
@@ -760,6 +764,47 @@ export function WhatIfSimulator() {
             
             {!isLoading && result && (
                 <ComparisonSummary result={result} currency={displayCurrency} />
+            )}
+            
+            {/* Correlation Matrix Heatmap */}
+            {correlationData && correlationData.tradeCount > 5 && (
+                <div className="glass-card rounded-2xl border border-border-color bg-surface-elevated p-4 mt-4">
+                    <button
+                        onClick={() => setShowCorrelation(!showCorrelation)}
+                        className="flex items-center justify-between w-full"
+                    >
+                        <div className="flex items-center gap-2">
+                            <FlaskConical size={14} className="text-primary" />
+                            <div className="text-left">
+                                <h4 className="text-sm font-bold text-white">Filter Correlation Matrix</h4>
+                                <p className="text-[10px] text-text-muted">Which filter combos yield the best results</p>
+                            </div>
+                        </div>
+                        <ChevronDown
+                            size={16}
+                            className={cn('text-text-muted transition-transform', showCorrelation && 'rotate-180')}
+                        />
+                    </button>
+                    <AnimatePresence>
+                        {showCorrelation && (
+                            <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="overflow-hidden"
+                            >
+                                <div className="mt-4 pt-4 border-t border-border-subtle">
+                                    <CorrelationHeatmap data={correlationData} />
+                                </div>
+                                <div className="mt-3 flex items-center gap-4 text-[10px] text-text-muted">
+                                    <span>{correlationData.tradeCount} trades analyzed</span>
+                                    <span>Generated {new Date(correlationData.generatedAt).toLocaleDateString()}</span>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
             )}
         </div>
     );

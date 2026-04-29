@@ -11,7 +11,7 @@ export const APP_VERSION = pkg.version; // e.g. "2.17.0"
  */
 export const BUILD_DATE = '2026-04-29';
 
-export const BUILD_NOTES = 'Expanded onboarding to 9 steps, Telegram strategy violation alerts, morning briefing, weekly chart digest';
+export const BUILD_NOTES = 'Bug fix: drawdown near-zero-peak cap (Prism Score & Performance); Rate-limit migration to Redis (2fa, password reset); What-If: Volatility/News filters + Correlation Heatmap enabled; Onboarding expanded to 14 steps; GDPR data deletion endpoint; E2E analytics tests; netPnl→totalPnl final cleanup';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {

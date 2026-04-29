@@ -6,7 +6,7 @@ import { generateSecret, generateURI } from 'otplib';
 import { checkLimit, Limiters } from '@/lib/rate-limit-redis';
 
 export const POST = withAuth(async (request: NextRequest, _ctx, session) => {
-    const rateLimitResult = await checkLimit(request, { ...Limiters.register, name: '2fa-setup' });
+    const rateLimitResult = await checkLimit(request, Limiters.twoFaSetup);
     if (rateLimitResult) return rateLimitResult;
 
     // Generate a new TOTP secret using otplib v13 API

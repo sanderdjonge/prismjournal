@@ -313,7 +313,7 @@ export async function handleStatsCommand(chatId: string, symbol: string): Promis
 
     if (trades.length === 0) return `No closed trades found for <code>${escapeHtml(upperSymbol)}</code>.`
 
-    let netPnl = 0, wins = 0, grossProfit = 0, grossLoss = 0
+    let totalPnl = 0, wins = 0, grossProfit = 0, grossLoss = 0
     const rMultiples: number[] = []
     const holdTimesMs: number[] = []
     let bestPnl = -Infinity, worstPnl = Infinity
@@ -321,7 +321,7 @@ export async function handleStatsCommand(chatId: string, symbol: string): Promis
 
     for (const t of trades) {
       if (t.pnl === null) continue
-      netPnl += t.pnl
+      totalPnl += t.pnl
       if (t.pnl > 0) { wins++; grossProfit += t.pnl }
       else if (t.pnl < 0) { grossLoss += Math.abs(t.pnl) }
       if (t.rMultiple !== null) rMultiples.push(t.rMultiple)
@@ -348,7 +348,7 @@ export async function handleStatsCommand(chatId: string, symbol: string): Promis
     const lines = [
       `📈 <b>${escapeHtml(upperSymbol)} Stats</b>`,
       ``,
-      `Net PnL:        ${formatSign(netPnl)} ${currency}`,
+      `Net PnL:        ${formatSign(totalPnl)} ${currency}`,
       `Win Rate:       ${winRate}% (${wins}/${total})`,
       `Profit Factor:  ${pf}`,
       `Avg R:R:        ${avgRR}R`,

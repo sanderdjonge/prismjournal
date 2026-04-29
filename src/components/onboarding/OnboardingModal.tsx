@@ -15,7 +15,13 @@ import {
   Target,
   Brain,
   Bell,
-  X
+  X,
+  FlaskConical,
+  Shield,
+  Keyboard,
+  MessageSquare,
+  Lock,
+  Download
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import Link from 'next/link';
@@ -152,6 +158,38 @@ const STEPS = [
     ),
   },
   {
+    id: 'what-if',
+    title: 'What-If Simulator',
+    description: 'Test hypotheses about your trading — exclude hours, adjust R:R, simulate different position sizing.',
+    icon: FlaskConical,
+    content: (
+      <div className="space-y-3">
+        <div className="glass-card bg-surface-elevated border border-border-color rounded-xl p-4">
+          <h4 className="font-bold text-white text-sm mb-2">How It Works</h4>
+          <p className="text-text-muted text-xs mb-2">
+            Import your real trade history, then toggle filters to see how different parameters would have changed your results.
+          </p>
+          <p className="text-text-muted text-xs">
+            Compare up to 3 side-by-side scenarios with different filter combinations.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <span className="px-2 py-1 rounded-md bg-primary/10 text-primary text-[10px] font-bold">Exclude Hours</span>
+          <span className="px-2 py-1 rounded-md bg-secondary/10 text-secondary text-[10px] font-bold">R:R Filter</span>
+          <span className="px-2 py-1 rounded-md bg-profit/10 text-profit text-[10px] font-bold">Position Sizing</span>
+          <span className="px-2 py-1 rounded-md bg-warning/10 text-warning text-[10px] font-bold">Volatility</span>
+        </div>
+        <Link
+          href="/analytics"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary text-xs font-black uppercase rounded-lg hover:bg-primary/20 transition-all"
+        >
+          Try What-If
+          <ArrowRight size={12} />
+        </Link>
+      </div>
+    ),
+  },
+  {
     id: 'dashboard',
     title: 'Understand Your Dashboard',
     description: 'Your dashboard shows key performance metrics at a glance.',
@@ -273,6 +311,44 @@ const STEPS = [
     ),
   },
   {
+    id: 'prop-firm',
+    title: 'Prop Firm Challenges',
+    description: 'Track prop firm challenge phases, daily loss limits, and rule violations automatically.',
+    icon: Shield,
+    content: (
+      <div className="space-y-3">
+        <div className="glass-card bg-surface-elevated border border-border-color rounded-xl p-4">
+          <h4 className="font-bold text-white text-sm mb-2">Challenge Tracking</h4>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-profit" />
+              <p className="text-text-muted text-xs">Profit target progress</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-loss" />
+              <p className="text-text-muted text-xs">Daily loss limit monitoring</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-warning" />
+              <p className="text-text-muted text-xs">Trailing drawdown tracking</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-primary" />
+              <p className="text-text-muted text-xs">Auto-advance on phase completion</p>
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/pages/accounts"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary text-xs font-black uppercase rounded-lg hover:bg-primary/20 transition-all"
+        >
+          Set Up Challenge
+          <ArrowRight size={12} />
+        </Link>
+      </div>
+    ),
+  },
+  {
     id: 'notifications',
     title: 'Set Up Notifications',
     description: 'Get alerts via Telegram and email so you never miss important events.',
@@ -304,6 +380,103 @@ const STEPS = [
             Enable Digest
             <ArrowRight size={12} />
           </Link>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: 'shortcuts',
+    title: 'Keyboard Shortcuts',
+    description: 'Navigate faster with keyboard shortcuts throughout the journal.',
+    icon: Keyboard,
+    content: (
+      <div className="space-y-3">
+        <div className="glass-card bg-surface-elevated border border-border-color rounded-xl p-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-white text-xs font-bold">Next Trade</span>
+            <kbd className="px-2 py-0.5 rounded bg-surface-elevated border border-border-subtle text-[10px] text-text-muted font-mono">→</kbd>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-white text-xs font-bold">Previous Trade</span>
+            <kbd className="px-2 py-0.5 rounded bg-surface-elevated border border-border-subtle text-[10px] text-text-muted font-mono">←</kbd>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-white text-xs font-bold">Save Current Trade</span>
+            <kbd className="px-2 py-0.5 rounded bg-surface-elevated border border-border-subtle text-[10px] text-text-muted font-mono">⌘ S</kbd>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-white text-xs font-bold">Search Trades</span>
+            <kbd className="px-2 py-0.5 rounded bg-surface-elevated border border-border-subtle text-[10px] text-text-muted font-mono">/</kbd>
+          </div>
+        </div>
+        <p className="text-text-muted text-[10px] text-center">More shortcuts available in the Journal page</p>
+      </div>
+    ),
+  },
+  {
+    id: 'telegram-bot',
+    title: 'Telegram Bot Commands',
+    description: 'Control PrismJournal from Telegram with powerful slash commands.',
+    icon: MessageSquare,
+    content: (
+      <div className="space-y-3">
+        <div className="glass-card bg-surface-elevated border border-border-color rounded-xl p-4">
+          <h4 className="font-bold text-white text-sm mb-2">Available Commands</h4>
+          <div className="space-y-1.5 text-xs">
+            <div className="flex items-center gap-2">
+              <code className="text-primary font-mono">/pnl today</code>
+              <span className="text-text-muted">— P&L summary</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <code className="text-primary font-mono">/score</code>
+              <span className="text-text-muted">— Prism Score + trends</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <code className="text-primary font-mono">/risk</code>
+              <span className="text-text-muted">— Account risk status</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <code className="text-primary font-mono">/mood CALM</code>
+              <span className="text-text-muted">— Log emotional state</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <code className="text-primary font-mono">/note text</code>
+              <span className="text-text-muted">— Add note to trade</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: 'data-privacy',
+    title: 'Your Data, Your Control',
+    description: 'PrismJournal is self-hosted — your data never leaves your server.',
+    icon: Lock,
+    content: (
+      <div className="space-y-3">
+        <div className="glass-card bg-surface-elevated border border-border-color rounded-xl p-4 space-y-2">
+          <div className="flex items-center gap-3">
+            <Lock size={16} className="text-profit shrink-0" />
+            <div>
+              <p className="text-white text-xs font-bold">Self-Hosted</p>
+              <p className="text-text-muted text-[10px]">All data stays on your server — no third-party data sharing</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Shield size={16} className="text-primary shrink-0" />
+            <div>
+              <p className="text-white text-xs font-bold">2FA Protection</p>
+              <p className="text-text-muted text-[10px]">TOTP-based two-factor authentication for your account</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Download size={16} className="text-secondary shrink-0" />
+            <div>
+              <p className="text-white text-xs font-bold">Full Data Export</p>
+              <p className="text-text-muted text-[10px]">Export all your data as JSON anytime from Settings</p>
+            </div>
+          </div>
         </div>
       </div>
     ),

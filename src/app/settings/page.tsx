@@ -49,6 +49,7 @@ import { APP_VERSION, versionToPhase } from '@/lib/version';
 import type { BridgeKeyInfoFull } from '@/types/auth'
 import PropFirmReferenceTable from '@/components/prop-firm/PropFirmReferenceTable';
 import { useCurrency } from '@/lib/currency';
+import { signOut } from 'next-auth/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { apiFetch, apiPost, apiPatch, apiDelete } from '@/lib/api/client';
 import { toast } from 'sonner';
@@ -293,6 +294,11 @@ function SettingsContent() {
     const [widgetPreviewKey, setWidgetPreviewKey] = useState(0);
     const [urlCopied, setUrlCopied] = useState(false);
     const [embedCopied, setEmbedCopied] = useState(false);
+
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
+    const [deleting, setDeleting] = useState(false);
+    const [deleteError, setDeleteError] = useState<string | null>(null);
 
     useEffect(() => {
         apiFetch('/api/settings')
@@ -1242,6 +1248,79 @@ function SettingsContent() {
                                     <button className="px-4 py-2 rounded-xl border border-border-color text-text-muted text-[10px] font-black uppercase tracking-widest hover:bg-surface-hover transition-all">
                                         Change
                                     </button>
+                                </div>
+                            </div>
+                            {/* GDPR Data Deletion */}
+                            <div className="space-y-4">
+                                <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-text-muted border-b border-border-subtle pb-2">Data & Privacy</h4>
+                                <div className="glass-card p-6 border-border-subtle bg-surface-elevated space-y-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-xl bg-danger/10 flex items-center justify-center">
+                                            <AlertTriangle size={24} className="text-danger" />
+                                        </div>
+                                        <div>
+                                            <h5 className="text-sm font-bold text-white">Delete All Data</h5>
+                                            <p className="text-[10px] text-text-muted">Permanently erase your account and all associated data (GDPR right to erasure)</p>
+                                        </div>
+                                    </div>
+                                    {!showDeleteDialog ? (
+                                        <button
+                                            onClick={() => setShowDeleteDialog(true)}
+                                            className="w-full p-3 rounded-xl border border-danger/30 text-danger text-[10px] font-black uppercase tracking-widest hover:bg-danger/10 transition-all"
+                                        >
+                                            <Trash2 size={14} className="inline mr-2" />
+                                            Delete All My Data
+                                        </button>
+                                    ) : (
+                                        <div className="space-y-4 pt-4 border-t border-border-color">
+                                            <p className="text-xs text-danger font-bold">
+                                                This action is irreversible. All trades, accounts, strategies, and settings will be permanently deleted.
+                                            </p>
+                                            <div className="space-y-2">
+                                                <label className="text-[9px] font-black uppercase tracking-widest text-text-muted">Type your email to confirm deletion</label>
+                                                <input
+                                                    type="email"
+                                                    value={deleteConfirmEmail}
+                                                    onChange={(e) => { setDeleteConfirmEmail(e.target.value); setDeleteError(null); }}
+                                                    placeholder="Enter your email"
+                                                    className="w-full glass-card px-4 py-3 border-border-subtle bg-surface-card text-sm text-white outline-none focus:border-danger/50 transition-all placeholder:text-text-muted"
+                                                />
+                                            </div>
+                                            {deleteError && <p className="text-danger text-[10px]">{deleteError}</p>}
+                                            <div className="flex gap-3">
+                                                <button
+                                                    onClick={() => { setShowDeleteDialog(false); setDeleteConfirmEmail(''); setDeleteError(null); }}
+                                                    className="flex-1 p-3 rounded-xl border border-border-color text-text-muted text-[10px] font-black uppercase tracking-widest hover:bg-surface-hover transition-all"
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    onClick={async () => {
+                                                        if (!deleteConfirmEmail.trim()) {
+                                                            setDeleteError('Please enter your email address.');
+                                                            return;
+                                                        }
+                                                        setDeleting(true);
+                                                        setDeleteError(null);
+                                                        try {
+                                                            await apiPost('/api/export/delete', { confirm: deleteConfirmEmail.trim() });
+                                                            toast.success('All data deleted successfully.');
+                                                            await signOut({ callbackUrl: '/login' });
+                                                        } catch (e) {
+                                                            setDeleteError(e instanceof Error ? e.message : 'Failed to delete data.');
+                                                        } finally {
+                                                            setDeleting(false);
+                                                        }
+                                                    }}
+                                                    disabled={deleting || !deleteConfirmEmail.trim()}
+                                                    className="flex-1 p-3 rounded-xl bg-danger text-white text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                                >
+                                                    {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                                                    {deleting ? 'Deleting...' : 'Permanently Delete Everything'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

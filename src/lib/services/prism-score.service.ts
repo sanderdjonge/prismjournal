@@ -86,8 +86,11 @@ export function computePrismScore(trades: TradeForScore[]): PrismScoreResult {
         const dd = peak - running;
         if (dd > maxDD) maxDD = dd;
     }
-    // Express drawdown as % of peak; if there is no positive peak, use the absolute DD value scaled to 100%
-    const maxDDPct = peak > 0 ? (maxDD / peak) * 100 : (maxDD > 0 ? 100 : 0);
+    // Express drawdown as % of peak; if there is no positive peak, use the absolute DD value scaled to 100%.
+    // Cap at 100% — when equity starts near zero, the ratio divides by a tiny peak and produces
+    // astronomical percentages (e.g. peak=0.50 → 2697%). Capping mirrors the same fix applied
+    // to calculateMaxDrawdownPercent() in analytics.ts.
+    const maxDDPct = peak > 0 ? Math.min((maxDD / peak) * 100, 100) : (maxDD > 0 ? 100 : 0);
     const ddScore  = clamp(100 - maxDDPct);
 
     // --- Recovery Factor ---

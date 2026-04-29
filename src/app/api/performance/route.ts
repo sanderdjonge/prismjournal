@@ -124,7 +124,7 @@ export const GET = withAuth(async (request: NextRequest, ctx: Record<string, unk
     for (const pnl of pnlList) {
         running += pnl;
         if (running > peak) peak = running;
-        const dd = peak > 0 ? ((peak - running) / peak) * 100 : 0;
+        const dd = peak > 0 ? Math.min(((peak - running) / peak) * 100, 100) : 0;
         if (dd > maxDrawdown) maxDrawdown = dd;
     }
 
@@ -150,8 +150,8 @@ export const GET = withAuth(async (request: NextRequest, ctx: Record<string, unk
     const yearClosedTrades = allClosedTrades.filter(t => t.exitTime!.getFullYear() === currentYear);
     const monthlyPnl = Array(12).fill(0);
     for (const t of yearClosedTrades) {
-        const netPnl = (t.pnl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
-        monthlyPnl[t.exitTime!.getMonth()] += netPnl;
+        const totalPnl = (t.pnl ?? 0) + (t.commission ?? 0) + (t.swap ?? 0);
+        monthlyPnl[t.exitTime!.getMonth()] += totalPnl;
     }
 
     const latestSnapshot = snapshots.length > 0 ? snapshots[snapshots.length - 1] : null;

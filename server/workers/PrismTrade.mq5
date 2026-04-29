@@ -36,7 +36,7 @@ input int      Slippage       = 10;
 #define SML_H       20
 #define CLB_H       28
 #define GAP          3
-#define SETT_W     258
+#define SETT_W     400
 #define CONFIRM_W  260
 #define GEAR_W      28
 
@@ -496,48 +496,56 @@ void CreateSettingsPanel()
 {
    if(!g_SettOpen) return;
    int px = g_SettX, py = g_SettY, w = SETT_W;
-   int rh = 20, gap2 = 2, ind = 12;
-   int togW = 44, togH = 16;
+   int rh   = 26;   // row height
+   int gap2 = 4;    // gap between rows
+   int ind  = 16;   // left indent for sub-rows
+   int togW = 56, togH = 20;
+   int editW = 80;  // edit field width
 
-   // Row count: hdr + 10 content rows + 3 sub-rows for TP + 1 sub RR = ~15 total
-   int totalH = HDR_H + GAP + 14 * (rh + gap2) + 6;
+   // totalH: header + info bar + 10 section/sub rows
+   int totalH = HDR_H + GAP + 22 + GAP + 10 * (rh + gap2) + 3 * (rh + gap2) + (rh + gap2) + 12;
    MakeBtn(PRISM_PREFIX + "SttBG", px - 3, py - 3, w + 6, totalH + 6, C'14,14,26', C'55,50,105', "", 1);
 
    // Header
-   MakeBtn(PRISM_PREFIX + "SttTitle", px, py, w - 22, HDR_H, C'50,40,110', C'90,75,200', ":: SETTINGS", 8);
-   MakeBtn(PRISM_PREFIX + "SttX",     px + w - 20, py, 20, HDR_H, C'90,25,25', C'150,45,45', "x", 8);
+   MakeBtn(PRISM_PREFIX + "SttTitle", px, py, w - 26, HDR_H, C'50,40,110', C'90,75,200', ":: SETTINGS", 9);
+   MakeBtn(PRISM_PREFIX + "SttX",     px + w - 24, py, 24, HDR_H, C'90,25,25', C'150,45,45', "x", 9);
 
-   int y = py + HDR_H + GAP;
+   // Tick-size info bar
+   double tickSz   = SymbolInfoDouble(Symbol(), SYMBOL_TRADE_TICK_SIZE);
+   string tickInfo = Symbol() + "   1 tick = " + DoubleToString(tickSz, _Digits) + "   (values entered in ticks)";
+   MakeBtn(PRISM_PREFIX + "SttInfo", px, py + HDR_H + GAP, w, 22, C'22,22,44', C'50,48,90', tickInfo, 8);
+
+   int y = py + HDR_H + GAP + 22 + GAP;
 
    // ── Auto Breakeven ─────────────────────────────────────────────
-   MakeLabel(PRISM_PREFIX + "SttBELbl",   px + 4,           y + 2,  C'210,205,240', 8, "Auto Breakeven");
-   MakeToggle(PRISM_PREFIX + "SttBEBtn",  px + w - togW - 2, y + 2, togW, togH, g_AutoBE);
+   MakeLabel(PRISM_PREFIX + "SttBELbl",  px + 6,            y + 4,  C'210,205,240', 10, "Auto Breakeven");
+   MakeToggle(PRISM_PREFIX + "SttBEBtn", px + w - togW - 4, y + 3, togW, togH, g_AutoBE);
    y += rh + gap2;
 
-   MakeLabel(PRISM_PREFIX + "SttBETLbl",  px + ind,     y + 3, C'140,135,175', 7, "Trigger:");
-   MakeEdit(PRISM_PREFIX  + "SttBETrig",  px + ind + 54, y, 38, rh - 2, IntegerToString(g_BETrig));
-   MakeLabel(PRISM_PREFIX + "SttBEULbl",  px + ind + 95, y + 3, C'140,135,175', 7, "pts");
-   MakeLabel(PRISM_PREFIX + "SttBEOLbl",  px + ind + 118, y + 3, C'140,135,175', 7, "Offset:");
-   MakeEdit(PRISM_PREFIX  + "SttBEOff",   px + ind + 170, y, 38, rh - 2, IntegerToString(g_BEOffset));
-   MakeLabel(PRISM_PREFIX + "SttBEOU",    px + ind + 212, y + 3, C'140,135,175', 7, "pts");
-   y += rh + gap2 + 2;
+   MakeLabel(PRISM_PREFIX + "SttBETLbl", px + ind,           y + 5, C'155,150,190', 8, "Trigger:");
+   MakeEdit( PRISM_PREFIX + "SttBETrig", px + ind + 68,      y, editW, rh - 2, IntegerToString(g_BETrig));
+   MakeLabel(PRISM_PREFIX + "SttBEULbl", px + ind + 68 + editW + 4, y + 5, C'155,150,190', 8, "ticks");
+   MakeLabel(PRISM_PREFIX + "SttBEOLbl", px + ind + 68 + editW + 50, y + 5, C'155,150,190', 8, "Offset:");
+   MakeEdit( PRISM_PREFIX + "SttBEOff",  px + ind + 68 + editW + 106, y, editW, rh - 2, IntegerToString(g_BEOffset));
+   MakeLabel(PRISM_PREFIX + "SttBEOU",   px + ind + 68 + editW + 106 + editW + 4, y + 5, C'155,150,190', 8, "ticks");
+   y += rh + gap2 + 4;
 
    // ── Trailing Stop ──────────────────────────────────────────────
-   MakeLabel(PRISM_PREFIX + "SttTRLbl",   px + 4,           y + 2,  C'210,205,240', 8, "Trailing Stop");
-   MakeToggle(PRISM_PREFIX + "SttTRBtn",  px + w - togW - 2, y + 2, togW, togH, g_TrailOn);
+   MakeLabel(PRISM_PREFIX + "SttTRLbl",  px + 6,            y + 4,  C'210,205,240', 10, "Trailing Stop");
+   MakeToggle(PRISM_PREFIX + "SttTRBtn", px + w - togW - 4, y + 3, togW, togH, g_TrailOn);
    y += rh + gap2;
 
-   MakeLabel(PRISM_PREFIX + "SttTRSLbl",  px + ind,      y + 3, C'140,135,175', 7, "Start:");
-   MakeEdit(PRISM_PREFIX  + "SttTRStart", px + ind + 40,  y, 38, rh - 2, IntegerToString(g_TrailStart));
-   MakeLabel(PRISM_PREFIX + "SttTRSU",    px + ind + 82,  y + 3, C'140,135,175', 7, "pts");
-   MakeLabel(PRISM_PREFIX + "SttTRStLbl", px + ind + 105, y + 3, C'140,135,175', 7, "Step:");
-   MakeEdit(PRISM_PREFIX  + "SttTRStep",  px + ind + 140, y, 38, rh - 2, IntegerToString(g_TrailStep));
-   MakeLabel(PRISM_PREFIX + "SttTRStU",   px + ind + 182, y + 3, C'140,135,175', 7, "pts");
-   y += rh + gap2 + 2;
+   MakeLabel(PRISM_PREFIX + "SttTRSLbl",  px + ind,          y + 5, C'155,150,190', 8, "Start:");
+   MakeEdit( PRISM_PREFIX + "SttTRStart", px + ind + 54,     y, editW, rh - 2, IntegerToString(g_TrailStart));
+   MakeLabel(PRISM_PREFIX + "SttTRSU",    px + ind + 54 + editW + 4,  y + 5, C'155,150,190', 8, "ticks");
+   MakeLabel(PRISM_PREFIX + "SttTRStLbl", px + ind + 54 + editW + 52, y + 5, C'155,150,190', 8, "Step:");
+   MakeEdit( PRISM_PREFIX + "SttTRStep",  px + ind + 54 + editW + 100, y, editW, rh - 2, IntegerToString(g_TrailStep));
+   MakeLabel(PRISM_PREFIX + "SttTRStU",   px + ind + 54 + editW + 100 + editW + 4, y + 5, C'155,150,190', 8, "ticks");
+   y += rh + gap2 + 4;
 
    // ── Partial Take Profits ───────────────────────────────────────
-   MakeLabel(PRISM_PREFIX + "SttPTLbl",   px + 4,           y + 2,  C'210,205,240', 8, "Partial Take Profits");
-   MakeToggle(PRISM_PREFIX + "SttPTBtn",  px + w - togW - 2, y + 2, togW, togH, g_PartialOn);
+   MakeLabel(PRISM_PREFIX + "SttPTLbl",  px + 6,            y + 4,  C'210,205,240', 10, "Partial Take Profits");
+   MakeToggle(PRISM_PREFIX + "SttPTBtn", px + w - togW - 4, y + 3, togW, togH, g_PartialOn);
    y += rh + gap2;
 
    double tpPcts[] = {g_TP1Pct, g_TP2Pct, g_TP3Pct};
@@ -546,22 +554,22 @@ void CreateSettingsPanel()
    string tpLbl[]  = {"TP1:", "TP2:", "TP3:"};
    for(int i = 0; i < 3; i++)
    {
-      MakeLabel(PRISM_PREFIX + tpPfx[i] + "Lbl", px + ind,       y + 3, C'140,135,175', 7, tpLbl[i]);
-      MakeEdit( PRISM_PREFIX + tpPfx[i] + "P",   px + ind + 30,  y, 38, rh - 2, DoubleToString(tpPcts[i], 0));
-      MakeLabel(PRISM_PREFIX + tpPfx[i] + "PU",  px + ind + 72,  y + 3, C'140,135,175', 7, "%  at");
-      MakeEdit( PRISM_PREFIX + tpPfx[i] + "R",   px + ind + 102, y, 38, rh - 2, DoubleToString(tpRs[i], 1));
-      MakeLabel(PRISM_PREFIX + tpPfx[i] + "RU",  px + ind + 144, y + 3, C'140,135,175', 7, "R");
+      MakeLabel(PRISM_PREFIX + tpPfx[i] + "Lbl", px + ind,          y + 5, C'155,150,190', 8, tpLbl[i]);
+      MakeEdit( PRISM_PREFIX + tpPfx[i] + "P",   px + ind + 40,     y, editW, rh - 2, DoubleToString(tpPcts[i], 0));
+      MakeLabel(PRISM_PREFIX + tpPfx[i] + "PU",  px + ind + 40 + editW + 4,  y + 5, C'155,150,190', 8, "%  at");
+      MakeEdit( PRISM_PREFIX + tpPfx[i] + "R",   px + ind + 40 + editW + 48, y, editW, rh - 2, DoubleToString(tpRs[i], 1));
+      MakeLabel(PRISM_PREFIX + tpPfx[i] + "RU",  px + ind + 40 + editW + 48 + editW + 4, y + 5, C'155,150,190', 8, "R");
       y += rh + gap2;
    }
 
-   y += 2;
+   y += 4;
    // ── Lock R:R Ratio ─────────────────────────────────────────────
-   MakeLabel(PRISM_PREFIX + "SttRRLbl",  px + 4,           y + 2,  C'210,205,240', 8, "Lock R:R Ratio");
-   MakeToggle(PRISM_PREFIX + "SttRRBtn", px + w - togW - 2, y + 2, togW, togH, g_LockRR);
+   MakeLabel(PRISM_PREFIX + "SttRRLbl",  px + 6,            y + 4,  C'210,205,240', 10, "Lock R:R Ratio");
+   MakeToggle(PRISM_PREFIX + "SttRRBtn", px + w - togW - 4, y + 3, togW, togH, g_LockRR);
    y += rh + gap2;
 
-   MakeLabel(PRISM_PREFIX + "SttRRVLbl", px + ind,      y + 3, C'140,135,175', 7, "Ratio:");
-   MakeEdit( PRISM_PREFIX + "SttRRVal",  px + ind + 44, y, 45, rh - 2, DoubleToString(g_LockRRRatio, 1));
+   MakeLabel(PRISM_PREFIX + "SttRRVLbl", px + ind,      y + 5, C'155,150,190', 8, "Ratio:");
+   MakeEdit( PRISM_PREFIX + "SttRRVal",  px + ind + 58, y, editW, rh - 2, DoubleToString(g_LockRRRatio, 1));
 
    ChartRedraw(0);
 }
@@ -569,7 +577,7 @@ void CreateSettingsPanel()
 void DestroySettingsPanel()
 {
    string nms[] = {
-      "SttBG","SttTitle","SttX",
+      "SttBG","SttTitle","SttX","SttInfo",
       "SttBELbl","SttBEBtn","SttBETLbl","SttBETrig","SttBEULbl","SttBEOLbl","SttBEOff","SttBEOU",
       "SttTRLbl","SttTRBtn","SttTRSLbl","SttTRStart","SttTRSU","SttTRStLbl","SttTRStep","SttTRStU",
       "SttPTLbl","SttPTBtn",
@@ -586,7 +594,7 @@ void MoveSettings(int dx, int dy)
    g_SettX += dx;
    g_SettY += dy;
    string nms[] = {
-      "SttBG","SttTitle","SttX",
+      "SttBG","SttTitle","SttX","SttInfo",
       "SttBELbl","SttBEBtn","SttBETLbl","SttBETrig","SttBEULbl","SttBEOLbl","SttBEOff","SttBEOU",
       "SttTRLbl","SttTRBtn","SttTRSLbl","SttTRStart","SttTRSU","SttTRStLbl","SttTRStep","SttTRStU",
       "SttPTLbl","SttPTBtn",
@@ -681,37 +689,37 @@ void HideConfirmPanel()
 //+------------------------------------------------------------------+
 //| Trade lines                                                       |
 //+------------------------------------------------------------------+
+void MakeHLine(string name, double price, color clr, ENUM_LINE_STYLE style, int width, string label)
+{
+   ObjectDelete(0, name);
+   ObjectCreate(0, name, OBJ_HLINE, 0, 0, price);
+   ObjectSetInteger(0, name, OBJPROP_COLOR,      clr);
+   ObjectSetInteger(0, name, OBJPROP_STYLE,      style);
+   ObjectSetInteger(0, name, OBJPROP_WIDTH,      width);
+   ObjectSetInteger(0, name, OBJPROP_SELECTABLE, true);
+   ObjectSetInteger(0, name, OBJPROP_SELECTED,   false);
+   ObjectSetInteger(0, name, OBJPROP_BACK,       false);
+   ObjectSetInteger(0, name, OBJPROP_HIDDEN,     false);
+   ObjectSetString (0, name, OBJPROP_TOOLTIP,    label);
+   ObjectSetString (0, name, OBJPROP_TEXT,       label);
+}
+
 void CreateEntryLine(double price)
 {
-   string n = PRISM_PREFIX + "Entry";
-   ObjectDelete(0, n); ObjectCreate(0, n, OBJ_HLINE, 0, 0, price);
-   ObjectSetInteger(0, n, OBJPROP_COLOR,     C'124,106,255');
-   ObjectSetInteger(0, n, OBJPROP_STYLE,     STYLE_SOLID);
-   ObjectSetInteger(0, n, OBJPROP_WIDTH,     2);
-   ObjectSetInteger(0, n, OBJPROP_SELECTABLE, true);
-   ObjectSetString (0, n, OBJPROP_TEXT,      "ENTRY " + DoubleToString(price, _Digits));
+   MakeHLine(PRISM_PREFIX + "Entry", price, C'124,106,255', STYLE_SOLID, 3,
+             "ENTRY  " + DoubleToString(price, _Digits) + "  [drag to adjust]");
 }
 
 void CreateSLLine(double price)
 {
-   string n = PRISM_PREFIX + "SL";
-   ObjectDelete(0, n); ObjectCreate(0, n, OBJ_HLINE, 0, 0, price);
-   ObjectSetInteger(0, n, OBJPROP_COLOR,     C'239,83,80');
-   ObjectSetInteger(0, n, OBJPROP_STYLE,     STYLE_DASH);
-   ObjectSetInteger(0, n, OBJPROP_WIDTH,     2);
-   ObjectSetInteger(0, n, OBJPROP_SELECTABLE, true);
-   ObjectSetString (0, n, OBJPROP_TEXT,      "SL " + DoubleToString(price, _Digits));
+   MakeHLine(PRISM_PREFIX + "SL", price, C'239,83,80', STYLE_SOLID, 3,
+             "STOP LOSS  " + DoubleToString(price, _Digits) + "  [drag to adjust]");
 }
 
 void CreateTPLine(double price)
 {
-   string n = PRISM_PREFIX + "TP";
-   ObjectDelete(0, n); ObjectCreate(0, n, OBJ_HLINE, 0, 0, price);
-   ObjectSetInteger(0, n, OBJPROP_COLOR,     C'38,166,154');
-   ObjectSetInteger(0, n, OBJPROP_STYLE,     STYLE_DASH);
-   ObjectSetInteger(0, n, OBJPROP_WIDTH,     2);
-   ObjectSetInteger(0, n, OBJPROP_SELECTABLE, true);
-   ObjectSetString (0, n, OBJPROP_TEXT,      "TP " + DoubleToString(price, _Digits));
+   MakeHLine(PRISM_PREFIX + "TP", price, C'38,166,154', STYLE_SOLID, 3,
+             "TAKE PROFIT  " + DoubleToString(price, _Digits) + "  [drag to adjust]");
 }
 
 void DeleteTradeLines()
@@ -732,6 +740,14 @@ void ShowError(string msg)
       ObjectSetString (0, PRISM_PREFIX + "Status", OBJPROP_TEXT,  msg);
       ObjectSetInteger(0, PRISM_PREFIX + "Status", OBJPROP_COLOR, C'239,83,80');
    }
+   // Also surface in confirm panel label and chart comment so it's always visible
+   if(ObjectFind(0, PRISM_PREFIX + "CfmDir") >= 0)
+   {
+      ObjectSetString (0, PRISM_PREFIX + "CfmDir", OBJPROP_TEXT,  "ERROR: " + msg);
+      ObjectSetInteger(0, PRISM_PREFIX + "CfmDir", OBJPROP_COLOR, C'239,83,80');
+   }
+   ChartSetString(0, CHART_COMMENT, "PrismTrade error: " + msg);
+   Print("PrismTrade error: ", msg);
 }
 
 void ClearError()
@@ -742,6 +758,7 @@ void ClearError()
       g_ErrorTipTime = 0;
       if(ObjectFind(0, PRISM_PREFIX + "Status") >= 0)
          ObjectSetInteger(0, PRISM_PREFIX + "Status", OBJPROP_COLOR, C'215,215,235');
+      ChartSetString(0, CHART_COMMENT, "");
       UpdateStatus();
    }
 }
@@ -828,6 +845,36 @@ bool ExecutePlannedTrade()
       price     = (g_OrdType == ORD_MARKET) ? SymbolInfoDouble(Symbol(), SYMBOL_BID) : NormPrice(g_EntryPrice);
       orderType = (g_OrdType == ORD_MARKET) ? ORDER_TYPE_SELL :
                   (g_OrdType == ORD_LIMIT)  ? ORDER_TYPE_SELL_LIMIT : ORDER_TYPE_SELL_STOP;
+   }
+
+   double curAsk = SymbolInfoDouble(Symbol(), SYMBOL_ASK);
+   double curBid = SymbolInfoDouble(Symbol(), SYMBOL_BID);
+
+   // Validate pending order price relative to current market
+   long   stopLvl  = SymbolInfoInteger(Symbol(), SYMBOL_TRADE_STOPS_LEVEL);
+   double minPtDist = stopLvl * SymbolInfoDouble(Symbol(), SYMBOL_POINT);
+
+   if(g_OrdType == ORD_LIMIT)
+   {
+      if(g_Direction == "LONG"  && price >= curAsk)
+         { ShowError("Buy Limit must be BELOW Ask " + DoubleToString(curAsk, _Digits)); return false; }
+      if(g_Direction == "SHORT" && price <= curBid)
+         { ShowError("Sell Limit must be ABOVE Bid " + DoubleToString(curBid, _Digits)); return false; }
+      if(g_Direction == "LONG"  && curAsk - price < minPtDist)
+         { ShowError("Buy Limit too close to Ask — move " + (string)stopLvl + " pts further"); return false; }
+      if(g_Direction == "SHORT" && price - curBid < minPtDist)
+         { ShowError("Sell Limit too close to Bid — move " + (string)stopLvl + " pts further"); return false; }
+   }
+   if(g_OrdType == ORD_STOP)
+   {
+      if(g_Direction == "LONG"  && price <= curAsk)
+         { ShowError("Buy Stop must be ABOVE Ask " + DoubleToString(curAsk, _Digits)); return false; }
+      if(g_Direction == "SHORT" && price >= curBid)
+         { ShowError("Sell Stop must be BELOW Bid " + DoubleToString(curBid, _Digits)); return false; }
+      if(g_Direction == "LONG"  && price - curAsk < minPtDist)
+         { ShowError("Buy Stop too close to Ask — move " + (string)stopLvl + " pts further"); return false; }
+      if(g_Direction == "SHORT" && curBid - price < minPtDist)
+         { ShowError("Sell Stop too close to Bid — move " + (string)stopLvl + " pts further"); return false; }
    }
 
    // Validate stop distance for market orders
@@ -934,7 +981,7 @@ void DeletePendingOrders()
 //+------------------------------------------------------------------+
 void RunAutoBreakeven()
 {
-   double pt = SymbolInfoDouble(Symbol(), SYMBOL_POINT);
+   double tick = SymbolInfoDouble(Symbol(), SYMBOL_TRADE_TICK_SIZE);
    int total = PositionsTotal();
    for(int i = 0; i < total; i++)
    {
@@ -947,8 +994,8 @@ void RunAutoBreakeven()
       double tp       = PositionGetDouble(POSITION_TP);
       double bid      = SymbolInfoDouble(Symbol(), SYMBOL_BID);
       double ask      = SymbolInfoDouble(Symbol(), SYMBOL_ASK);
-      double trigPts  = g_BETrig   * pt;
-      double offPts   = g_BEOffset * pt;
+      double trigPts  = g_BETrig   * tick;
+      double offPts   = g_BEOffset * tick;
 
       if(posType == POSITION_TYPE_BUY)
       {
@@ -967,7 +1014,7 @@ void RunAutoBreakeven()
 
 void RunTrailingStop()
 {
-   double pt = SymbolInfoDouble(Symbol(), SYMBOL_POINT);
+   double tick = SymbolInfoDouble(Symbol(), SYMBOL_TRADE_TICK_SIZE);
    int total = PositionsTotal();
    for(int i = 0; i < total; i++)
    {
@@ -980,8 +1027,8 @@ void RunTrailingStop()
       double tp        = PositionGetDouble(POSITION_TP);
       double bid       = SymbolInfoDouble(Symbol(), SYMBOL_BID);
       double ask       = SymbolInfoDouble(Symbol(), SYMBOL_ASK);
-      double startPts  = g_TrailStart * pt;
-      double trailDist = g_TrailStep  * pt;
+      double startPts  = g_TrailStart * tick;
+      double trailDist = g_TrailStep  * tick;
 
       if(posType == POSITION_TYPE_BUY)
       {
@@ -1072,21 +1119,11 @@ void ShowPositionLines()
       double sl = PositionGetDouble(POSITION_SL);
       double tp = PositionGetDouble(POSITION_TP);
       if(sl > 0)
-      {
-         string n = PRISM_PREFIX + "PosSL" + (string)ticket;
-         ObjectDelete(0, n); ObjectCreate(0, n, OBJ_HLINE, 0, 0, sl);
-         ObjectSetInteger(0, n, OBJPROP_COLOR, C'239,83,80'); ObjectSetInteger(0, n, OBJPROP_STYLE, STYLE_DOT);
-         ObjectSetInteger(0, n, OBJPROP_WIDTH, 1);           ObjectSetInteger(0, n, OBJPROP_SELECTABLE, true);
-         ObjectSetString (0, n, OBJPROP_TEXT, "SL #" + (string)ticket);
-      }
+         MakeHLine(PRISM_PREFIX + "PosSL" + (string)ticket, sl, C'239,83,80', STYLE_DASH, 2,
+                   "SL #" + (string)ticket + "  " + DoubleToString(sl, _Digits) + "  [drag to modify]");
       if(tp > 0)
-      {
-         string n = PRISM_PREFIX + "PosTP" + (string)ticket;
-         ObjectDelete(0, n); ObjectCreate(0, n, OBJ_HLINE, 0, 0, tp);
-         ObjectSetInteger(0, n, OBJPROP_COLOR, C'38,166,154'); ObjectSetInteger(0, n, OBJPROP_STYLE, STYLE_DOT);
-         ObjectSetInteger(0, n, OBJPROP_WIDTH, 1);             ObjectSetInteger(0, n, OBJPROP_SELECTABLE, true);
-         ObjectSetString (0, n, OBJPROP_TEXT, "TP #" + (string)ticket);
-      }
+         MakeHLine(PRISM_PREFIX + "PosTP" + (string)ticket, tp, C'38,166,154', STYLE_DASH, 2,
+                   "TP #" + (string)ticket + "  " + DoubleToString(tp, _Digits) + "  [drag to modify]");
    }
 }
 
@@ -1264,6 +1301,8 @@ void OnChartEvent(const int id, const long& lparam, const double& dparam, const 
 
       if(!leftDown)
       {
+         if(g_DraggingPanel || g_DraggingSett)
+            ChartSetInteger(0, CHART_MOUSE_SCROLL, true);
          g_DraggingPanel = false;
          g_DraggingSett  = false;
       }
@@ -1271,11 +1310,21 @@ void OnChartEvent(const int id, const long& lparam, const double& dparam, const 
       {
          // Initiate main toolbar drag
          if(!g_DraggingPanel && !g_DraggingSett && IsOverMainTitle(mx, my))
-         { g_DraggingPanel = true; g_DragOffX = mx - g_PanelX; g_DragOffY = my - g_PanelY; }
+         {
+            g_DraggingPanel = true;
+            g_DragOffX = mx - g_PanelX;
+            g_DragOffY = my - g_PanelY;
+            ChartSetInteger(0, CHART_MOUSE_SCROLL, false);
+         }
 
          // Initiate settings panel drag
          if(!g_DraggingPanel && !g_DraggingSett && IsOverSettTitle(mx, my))
-         { g_DraggingSett = true; g_SettDragOffX = mx - g_SettX; g_SettDragOffY = my - g_SettY; }
+         {
+            g_DraggingSett = true;
+            g_SettDragOffX = mx - g_SettX;
+            g_SettDragOffY = my - g_SettY;
+            ChartSetInteger(0, CHART_MOUSE_SCROLL, false);
+         }
       }
 
       if(g_DraggingPanel && leftDown)
@@ -1339,7 +1388,8 @@ void OnChartEvent(const int id, const long& lparam, const double& dparam, const 
          bool changed = false;
          if(sparam == PRISM_PREFIX + "Entry")
          {
-            double np = ObjectGetDouble(0, sparam, OBJPROP_PRICE);
+            double np = NormPrice(ObjectGetDouble(0, sparam, OBJPROP_PRICE));
+            ObjectSetDouble(0, sparam, OBJPROP_PRICE, np);
             bool bad = (g_Direction == "LONG")
                        ? (np >= g_SLPrice || np >= g_TPPrice)
                        : (np <= g_SLPrice || np <= g_TPPrice);
@@ -1350,7 +1400,7 @@ void OnChartEvent(const int id, const long& lparam, const double& dparam, const 
                if(g_LockRR && g_SLPrice != 0)
                {
                   double slDist = MathAbs(g_EntryPrice - g_SLPrice);
-                  g_TPPrice = (g_Direction == "LONG") ? g_EntryPrice + slDist * g_LockRRRatio : g_EntryPrice - slDist * g_LockRRRatio;
+                  g_TPPrice = NormPrice((g_Direction == "LONG") ? g_EntryPrice + slDist * g_LockRRRatio : g_EntryPrice - slDist * g_LockRRRatio);
                   CreateTPLine(g_TPPrice);
                }
             }
@@ -1358,7 +1408,8 @@ void OnChartEvent(const int id, const long& lparam, const double& dparam, const 
          }
          if(sparam == PRISM_PREFIX + "SL")
          {
-            double np  = ObjectGetDouble(0, sparam, OBJPROP_PRICE);
+            double np  = NormPrice(ObjectGetDouble(0, sparam, OBJPROP_PRICE));
+            ObjectSetDouble(0, sparam, OBJPROP_PRICE, np);
             bool   bad = (g_Direction == "LONG") ? np >= g_EntryPrice : np <= g_EntryPrice;
             if(bad) { ObjectSetDouble(0, sparam, OBJPROP_PRICE, g_SLPrice); ShowError("SL wrong side"); }
             else
@@ -1367,7 +1418,7 @@ void OnChartEvent(const int id, const long& lparam, const double& dparam, const 
                if(g_LockRR)
                {
                   double slDist = MathAbs(g_EntryPrice - g_SLPrice);
-                  g_TPPrice = (g_Direction == "LONG") ? g_EntryPrice + slDist * g_LockRRRatio : g_EntryPrice - slDist * g_LockRRRatio;
+                  g_TPPrice = NormPrice((g_Direction == "LONG") ? g_EntryPrice + slDist * g_LockRRRatio : g_EntryPrice - slDist * g_LockRRRatio);
                   CreateTPLine(g_TPPrice);
                }
             }
@@ -1375,7 +1426,8 @@ void OnChartEvent(const int id, const long& lparam, const double& dparam, const 
          }
          if(sparam == PRISM_PREFIX + "TP" && !g_LockRR)
          {
-            double np  = ObjectGetDouble(0, sparam, OBJPROP_PRICE);
+            double np  = NormPrice(ObjectGetDouble(0, sparam, OBJPROP_PRICE));
+            ObjectSetDouble(0, sparam, OBJPROP_PRICE, np);
             bool   bad = (g_Direction == "LONG") ? np <= g_EntryPrice : np >= g_EntryPrice;
             if(bad) { ObjectSetDouble(0, sparam, OBJPROP_PRICE, g_TPPrice); ShowError("TP wrong side"); }
             else g_TPPrice = np;
@@ -1581,6 +1633,7 @@ int OnInit()
 void OnDeinit(const int reason)
 {
    ObjectsDeleteAll(0, PRISM_PREFIX);
+   ChartSetInteger(0, CHART_MOUSE_SCROLL, true);
    EventKillTimer();
 }
 

@@ -1,3 +1,16 @@
+/**
+ * @deprecated In-memory rate limiter — retained ONLY for Edge middleware (proxy.ts)
+ * which cannot use Redis. All Node.js API routes should use rate-limit-redis.ts instead.
+ *
+ * Migration status:
+ *   - 2fa/setup → rate-limit-redis (Limiters.register, name: '2fa-setup')
+ *   - 2fa/verify → rate-limit-redis (name: '2fa-verify')
+ *   - 2fa/disable → rate-limit-redis (name: '2fa-disable')
+ *   - forgot-password → rate-limit-redis (name: 'forgot-password')
+ *   - reset-password → rate-limit-redis (name: 'reset-password')
+ *   - proxy.ts (Edge) → still uses loginLimiter (cannot migrate — no Redis in Edge)
+ */
+
 import { NextResponse } from 'next/server';
 
 type RateLimitConfig = {

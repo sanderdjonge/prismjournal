@@ -126,7 +126,7 @@ export function RichTextEditor({ value, onChange, compact = false, placeholder }
 
   useEffect(() => {
     if (editor && !editor.isFocused && value !== editor.getHTML()) {
-      editor.commands.setContent(value || '', false)
+      editor.commands.setContent(value || '', { emitUpdate: false })
     }
   }, [value, editor])
 

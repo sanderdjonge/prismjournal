@@ -5,7 +5,7 @@ import { withAuth } from '@/lib/api/withAuth';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { verifySync } from 'otplib';
-import { authLimiter } from '@/lib/rate-limit';
+import { checkLimit, Limiters } from '@/lib/rate-limit-redis';
 import { validateBody } from '@/lib/validations/common';
 import { z } from 'zod';
 
@@ -15,7 +15,7 @@ const disable2faSchema = z.object({
 });
 
 export const POST = withAuth(async (request: NextRequest, _ctx, session) => {
-    const rateLimitResult = await authLimiter.check(request, 5);
+    const rateLimitResult = await checkLimit(request, { ...Limiters.register, name: '2fa-disable', limit: 5 });
     if (rateLimitResult) return rateLimitResult;
 
     const validation = await validateBody(request, disable2faSchema);
