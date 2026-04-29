@@ -1,5 +1,6 @@
 import { Resend } from 'resend';
 import { formatPercent } from '@/lib/formatNumber';
+import { formatProfitFactor } from '@/lib/analytics';
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
