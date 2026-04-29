@@ -108,7 +108,7 @@ export default function StrategyRulesEditor({ strategyId, onSave }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-sm font-black uppercase tracking-widest text-gray-500">Strategy Rules</h3>
+        <h3 className="text-sm font-black uppercase tracking-widest text-text-muted">Strategy Rules</h3>
         <button
           onClick={saveRules}
           disabled={saving}
@@ -122,9 +122,9 @@ export default function StrategyRulesEditor({ strategyId, onSave }: Props) {
       {config.rules.length > 0 && (
         <div className="space-y-2">
           {config.rules.map(rule => (
-            <div key={rule.id} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+            <div key={rule.id} className="bg-surface-elevated border border-border-color rounded-xl overflow-hidden">
               <div
-                className="flex items-center justify-between p-4 cursor-pointer hover:bg-white/5 transition-colors"
+                className="flex items-center justify-between p-4 cursor-pointer hover:bg-surface-hover transition-colors"
                 onClick={() => setExpandedRule(expandedRule === rule.id ? null : rule.id)}
               >
                 <div className="flex items-center gap-3">
@@ -135,7 +135,7 @@ export default function StrategyRulesEditor({ strategyId, onSave }: Props) {
                       e.stopPropagation();
                       updateRule(rule.id, { enabled: e.target.checked });
                     }}
-                    className="w-4 h-4 rounded border-white/20 bg-white/5"
+                    className="w-4 h-4 rounded border-border-color bg-surface-elevated"
                   />
                   <span className="font-medium text-white">{RULE_TYPES.find(t => t.type === rule.type)?.label}</span>
                 </div>
@@ -151,7 +151,7 @@ export default function StrategyRulesEditor({ strategyId, onSave }: Props) {
               </div>
               
               {expandedRule === rule.id && (
-                <div className="p-4 border-t border-white/10 bg-white/[0.02]">
+                <div className="p-4 border-t border-border-color bg-surface-elevated">
                   <RuleConfigEditor rule={rule} onChange={(updates) => updateRule(rule.id, updates)} />
                 </div>
               )}
@@ -162,8 +162,8 @@ export default function StrategyRulesEditor({ strategyId, onSave }: Props) {
 
       {/* Add Rule Dropdown */}
       {availableTypes.length > 0 && (
-        <div className="border border-dashed border-white/20 rounded-xl p-4 bg-white/[0.02]">
-          <label className="block text-xs font-black uppercase tracking-widest text-gray-500 mb-2">Add a rule</label>
+        <div className="border border-dashed border-border-color rounded-xl p-4 bg-surface-elevated">
+          <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-2">Add a rule</label>
           <select
             onChange={(e) => {
               if (e.target.value) {
@@ -171,12 +171,12 @@ export default function StrategyRulesEditor({ strategyId, onSave }: Props) {
                 e.target.value = '';
               }
             }}
-            className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white focus:border-primary/50 focus:outline-none transition-colors"
+            className="w-full bg-surface-elevated border border-border-color rounded-xl p-3 text-white focus:border-primary/50 focus:outline-none transition-colors"
             value=""
           >
-            <option value="" className="bg-gray-900">Select a rule type...</option>
+            <option value="" className="bg-surface-elevated">Select a rule type...</option>
             {availableTypes.map(t => (
-              <option key={t.type} value={t.type} className="bg-gray-900">
+              <option key={t.type} value={t.type} className="bg-surface-elevated">
                 {t.label} — {t.description}
               </option>
             ))}
@@ -185,7 +185,7 @@ export default function StrategyRulesEditor({ strategyId, onSave }: Props) {
       )}
 
       {config.rules.length === 0 && (
-        <p className="text-gray-500 text-sm text-center py-8">
+        <p className="text-text-muted text-sm text-center py-8">
           No rules configured. Add rules to track strategy compliance.
         </p>
       )}
@@ -229,20 +229,20 @@ function RuleConfigEditor({ rule, onChange }: { rule: Rule; onChange: (updates: 
       return (
         <div className="space-y-3">
           <div className="flex items-center gap-4">
-            <label className="text-xs font-black uppercase tracking-widest text-gray-500 w-24">Limit</label>
+            <label className="text-xs font-black uppercase tracking-widest text-text-muted w-24">Limit</label>
             <input
               type="number"
               value={rule.limit}
               onChange={(e) => onChange({ limit: parseFloat(e.target.value) })}
-              className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 w-32 text-white focus:border-primary/50 focus:outline-none"
+              className="bg-surface-elevated border border-border-color rounded-xl px-4 py-2 w-32 text-white focus:border-primary/50 focus:outline-none"
             />
             <select
               value={rule.isPercentage ? 'percent' : 'amount'}
               onChange={(e) => onChange({ isPercentage: e.target.value === 'percent' })}
-              className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white focus:border-primary/50 focus:outline-none"
+              className="bg-surface-elevated border border-border-color rounded-xl px-4 py-2 text-white focus:border-primary/50 focus:outline-none"
             >
-              <option value="amount" className="bg-gray-900">$ (amount)</option>
-              <option value="percent" className="bg-gray-900">% (percentage)</option>
+              <option value="amount" className="bg-surface-elevated">$ (amount)</option>
+              <option value="percent" className="bg-surface-elevated">% (percentage)</option>
             </select>
           </div>
         </div>
@@ -251,12 +251,12 @@ function RuleConfigEditor({ rule, onChange }: { rule: Rule; onChange: (updates: 
     case 'MAX_DAILY_TRADES':
       return (
         <div className="flex items-center gap-4">
-          <label className="text-xs font-black uppercase tracking-widest text-gray-500 w-24">Max Trades</label>
+          <label className="text-xs font-black uppercase tracking-widest text-text-muted w-24">Max Trades</label>
           <input
             type="number"
             value={rule.limit}
             onChange={(e) => onChange({ limit: parseInt(e.target.value) })}
-            className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 w-32 text-white focus:border-primary/50 focus:outline-none"
+            className="bg-surface-elevated border border-border-color rounded-xl px-4 py-2 w-32 text-white focus:border-primary/50 focus:outline-none"
             min="1"
           />
         </div>
@@ -265,12 +265,12 @@ function RuleConfigEditor({ rule, onChange }: { rule: Rule; onChange: (updates: 
     case 'MIN_RR_RATIO':
       return (
         <div className="flex items-center gap-4">
-          <label className="text-xs font-black uppercase tracking-widest text-gray-500 w-24">Min R:R</label>
+          <label className="text-xs font-black uppercase tracking-widest text-text-muted w-24">Min R:R</label>
           <input
             type="number"
             value={rule.limit}
             onChange={(e) => onChange({ limit: parseFloat(e.target.value) })}
-            className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 w-32 text-white focus:border-primary/50 focus:outline-none"
+            className="bg-surface-elevated border border-border-color rounded-xl px-4 py-2 w-32 text-white focus:border-primary/50 focus:outline-none"
             step="0.1"
             min="0"
           />
@@ -280,12 +280,12 @@ function RuleConfigEditor({ rule, onChange }: { rule: Rule; onChange: (updates: 
     case 'MAX_POSITION_SIZE':
       return (
         <div className="flex items-center gap-4">
-          <label className="text-xs font-black uppercase tracking-widest text-gray-500 w-24">Max Lots</label>
+          <label className="text-xs font-black uppercase tracking-widest text-text-muted w-24">Max Lots</label>
           <input
             type="number"
             value={rule.limit}
             onChange={(e) => onChange({ limit: parseFloat(e.target.value) })}
-            className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 w-32 text-white focus:border-primary/50 focus:outline-none"
+            className="bg-surface-elevated border border-border-color rounded-xl px-4 py-2 w-32 text-white focus:border-primary/50 focus:outline-none"
             step="0.1"
             min="0"
           />
@@ -295,12 +295,12 @@ function RuleConfigEditor({ rule, onChange }: { rule: Rule; onChange: (updates: 
     case 'NO_OVERTRADING':
       return (
         <div className="flex items-center gap-4">
-          <label className="text-xs font-black uppercase tracking-widest text-gray-500 w-24">Max/Hour</label>
+          <label className="text-xs font-black uppercase tracking-widest text-text-muted w-24">Max/Hour</label>
           <input
             type="number"
             value={rule.maxTradesPerHour}
             onChange={(e) => onChange({ maxTradesPerHour: parseInt(e.target.value) })}
-            className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 w-32 text-white focus:border-primary/50 focus:outline-none"
+            className="bg-surface-elevated border border-border-color rounded-xl px-4 py-2 w-32 text-white focus:border-primary/50 focus:outline-none"
             min="1"
           />
         </div>
@@ -309,12 +309,12 @@ function RuleConfigEditor({ rule, onChange }: { rule: Rule; onChange: (updates: 
     case 'MAX_HOLDING_TIME':
       return (
         <div className="flex items-center gap-4">
-          <label className="text-xs font-black uppercase tracking-widest text-gray-500 w-24">Max Minutes</label>
+          <label className="text-xs font-black uppercase tracking-widest text-text-muted w-24">Max Minutes</label>
           <input
             type="number"
             value={rule.maxMinutes}
             onChange={(e) => onChange({ maxMinutes: parseInt(e.target.value) })}
-            className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 w-32 text-white focus:border-primary/50 focus:outline-none"
+            className="bg-surface-elevated border border-border-color rounded-xl px-4 py-2 w-32 text-white focus:border-primary/50 focus:outline-none"
             min="1"
           />
         </div>
@@ -323,12 +323,12 @@ function RuleConfigEditor({ rule, onChange }: { rule: Rule; onChange: (updates: 
     case 'MIN_HOLDING_TIME':
       return (
         <div className="flex items-center gap-4">
-          <label className="text-xs font-black uppercase tracking-widest text-gray-500 w-24">Min Minutes</label>
+          <label className="text-xs font-black uppercase tracking-widest text-text-muted w-24">Min Minutes</label>
           <input
             type="number"
             value={rule.minMinutes}
             onChange={(e) => onChange({ minMinutes: parseInt(e.target.value) })}
-            className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 w-32 text-white focus:border-primary/50 focus:outline-none"
+            className="bg-surface-elevated border border-border-color rounded-xl px-4 py-2 w-32 text-white focus:border-primary/50 focus:outline-none"
             min="1"
           />
         </div>
@@ -338,26 +338,26 @@ function RuleConfigEditor({ rule, onChange }: { rule: Rule; onChange: (updates: 
       return (
         <div className="space-y-4">
           <div className="flex items-center gap-4">
-            <label className="text-xs font-black uppercase tracking-widest text-gray-500 w-24">Timezone</label>
+            <label className="text-xs font-black uppercase tracking-widest text-text-muted w-24">Timezone</label>
             <select
               value={rule.timezone || 'UTC'}
               onChange={(e) => onChange({ timezone: e.target.value })}
-              className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white focus:border-primary/50 focus:outline-none"
+              className="bg-surface-elevated border border-border-color rounded-xl px-4 py-2 text-white focus:border-primary/50 focus:outline-none"
             >
-              <option value="UTC" className="bg-gray-900">UTC</option>
-              <option value="America/New_York" className="bg-gray-900">New York (EST)</option>
-              <option value="America/Chicago" className="bg-gray-900">Chicago (CST)</option>
-              <option value="America/Los_Angeles" className="bg-gray-900">Los Angeles (PST)</option>
-              <option value="Europe/London" className="bg-gray-900">London (GMT)</option>
-              <option value="Europe/Amsterdam" className="bg-gray-900">Amsterdam (CET)</option>
-              <option value="Asia/Tokyo" className="bg-gray-900">Tokyo (JST)</option>
-              <option value="Asia/Singapore" className="bg-gray-900">Singapore (SGT)</option>
-              <option value="Australia/Sydney" className="bg-gray-900">Sydney (AEDT)</option>
+              <option value="UTC" className="bg-surface-elevated">UTC</option>
+              <option value="America/New_York" className="bg-surface-elevated">New York (EST)</option>
+              <option value="America/Chicago" className="bg-surface-elevated">Chicago (CST)</option>
+              <option value="America/Los_Angeles" className="bg-surface-elevated">Los Angeles (PST)</option>
+              <option value="Europe/London" className="bg-surface-elevated">London (GMT)</option>
+              <option value="Europe/Amsterdam" className="bg-surface-elevated">Amsterdam (CET)</option>
+              <option value="Asia/Tokyo" className="bg-surface-elevated">Tokyo (JST)</option>
+              <option value="Asia/Singapore" className="bg-surface-elevated">Singapore (SGT)</option>
+              <option value="Australia/Sydney" className="bg-surface-elevated">Sydney (AEDT)</option>
             </select>
           </div>
           
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-3 block">Trading Windows</label>
+            <label className="text-xs font-black uppercase tracking-widest text-text-muted mb-3 block">Trading Windows</label>
             <div className="space-y-2">
               {(rule.windows || []).map((window: { start: string; end: string }, index: number) => (
                 <div key={index} className="flex items-center gap-3">
@@ -369,9 +369,9 @@ function RuleConfigEditor({ rule, onChange }: { rule: Rule; onChange: (updates: 
                       newWindows[index] = { ...newWindows[index], start: e.target.value };
                       onChange({ windows: newWindows });
                     }}
-                    className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-primary/50 focus:outline-none"
+                    className="bg-surface-elevated border border-border-color rounded-lg px-3 py-2 text-white focus:border-primary/50 focus:outline-none"
                   />
-                  <span className="text-gray-500">to</span>
+                  <span className="text-text-muted">to</span>
                   <input
                     type="time"
                     value={window.end}
@@ -380,7 +380,7 @@ function RuleConfigEditor({ rule, onChange }: { rule: Rule; onChange: (updates: 
                       newWindows[index] = { ...newWindows[index], end: e.target.value };
                       onChange({ windows: newWindows });
                     }}
-                    className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-primary/50 focus:outline-none"
+                    className="bg-surface-elevated border border-border-color rounded-lg px-3 py-2 text-white focus:border-primary/50 focus:outline-none"
                   />
                   <button
                     onClick={() => {
@@ -427,22 +427,22 @@ function RuleConfigEditor({ rule, onChange }: { rule: Rule; onChange: (updates: 
       return (
         <div className="space-y-4">
           <div className="flex items-center gap-4">
-            <label className="text-xs font-black uppercase tracking-widest text-gray-500 w-24">Mode</label>
+            <label className="text-xs font-black uppercase tracking-widest text-text-muted w-24">Mode</label>
             <select
               value={rule.mode || 'ALLOW'}
               onChange={(e) => onChange({ mode: e.target.value })}
-              className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white focus:border-primary/50 focus:outline-none"
+              className="bg-surface-elevated border border-border-color rounded-xl px-4 py-2 text-white focus:border-primary/50 focus:outline-none"
             >
-              <option value="ALLOW" className="bg-gray-900">Allow Only</option>
-              <option value="BLOCK" className="bg-gray-900">Block</option>
+              <option value="ALLOW" className="bg-surface-elevated">Allow Only</option>
+              <option value="BLOCK" className="bg-surface-elevated">Block</option>
             </select>
           </div>
           
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-3 block">Quick Add</label>
+            <label className="text-xs font-black uppercase tracking-widest text-text-muted mb-3 block">Quick Add</label>
             {presetSymbols.map(category => (
               <div key={category.category} className="mb-3">
-                <p className="text-gray-500 text-xs mb-2">{category.category}</p>
+                <p className="text-text-muted text-xs mb-2">{category.category}</p>
                 <div className="flex flex-wrap gap-2">
                   {category.symbols.map(symbol => {
                     const isSelected = (rule.symbols || []).includes(symbol);
@@ -453,7 +453,7 @@ function RuleConfigEditor({ rule, onChange }: { rule: Rule; onChange: (updates: 
                         className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
                           isSelected
                             ? 'bg-primary text-black'
-                            : 'bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:border-white/20'
+                            : 'bg-surface-elevated border border-border-color text-text-muted hover:text-text-primary hover:border-border-color'
                         }`}
                       >
                         {symbol}
@@ -466,7 +466,7 @@ function RuleConfigEditor({ rule, onChange }: { rule: Rule; onChange: (updates: 
           </div>
           
           <div>
-            <label className="text-xs font-black uppercase tracking-widest text-gray-500 mb-2 block">Custom Symbols</label>
+            <label className="text-xs font-black uppercase tracking-widest text-text-muted mb-2 block">Custom Symbols</label>
             <input
               type="text"
               value={(rule.symbols || []).filter((s: string) => !presetSymbols.flatMap(c => c.symbols).includes(s)).join(', ')}
@@ -477,14 +477,14 @@ function RuleConfigEditor({ rule, onChange }: { rule: Rule; onChange: (updates: 
                 onChange({ symbols: [...selectedPresets, ...customSymbols] });
               }}
               placeholder="Add other symbols..."
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:border-primary/50 focus:outline-none transition-colors"
+              className="w-full bg-surface-elevated border border-border-color rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:border-primary/50 focus:outline-none transition-colors"
             />
-            <p className="text-gray-500 text-xs mt-1">Comma-separated list of additional symbols</p>
+            <p className="text-text-muted text-xs mt-1">Comma-separated list of additional symbols</p>
           </div>
         </div>
       );
     
     default:
-      return <p className="text-sm text-gray-500">No additional configuration needed.</p>;
+      return <p className="text-sm text-text-muted">No additional configuration needed.</p>;
   }
 }

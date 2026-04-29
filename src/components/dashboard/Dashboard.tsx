@@ -108,7 +108,7 @@ export default function Dashboard() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-black tracking-tight text-white">Dashboard</h1>
-                    <p className="text-sm text-gray-500 mt-1">Your trading performance at a glance</p>
+                    <p className="text-sm text-text-muted mt-1">Your trading performance at a glance</p>
                 </div>
                 <div className="flex gap-2 items-center">
                     <button
@@ -127,7 +127,7 @@ export default function Dashboard() {
                                 "px-4 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all duration-300",
                                 period === d
                                     ? "bg-primary/20 text-primary border border-primary/30"
-                                    : "bg-white/5 text-gray-500 border border-white/5 hover:bg-white/10 hover:text-white"
+                                    : "bg-surface-elevated text-text-muted border border-border-subtle hover:bg-surface-hover hover:text-text-primary"
                             )}
                         >
                             {d === '7' ? '7D' : d === '30' ? '30D' : d === '90' ? '90D' : '1Y'}
@@ -139,10 +139,10 @@ export default function Dashboard() {
             {/* Row 1: Three Column Metrics Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                 {/* Key Metrics Widget */}
-                <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-4">
+                <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-4">
                     <div className="mb-4">
                         <h3 className="text-sm font-semibold text-gray-100">Key Metrics</h3>
-                        <p className="text-xs text-gray-500">Performance overview</p>
+                        <p className="text-xs text-text-muted">Performance overview</p>
                     </div>
                     <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                         <MetricRow label="Total P&L" value={formatPnl(stats.totalPnl)} variant={stats.totalPnl >= 0 ? 'profit' : 'loss'} />
@@ -155,10 +155,10 @@ export default function Dashboard() {
                 </div>
 
                 {/* Performance Breakdown Widget */}
-                <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-4">
+                <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-4">
                     <div className="mb-4">
                         <h3 className="text-sm font-semibold text-gray-100">Performance Breakdown</h3>
-                        <p className="text-xs text-gray-500">Trade statistics</p>
+                        <p className="text-xs text-text-muted">Trade statistics</p>
                     </div>
                     <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                         <MetricRow label="Total Trades" value={stats.totalTrades.toString()} />
@@ -182,7 +182,7 @@ export default function Dashboard() {
             {/* Row 2: Equity + Challenges/Pre-Trade */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Equity Curve - 2 columns */}
-                <div className="lg:col-span-2 glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl">
+                <div className="lg:col-span-2 glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl">
                     <EquityChart 
                         data={stats.allTimeEquity} 
                         className="h-[400px]" 
@@ -202,12 +202,12 @@ export default function Dashboard() {
             {/* Row 3: Calendar + Recent Trades */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 {/* Trade Calendar — 3/4 width */}
-                <div className="lg:col-span-3 glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl overflow-hidden min-h-[480px]">
+                <div className="lg:col-span-3 glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl overflow-hidden min-h-[480px]">
                     <TradeCalendar data={stats.calendar} accountBalance={stats.accountBalance} />
                 </div>
 
                 {/* Recent Trades — 1/4 width */}
-                <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl overflow-hidden">
+                <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl overflow-hidden">
                     <RecentTrades trades={stats.trades} />
                 </div>
             </div>

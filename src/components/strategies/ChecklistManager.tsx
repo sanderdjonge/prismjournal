@@ -60,7 +60,7 @@ function ChecklistItemEditor({
     return (
         <div className="space-y-2">
             {items.length === 0 ? (
-                <p className="text-xs text-gray-500 text-center py-3 bg-white/[0.02] rounded-lg border border-white/5">
+                <p className="text-xs text-text-muted text-center py-3 bg-surface-elevated rounded-lg border border-border-subtle">
                     No items yet. Add entry criteria below.
                 </p>
             ) : (
@@ -72,7 +72,7 @@ function ChecklistItemEditor({
                                 type="button"
                                 onClick={() => moveItem(index, 'up')}
                                 disabled={index === 0}
-                                className="text-gray-600 hover:text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed"
+                                className="text-text-muted hover:text-text-muted disabled:opacity-30 disabled:cursor-not-allowed"
                             >
                                 <ChevronUp size={10} />
                             </button>
@@ -80,7 +80,7 @@ function ChecklistItemEditor({
                                 type="button"
                                 onClick={() => moveItem(index, 'down')}
                                 disabled={index === items.length - 1}
-                                className="text-gray-600 hover:text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed"
+                                className="text-text-muted hover:text-text-muted disabled:opacity-30 disabled:cursor-not-allowed"
                             >
                                 <ChevronDown size={10} />
                             </button>
@@ -91,7 +91,7 @@ function ChecklistItemEditor({
                             type="text"
                             value={item.label}
                             onChange={(e) => updateLabel(index, e.target.value)}
-                            className="flex-1 px-3 py-1.5 bg-white/[0.02] border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-primary/50"
+                            className="flex-1 px-3 py-1.5 bg-surface-elevated border border-border-color rounded-lg text-sm text-white focus:outline-none focus:border-primary/50"
                             placeholder="Item label"
                         />
 
@@ -103,7 +103,7 @@ function ChecklistItemEditor({
                             className={`flex items-center gap-1 px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest border transition-colors ${
                                 item.required
                                     ? 'bg-red-500/15 border-red-500/40 text-red-400'
-                                    : 'bg-white/[0.03] border-white/10 text-gray-500 hover:text-white'
+                                    : 'bg-surface-elevated border-border-color text-text-muted hover:text-text-primary'
                             }`}
                         >
                             {item.required ? 'Req' : 'Opt'}
@@ -113,7 +113,7 @@ function ChecklistItemEditor({
                         <button
                             type="button"
                             onClick={() => removeItem(index)}
-                            className="p-1 text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="p-1 text-text-muted hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                             <X size={13} />
                         </button>
@@ -134,13 +134,13 @@ function ChecklistItemEditor({
                         }
                     }}
                     placeholder="Add new item..."
-                    className="flex-1 px-3 py-1.5 bg-white/[0.02] border border-white/10 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary/50"
+                    className="flex-1 px-3 py-1.5 bg-surface-elevated border border-border-color rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary/50"
                 />
                 <button
                     type="button"
                     onClick={addItem}
                     disabled={!newLabel.trim()}
-                    className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
+                    className="px-3 py-1.5 bg-surface-elevated border border-border-color rounded-lg text-sm text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
                 >
                     <Plus size={13} />
                     Add
@@ -175,19 +175,19 @@ function InlineEditor({ initial, onSave, onCancel, isSaving }: InlineEditorProps
     return (
         <form onSubmit={handleSubmit} className="space-y-3 pt-2">
             <div>
-                <label className="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-1">Checklist Name *</label>
+                <label className="block text-[9px] font-black uppercase tracking-widest text-text-muted mb-1">Checklist Name *</label>
                 <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g., ICT Entry Checklist"
-                    className="w-full px-3 py-2 bg-white/[0.03] border border-white/10 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary/50"
+                    className="w-full px-3 py-2 bg-surface-elevated border border-border-color rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary/50"
                     autoFocus
                 />
             </div>
 
             <div>
-                <label className="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-2">Items</label>
+                <label className="block text-[9px] font-black uppercase tracking-widest text-text-muted mb-2">Items</label>
                 <ChecklistItemEditor items={items} onChange={setItems} />
             </div>
 
@@ -195,7 +195,7 @@ function InlineEditor({ initial, onSave, onCancel, isSaving }: InlineEditorProps
                 <button
                     type="button"
                     onClick={onCancel}
-                    className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm font-bold text-gray-400 hover:text-white transition-colors"
+                    className="flex-1 px-3 py-2 bg-surface-elevated border border-border-color rounded-lg text-sm font-bold text-text-muted hover:text-text-primary transition-colors"
                 >
                     Cancel
                 </button>
@@ -244,8 +244,8 @@ export default function ChecklistManager() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-sm font-black uppercase tracking-widest text-gray-400">Entry Checklists</h2>
-                    <p className="text-xs text-gray-600 mt-0.5">Reusable checklists you can attach to strategies</p>
+                    <h2 className="text-sm font-black uppercase tracking-widest text-text-muted">Entry Checklists</h2>
+                    <p className="text-xs text-text-muted mt-0.5">Reusable checklists you can attach to strategies</p>
                 </div>
                 {!showNew && (
                     <button
@@ -260,7 +260,7 @@ export default function ChecklistManager() {
 
             {/* Inline form for new checklist */}
             {showNew && (
-                <div className="glass-card p-4 border-primary/20 bg-white/[0.03]">
+                <div className="glass-card p-4 border-primary/20 bg-surface-elevated">
                     <p className="text-xs font-black uppercase tracking-widest text-primary mb-3">New Checklist</p>
                     <InlineEditor
                         onSave={handleCreate}
@@ -272,13 +272,13 @@ export default function ChecklistManager() {
 
             {/* Checklist list */}
             {isLoading ? (
-                <div className="flex items-center gap-2 text-gray-500 text-sm py-4">
+                <div className="flex items-center gap-2 text-text-muted text-sm py-4">
                     <Loader2 size={14} className="animate-spin" />
                     Loading checklists...
                 </div>
             ) : checklists.length === 0 && !showNew ? (
-                <div className="text-center py-8 bg-white/[0.02] rounded-xl border border-white/5">
-                    <p className="text-gray-500 text-sm">No checklists yet.</p>
+                <div className="text-center py-8 bg-surface-elevated rounded-xl border border-border-subtle">
+                    <p className="text-text-muted text-sm">No checklists yet.</p>
                     <button
                         onClick={() => setShowNew(true)}
                         className="text-primary hover:text-primary/80 text-sm font-bold mt-2 transition-colors"
@@ -289,7 +289,7 @@ export default function ChecklistManager() {
             ) : (
                 <div className="space-y-3">
                     {checklists.map((cl) => (
-                        <div key={cl.id} className="glass-card p-4 border-white/5">
+                        <div key={cl.id} className="glass-card p-4 border-border-subtle">
                             {editingId === cl.id ? (
                                 <>
                                     <p className="text-xs font-black uppercase tracking-widest text-primary mb-3">Editing</p>
@@ -306,7 +306,7 @@ export default function ChecklistManager() {
                                         <div>
                                             <h3 className="text-sm font-bold text-white">{cl.name}</h3>
                                             <div className="flex items-center gap-2 mt-1">
-                                                <span className="text-[10px] text-gray-500">
+                                                <span className="text-[10px] text-text-muted">
                                                     {cl.items.length} item{cl.items.length !== 1 ? 's' : ''}
                                                 </span>
                                                 {(cl._count?.strategies ?? 0) > 0 && (
@@ -319,14 +319,14 @@ export default function ChecklistManager() {
                                         <div className="flex items-center gap-1">
                                             <button
                                                 onClick={() => setEditingId(cl.id)}
-                                                className="p-1.5 text-gray-500 hover:text-primary transition-colors rounded"
+                                                className="p-1.5 text-text-muted hover:text-primary transition-colors rounded"
                                                 title="Edit checklist"
                                             >
                                                 <Pencil size={13} />
                                             </button>
                                             <button
                                                 onClick={() => setConfirmDeleteId(cl.id)}
-                                                className="p-1.5 text-gray-500 hover:text-red-400 transition-colors rounded"
+                                                className="p-1.5 text-text-muted hover:text-red-400 transition-colors rounded"
                                                 title="Delete checklist"
                                             >
                                                 <Trash2 size={13} />
@@ -338,7 +338,7 @@ export default function ChecklistManager() {
                                     {cl.items.length > 0 && (
                                         <ul className="mt-3 space-y-1">
                                             {cl.items.map((item) => (
-                                                <li key={item.id} className="flex items-center gap-2 text-xs text-gray-400">
+                                                <li key={item.id} className="flex items-center gap-2 text-xs text-text-muted">
                                                     <span className="w-1 h-1 rounded-full bg-gray-600 shrink-0" />
                                                     <span className="flex-1">{item.label}</span>
                                                     {item.required && (
@@ -362,13 +362,13 @@ export default function ChecklistManager() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
                     <div className="glass-card w-full max-w-sm mx-4 p-6 border-red-500/20">
                         <h2 className="text-lg font-bold text-white mb-2">Delete Checklist?</h2>
-                        <p className="text-gray-400 text-sm mb-6">
+                        <p className="text-text-muted text-sm mb-6">
                             This will remove the checklist from all strategies using it. Trade completion records are not affected.
                         </p>
                         <div className="flex gap-3">
                             <button
                                 onClick={() => setConfirmDeleteId(null)}
-                                className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-gray-400 hover:text-white transition-colors"
+                                className="flex-1 px-4 py-2 bg-surface-elevated border border-border-color rounded-xl text-sm font-bold text-text-muted hover:text-text-primary transition-colors"
                             >
                                 Cancel
                             </button>

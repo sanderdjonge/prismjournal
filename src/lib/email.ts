@@ -1,5 +1,6 @@
 import { Resend } from 'resend';
 import { formatPercent } from '@/lib/formatNumber';
+import { formatProfitFactor } from '@/lib/analytics';
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
@@ -111,7 +112,7 @@ export async function sendWeeklyDigestEmail(data: WeeklyDigestData): Promise<Ema
     const pnlColor = pnl >= 0 ? '#4ade80' : '#f87171';
     return `
       <tr>
-        <td width="36" style="font-size:12px;color:#94a3b8;padding:3px 0;">${day}</td>
+        <td width="36" style="font-size:12px;color:#94a3b8;padding:3px 0;">${escapeHtml(day)}</td>
         <td style="padding:3px 8px;">
           <table role="presentation" cellpadding="0" cellspacing="0"><tr>
             <td style="background-color:${barColor};height:14px;width:${barWidth}px;border-radius:3px;"></td>
@@ -127,7 +128,7 @@ export async function sendWeeklyDigestEmail(data: WeeklyDigestData): Promise<Ema
     const padding = idx === 0 ? '10px 0 0' : '8px 0 0';
     return `
       <tr>
-        <td style="font-size:13px;color:#e2e8f0;font-weight:600;padding:${padding};">${inst.symbol}</td>
+        <td style="font-size:13px;color:#e2e8f0;font-weight:600;padding:${padding};">${escapeHtml(inst.symbol)}</td>
         <td style="font-size:13px;color:#94a3b8;padding:${padding};text-align:center;">${inst.trades}</td>
         <td style="font-size:13px;color:#94a3b8;padding:${padding};text-align:center;">${formatPercent(inst.winRate, 1)}</td>
         <td style="font-size:13px;color:${instPnlColor};font-weight:600;padding:${padding};text-align:right;">${formatCurrency(inst.pnl)}</td>
@@ -217,7 +218,7 @@ export async function sendWeeklyDigestEmail(data: WeeklyDigestData): Promise<Ema
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#1a1a2e;border:1px solid #2d2d44;border-radius:10px;">
           <tr><td style="padding:16px 20px;">
             <p style="margin:0;font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Profit Factor</p>
-            <p style="margin:4px 0 0;font-size:24px;font-weight:700;color:#e2e8f0;">${profitFactor.toFixed(2)}</p>
+            <p style="margin:4px 0 0;font-size:24px;font-weight:700;color:#e2e8f0;">${formatProfitFactor(profitFactor)}</p>
             <p style="margin:2px 0 0;font-size:12px;color:#64748b;">Target: > 1.5</p>
           </td></tr>
         </table>
@@ -440,6 +441,14 @@ export async function sendMddAlertEmail(
 /**
  * Send a broadcast/announcement email to a single user
  */
+function escapeHtml(str: string): string {
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
 export async function sendBroadcastEmail(
   email: string,
   title: string,
@@ -453,7 +462,7 @@ export async function sendBroadcastEmail(
 
   const accentColor = type === 'SUCCESS' ? '#4ade80' : type === 'WARNING' ? '#fbbf24' : '#818cf8';
   const typeLabel = type === 'SUCCESS' ? '✅ Announcement' : type === 'WARNING' ? '⚠️ Important Notice' : 'ℹ️ Announcement';
-  const messageHtml = message.replace(/\n/g, '<br>');
+  const messageHtml = escapeHtml(message).replace(/\n/g, '<br>');
 
   try {
     const { data: result, error } = await resend.emails.send({
@@ -468,7 +477,7 @@ export async function sendBroadcastEmail(
           </div>
           <div style="background-color:#1a1a2e;border:1px solid ${accentColor}33;border-left:4px solid ${accentColor};border-radius:8px;padding:24px;margin-bottom:20px;">
             <p style="margin:0 0 4px;font-size:11px;color:${accentColor};text-transform:uppercase;letter-spacing:1px;">${typeLabel}</p>
-            <h2 style="margin:8px 0 16px;font-size:20px;color:#e2e8f0;">${title}</h2>
+            <h2 style="margin:8px 0 16px;font-size:20px;color:#e2e8f0;">${escapeHtml(title)}</h2>
             <p style="margin:0;font-size:15px;color:#94a3b8;line-height:1.6;">${messageHtml}</p>
           </div>
           <hr style="border:none;border-top:1px solid #2d2d44;margin:24px 0;">

@@ -22,21 +22,13 @@ export async function POST(request: Request) {
         return unauthorized();
     }
 
-    let rawBody: unknown;
-    try {
-        rawBody = await request.clone().json();
-    } catch {
-        rawBody = '<invalid json>';
-    }
-    logger.info({ userId: user.id, rawBody }, '[sync] raw payload received');
-
     const validation = await validateBody(request, syncPayloadSchema);
     if (!validation.success) {
-        logger.warn({ userId: user.id, rawBody }, '[sync] validation failed');
         return validation.response;
     }
 
     const payload = validation.data;
+    logger.debug({ userId: user.id, type: payload.type }, '[sync] payload received');
 
     try {
         let account;
@@ -49,6 +41,9 @@ export async function POST(request: Request) {
             );
             
             if (!account) {
+                // Security note (4.5): Auto-creating accounts for unknown platformAccountId
+                // is intentional — the MT5 EA may report from new accounts the user hasn't
+                // pre-registered. Bridge keys are 48 hex chars, making brute-force infeasible.
                 const platform = payload.platform ?? 'METATRADER5';
                 account = await prisma.tradingAccount.create({
                     data: {

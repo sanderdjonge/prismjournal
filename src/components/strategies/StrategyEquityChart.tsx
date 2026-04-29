@@ -20,14 +20,14 @@ export function StrategyEquityChart({ data }: EquityChartProps) {
 
   if (data.length === 0) {
     return (
-      <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6 h-[300px] flex items-center justify-center">
-        <p className="text-gray-500 text-sm">No closed trades yet</p>
+      <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-6 h-[300px] flex items-center justify-center">
+        <p className="text-text-muted text-sm">No closed trades yet</p>
       </div>
     )
   }
 
   return (
-    <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
+    <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-6">
       <h3 className="text-sm font-semibold text-gray-100 mb-4">Equity Curve</h3>
       <div className="h-[250px]">
         <ResponsiveContainer width="100%" height="100%">
@@ -48,8 +48,8 @@ export function StrategyEquityChart({ data }: EquityChartProps) {
                   const value = payload[0]?.value
                   const numValue = typeof value === 'number' ? value : 0
                   return (
-                    <div className="glass-card p-3 border-white/10 bg-black/80 backdrop-blur-md">
-                      <p className="text-[10px] text-gray-500 mb-1">{label}</p>
+                    <div className="glass-card p-3 border-border-color bg-black/80 backdrop-blur-md">
+                      <p className="text-[10px] text-text-muted mb-1">{label}</p>
                       <p className="text-sm font-bold text-primary">
                         {formatAmount(numValue)}
                       </p>

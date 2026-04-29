@@ -37,10 +37,10 @@ export default function ComplianceWidget({ accountId, strategyId }: ComplianceWi
 
     if (isLoading) {
         return (
-            <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
+            <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-6">
                 <div className="animate-pulse space-y-4">
-                    <div className="h-6 bg-white/10 rounded w-1/3" />
-                    <div className="h-24 bg-white/5 rounded" />
+                    <div className="h-6 bg-surface-hover rounded w-1/3" />
+                    <div className="h-24 bg-surface-elevated rounded" />
                 </div>
             </div>
         );
@@ -48,9 +48,9 @@ export default function ComplianceWidget({ accountId, strategyId }: ComplianceWi
 
     if (error || !data) {
         return (
-            <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
+            <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-6">
                 <h3 className="text-lg font-bold text-white mb-4">Checklist Impact</h3>
-                <p className="text-gray-500">Unable to load compliance data</p>
+                <p className="text-text-muted">Unable to load compliance data</p>
             </div>
         );
     }
@@ -58,9 +58,9 @@ export default function ComplianceWidget({ accountId, strategyId }: ComplianceWi
     // Check if we have meaningful data
     if (data.overall.totalTrades === 0) {
         return (
-            <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
+            <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-6">
                 <h3 className="text-lg font-bold text-white mb-4">Checklist Impact</h3>
-                <div className="flex items-center gap-2 text-gray-500">
+                <div className="flex items-center gap-2 text-text-muted">
                     <HelpCircle className="w-5 h-5" />
                     <span>No trades with checklist data yet</span>
                 </div>
@@ -73,7 +73,7 @@ export default function ComplianceWidget({ accountId, strategyId }: ComplianceWi
     const improves = fullVsNoneDiff > 5;
 
     return (
-        <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
+        <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-6">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-bold text-white">Checklist Impact</h3>
@@ -91,18 +91,18 @@ export default function ComplianceWidget({ accountId, strategyId }: ComplianceWi
             </div>
 
             {/* Completion Rate Summary */}
-            <div className="mb-6 p-3 bg-white/5 rounded-lg">
+            <div className="mb-6 p-3 bg-surface-elevated rounded-lg">
                 <div className="flex justify-between items-center mb-2">
-                    <span className="text-xs text-gray-500 uppercase tracking-wider">Completion Rate</span>
+                    <span className="text-xs text-text-muted uppercase tracking-wider">Completion Rate</span>
                     <span className="text-sm font-medium text-white">{formatPercent(data.overall.completionRate, 0)}</span>
                 </div>
-                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                <div className="h-2 bg-surface-hover rounded-full overflow-hidden">
                     <div 
                         className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-500"
                         style={{ width: `${data.overall.completionRate}%` }}
                     />
                 </div>
-                <div className="mt-1 text-xs text-gray-500">
+                <div className="mt-1 text-xs text-text-muted">
                     {data.overall.totalTrades} total trades • Avg {formatPercent(data.overall.avgCompletionPct, 0)} completion
                 </div>
             </div>
@@ -132,7 +132,7 @@ export default function ComplianceWidget({ accountId, strategyId }: ComplianceWi
 
                 {/* No Completion */}
                 <CompletionRow
-                    icon={<XCircle className="w-5 h-5 text-gray-500" />}
+                    icon={<XCircle className="w-5 h-5 text-text-muted" />}
                     label="No Checklist"
                     count={data.noCompletion.tradeCount}
                     winRate={data.noCompletion.winRate}
@@ -181,33 +181,33 @@ function CompletionRow({
     if (count === 0) return null;
 
     return (
-        <div className={`flex items-center justify-between p-3 rounded-lg ${highlight ? 'bg-white/5' : ''}`}>
+        <div className={`flex items-center justify-between p-3 rounded-lg ${highlight ? 'bg-surface-elevated' : ''}`}>
             <div className="flex items-center gap-3">
                 {icon}
                 <div>
-                    <div className={`text-sm font-medium ${highlight ? 'text-white' : 'text-gray-300'}`}>
+                    <div className={`text-sm font-medium ${highlight ? 'text-white' : 'text-text-secondary'}`}>
                         {label}
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-text-muted">
                         {count} trade{count !== 1 ? 's' : ''}
                     </div>
                 </div>
             </div>
             <div className="flex items-center gap-4 text-right">
                 <div>
-                    <div className="text-xs text-gray-500">Win Rate</div>
+                    <div className="text-xs text-text-muted">Win Rate</div>
                     <div className={`text-sm font-medium ${winRate >= 50 ? 'text-green-400' : 'text-red-400'}`}>
                         {formatPercent(winRate, 0)}
                     </div>
                 </div>
                 <div>
-                    <div className="text-xs text-gray-500">Avg R</div>
+                    <div className="text-xs text-text-muted">Avg R</div>
                     <div className={`text-sm font-medium ${avgRR >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                         {avgRR >= 0 ? '+' : ''}{fmtDecimals(avgRR, 2)}R
                     </div>
                 </div>
                 <div>
-                    <div className="text-xs text-gray-500">P&L</div>
+                    <div className="text-xs text-text-muted">P&L</div>
                     <div className={`text-sm font-medium ${totalPnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                         ${fmtDecimals(totalPnl, 2)}
                     </div>

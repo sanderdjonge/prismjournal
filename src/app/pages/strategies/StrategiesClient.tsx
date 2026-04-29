@@ -102,7 +102,7 @@ export default function StrategiesClient({ strategies: initialStrategies }: Prop
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white">Strategies</h1>
-            <p className="text-sm text-gray-400 mt-1">
+            <p className="text-sm text-text-muted mt-1">
               Define trading rules and track strategy compliance
             </p>
           </div>
@@ -116,7 +116,7 @@ export default function StrategiesClient({ strategies: initialStrategies }: Prop
         </div>
 
         {strategies.length === 0 ? (
-          <div className="glass-card p-12 border-white/5 text-center">
+          <div className="glass-card p-12 border-border-subtle text-center">
             <EmptyState
               icon={Target}
               title="No strategies found."
@@ -138,17 +138,17 @@ export default function StrategiesClient({ strategies: initialStrategies }: Prop
               <Link
                 key={strategy.id}
                 href={`/pages/strategies/${strategy.id}`}
-                className="glass-card p-5 border-white/5 hover:border-primary/20 hover:bg-white/[0.03] transition-all group"
+                className="glass-card p-5 border-border-subtle hover:border-primary/20 hover:bg-surface-hover transition-all group"
               >
                 <div className="flex justify-between items-start gap-4">
                   <div className="flex-1 min-w-0">
                     <h3 className="text-lg font-bold text-white group-hover:text-primary transition-colors">{strategy.name}</h3>
                     {strategy.description && (
-                      <p className="text-gray-400 text-sm mt-1 truncate">{strategy.description}</p>
+                      <p className="text-text-muted text-sm mt-1 truncate">{strategy.description}</p>
                     )}
-                    <div className="text-sm text-gray-500 mt-2">
+                    <div className="text-sm text-text-muted mt-2">
                       <span className="font-mono">{strategy._count.trades}</span>
-                      <span className="text-gray-600 ml-1">trades</span>
+                      <span className="text-text-muted ml-1">trades</span>
                     </div>
                   </div>
                   
@@ -157,8 +157,8 @@ export default function StrategiesClient({ strategies: initialStrategies }: Prop
                     {/* Adherence */}
                     <div className="text-center">
                       <div className="flex items-center gap-1 mb-1">
-                        <Target size={14} className="text-gray-500" />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Adherence</span>
+                        <Target size={14} className="text-text-muted" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">Adherence</span>
                       </div>
                       <div className={`text-2xl font-black ${getAdherenceColor(strategy.adherenceScore)}`}>
                         {strategy.adherenceScore}%
@@ -168,7 +168,7 @@ export default function StrategiesClient({ strategies: initialStrategies }: Prop
                     {/* Tiltmeter */}
                     <div className="text-center">
                       <div className="flex items-center gap-1 mb-1">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Tilt</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">Tilt</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <span className="text-xl">{getTiltmeterEmoji(strategy.tiltmeterScore)}</span>
@@ -182,7 +182,7 @@ export default function StrategiesClient({ strategies: initialStrategies }: Prop
                 
                 {/* Violations indicator */}
                 {strategy._count.violations > 0 && (
-                  <div className="mt-3 pt-3 border-t border-white/5 flex items-center gap-2 text-xs">
+                  <div className="mt-3 pt-3 border-t border-border-subtle flex items-center gap-2 text-xs">
                     <AlertTriangle size={12} className="text-red-400" />
                     <span className="text-red-400 font-medium">
                       {strategy._count.violations} rule violation{strategy._count.violations !== 1 ? 's' : ''}
@@ -195,7 +195,7 @@ export default function StrategiesClient({ strategies: initialStrategies }: Prop
         )}
 
         {/* Checklists section */}
-        <div className="glass-card p-6 border-white/5">
+        <div className="glass-card p-6 border-border-subtle">
           <ChecklistManager />
         </div>
       </div>
@@ -203,12 +203,12 @@ export default function StrategiesClient({ strategies: initialStrategies }: Prop
       {/* Create Strategy Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-          <div className="glass-card w-full max-w-md mx-4 p-6 border-white/10">
+          <div className="glass-card w-full max-w-md mx-4 p-6 border-border-color">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-white">Create Strategy</h2>
               <button
                 onClick={() => setShowModal(false)}
-                className="text-gray-400 hover:text-white transition-colors"
+                className="text-text-muted hover:text-text-primary transition-colors"
               >
                 <X size={24} />
               </button>
@@ -216,22 +216,22 @@ export default function StrategiesClient({ strategies: initialStrategies }: Prop
 
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="block text-xs font-black uppercase tracking-widest text-gray-500 mb-2">Name *</label>
+                <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-2">Name *</label>
                 <input
                   type="text"
                   value={newStrategy.name}
                   onChange={e => setNewStrategy(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:border-primary/50 focus:outline-none transition-colors"
+                  className="w-full bg-surface-elevated border border-border-color rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:border-primary/50 focus:outline-none transition-colors"
                   placeholder="e.g., ICT FVG Strategy"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-black uppercase tracking-widest text-gray-500 mb-2">Description</label>
+                <label className="block text-xs font-black uppercase tracking-widest text-text-muted mb-2">Description</label>
                 <textarea
                   value={newStrategy.description}
                   onChange={e => setNewStrategy(prev => ({ ...prev, description: e.target.value }))}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:border-primary/50 focus:outline-none transition-colors resize-none"
+                  className="w-full bg-surface-elevated border border-border-color rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:border-primary/50 focus:outline-none transition-colors resize-none"
                   rows={3}
                   placeholder="Optional description..."
                 />
@@ -245,7 +245,7 @@ export default function StrategiesClient({ strategies: initialStrategies }: Prop
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-colors text-sm font-bold text-gray-400 hover:text-white"
+                  className="flex-1 px-4 py-3 bg-surface-elevated hover:bg-surface-hover border border-border-color rounded-xl transition-colors text-sm font-bold text-text-muted hover:text-text-primary"
                 >
                   Cancel
                 </button>

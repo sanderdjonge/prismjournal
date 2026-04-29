@@ -25,7 +25,7 @@ export default function RecentTrades({ trades }: RecentTradesProps) {
     const renderTradeItem = (trade: Trade) => (
         <div
             key={trade.id}
-            className="flex justify-between items-center group cursor-pointer hover:bg-white/[0.03] p-3 rounded-2xl transition-all duration-300 border border-transparent hover:border-white/5"
+            className="flex justify-between items-center group cursor-pointer hover:bg-surface-hover p-3 rounded-2xl transition-all duration-300 border border-transparent hover:border-border-subtle"
         >
             <div className="flex items-center gap-4">
                 {/* Symbol Icon Placeholder */}
@@ -48,7 +48,7 @@ export default function RecentTrades({ trades }: RecentTradesProps) {
                             {trade.direction === 'LONG' ? 'Long' : 'Short'}
                         </span>
                     </div>
-                    <p className="text-[10px] text-gray-500 font-mono mt-0.5 uppercase tracking-widest">
+                    <p className="text-[10px] text-text-muted font-mono mt-0.5 uppercase tracking-widest">
                         {trade.isActive ? 'Active TYDA' : `@ ${trade.price}`}
                     </p>
                 </div>
@@ -61,7 +61,7 @@ export default function RecentTrades({ trades }: RecentTradesProps) {
                 )}>
                     {formatPnl(trade.pnl)}
                 </p>
-                <p className="text-[9px] text-gray-600 font-black uppercase tracking-widest mt-0.5">
+                <p className="text-[9px] text-text-muted font-black uppercase tracking-widest mt-0.5">
                     {trade.isActive ? 'Live Delta' : trade.time}
                 </p>
             </div>
@@ -80,7 +80,7 @@ export default function RecentTrades({ trades }: RecentTradesProps) {
                             <h3 className="text-sm font-semibold text-gray-100">
                                 Current Trades
                             </h3>
-                            <p className="text-xs text-gray-500">Live positions</p>
+                            <p className="text-xs text-text-muted">Live positions</p>
                         </div>
                         <div className="flex items-center gap-1">
                             <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
@@ -89,7 +89,7 @@ export default function RecentTrades({ trades }: RecentTradesProps) {
                     </div>
                     <div className="space-y-1">
                         {activeTrades.length > 0 ? activeTrades.map(renderTradeItem) : (
-                            <p className="text-[10px] text-gray-700 font-bold uppercase tracking-widest text-center py-4 italic">No active risk detected</p>
+                            <p className="text-[10px] text-text-muted font-bold uppercase tracking-widest text-center py-4 italic">No active risk detected</p>
                         )}
                     </div>
                 </section>
@@ -101,7 +101,7 @@ export default function RecentTrades({ trades }: RecentTradesProps) {
                             <h3 className="text-sm font-semibold text-gray-100">
                                 Recent History
                             </h3>
-                            <p className="text-xs text-gray-500">Closed trades</p>
+                            <p className="text-xs text-text-muted">Closed trades</p>
                         </div>
                     </div>
                     <div className="space-y-1">
@@ -109,7 +109,7 @@ export default function RecentTrades({ trades }: RecentTradesProps) {
                     </div>
                 </section>
 
-                <button className="w-full py-3 rounded-2xl bg-white/5 hover:bg-white/10 transition-all duration-300 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white border border-white/5 group/btn">
+                <button className="w-full py-3 rounded-2xl bg-surface-elevated hover:bg-surface-hover transition-all duration-300 text-[10px] font-black uppercase tracking-widest text-text-muted hover:text-text-primary border border-border-subtle group/btn">
                     Open Full Audit Log
                 </button>
             </div>

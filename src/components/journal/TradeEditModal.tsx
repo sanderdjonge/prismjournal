@@ -198,17 +198,17 @@ export default function TradeEditModal({ trade, isOpen, onClose, onSaved }: Trad
                         className="fixed inset-0 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 w-full md:max-w-4xl max-h-[90vh] glass-card bg-surface border-border-subtle z-[101] shadow-2xl flex flex-col overflow-hidden md:rounded-2xl"
                     >
                         {/* Header */}
-                        <div className="p-6 border-b border-border-subtle flex items-center justify-between bg-white/[0.02]">
+                        <div className="p-6 border-b border-border-subtle flex items-center justify-between bg-surface-elevated">
                             <div className="flex items-center gap-4">
                                 <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                                     <Edit3 size={20} />
                                 </div>
                                 <div>
                                     <h2 className="text-xl font-black text-white tracking-tighter uppercase italic">Edit Trade</h2>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Modify Trade Details</p>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">Modify Trade Details</p>
                                 </div>
                             </div>
-                            <button onClick={handleClose} className="w-9 h-9 rounded-full hover:bg-white/5 flex items-center justify-center text-gray-500 hover:text-white transition-all">
+                            <button onClick={handleClose} className="w-9 h-9 rounded-full hover:bg-surface-hover flex items-center justify-center text-text-muted hover:text-text-primary transition-all">
                                 <X size={18} />
                             </button>
                         </div>
@@ -218,13 +218,13 @@ export default function TradeEditModal({ trade, isOpen, onClose, onSaved }: Trad
                                 {/* Account Selector */}
                                 {accounts && accounts.length > 1 && (
                                     <div>
-                                        <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">
+                                        <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2">
                                             Account
                                         </label>
                                         <select
                                             value={editAccountId || ''}
                                             onChange={(e) => setEditAccountId(e.target.value || undefined)}
-                                            className="w-full px-3 py-2.5 bg-black/40 border border-white/10 rounded-xl text-white text-sm focus:border-primary/50 focus:outline-none"
+                                            className="w-full px-3 py-2.5 bg-surface-elevated border border-border-color rounded-xl text-white text-sm focus:border-primary/50 focus:outline-none"
                                         >
                                             {accounts.map((acc) => (
                                                 <option key={acc.id} value={acc.id}>
@@ -264,7 +264,7 @@ export default function TradeEditModal({ trade, isOpen, onClose, onSaved }: Trad
 
                                 {/* Tags */}
                                 <div>
-                                    <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 flex items-center gap-1">
+                                    <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted mb-2 flex items-center gap-1">
                                         <TagIcon size={10} /> Tags
                                     </label>
                                     <div className="flex flex-wrap gap-2 mb-2">
@@ -295,7 +295,7 @@ export default function TradeEditModal({ trade, isOpen, onClose, onSaved }: Trad
                                         <button
                                             type="button"
                                             onClick={() => setShowTagInput(!showTagInput)}
-                                            className="px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider border border-white/10 text-gray-500 hover:text-white hover:border-white/20 transition-all flex items-center gap-1"
+                                            className="px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider border border-border-color text-text-muted hover:text-text-primary hover:border-border-color transition-all flex items-center gap-1"
                                         >
                                             <Plus size={9} /> New
                                         </button>
@@ -317,7 +317,7 @@ export default function TradeEditModal({ trade, isOpen, onClose, onSaved }: Trad
                                                     }
                                                 }}
                                                 placeholder="Tag name (Enter to create)"
-                                                className="flex-1 px-3 py-1.5 bg-black/40 border border-white/10 rounded-lg text-white text-xs focus:border-primary/50 focus:outline-none"
+                                                className="flex-1 px-3 py-1.5 bg-surface-elevated border border-border-color rounded-lg text-white text-xs focus:border-primary/50 focus:outline-none"
                                             />
                                             <button
                                                 type="button"
@@ -339,7 +339,7 @@ export default function TradeEditModal({ trade, isOpen, onClose, onSaved }: Trad
                                 {/* Existing Screenshots */}
                                 {existingMedia.length > 0 && (
                                     <div className="space-y-3">
-                                        <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1">
+                                        <label className="text-[9px] font-black uppercase tracking-widest text-text-muted px-1">
                                             Existing Screenshots
                                         </label>
                                         <ExistingScreenshots

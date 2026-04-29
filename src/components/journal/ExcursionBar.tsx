@@ -44,8 +44,8 @@ export function ExcursionBar({ mae, mfe, exitDistFromEntry, pipLabel = 'pts' }: 
     if (!mfe || mfe <= 0) {
         return (
             <div className="space-y-1.5">
-                <div className="h-4 rounded-full bg-white/5 w-full" />
-                <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest text-center">
+                <div className="h-4 rounded-full bg-surface-elevated w-full" />
+                <p className="text-[9px] font-black text-text-muted uppercase tracking-widest text-center">
                     MAE / MFE data not yet available — sync a new trade or run backfill
                 </p>
             </div>

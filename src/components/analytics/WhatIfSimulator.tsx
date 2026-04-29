@@ -23,6 +23,8 @@ import {
   VolatilityConfig,
   NewsEventConfig,
 } from '@/components/what-if/WhatIfFilterChips';
+import { CorrelationHeatmap } from '@/components/analytics/CorrelationHeatmap'
+import { useWhatIfCorrelation } from '@/hooks/useWhatIfCorrelation'
 
 const DAYS = [
     { value: 0, label: 'Sunday' },
@@ -45,7 +47,7 @@ function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }
             {label}
             <button
                 onClick={onRemove}
-                className="opacity-60 hover:opacity-100 transition-opacity ml-0.5 hover:text-white"
+                className="opacity-60 hover:opacity-100 transition-opacity ml-0.5 hover:text-text-primary"
                 aria-label={`Remove ${label} filter`}
             >
                 <X size={10} />
@@ -84,14 +86,14 @@ function MetricCard({
     };
     
     return (
-        <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.08]">
-            <div className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">{label}</div>
+        <div className="p-3 rounded-lg bg-surface-elevated border border-border-subtle">
+            <div className="text-[10px] text-text-muted uppercase tracking-wide mb-1">{label}</div>
             <div className="flex items-baseline gap-2">
                 <span className="text-lg font-bold text-white">{prefix}{formatValue(actual)}{suffix}</span>
-                <span className="text-xs text-gray-500">→</span>
+                <span className="text-xs text-text-muted">→</span>
                 <span className={cn(
                     "text-lg font-bold",
-                    improved ? "text-profit" : diff < 0 ? "text-loss" : "text-gray-400"
+                    improved ? "text-profit" : diff < 0 ? "text-loss" : "text-text-muted"
                 )}>
                     {prefix}{formatValue(simulated)}{suffix}
                 </span>
@@ -259,10 +261,10 @@ function AdvancedFilterPopover({ type, filters, onChange, onClose, currency = 'U
   };
   
   return (
-    <div className="absolute z-50 top-full left-0 mt-1 p-3 bg-[var(--surface-solid)] border border-white/10 rounded-lg shadow-xl min-w-[280px]">
+    <div className="absolute z-50 top-full left-0 mt-1 p-3 bg-[var(--surface-solid)] border border-border-color rounded-lg shadow-xl min-w-[280px]">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Configure Filter</span>
-        <button onClick={onClose} className="text-gray-500 hover:text-white">
+        <span className="text-xs font-bold text-text-muted uppercase tracking-widest">Configure Filter</span>
+        <button onClick={onClose} className="text-text-muted hover:text-text-primary">
           <X size={14} />
         </button>
       </div>
@@ -280,6 +282,10 @@ export function WhatIfSimulator() {
     
     const { displayCurrency } = useSettings();
     const { data: result, isLoading, refetch } = useWhatIf(activeFilters);
+    const { data: correlationData } = useWhatIfCorrelation({
+        accountIds: undefined,
+    })
+    const [showCorrelation, setShowCorrelation] = useState(false)
     
     // Close popover when clicking outside
     useEffect(() => {
@@ -390,7 +396,6 @@ export function WhatIfSimulator() {
     };
     
     // Available advanced filter options
-    // Note: Volatility and News Events removed - require external API integration (see ROADMAP.md)
     const advancedFilterOptions = [
         { id: 'duration', label: 'Duration', category: 'time' as const },
         { id: 'marketSession', label: 'Market Session', category: 'time' as const },
@@ -400,9 +405,8 @@ export function WhatIfSimulator() {
         { id: 'bigLossCooldown', label: 'Big Loss Cooldown', category: 'psychology' as const },
         { id: 'positionSizing', label: 'Position Sizing', category: 'risk' as const },
         { id: 'trailingStop', label: 'Trailing Stop', category: 'risk' as const },
-        // TODO: Re-enable when external API integration complete
-        // { id: 'volatility', label: 'Volatility Filter', category: 'market' as const },
-        // { id: 'newsEvent', label: 'News Events', category: 'market' as const },
+        { id: 'volatility', label: 'Volatility Filter', category: 'market' as const },
+        { id: 'newsEvent', label: 'News Events', category: 'market' as const },
     ];
     
     const categoryColors = {
@@ -421,7 +425,7 @@ export function WhatIfSimulator() {
                 </div>
                 <button
                     onClick={() => setIsOpen(!isOpen)}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-sm text-gray-300 transition-colors"
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-elevated hover:bg-surface-hover text-sm text-text-secondary transition-colors"
                 >
                     {activeFilterCount > 0 && (
                         <span className="w-5 h-5 rounded-full bg-primary text-black text-xs font-bold flex items-center justify-center">
@@ -445,16 +449,16 @@ export function WhatIfSimulator() {
                         exit={{ height: 0, opacity: 0 }}
                         className="overflow-visible"
                     >
-                        <div className="p-4 rounded-lg bg-white/[0.02] border border-white/[0.05] mb-4 space-y-4 relative z-40">
+                        <div className="p-4 rounded-lg bg-surface-elevated border border-white/[0.05] mb-4 space-y-4 relative z-40">
                             {/* Basic Filters Section */}
-                            <div className="pb-4 border-b border-white/5">
-                                <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-3">
+                            <div className="pb-4 border-b border-border-subtle">
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-3">
                                     Basic Filters
                                 </h4>
                                 
                                 {/* Day Filter */}
                                 <div className="mb-3">
-                                    <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2 block">
+                                    <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted mb-2 block">
                                         Exclude Days
                                     </label>
                                     <div className="flex flex-wrap gap-1">
@@ -472,7 +476,7 @@ export function WhatIfSimulator() {
                                                     "px-2 py-1 rounded text-xs font-medium transition-colors",
                                                     filters.excludeDays?.includes(day.value)
                                                         ? "bg-primary text-black"
-                                                        : "bg-white/5 text-gray-400 hover:bg-white/10"
+                                                        : "bg-surface-elevated text-text-muted hover:bg-surface-hover"
                                                 )}
                                             >
                                                 {day.label.slice(0, 3)}
@@ -483,7 +487,7 @@ export function WhatIfSimulator() {
                                 
                                 {/* Hour Filter */}
                                 <div className="mb-3">
-                                    <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2 block">
+                                    <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted mb-2 block">
                                         Exclude Hours
                                     </label>
                                     <div className="flex flex-wrap gap-1">
@@ -501,7 +505,7 @@ export function WhatIfSimulator() {
                                                     "px-2 py-1 rounded text-xs font-medium transition-colors",
                                                     filters.excludeHours?.includes(hour.value)
                                                         ? "bg-primary text-black"
-                                                        : "bg-white/5 text-gray-400 hover:bg-white/10"
+                                                        : "bg-surface-elevated text-text-muted hover:bg-surface-hover"
                                                 )}
                                             >
                                                 {hour.label}
@@ -513,7 +517,7 @@ export function WhatIfSimulator() {
                                 {/* R:R & Profit Filters */}
                                 <div className="grid grid-cols-2 gap-3">
                                     <div>
-                                        <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1.5 block">
+                                        <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1.5 block">
                                             Min R:R
                                         </label>
                                         <input
@@ -524,12 +528,12 @@ export function WhatIfSimulator() {
                                                 ...filters, 
                                                 minRR: e.target.value ? parseFloat(e.target.value) : undefined 
                                             })}
-                                            className="w-full bg-white/5 border border-white/10 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-primary/40"
+                                            className="w-full bg-surface-elevated border border-border-color rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-primary/40"
                                             placeholder="0.0"
                                         />
                                     </div>
                                     <div>
-                                        <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1.5 block">
+                                        <label className="text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1.5 block">
                                             Max R:R
                                         </label>
                                         <input
@@ -540,7 +544,7 @@ export function WhatIfSimulator() {
                                                 ...filters, 
                                                 maxRR: e.target.value ? parseFloat(e.target.value) : undefined 
                                             })}
-                                            className="w-full bg-white/5 border border-white/10 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-primary/40"
+                                            className="w-full bg-surface-elevated border border-border-color rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-primary/40"
                                             placeholder="10.0"
                                         />
                                     </div>
@@ -549,7 +553,7 @@ export function WhatIfSimulator() {
                             
                             {/* Advanced Filters Section */}
                             <div ref={popoverRef}>
-                                <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-3">
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-3">
                                     Advanced Filters
                                 </h4>
                                 <div className="flex flex-wrap gap-1.5">
@@ -597,10 +601,10 @@ export function WhatIfSimulator() {
                             </div>
                             
                             {/* Action Buttons */}
-                            <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                            <div className="flex items-center justify-between pt-2 border-t border-border-subtle">
                                 <button
                                     onClick={handleClearFilters}
-                                    className="text-xs text-gray-500 hover:text-white transition-colors"
+                                    className="text-xs text-text-muted hover:text-text-primary transition-colors"
                                 >
                                     Clear all
                                 </button>
@@ -752,14 +756,55 @@ export function WhatIfSimulator() {
             
             {!isLoading && !result && (
                 <div className="text-center py-8">
-                    <FlaskConical size={32} className="mx-auto text-gray-700 mb-2" />
-                    <p className="text-sm text-gray-500">Apply filters and run simulation</p>
-                    <p className="text-xs text-gray-600 mt-1">See how your P&L would change with different rules</p>
+                    <FlaskConical size={32} className="mx-auto text-text-muted mb-2" />
+                    <p className="text-sm text-text-muted">Apply filters and run simulation</p>
+                    <p className="text-xs text-text-muted mt-1">See how your P&L would change with different rules</p>
                 </div>
             )}
             
             {!isLoading && result && (
                 <ComparisonSummary result={result} currency={displayCurrency} />
+            )}
+            
+            {/* Correlation Matrix Heatmap */}
+            {correlationData && correlationData.tradeCount > 5 && (
+                <div className="glass-card rounded-2xl border border-border-color bg-surface-elevated p-4 mt-4">
+                    <button
+                        onClick={() => setShowCorrelation(!showCorrelation)}
+                        className="flex items-center justify-between w-full"
+                    >
+                        <div className="flex items-center gap-2">
+                            <FlaskConical size={14} className="text-primary" />
+                            <div className="text-left">
+                                <h4 className="text-sm font-bold text-white">Filter Correlation Matrix</h4>
+                                <p className="text-[10px] text-text-muted">Which filter combos yield the best results</p>
+                            </div>
+                        </div>
+                        <ChevronDown
+                            size={16}
+                            className={cn('text-text-muted transition-transform', showCorrelation && 'rotate-180')}
+                        />
+                    </button>
+                    <AnimatePresence>
+                        {showCorrelation && (
+                            <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="overflow-hidden"
+                            >
+                                <div className="mt-4 pt-4 border-t border-border-subtle">
+                                    <CorrelationHeatmap data={correlationData} />
+                                </div>
+                                <div className="mt-3 flex items-center gap-4 text-[10px] text-text-muted">
+                                    <span>{correlationData.tradeCount} trades analyzed</span>
+                                    <span>Generated {new Date(correlationData.generatedAt).toLocaleDateString()}</span>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
             )}
         </div>
     );

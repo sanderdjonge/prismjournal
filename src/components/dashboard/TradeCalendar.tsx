@@ -59,12 +59,12 @@ const MiniMonth = React.memo(function MiniMonth({ year, month, dataByDate, event
 
     return (
         <div className="flex flex-col gap-0.5">
-            <div className="text-[10px] font-black uppercase tracking-widest text-gray-500 text-center mb-1">
+            <div className="text-[10px] font-black uppercase tracking-widest text-text-muted text-center mb-1">
                 {d.format('MMMM')}
             </div>
             <div className="grid grid-cols-7 gap-px mb-0.5">
                 {['S','M','T','W','T','F','S'].map((l, i) => (
-                    <div key={i} className="text-[9px] text-gray-400 font-black text-center">{l}</div>
+                    <div key={i} className="text-[9px] text-text-muted font-black text-center">{l}</div>
                 ))}
             </div>
             <div className="grid grid-cols-7 gap-px">
@@ -90,7 +90,7 @@ const MiniMonth = React.memo(function MiniMonth({ year, month, dataByDate, event
                             style={hasData ? getYearDayBg(metricVal) : { backgroundColor: 'rgba(255,255,255,0.03)' }}
                             title={tooltipText}
                         >
-                            <span className="text-[9px] font-bold text-gray-400 leading-none">{day}</span>
+                            <span className="text-[9px] font-bold text-text-muted leading-none">{day}</span>
                             {hasEvents && !hasData && (
                                 <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 flex gap-0.5">
                                     {dayEvents.slice(0, 3).map((e, idx) => (
@@ -229,9 +229,9 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
 
     const getPnlStyle = (metricVal: number | null, hasTrades: boolean) => {
         if (!hasTrades || metricVal === null) return {
-            bg: "bg-white/5 hover:bg-white/10",
-            border: "border-white/5",
-            text: "text-gray-500",
+            bg: "bg-surface-elevated hover:bg-surface-hover",
+            border: "border-border-subtle",
+            text: "text-text-muted",
         };
         const isPositive = metric === 'rr' ? metricVal >= 1.0 : metricVal > 0;
         const isNegative = metric === 'rr' ? metricVal < 1.0 : metricVal < 0;
@@ -241,7 +241,7 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
     };
 
     const pnlColor = (pnl: number) =>
-        pnl > 0 ? 'text-profit' : pnl < 0 ? 'text-loss' : 'text-gray-400';
+        pnl > 0 ? 'text-profit' : pnl < 0 ? 'text-loss' : 'text-text-muted';
 
     // 95th-percentile of absolute metric values for the viewed year (for colour intensity scaling)
     const p95 = useMemo(() => {
@@ -283,20 +283,20 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
                     <div className="relative" ref={metricDropdownRef}>
                         <button
                             onClick={() => setMetricOpen(o => !o)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.06] border border-white/10 text-xs font-bold text-gray-300 hover:bg-white/10 transition-colors"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-hover border border-border-color text-xs font-bold text-text-secondary hover:bg-surface-hover transition-colors"
                         >
                             {metric === 'pnl' ? 'Dollar Profit' : metric === 'pct' ? '% Profit' : 'R:R'}
-                            <span className="text-gray-500 text-[10px]">{metricOpen ? '▲' : '▼'}</span>
+                            <span className="text-text-muted text-[10px]">{metricOpen ? '▲' : '▼'}</span>
                         </button>
                         {metricOpen && (
-                            <div className="absolute top-full left-0 mt-1 bg-[var(--surface-solid)] border border-white/10 rounded-lg py-1 z-50 min-w-[120px] shadow-xl">
+                            <div className="absolute top-full left-0 mt-1 bg-[var(--surface-solid)] border border-border-color rounded-lg py-1 z-50 min-w-[120px] shadow-xl">
                                 {(['pnl', 'pct', 'rr'] as const)
                                     .filter(m => m !== 'pct' || (accountBalance != null && accountBalance !== 0))
                                     .map(m => (
                                         <button
                                             key={m}
                                             onClick={() => { setMetric(m); setMetricOpen(false); }}
-                                            className={`w-full text-left px-3 py-2 text-xs font-semibold hover:bg-white/10 transition-colors ${metric === m ? 'text-primary' : 'text-gray-300'}`}
+                                            className={`w-full text-left px-3 py-2 text-xs font-semibold hover:bg-surface-hover transition-colors ${metric === m ? 'text-primary' : 'text-text-secondary'}`}
                                         >
                                             {m === 'pnl' ? 'Dollar Profit' : m === 'pct' ? '% Profit' : 'R:R'}
                                         </button>
@@ -309,22 +309,22 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
                     {/* Month nav (Month view only) */}
                     {viewMode === 'month' && (
                         <div className="flex items-center gap-1.5">
-                            <button onClick={prevMonth} className="w-6 h-6 flex items-center justify-center rounded-md bg-white/[0.06] border border-white/10 text-gray-400 hover:bg-white/10 transition-colors text-xs">‹</button>
+                            <button onClick={prevMonth} className="w-6 h-6 flex items-center justify-center rounded-md bg-surface-hover border border-border-color text-text-muted hover:bg-surface-hover transition-colors text-xs">‹</button>
                             <span className="text-sm font-bold text-gray-100 min-w-[72px] text-center">{viewDate.format('MMMM')}</span>
-                            <button onClick={nextMonth} className="w-6 h-6 flex items-center justify-center rounded-md bg-white/[0.06] border border-white/10 text-gray-400 hover:bg-white/10 transition-colors text-xs">›</button>
+                            <button onClick={nextMonth} className="w-6 h-6 flex items-center justify-center rounded-md bg-surface-hover border border-border-color text-text-muted hover:bg-surface-hover transition-colors text-xs">›</button>
                         </div>
                     )}
 
                     {/* Year nav (always shown) */}
                     <div className="flex items-center gap-1.5">
-                        <button onClick={prevYear} className="w-6 h-6 flex items-center justify-center rounded-md bg-white/[0.06] border border-white/10 text-gray-400 hover:bg-white/10 transition-colors text-xs">‹</button>
-                        <span className="text-sm font-semibold text-gray-500 min-w-[40px] text-center">{viewYear}</span>
-                        <button onClick={nextYear} className="w-6 h-6 flex items-center justify-center rounded-md bg-white/[0.06] border border-white/10 text-gray-400 hover:bg-white/10 transition-colors text-xs">›</button>
+                        <button onClick={prevYear} className="w-6 h-6 flex items-center justify-center rounded-md bg-surface-hover border border-border-color text-text-muted hover:bg-surface-hover transition-colors text-xs">‹</button>
+                        <span className="text-sm font-semibold text-text-muted min-w-[40px] text-center">{viewYear}</span>
+                        <button onClick={nextYear} className="w-6 h-6 flex items-center justify-center rounded-md bg-surface-hover border border-border-color text-text-muted hover:bg-surface-hover transition-colors text-xs">›</button>
                     </div>
                 </div>
 
                 {/* Right: Month | Year toggle — desktop only */}
-                <div className="hidden sm:flex bg-white/[0.06] border border-white/[0.08] rounded-lg p-0.5 gap-0.5">
+                <div className="hidden sm:flex bg-surface-hover border border-border-subtle rounded-lg p-0.5 gap-0.5">
                     {(['month', 'year'] as const).map(mode => (
                         <button
                             key={mode}
@@ -332,7 +332,7 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
                             className={`px-3 py-1 rounded-md text-[11px] font-black uppercase tracking-widest transition-colors ${
                                 viewMode === mode
                                     ? 'bg-primary/20 border border-primary/40 text-primary/90'
-                                    : 'text-gray-500 hover:text-gray-300'
+                                    : 'text-text-muted hover:text-text-secondary'
                             }`}
                         >
                             {mode}
@@ -347,20 +347,20 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
                     {/* Column headers — 7 days on mobile, 9 cols on desktop (7 days + spacer + weekly) */}
                     <div className="hidden md:grid grid-cols-[repeat(7,minmax(0,1fr))_12px_minmax(0,1.3fr)] gap-1 shrink-0">
                         {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((d) => (
-                            <div key={d} className="text-center text-[10px] font-black text-gray-600 pb-1 tracking-tighter">
+                            <div key={d} className="text-center text-[10px] font-black text-text-muted pb-1 tracking-tighter">
                                 {d}
                             </div>
                         ))}
                         {/* spacer */}
                         <div />
-                        <div className="text-center text-[10px] font-black text-gray-500 pb-1 tracking-tighter">
+                        <div className="text-center text-[10px] font-black text-text-muted pb-1 tracking-tighter">
                             WEEK
                         </div>
                     </div>
                     {/* Mobile column headers - just 7 days */}
                     <div className="grid grid-cols-7 gap-1 shrink-0 md:hidden">
                         {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d) => (
-                            <div key={d} className="text-center text-[10px] font-black text-gray-600 pb-1 tracking-tighter">
+                            <div key={d} className="text-center text-[10px] font-black text-text-muted pb-1 tracking-tighter">
                                 {d}
                             </div>
                         ))}
@@ -393,7 +393,7 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
                                                     style.border
                                                 )}
                                             >
-                                                <span className={cn("text-[10px] font-bold", day.trades > 0 ? "text-gray-400" : style.text)}>
+                                                <span className={cn("text-[10px] font-bold", day.trades > 0 ? "text-text-muted" : style.text)}>
                                                     {day.date}
                                                 </span>
                                                 {day.trades > 0 && (
@@ -420,29 +420,29 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
                                                             <EventBadge key={idx} event={event} />
                                                         ))}
                                                         {day.events.length > 3 && (
-                                                            <span className="text-[7px] text-gray-500 font-bold">+{day.events.length - 3}</span>
+                                                            <span className="text-[7px] text-text-muted font-bold">+{day.events.length - 3}</span>
                                                         )}
                                                     </div>
                                                 )}
 
                                                 {/* Hover Tooltip */}
                                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover/day:opacity-100 pointer-events-none transition-opacity duration-200 z-50">
-                                                    <div className="bg-[var(--surface-solid)] border border-white/20 rounded-lg px-3 py-2 shadow-xl whitespace-nowrap">
+                                                    <div className="bg-[var(--surface-solid)] border border-border-color rounded-lg px-3 py-2 shadow-xl whitespace-nowrap">
                                                         <p className="text-[10px] font-bold text-white">{viewDate.date(day.date).format('MMM D, YYYY')}</p>
                                                         <p className={cn("text-xs font-black mt-1", style.text)}>
                                                             {day.trades === 0 ? 'No trades' : `${day.trades} trade${day.trades > 1 ? 's' : ''} · ${formatMetricValue(metricVal)}`}
                                                         </p>
                                                         {day.trades > 0 && (
-                                                            <p className="text-[9px] text-gray-400 mt-0.5">
+                                                            <p className="text-[9px] text-text-muted mt-0.5">
                                                                 {day.wins} win{day.wins !== 1 ? 's' : ''}, {day.losses} loss{day.losses !== 1 ? 'es' : ''}
                                                                 {day.wins === 0 && day.losses === 0 && ' • Breakeven'}
                                                             </p>
                                                         )}
                                                         {day.events.length > 0 && (
-                                                            <div className="mt-1 pt-1 border-t border-white/10">
-                                                                <p className="text-[8px] font-bold text-gray-500 uppercase tracking-wide mb-0.5">Economic Events</p>
+                                                            <div className="mt-1 pt-1 border-t border-border-color">
+                                                                <p className="text-[8px] font-bold text-text-muted uppercase tracking-wide mb-0.5">Economic Events</p>
                                                                 {day.events.map((event, idx) => (
-                                                                    <p key={idx} className="text-[9px] text-gray-300">
+                                                                    <p key={idx} className="text-[9px] text-text-secondary">
                                                                         {event.name} ({event.currency}){event.time ? ` - ${event.time}` : ''}
                                                                     </p>
                                                                 ))}
@@ -450,7 +450,7 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
                                                         )}
                                                     </div>
                                                     <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1">
-                                                        <div className="w-2 h-2 bg-[var(--surface-solid)] border-r border-b border-white/20 transform rotate-45 -translate-y-1/2" />
+                                                        <div className="w-2 h-2 bg-[var(--surface-solid)] border-r border-b border-border-color transform rotate-45 -translate-y-1/2" />
                                                     </div>
                                                 </div>
                                             </div>
@@ -469,19 +469,19 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
                                                 : weekPnl < 0
                                                     ? "bg-loss/10 border-loss/20"
                                                     : "bg-secondary/10 border-secondary/20"
-                                            : "bg-white/[0.03] border-white/5"
+                                            : "bg-surface-elevated border-border-subtle"
                                     )}>
                                         {weekTrades > 0 ? (
                                             <>
                                                 <span className={cn("text-[12px] font-black leading-tight", pnlColor(weekPnl))}>
                                                     {weekPnl > 0 ? '+' : weekPnl < 0 ? '-' : ''}{symbol}{Math.abs(weekPnl).toFixed(0)}
                                                 </span>
-                                                <span className="text-[9px] font-black text-gray-400 mt-0.5">
+                                                <span className="text-[9px] font-black text-text-muted mt-0.5">
                                                     {weekTrades}T
                                                 </span>
                                                 <div className="flex gap-0.5 mt-0.5">
                                                     {weekWins > 0 && <span className="text-[8px] font-black text-profit">{weekWins}W</span>}
-                                                    {weekWins > 0 && weekLosses > 0 && <span className="text-[8px] text-gray-600">/</span>}
+                                                    {weekWins > 0 && weekLosses > 0 && <span className="text-[8px] text-text-muted">/</span>}
                                                     {weekLosses > 0 && <span className="text-[8px] font-black text-loss">{weekLosses}L</span>}
                                                 </div>
                                                 {weekWinRate !== null && (
@@ -491,7 +491,7 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
                                                 )}
                                             </>
                                         ) : (
-                                            <span className="text-[9px] text-gray-700 font-bold">—</span>
+                                            <span className="text-[9px] text-text-muted font-bold">—</span>
                                         )}
                                     </div>
                                 </div>
@@ -513,20 +513,20 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
                                     : monthlyPnl < 0
                                         ? "bg-loss/15 border-loss/30"
                                         : "bg-secondary/15 border-secondary/30"
-                                : "bg-white/[0.03] border-white/5"
+                                : "bg-surface-elevated border-border-subtle"
                         )}>
-                            <div className="text-[7px] font-black uppercase tracking-widest text-gray-600 mb-0.5">MTD</div>
+                            <div className="text-[7px] font-black uppercase tracking-widest text-text-muted mb-0.5">MTD</div>
                             {monthlyTrades > 0 ? (
                                 <>
                                     <span className={cn("text-[12px] font-black leading-tight", pnlColor(monthlyPnl))}>
                                         {monthlyPnl > 0 ? '+' : monthlyPnl < 0 ? '-' : ''}{symbol}{Math.abs(monthlyPnl).toFixed(0)}
                                     </span>
-                                    <span className="text-[9px] font-black text-gray-400 mt-0.5">
+                                    <span className="text-[9px] font-black text-text-muted mt-0.5">
                                         {monthlyTrades}T
                                     </span>
                                     <div className="flex gap-0.5 mt-0.5">
                                         {monthlyWins > 0 && <span className="text-[8px] font-black text-profit">{monthlyWins}W</span>}
-                                        {monthlyWins > 0 && monthlyLosses > 0 && <span className="text-[8px] text-gray-600">/</span>}
+                                        {monthlyWins > 0 && monthlyLosses > 0 && <span className="text-[8px] text-text-muted">/</span>}
                                         {monthlyLosses > 0 && <span className="text-[8px] font-black text-loss">{monthlyLosses}L</span>}
                                     </div>
                                     <span className={cn("text-[8px] font-black mt-0.5", monthlyWinRate >= 50 ? "text-profit" : "text-loss")}>
@@ -534,7 +534,7 @@ export default function TradeCalendar({ data, accountBalance }: TradeCalendarPro
                                     </span>
                                 </>
                             ) : (
-                                <span className="text-[9px] text-gray-700 font-bold">—</span>
+                                <span className="text-[9px] text-text-muted font-bold">—</span>
                             )}
                         </div>
                     </div>

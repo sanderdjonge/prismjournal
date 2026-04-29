@@ -1,6 +1,6 @@
-'use client';
+'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { toast } from 'sonner'
 import { Share2, Plus, X, ChevronDown } from 'lucide-react'
 import { useUpdateTrade } from '@/hooks/useTrades'
@@ -10,6 +10,9 @@ import { useCurrency } from '@/lib/currency'
 import { fmtDecimals } from '@/lib/formatNumber'
 import { apiFetch } from '@/lib/api/client'
 import { ExcursionBar } from '@/components/journal/ExcursionBar'
+import { TradePnlCurve } from '@/components/journal/TradePnlCurve'
+import { RelatedTrades } from '@/components/journal/RelatedTrades'
+import { RichTextEditor } from '@/components/ui/RichTextEditor'
 import { computeDuration, deriveListZone } from './TradeListPanel'
 import { MOOD_OPTIONS, COMPLIANCE_OPTIONS } from '@/constants/tradeConfig'
 import { SetupChecklist, SetupChecklistRef } from '@/components/pre-trade/SetupChecklist'
@@ -35,6 +38,7 @@ interface StrategyWithChecklist {
 
 interface TradeDetailPanelProps {
     trade: JournalTrade;
+    onNavigateTrade?: (tradeId: string) => void;
 }
 
 function Stars({
@@ -67,14 +71,14 @@ function Stars({
 
 function Cell({ label, children }: { label: string; children: React.ReactNode }) {
     return (
-        <div className="bg-white/[0.03] border border-white/[0.08] rounded-lg px-3 py-2">
-            <div className="text-[9px] font-black uppercase tracking-[0.18em] text-gray-500 mb-1">{label}</div>
+        <div className="bg-surface-elevated border border-border-subtle rounded-lg px-3 py-2">
+            <div className="text-[9px] font-black uppercase tracking-[0.18em] text-text-muted mb-1">{label}</div>
             {children}
         </div>
     );
 }
 
-export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
+export function TradeDetailPanel({ trade, onNavigateTrade }: TradeDetailPanelProps) {
     const { formatPnl } = useCurrency()
     const update = useUpdateTrade();
     const { data: tagsData } = useTags();
@@ -98,6 +102,7 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
     const [entryRating, setEntryRating] = useState<number | null>(trade.entryRating ?? null);
     const [exitRating, setExitRating] = useState<number | null>(trade.exitRating ?? null);
     const [managementRating, setManagementRating] = useState<number | null>(trade.managementRating ?? null);
+    const [relatedTradeIds, setRelatedTradeIds] = useState<string[]>([]);
 
     useEffect(() => {
         setNotes(trade.notes ?? '');
@@ -112,6 +117,7 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
         setEntryRating(trade.entryRating ?? null);
         setExitRating(trade.exitRating ?? null);
         setManagementRating(trade.managementRating ?? null);
+        setRelatedTradeIds((trade as JournalTrade & { relatedTradeIds?: string[] }).relatedTradeIds ?? []);
     }, [trade.id]);
 
     useEffect(() => {
@@ -120,9 +126,9 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                 .then(data => {
                     setStrategy(data)
                     apiFetch(`/api/checklist-completions?tradeId=${trade.id}`)
-                        .then((compData: any) => {
-                            if (compData.hasStrategy && compData.checkedState) {
-                                setCheckedItems(compData.checkedState)
+                        .then((compData: unknown) => {
+                            if (typeof compData === "object" && compData !== null && "hasStrategy" in compData && "checkedState" in compData) {
+                                setCheckedItems((compData as { checkedState: Record<string, boolean> }).checkedState)
                             } else {
                                 setCheckedItems({})
                             }
@@ -139,7 +145,6 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
     }, [selectedStrategyId, trade.id])
 
     const handleRating = (field: 'entryRating' | 'exitRating' | 'managementRating', val: number) => {
-        // Update local state immediately for responsive UI
         if (field === 'entryRating') setEntryRating(val);
         else if (field === 'exitRating') setExitRating(val);
         else if (field === 'managementRating') setManagementRating(val);
@@ -224,6 +229,15 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
         }
     };
 
+    const handleLinkedChange = useCallback(async () => {
+        try {
+            const data = await apiFetch<{ relatedTradeIds: string[] }>(`/api/trades/${trade.id}`)
+            setRelatedTradeIds(data.relatedTradeIds ?? [])
+        } catch {
+            toast.error('Failed to refresh linked trades')
+        }
+    }, [trade.id])
+
     const isForex = /USD|EUR|GBP|JPY|CHF|AUD|CAD|NZD/i.test(trade.symbol);
     const fmt = (v: number) => isForex ? v.toFixed(5) : v.toFixed(0);
 
@@ -248,15 +262,15 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
 
     return (
         <div
-            className="flex flex-col min-h-0 border-l border-white/[0.06] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10"
+            className="flex flex-col min-h-0 border-l border-border-subtle overflow-y-auto scrollbar-thin scrollbar-thumb-white/10"
             style={{ width: 340 }}
         >
-            <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] flex-shrink-0">
-                <span className="text-[9px] font-black uppercase tracking-[0.22em] text-gray-500">Trade Details</span>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle flex-shrink-0">
+                <span className="text-[9px] font-black uppercase tracking-[0.22em] text-text-muted">Trade Details</span>
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => setShareModalOpen(true)}
-                        className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-gray-500 hover:text-white"
+                        className="p-1.5 rounded-lg hover:bg-surface-hover transition-colors text-text-muted hover:text-text-primary"
                         title="Share trade"
                     >
                         <Share2 size={14} />
@@ -280,14 +294,14 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                             <span className={`text-[9px] font-black uppercase tracking-[0.08em] px-[5px] py-[1px] rounded-[3px] ${
                                 trade.type === 'LONG' ? 'bg-profit/15 text-profit' : 'bg-loss/15 text-loss'
                             }`}>{trade.type}</span>
-                            <span className="text-[9px] font-semibold text-gray-600">{fmtDecimals(trade.volume, 2)} lots</span>
+                            <span className="text-[9px] font-semibold text-text-muted">{fmtDecimals(trade.volume, 2)} lots</span>
                         </div>
                     </div>
                     <div className="text-right">
                         <div className={`font-mono text-[20px] font-bold leading-none ${trade.pnl >= 0 ? 'text-profit' : 'text-loss'}`}>
                             {formatPnl(trade.pnl)}
                         </div>
-                        <div className="text-[8px] font-black uppercase tracking-[0.18em] text-gray-600 mt-1">
+                        <div className="text-[8px] font-black uppercase tracking-[0.18em] text-text-muted mt-1">
                             {trade.pnl >= 0 ? 'profit' : 'loss'}
                         </div>
                     </div>
@@ -303,10 +317,9 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                     <Cell label="Stop Loss">
                         <div className="flex flex-col">
                             <span className="font-mono text-[13px] font-semibold text-loss">{trade.stopLoss ? fmt(trade.stopLoss) : '—'}</span>
-                            {/* Show initial SL if different from current SL */}
                             {(trade as { initialStopLoss?: number | null }).initialStopLoss != null &&
                              (trade as { initialStopLoss?: number | null }).initialStopLoss !== trade.stopLoss && (
-                                <span className="text-[9px] text-gray-500 mt-0.5">
+                                <span className="text-[9px] text-text-muted mt-0.5">
                                     Initial: {fmt((trade as { initialStopLoss?: number | null }).initialStopLoss!)}
                                 </span>
                             )}
@@ -316,22 +329,22 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                         <span className="font-mono text-[13px] font-semibold text-profit">{trade.takeProfit ? fmt(trade.takeProfit) : '—'}</span>
                     </Cell>
                     <Cell label="Entry Time">
-                        <span className="text-[11px] font-semibold text-gray-300">{entryDateStr}</span>
+                        <span className="text-[11px] font-semibold text-text-secondary">{entryDateStr}</span>
                     </Cell>
                     <Cell label="Exit Time">
-                        <span className="text-[11px] font-semibold text-gray-300">{exitDateStr}</span>
+                        <span className="text-[11px] font-semibold text-text-secondary">{exitDateStr}</span>
                     </Cell>
                     <Cell label="Duration">
-                        <span className="text-[11px] font-semibold text-gray-300">{duration ?? '—'}</span>
+                        <span className="text-[11px] font-semibold text-text-secondary">{duration ?? '—'}</span>
                     </Cell>
                     <Cell label="Volume">
-                        <span className="text-[11px] font-semibold text-gray-300">{fmtDecimals(trade.volume, 2)}</span>
+                        <span className="text-[11px] font-semibold text-text-secondary">{fmtDecimals(trade.volume, 2)}</span>
                     </Cell>
                 </div>
 
                 {trade.mae && trade.mfe && (
                     <div className="space-y-1">
-                        <div className="text-[9px] font-black uppercase tracking-[0.18em] text-gray-500">Excursion</div>
+                        <div className="text-[9px] font-black uppercase tracking-[0.18em] text-text-muted">Excursion</div>
                         <ExcursionBar
                             mae={trade.mae}
                             mfe={trade.mfe}
@@ -341,8 +354,28 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                     </div>
                 )}
 
+                <TradePnlCurve
+                    trade={{
+                        entryPrice: trade.entry,
+                        exitPrice: trade.exit && trade.exit > 0 ? trade.exit : null,
+                        mae: trade.mae ?? null,
+                        mfe: trade.mfe ?? null,
+                        volume: trade.volume,
+                        type: trade.type,
+                        entryTime: trade.entryTime ?? null,
+                        exitTime: trade.exitTime ?? null,
+                    }}
+                />
+
+                <RelatedTrades
+                    tradeId={trade.id}
+                    relatedTradeIds={relatedTradeIds}
+                    onNavigate={onNavigateTrade ?? (() => {})}
+                    onLinkedChange={handleLinkedChange}
+                />
+
                 <div className="space-y-3">
-                    <div className="text-[9px] font-black uppercase tracking-[0.18em] text-gray-500">Ratings</div>
+                    <div className="text-[9px] font-black uppercase tracking-[0.18em] text-text-muted">Ratings</div>
                     <div className="grid grid-cols-3 gap-2">
                         {[
                             { label: 'Entry', field: 'entryRating' as const, value: entryRating },
@@ -350,7 +383,7 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                             { label: 'Mgmt', field: 'managementRating' as const, value: managementRating },
                         ].map(({ label, field, value }) => (
                             <div key={field} className="flex flex-col items-center gap-1">
-                                <span className="text-[8px] font-black uppercase tracking-[0.12em] text-gray-600">{label}</span>
+                                <span className="text-[8px] font-black uppercase tracking-[0.12em] text-text-muted">{label}</span>
                                 <Stars value={value} onChange={n => handleRating(field, n)} />
                             </div>
                         ))}
@@ -358,7 +391,7 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                 </div>
 
                 <div className="space-y-2">
-                    <div className="text-[9px] font-black uppercase tracking-[0.18em] text-gray-500">Mood</div>
+                    <div className="text-[9px] font-black uppercase tracking-[0.18em] text-text-muted">Mood</div>
                     <div className="flex flex-wrap gap-1">
                         {MOOD_OPTIONS.map(m => {
                             const Icon = m.icon;
@@ -370,7 +403,7 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                                     className={`flex items-center gap-1 px-2 py-1 rounded-lg border text-[9px] font-black uppercase tracking-[0.08em] transition-all ${
                                         isActive
                                             ? `${m.bg} ${m.color} border-current`
-                                            : 'bg-white/[0.03] border-white/[0.08] text-gray-500 hover:text-white hover:bg-white/[0.06]'
+                                            : 'bg-surface-elevated border-border-subtle text-text-muted hover:text-text-primary hover:bg-surface-hover'
                                     }`}
                                 >
                                     <Icon size={12} />
@@ -382,7 +415,7 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                 </div>
 
                 <div className="space-y-2">
-                    <div className="text-[9px] font-black uppercase tracking-[0.18em] text-gray-500">Plan Compliance</div>
+                    <div className="text-[9px] font-black uppercase tracking-[0.18em] text-text-muted">Plan Compliance</div>
                     <div className="flex gap-1">
                         {COMPLIANCE_OPTIONS.map(c => {
                             const isActive = compliance === c.id;
@@ -393,7 +426,7 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                                     className={`flex-1 px-2 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-[0.08em] transition-all ${
                                         isActive
                                             ? `${c.activeBg} ${c.color} ${c.activeBorder}`
-                                            : 'bg-white/[0.03] border-white/[0.08] text-gray-500 hover:text-white hover:bg-white/[0.06]'
+                                            : 'bg-surface-elevated border-border-subtle text-text-muted hover:text-text-primary hover:bg-surface-hover'
                                     }`}
                                 >
                                     {c.label}
@@ -404,13 +437,13 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                 </div>
 
                 <div className="space-y-2">
-                    <div className="text-[9px] font-black uppercase tracking-[0.18em] text-gray-500">Strategy</div>
+                    <div className="text-[9px] font-black uppercase tracking-[0.18em] text-text-muted">Strategy</div>
                     <div className="relative">
                         <button
                             onClick={() => setShowStrategyDropdown(!showStrategyDropdown)}
-                            className="w-full flex items-center justify-between px-3 py-2 bg-white/[0.03] border border-white/[0.08] rounded-lg text-[11px] text-gray-200 hover:border-white/20 transition-colors"
+                            className="w-full flex items-center justify-between px-3 py-2 bg-surface-elevated border border-border-subtle rounded-lg text-[11px] text-gray-200 hover:border-border-color transition-colors"
                         >
-                            <span className={selectedStrategyId ? 'text-white' : 'text-gray-500'}>
+                            <span className={selectedStrategyId ? 'text-white' : 'text-text-muted'}>
                                 {selectedStrategyId
                                     ? allStrategies.find(s => s.id === selectedStrategyId)?.name ?? 'Unknown'
                                     : 'Select strategy...'}
@@ -421,7 +454,7 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                             <div className="absolute z-20 w-full mt-1 bg-[var(--surface-solid)] border border-border-glass rounded-lg shadow-xl max-h-48 overflow-y-auto">
                                 <button
                                     onClick={() => handleStrategyChange(null)}
-                                    className={`w-full text-left px-3 py-2 text-[11px] hover:bg-white/[0.05] transition-colors ${!selectedStrategyId ? 'text-primary' : 'text-gray-400'}`}
+                                    className={`w-full text-left px-3 py-2 text-[11px] hover:bg-surface-hover transition-colors ${!selectedStrategyId ? 'text-primary' : 'text-text-muted'}`}
                                 >
                                     No strategy
                                 </button>
@@ -429,7 +462,7 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                                     <button
                                         key={s.id}
                                         onClick={() => handleStrategyChange(s.id)}
-                                        className={`w-full text-left px-3 py-2 text-[11px] hover:bg-white/[0.05] transition-colors ${selectedStrategyId === s.id ? 'text-primary' : 'text-gray-300'}`}
+                                        className={`w-full text-left px-3 py-2 text-[11px] hover:bg-surface-hover transition-colors ${selectedStrategyId === s.id ? 'text-primary' : 'text-text-secondary'}`}
                                     >
                                         {s.name}
                                     </button>
@@ -439,13 +472,12 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                     </div>
                 </div>
 
-                {/* Setup Checklist - shown when a strategy with checklist is selected */}
                 {selectedStrategyId && strategy?.checklist?.items && strategy.checklist.items.length > 0 && (
                     <div className="space-y-2">
-                        <div className="text-[9px] font-black uppercase tracking-[0.18em] text-gray-500">
+                        <div className="text-[9px] font-black uppercase tracking-[0.18em] text-text-muted">
                             Setup Checklist
                             {strategy.checklist.name && (
-                                <span className="text-gray-600 ml-1">({strategy.checklist.name})</span>
+                                <span className="text-text-muted ml-1">({strategy.checklist.name})</span>
                             )}
                         </div>
                         <SetupChecklist
@@ -460,7 +492,7 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                 )}
 
                 <div className="space-y-2">
-                    <div className="text-[9px] font-black uppercase tracking-[0.18em] text-gray-500">Tags</div>
+                    <div className="text-[9px] font-black uppercase tracking-[0.18em] text-text-muted">Tags</div>
                     <div className="flex flex-wrap gap-1">
                         {allTags.map(tag => {
                             const isSelected = selectedTagIds.includes(tag.id);
@@ -470,8 +502,8 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                                     onClick={() => handleToggleTag(tag.id)}
                                     className={`px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-[0.08em] border transition-all ${
                                         isSelected
-                                            ? 'bg-white/[0.08] border-white/20'
-                                            : 'bg-white/[0.02] border-white/[0.06] text-gray-600 hover:text-white hover:border-white/10'
+                                            ? 'bg-surface-hover border-border-color'
+                                            : 'bg-surface-elevated border-border-subtle text-text-muted hover:text-text-primary hover:border-border-color'
                                     }`}
                                     style={isSelected && tag.color ? { color: tag.color, borderColor: tag.color + '40' } : {}}
                                 >
@@ -481,7 +513,7 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                         })}
                         <button
                             onClick={() => setShowTagInput(!showTagInput)}
-                            className="px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-[0.08em] border border-white/[0.06] text-gray-600 hover:text-white hover:border-white/10 transition-all flex items-center gap-1"
+                            className="px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-[0.08em] border border-border-subtle text-text-muted hover:text-text-primary hover:border-border-color transition-all flex items-center gap-1"
                         >
                             <Plus size={9} /> New
                         </button>
@@ -499,7 +531,7 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                                     }
                                 }}
                                 placeholder="Tag name..."
-                                className="flex-1 px-2 py-1 bg-white/[0.03] border border-white/[0.08] rounded-lg text-[11px] text-white placeholder-gray-600 focus:border-primary/40 focus:outline-none"
+                                className="flex-1 px-2 py-1 bg-surface-elevated border border-border-subtle rounded-lg text-[11px] text-white placeholder-gray-600 focus:border-primary/40 focus:outline-none"
                                 autoFocus
                             />
                             <button
@@ -511,7 +543,7 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                             </button>
                             <button
                                 onClick={() => { setShowTagInput(false); setNewTagName(''); }}
-                                className="p-1 text-gray-500 hover:text-white transition-colors"
+                                className="p-1 text-text-muted hover:text-text-primary transition-colors"
                             >
                                 <X size={12} />
                             </button>
@@ -520,12 +552,11 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                 </div>
 
                 <div className="space-y-2">
-                    <div className="text-[9px] font-black uppercase tracking-[0.18em] text-gray-500">Notes</div>
-                    <textarea
+                    <div className="text-[9px] font-black uppercase tracking-[0.18em] text-text-muted">Notes</div>
+                    <RichTextEditor
                         value={notes}
-                        onChange={e => setNotes(e.target.value)}
+                        onChange={setNotes}
                         placeholder="Add notes about this trade..."
-                        className="w-full h-24 bg-white/[0.03] border border-white/[0.08] rounded-lg px-3 py-2 text-[12px] text-gray-200 placeholder-gray-600 resize-none focus:outline-none focus:border-primary/40 transition-colors"
                     />
                 </div>
 
@@ -538,7 +569,6 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                 </button>
             </div>
 
-            {/* Share Trade Modal */}
             <ShareTradeModal
                 isOpen={shareModalOpen}
                 onClose={() => setShareModalOpen(false)}

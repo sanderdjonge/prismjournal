@@ -6,7 +6,6 @@ import { z } from 'zod';
 import { withAdmin } from '@/lib/api/withAdmin';
 import type { AdminSession } from '@/lib/api/withAdmin';
 import { deleteFile } from '@/lib/storage';
-import { checkLimit, Limiters } from '@/lib/rate-limit-redis';
 import { ok, badRequest, notFound, internalError } from '@/lib/api/responses';
 import logger from '@/lib/logger';
 
@@ -51,9 +50,6 @@ async function createAuditLog(
 }
 
 export const GET = withAdmin(async (request: NextRequest, _ctx: Record<string, unknown>, session: AdminSession) => {
-  const rateLimitResponse = await checkLimit(request, Limiters.admin);
-  if (rateLimitResponse) return rateLimitResponse;
-
   const { searchParams } = new URL(request.url);
   const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1);
   const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20') || 20));
@@ -119,9 +115,6 @@ const updateUserSchema = z.object({
 });
 
 export const PATCH = withAdmin(async (request: NextRequest, _ctx: Record<string, unknown>, session: AdminSession) => {
-  const rateLimitResponse = await checkLimit(request, Limiters.admin);
-  if (rateLimitResponse) return rateLimitResponse;
-
   try {
     const bodyValidation = await validateBody(request, updateUserSchema);
     if (!bodyValidation.success) return bodyValidation.response;
@@ -180,9 +173,6 @@ const sendResetSchema = z.object({
 });
 
 export const POST = withAdmin(async (request: NextRequest, _ctx: Record<string, unknown>, session: AdminSession) => {
-  const rateLimitResponse = await checkLimit(request, Limiters.admin);
-  if (rateLimitResponse) return rateLimitResponse;
-
   try {
     const bodyValidation = await validateBody(request, sendResetSchema);
     if (!bodyValidation.success) return bodyValidation.response;
@@ -239,9 +229,6 @@ export const POST = withAdmin(async (request: NextRequest, _ctx: Record<string, 
 });
 
 export const DELETE = withAdmin(async (request: NextRequest, _ctx: Record<string, unknown>, session: AdminSession) => {
-  const rateLimitResponse = await checkLimit(request, Limiters.admin);
-  if (rateLimitResponse) return rateLimitResponse;
-
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');

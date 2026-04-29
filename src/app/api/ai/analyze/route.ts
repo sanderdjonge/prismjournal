@@ -5,6 +5,11 @@ import { internalError, ok } from '@/lib/api/responses';
 import { validateBody } from '@/lib/validations/common';
 import { z } from 'zod';
 
+// Security note (3.2, 3.4): The prompt and trade fields are sent to the AI
+// model with minimal validation. This is inherent to LLM chat — guardrails
+// (topic restriction, output filtering) can be added as the AI feature matures.
+// The trade field accepts z.record(z.unknown()) intentionally for flexibility.
+
 const analyzeSchema = z.object({
     prompt: z.string().optional(),
     trade: z.record(z.unknown()).optional(),

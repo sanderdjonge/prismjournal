@@ -49,7 +49,7 @@ const SHORT_NAMES: Record<string, string> = {
 
 export function EventBadge({ event }: { event: EconomicEvent }) {
   const displayName = SHORT_NAMES[event.name] || event.name.slice(0, 8);
-  const colorClass = CURRENCY_COLORS[event.currency] || 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+  const colorClass = CURRENCY_COLORS[event.currency] || 'bg-gray-500/20 text-text-muted border-gray-500/30';
 
   return (
     <span

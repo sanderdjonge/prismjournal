@@ -18,8 +18,13 @@ describe('calcExitEfficiency', () => {
         // mae=10, mfe=10, exitDist=0 → (10+0)/(10+10)*100 = 50
         expect(calcExitEfficiency(10, 10, 0)).toBe(50);
     });
-    it('returns null when any input is null', () => {
-        expect(calcExitEfficiency(null, 20, 10)).toBeNull();
+    it('treats null MAE as 0 (no adverse excursion)', () => {
+        // NULL MAE is a valid case — means no adverse excursion recorded for the trade.
+        // The function treats it as 0, not null (per documented behavior).
+        expect(calcExitEfficiency(null, 20, 10)).toBe(50);
+    });
+
+    it('returns null when MFE or exit distance is null', () => {
         expect(calcExitEfficiency(10, null, 10)).toBeNull();
         expect(calcExitEfficiency(10, 20, null)).toBeNull();
     });

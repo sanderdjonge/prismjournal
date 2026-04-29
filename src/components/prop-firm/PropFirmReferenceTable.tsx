@@ -44,25 +44,25 @@ export default function PropFirmReferenceTable({ firms }: PropFirmReferenceTable
         <div className="overflow-x-auto">
             <table className="w-full text-xs">
                 <thead>
-                    <tr className="border-b border-white/5">
+                    <tr className="border-b border-border-subtle">
                         {['Prop Firm', 'Type', 'Phases', 'Daily Loss', 'Max DD', 'DD Type', 'News', 'Weekend', 'EA', 'Scaling'].map(h => (
-                            <th key={h} className="px-3 py-2 text-left text-[10px] font-black uppercase tracking-widest text-gray-500">{h}</th>
+                            <th key={h} className="px-3 py-2 text-left text-[10px] font-black uppercase tracking-widest text-text-muted">{h}</th>
                         ))}
                     </tr>
                 </thead>
                 <tbody>
                     {firms.map((firm) => (
-                        <tr key={firm.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                        <tr key={firm.id} className="border-b border-border-subtle hover:bg-surface-hover transition-colors">
                             <td className="px-3 py-3 font-bold text-white">{firm.name}</td>
                             <td className="px-3 py-3">
-                                <span className={cn('font-bold', CHALLENGE_COLORS[firm.challengeType] ?? 'text-gray-400')}>
+                                <span className={cn('font-bold', CHALLENGE_COLORS[firm.challengeType] ?? 'text-text-muted')}>
                                     {CHALLENGE_LABELS[firm.challengeType] ?? firm.challengeType.replace(/_/g, ' ')}
                                 </span>
                             </td>
-                            <td className="px-3 py-3 text-gray-300">{parsePhaseCount(firm.phasesConfig) || '—'}</td>
+                            <td className="px-3 py-3 text-text-secondary">{parsePhaseCount(firm.phasesConfig) || '—'}</td>
                             <td className="px-3 py-3 text-orange-400 font-bold">{firm.dailyLossLimit}%</td>
                             <td className="px-3 py-3 text-orange-400 font-bold">{firm.maxDrawdown}%</td>
-                            <td className="px-3 py-3 text-gray-300">{firm.drawdownType}</td>
+                            <td className="px-3 py-3 text-text-secondary">{firm.drawdownType}</td>
                             {[firm.allowNewsTrading, firm.allowWeekendHolding, firm.allowEA].map((allowed, i) => (
                                 <td key={i} className="px-3 py-3">
                                     {allowed

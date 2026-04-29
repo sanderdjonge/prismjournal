@@ -97,7 +97,7 @@ function PropFirmsContent() {
                 {/* Header */}
                 <div>
                     <h1 className="text-2xl font-bold text-white">Prop Firm Comparison</h1>
-                    <p className="text-sm text-gray-400 mt-1">
+                    <p className="text-sm text-text-muted mt-1">
                         Compare prop firm rules and find the best fit for your trading style
                     </p>
                 </div>
@@ -112,7 +112,7 @@ function PropFirmsContent() {
                             <div
                                 key={firm.id}
                                 className={cn(
-                                    "glass-card p-6 border-white/5 transition-all",
+                                    "glass-card p-6 border-border-subtle transition-all",
                                     hasAccount && "ring-2 ring-primary/30"
                                 )}
                             >
@@ -137,7 +137,7 @@ function PropFirmsContent() {
                                             href={firm.website}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="text-gray-400 hover:text-white transition-all"
+                                            className="text-text-muted hover:text-text-primary transition-all"
                                         >
                                             <ExternalLink size={16} />
                                         </a>
@@ -159,26 +159,26 @@ function PropFirmsContent() {
                                 {/* Rules Grid */}
                                 <div className="space-y-3 mb-4">
                                     <div className="flex items-center justify-between text-sm">
-                                        <span className="text-gray-400">Daily Loss</span>
+                                        <span className="text-text-muted">Daily Loss</span>
                                         <span className="text-orange-400 font-bold">{firm.dailyLossLimit}%</span>
                                     </div>
                                     <div className="flex items-center justify-between text-sm">
-                                        <span className="text-gray-400">Max Drawdown</span>
+                                        <span className="text-text-muted">Max Drawdown</span>
                                         <span className="text-orange-400 font-bold">{firm.maxDrawdown}%</span>
                                     </div>
                                     <div className="flex items-center justify-between text-sm">
-                                        <span className="text-gray-400">DD Type</span>
+                                        <span className="text-text-muted">DD Type</span>
                                         <span className="text-white">{firm.drawdownType}</span>
                                     </div>
                                     <div className="flex items-center justify-between text-sm">
-                                        <span className="text-gray-400">Phases</span>
+                                        <span className="text-text-muted">Phases</span>
                                         <span className="text-white">{phases.length || 'N/A'}</span>
                                     </div>
                                 </div>
 
                                 {/* Restrictions */}
-                                <div className="pt-4 border-t border-white/5">
-                                    <p className="text-xs text-gray-500 mb-2">Restrictions</p>
+                                <div className="pt-4 border-t border-border-subtle">
+                                    <p className="text-xs text-text-muted mb-2">Restrictions</p>
                                     <div className="flex flex-wrap gap-2">
                                         <span className={cn(
                                             "flex items-center gap-1 text-xs px-2 py-1 rounded",
@@ -212,7 +212,7 @@ function PropFirmsContent() {
 
                                 {/* Scaling Plan */}
                                 {firm.hasScalingPlan && (
-                                    <div className="mt-4 pt-4 border-t border-white/5">
+                                    <div className="mt-4 pt-4 border-t border-border-subtle">
                                         <span className="flex items-center gap-1 text-xs text-primary">
                                             <Star size={12} />
                                             Scaling Plan Available
@@ -226,8 +226,8 @@ function PropFirmsContent() {
 
                 {propFirms.length === 0 && (
                     <div className="text-center py-12">
-                        <Building2 size={48} className="mx-auto text-gray-600 mb-4" />
-                        <p className="text-gray-400">No prop firms found</p>
+                        <Building2 size={48} className="mx-auto text-text-muted mb-4" />
+                        <p className="text-text-muted">No prop firms found</p>
                     </div>
                 )}
             </div>

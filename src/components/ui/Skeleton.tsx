@@ -6,7 +6,7 @@ interface SkeletonProps {
 
 export function Skeleton({ className }: SkeletonProps) {
     return (
-        <div className={cn('animate-pulse rounded-xl bg-white/5', className)} />
+        <div className={cn('animate-pulse rounded-xl bg-surface-elevated', className)} />
     );
 }
 
@@ -22,7 +22,7 @@ export function SkeletonCard({ className }: SkeletonProps) {
 
 export function SkeletonRow() {
     return (
-        <div className="flex items-center gap-4 px-4 py-3 border-b border-white/5">
+        <div className="flex items-center gap-4 px-4 py-3 border-b border-border-subtle">
             <Skeleton className="h-4 w-16" />
             <Skeleton className="h-4 w-12" />
             <Skeleton className="h-4 w-20" />

@@ -32,16 +32,16 @@ async function main() {
 
     // ---- users ---------------------------------------------------------------
 
-    const adminPassword = await bcrypt.hash('Admin1234!', 12);
+    const adminPassword = await bcrypt.hash('ChangeMe123!', 12);
     const admin = await prisma.user.upsert({
-        where: { email: 'admin@prism.dev' },
+        where: { email: 'admin@example.com' },
         update: {},
         create: {
-            email: 'admin@prism.dev',
+            email: 'admin@example.com',
             name: 'Admin User',
             password: adminPassword,
-            bridgeKeyId: 'prism_admin1',
-            bridgeKeyHash: await bcrypt.hash('admin-bridge-key-dev', 8),
+            bridgeKeyId: 'seed_admin_key',
+            bridgeKeyHash: await bcrypt.hash('change-this-bridge-key', 8),
             isSuperuser: true,
             settings: {
                 create: { displayCurrency: 'USD', timezone: 'Europe/Amsterdam' },
@@ -49,16 +49,16 @@ async function main() {
         },
     });
 
-    const traderPassword = await bcrypt.hash('Trader1234!', 12);
+    const traderPassword = await bcrypt.hash('ChangeMe123!', 12);
     const trader = await prisma.user.upsert({
-        where: { email: 'trader@prism.dev' },
+        where: { email: 'trader@example.com' },
         update: {},
         create: {
-            email: 'trader@prism.dev',
+            email: 'trader@example.com',
             name: 'Alex Trader',
             password: traderPassword,
-            bridgeKeyId: 'prism_trade1',
-            bridgeKeyHash: await bcrypt.hash('trader-bridge-key-dev', 8),
+            bridgeKeyId: 'seed_trader_key',
+            bridgeKeyHash: await bcrypt.hash('change-this-bridge-key', 8),
             settings: {
                 create: { displayCurrency: 'USD', timezone: 'Europe/Amsterdam' },
             },
@@ -324,8 +324,8 @@ async function main() {
     console.log('');
     console.log('✅  Seed complete.');
     console.log('');
-    console.log('  Admin:  admin@prism.dev  / Admin1234!');
-    console.log('  Trader: trader@prism.dev / Trader1234!');
+    console.log('  Admin:  admin@example.com  / ChangeMe123!');
+    console.log('  Trader: trader@example.com / ChangeMe123!');
     console.log('');
     console.log('  Run: npx tsx prisma/seed.ts');
 }

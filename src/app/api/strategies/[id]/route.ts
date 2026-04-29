@@ -13,13 +13,11 @@ const updateStrategySchema = z.object({
 });
 
 export const GET = withAuth(async (
-    req: NextRequest,
-    _ctx: Record<string, unknown>,
+    _req: NextRequest,
+    ctx: Record<string, unknown>,
     session: Session & { user: { id: string } }
 ) => {
-    const url = new URL(req.url);
-    const pathParts = url.pathname.split('/');
-    const id = pathParts[pathParts.length - 1];
+    const { id } = await (ctx as { params: Promise<{ id: string }> }).params;
 
     const strategy = await prisma.strategy.findFirst({
         where: { id, userId: session.user.id },
@@ -48,12 +46,10 @@ export const GET = withAuth(async (
 
 export const PATCH = withAuth(async (
     req: NextRequest,
-    _ctx: Record<string, unknown>,
+    ctx: Record<string, unknown>,
     session: Session & { user: { id: string } }
 ) => {
-    const url = new URL(req.url);
-    const pathParts = url.pathname.split('/');
-    const id = pathParts[pathParts.length - 1];
+    const { id } = await (ctx as { params: Promise<{ id: string }> }).params;
 
     const validation = await validateBody(req, updateStrategySchema);
     if (!validation.success) return validation.response;
@@ -103,13 +99,11 @@ export const PATCH = withAuth(async (
 });
 
 export const DELETE = withAuth(async (
-    req: NextRequest,
-    _ctx: Record<string, unknown>,
+    _req: NextRequest,
+    ctx: Record<string, unknown>,
     session: Session & { user: { id: string } }
 ) => {
-    const url = new URL(req.url);
-    const pathParts = url.pathname.split('/');
-    const id = pathParts[pathParts.length - 1];
+    const { id } = await (ctx as { params: Promise<{ id: string }> }).params;
 
     const existing = await prisma.strategy.findFirst({
         where: { id, userId: session.user.id },

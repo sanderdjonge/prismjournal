@@ -24,9 +24,18 @@ export async function ensureStorageDir(): Promise<void> {
     }
 }
 
-// Generate unique filename
+const ALLOWED_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif']);
+
+function assertSafeFilename(filename: string): void {
+    // Reject: path traversal, leading dots (hidden files), non-word characters
+    if (!/^[\w.-]+$/.test(filename) || filename.includes('..') || filename.startsWith('.')) {
+        throw new Error('Invalid filename');
+    }
+}
+
 export function generateFilename(originalName: string): string {
-    const ext = path.extname(originalName).toLowerCase() || '.png';
+    const rawExt = path.extname(originalName).toLowerCase();
+    const ext = ALLOWED_EXTENSIONS.has(rawExt) ? rawExt : '.png';
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(2, 8);
     return `${timestamp}-${random}${ext}`;
@@ -34,6 +43,7 @@ export function generateFilename(originalName: string): string {
 
 // Save file to storage
 export async function saveFile(buffer: Buffer, filename: string): Promise<string> {
+    assertSafeFilename(filename);
     await ensureStorageDir();
     const filepath = path.join(SCREENSHOTS_DIR, filename);
     await fs.promises.writeFile(filepath, buffer);
@@ -42,6 +52,7 @@ export async function saveFile(buffer: Buffer, filename: string): Promise<string
 
 // Delete file from storage
 export async function deleteFile(filename: string): Promise<void> {
+    assertSafeFilename(filename);
     const filepath = path.join(SCREENSHOTS_DIR, filename);
     try {
         await unlink(filepath);
@@ -61,6 +72,9 @@ export async function readFile(filename: string): Promise<Buffer> {
 
 // Check if file exists
 export async function fileExists(filename: string): Promise<boolean> {
+    if (!/^\d+-[a-z0-9]+\.(png|jpg|jpeg|webp|gif)$/i.test(filename)) {
+        throw new Error('Invalid filename');
+    }
     const filepath = path.join(SCREENSHOTS_DIR, filename);
     try {
         await access(filepath);
@@ -72,6 +86,9 @@ export async function fileExists(filename: string): Promise<boolean> {
 
 // Get file stats
 export async function getFileStats(filename: string): Promise<fs.Stats | null> {
+    if (!/^\d+-[a-z0-9]+\.(png|jpg|jpeg|webp|gif)$/i.test(filename)) {
+        throw new Error('Invalid filename');
+    }
     const filepath = path.join(SCREENSHOTS_DIR, filename);
     try {
         return await fs.promises.stat(filepath);

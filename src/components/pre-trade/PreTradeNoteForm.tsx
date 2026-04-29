@@ -60,7 +60,7 @@ export function PreTradeNoteForm({ onSuccess, onCancel, compact = false }: PreTr
 
     return (
         <form onSubmit={handleSubmit} className={cn(
-            "bg-white/[0.02] border border-white/10 rounded-xl",
+            "bg-surface-elevated border border-border-color rounded-xl",
             compact ? "p-4" : "p-6"
         )}>
             {!compact && (
@@ -70,7 +70,7 @@ export function PreTradeNoteForm({ onSuccess, onCancel, compact = false }: PreTr
                         <button
                             type="button"
                             onClick={onCancel}
-                            className="text-gray-500 hover:text-gray-300 transition-colors"
+                            className="text-text-muted hover:text-text-secondary transition-colors"
                         >
                             <X size={16} />
                         </button>
@@ -83,7 +83,7 @@ export function PreTradeNoteForm({ onSuccess, onCancel, compact = false }: PreTr
                 <div className="flex gap-3">
                     {/* Symbol Input */}
                     <div className="flex-1">
-                        <label className="block text-xs font-medium text-gray-400 mb-1.5">
+                        <label className="block text-xs font-medium text-text-muted mb-1.5">
                             Symbol
                         </label>
                         <input
@@ -91,16 +91,16 @@ export function PreTradeNoteForm({ onSuccess, onCancel, compact = false }: PreTr
                             value={symbol}
                             onChange={(e) => setSymbol(e.target.value.toUpperCase())}
                             placeholder="e.g., EURUSD"
-                            className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
+                            className="w-full px-3 py-2 bg-surface-elevated border border-border-color rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
                         />
                     </div>
 
                     {/* Direction Toggle */}
                     <div className="w-32">
-                        <label className="block text-xs font-medium text-gray-400 mb-1.5">
+                        <label className="block text-xs font-medium text-text-muted mb-1.5">
                             Direction
                         </label>
-                        <div className="flex rounded-lg overflow-hidden border border-white/10">
+                        <div className="flex rounded-lg overflow-hidden border border-border-color">
                             <button
                                 type="button"
                                 onClick={() => setDirection('LONG')}
@@ -108,7 +108,7 @@ export function PreTradeNoteForm({ onSuccess, onCancel, compact = false }: PreTr
                                     "flex-1 px-2 py-2 text-xs font-medium flex items-center justify-center gap-1 transition-colors",
                                     direction === 'LONG'
                                         ? "bg-profit/20 text-profit"
-                                        : "bg-black/40 text-gray-500 hover:text-gray-300"
+                                        : "bg-surface-elevated text-text-muted hover:text-text-secondary"
                                 )}
                             >
                                 <ArrowUpRight size={12} />
@@ -121,7 +121,7 @@ export function PreTradeNoteForm({ onSuccess, onCancel, compact = false }: PreTr
                                     "flex-1 px-2 py-2 text-xs font-medium flex items-center justify-center gap-1 transition-colors",
                                     direction === 'SHORT'
                                         ? "bg-loss/20 text-loss"
-                                        : "bg-black/40 text-gray-500 hover:text-gray-300"
+                                        : "bg-surface-elevated text-text-muted hover:text-text-secondary"
                                 )}
                             >
                                 <ArrowDownRight size={12} />
@@ -133,21 +133,21 @@ export function PreTradeNoteForm({ onSuccess, onCancel, compact = false }: PreTr
 
                 {/* Planned Entry (Optional) */}
                 <div>
-                    <label className="block text-xs font-medium text-gray-400 mb-1.5">
-                        Planned Entry <span className="text-gray-600">(optional)</span>
+                    <label className="block text-xs font-medium text-text-muted mb-1.5">
+                        Planned Entry <span className="text-text-muted">(optional)</span>
                     </label>
                     <input
                         type="text"
                         value={plannedEntry}
                         onChange={(e) => setPlannedEntry(e.target.value)}
                         placeholder="e.g., 1.0850"
-                        className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
+                        className="w-full px-3 py-2 bg-surface-elevated border border-border-color rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
                     />
                 </div>
 
                 {/* Analysis Body */}
                 <div>
-                    <label className="block text-xs font-medium text-gray-400 mb-1.5">
+                    <label className="block text-xs font-medium text-text-muted mb-1.5">
                         Analysis / Thesis
                     </label>
                     <textarea
@@ -155,7 +155,7 @@ export function PreTradeNoteForm({ onSuccess, onCancel, compact = false }: PreTr
                         onChange={(e) => setBody(e.target.value)}
                         placeholder="Describe your trade idea, setup, reasoning..."
                         rows={compact ? 3 : 4}
-                        className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 resize-none"
+                        className="w-full px-3 py-2 bg-surface-elevated border border-border-color rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 resize-none"
                     />
                 </div>
 
@@ -172,7 +172,7 @@ export function PreTradeNoteForm({ onSuccess, onCancel, compact = false }: PreTr
                         <button
                             type="button"
                             onClick={onCancel}
-                            className="px-4 py-2 text-xs font-medium text-gray-400 hover:text-gray-200 transition-colors"
+                            className="px-4 py-2 text-xs font-medium text-text-muted hover:text-gray-200 transition-colors"
                         >
                             Cancel
                         </button>

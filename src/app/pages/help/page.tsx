@@ -23,7 +23,7 @@ type Section = {
 
 function SectionCard({ title, icon, children, id }: { title: string; icon: React.ReactNode; children: React.ReactNode; id: string }) {
     return (
-        <section id={id} className="glass-card p-6 border-white/5 space-y-5 scroll-mt-4">
+        <section id={id} className="glass-card p-6 border-border-subtle space-y-5 scroll-mt-4">
             <h2 className="text-sm font-black uppercase tracking-widest text-white flex items-center gap-2">
                 <span className="text-primary">{icon}</span>
                 {title}
@@ -36,13 +36,13 @@ function SectionCard({ title, icon, children, id }: { title: string; icon: React
 function SubSection({ title, children }: { title: string; children: React.ReactNode }) {
     const [open, setOpen] = useState(true);
     return (
-        <div className="border-t border-white/5 pt-4">
+        <div className="border-t border-border-subtle pt-4">
             <button
                 onClick={() => setOpen(o => !o)}
                 className="flex items-center gap-2 w-full text-left mb-3 group"
             >
                 <span className="text-white font-black text-xs uppercase tracking-wider group-hover:text-primary transition-colors">{title}</span>
-                {open ? <ChevronDown size={12} className="text-gray-500" /> : <ChevronRight size={12} className="text-gray-500" />}
+                {open ? <ChevronDown size={12} className="text-text-muted" /> : <ChevronRight size={12} className="text-text-muted" />}
             </button>
             {open && <div className="space-y-3">{children}</div>}
         </div>
@@ -50,14 +50,14 @@ function SubSection({ title, children }: { title: string; children: React.ReactN
 }
 
 function P({ children }: { children: React.ReactNode }) {
-    return <p className="text-sm text-gray-400 leading-relaxed">{children}</p>;
+    return <p className="text-sm text-text-muted leading-relaxed">{children}</p>;
 }
 
 function Note({ children }: { children: React.ReactNode }) {
     return (
         <div className="flex gap-2 bg-primary/5 border border-primary/15 rounded-lg px-4 py-3">
             <Info size={14} className="text-primary mt-0.5 shrink-0" />
-            <p className="text-xs text-gray-300 leading-relaxed">{children}</p>
+            <p className="text-xs text-text-secondary leading-relaxed">{children}</p>
         </div>
     );
 }
@@ -66,7 +66,7 @@ function Tip({ children }: { children: React.ReactNode }) {
     return (
         <div className="flex gap-2 bg-accent/5 border border-accent/15 rounded-lg px-4 py-3">
             <Lightbulb size={14} className="text-accent mt-0.5 shrink-0" />
-            <p className="text-xs text-gray-300 leading-relaxed">{children}</p>
+            <p className="text-xs text-text-secondary leading-relaxed">{children}</p>
         </div>
     );
 }
@@ -75,13 +75,13 @@ function Warning({ children }: { children: React.ReactNode }) {
     return (
         <div className="flex gap-2 bg-yellow-500/5 border border-yellow-500/15 rounded-lg px-4 py-3">
             <AlertTriangle size={14} className="text-yellow-400 mt-0.5 shrink-0" />
-            <p className="text-xs text-gray-300 leading-relaxed">{children}</p>
+            <p className="text-xs text-text-secondary leading-relaxed">{children}</p>
         </div>
     );
 }
 
 function Code({ children }: { children: React.ReactNode }) {
-    return <code className="bg-white/5 text-primary text-xs font-mono px-1.5 py-0.5 rounded">{children}</code>;
+    return <code className="bg-surface-elevated text-primary text-xs font-mono px-1.5 py-0.5 rounded">{children}</code>;
 }
 
 function StatTable({ rows }: { rows: [string, string, string?][] }) {
@@ -90,9 +90,9 @@ function StatTable({ rows }: { rows: [string, string, string?][] }) {
             <table className="w-full text-xs border-collapse">
                 <tbody>
                     {rows.map(([label, value, sub], i) => (
-                        <tr key={i} className="border-b border-white/5 last:border-0">
-                            <td className="py-2 pr-4 text-gray-500 font-bold uppercase tracking-wider w-1/3">{label}</td>
-                            <td className="py-2 text-gray-200">{value}{sub && <span className="text-gray-500 ml-2">{sub}</span>}</td>
+                        <tr key={i} className="border-b border-border-subtle last:border-0">
+                            <td className="py-2 pr-4 text-text-muted font-bold uppercase tracking-wider w-1/3">{label}</td>
+                            <td className="py-2 text-gray-200">{value}{sub && <span className="text-text-muted ml-2">{sub}</span>}</td>
                         </tr>
                     ))}
                 </tbody>
@@ -106,17 +106,17 @@ function BenchmarkTable({ rows, headers }: { rows: string[][]; headers: string[]
         <div className="overflow-x-auto">
             <table className="w-full text-xs border-collapse">
                 <thead>
-                    <tr className="border-b border-white/10">
+                    <tr className="border-b border-border-color">
                         {headers.map((h, i) => (
-                            <th key={i} className="py-2 pr-4 text-left text-gray-500 font-black uppercase tracking-wider">{h}</th>
+                            <th key={i} className="py-2 pr-4 text-left text-text-muted font-black uppercase tracking-wider">{h}</th>
                         ))}
                     </tr>
                 </thead>
                 <tbody>
                     {rows.map((row, i) => (
-                        <tr key={i} className="border-b border-white/5 last:border-0">
+                        <tr key={i} className="border-b border-border-subtle last:border-0">
                             {row.map((cell, j) => (
-                                <td key={j} className="py-2 pr-4 text-gray-300">{cell}</td>
+                                <td key={j} className="py-2 pr-4 text-text-secondary">{cell}</td>
                             ))}
                         </tr>
                     ))}
@@ -149,7 +149,7 @@ function GettingStartedSection() {
 
             <SubSection title="Syncing trades from MetaTrader 5">
                 <P>PrismJournal syncs automatically from MT5 via a <strong className="text-white">Bridge Key</strong> — a secure token that identifies your account.</P>
-                <ol className="space-y-2 text-sm text-gray-400 list-decimal list-inside leading-relaxed">
+                <ol className="space-y-2 text-sm text-text-muted list-decimal list-inside leading-relaxed">
                     <li>Open your account settings and copy the <strong className="text-white">Bridge Key</strong>.</li>
                     <li>Attach the <strong className="text-white">PrismSync</strong> Expert Advisor (<Code>PrismSync.mq5</Code>) to any chart in MT5.</li>
                     <li>Paste your Bridge Key and your PrismJournal server URL into the EA settings.</li>
@@ -302,7 +302,7 @@ function JournalSection() {
 
                 <div className="space-y-4">
                     <div>
-                        <p className="text-xs font-black uppercase tracking-wider text-gray-300 mb-2">Mood</p>
+                        <p className="text-xs font-black uppercase tracking-wider text-text-secondary mb-2">Mood</p>
                         <BenchmarkTable
                             headers={['Mood', 'What it means']}
                             rows={[
@@ -318,7 +318,7 @@ function JournalSection() {
                     </div>
 
                     <div>
-                        <p className="text-xs font-black uppercase tracking-wider text-gray-300 mb-2">Plan Compliance</p>
+                        <p className="text-xs font-black uppercase tracking-wider text-text-secondary mb-2">Plan Compliance</p>
                         <StatTable rows={[
                             ['Followed', 'Trade taken exactly as your rules dictate'],
                             ['Partial', 'Deviated from part of the plan (moved stop, exited early, etc.)'],
@@ -328,7 +328,7 @@ function JournalSection() {
                     </div>
 
                     <div>
-                        <p className="text-xs font-black uppercase tracking-wider text-gray-300 mb-2">Quality Ratings (1–5)</p>
+                        <p className="text-xs font-black uppercase tracking-wider text-text-secondary mb-2">Quality Ratings (1–5)</p>
                         <StatTable rows={[
                             ['Entry Rating', 'How well-timed and well-placed was your entry?'],
                             ['Exit Rating', 'Did you exit at target, or cut early / hold too long?'],
@@ -340,7 +340,7 @@ function JournalSection() {
 
             <SubSection title="R-Multiple explained">
                 <P><strong className="text-white">R</strong> stands for Risk. An R-multiple expresses your trade result in units of the risk you took:</P>
-                <div className="bg-white/[0.03] rounded-lg p-4 text-xs font-mono text-gray-300 space-y-1">
+                <div className="bg-surface-elevated rounded-lg p-4 text-xs font-mono text-text-secondary space-y-1">
                     <p>Risk in price = |Entry Price − Stop Loss|</p>
                     <p>R-Multiple = Trade P&L ÷ Dollar value of 1R</p>
                 </div>
@@ -525,7 +525,7 @@ function StatisticsSection() {
     return (
         <SectionCard id="statistics" title="Understanding Your Statistics" icon={<TrendingUp size={16} />}>
             <SubSection title="Win Rate">
-                <div className="bg-white/[0.03] rounded-lg p-3 text-xs font-mono text-gray-300">
+                <div className="bg-surface-elevated rounded-lg p-3 text-xs font-mono text-text-secondary">
                     Win Rate (%) = (Winning Trades / Total Closed Trades) × 100
                 </div>
                 <P>What win rate is "good" depends entirely on your average winner vs. average loser:</P>
@@ -541,7 +541,7 @@ function StatisticsSection() {
             </SubSection>
 
             <SubSection title="Profit Factor">
-                <div className="bg-white/[0.03] rounded-lg p-3 text-xs font-mono text-gray-300">
+                <div className="bg-surface-elevated rounded-lg p-3 text-xs font-mono text-text-secondary">
                     Profit Factor = Sum of all winning P&Ls / |Sum of all losing P&Ls|
                 </div>
                 <BenchmarkTable
@@ -560,13 +560,13 @@ function StatisticsSection() {
             </SubSection>
 
             <SubSection title="Expectancy">
-                <div className="bg-white/[0.03] rounded-lg p-3 text-xs font-mono text-gray-300 space-y-1">
+                <div className="bg-surface-elevated rounded-lg p-3 text-xs font-mono text-text-secondary space-y-1">
                     <p>Expectancy = Total P&L / Number of Closed Trades</p>
                     <p>— or —</p>
                     <p>Expectancy = (Win Rate × Avg Winner) − (Loss Rate × Avg Loser)</p>
                 </div>
                 <P>Example: 55% win rate, $150 average winner, $100 average loser:</P>
-                <div className="bg-white/[0.03] rounded-lg p-3 text-xs font-mono text-gray-300">
+                <div className="bg-surface-elevated rounded-lg p-3 text-xs font-mono text-text-secondary">
                     (0.55 × $150) − (0.45 × $100) = $82.50 − $45 = <span className="text-accent">$37.50 per trade</span>
                 </div>
                 <P>At 80 trades per month: projected monthly profit = $37.50 × 80 = $3,000.</P>
@@ -574,7 +574,7 @@ function StatisticsSection() {
             </SubSection>
 
             <SubSection title="Max Drawdown">
-                <div className="bg-white/[0.03] rounded-lg p-3 text-xs font-mono text-gray-300 space-y-1">
+                <div className="bg-surface-elevated rounded-lg p-3 text-xs font-mono text-text-secondary space-y-1">
                     <p>At each trade: Drawdown = Peak P&L so far − Current P&L</p>
                     <p>Max Drawdown = largest Drawdown value across all trades</p>
                 </div>
@@ -613,7 +613,7 @@ function PropFirmSection({ firms, loading }: { firms: PropFirmRow[]; loading: bo
         <SectionCard id="prop-firms" title="Prop Firm Reference" icon={<Building2 size={16} />}>
             <P>Rules and limits for all supported prop firms. Used when creating or editing a prop firm account.</P>
             {loading ? (
-                <div className="flex items-center gap-2 py-4 text-gray-500">
+                <div className="flex items-center gap-2 py-4 text-text-muted">
                     <Loader2 size={16} className="animate-spin" />
                     <span className="text-xs">Loading…</span>
                 </div>
@@ -682,14 +682,14 @@ function FAQSection() {
                             onClick={() => setOpen(open === i ? null : i)}
                             className="flex items-start justify-between gap-4 w-full text-left group"
                         >
-                            <span className="text-sm font-bold text-gray-200 group-hover:text-white transition-colors">{item.q}</span>
+                            <span className="text-sm font-bold text-gray-200 group-hover:text-text-primary transition-colors">{item.q}</span>
                             {open === i
-                                ? <ChevronDown size={14} className="text-gray-500 mt-0.5 shrink-0" />
-                                : <ChevronRight size={14} className="text-gray-500 mt-0.5 shrink-0" />
+                                ? <ChevronDown size={14} className="text-text-muted mt-0.5 shrink-0" />
+                                : <ChevronRight size={14} className="text-text-muted mt-0.5 shrink-0" />
                             }
                         </button>
                         {open === i && (
-                            <p className="mt-2 text-sm text-gray-400 leading-relaxed">{item.a}</p>
+                            <p className="mt-2 text-sm text-text-muted leading-relaxed">{item.a}</p>
                         )}
                     </div>
                 ))}
@@ -724,7 +724,7 @@ function SideNav({ active }: { active: string }) {
                         'flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all',
                         active === s.id
                             ? 'bg-primary/10 text-primary border border-primary/20'
-                            : 'text-gray-500 hover:text-gray-300 hover:bg-white/5',
+                            : 'text-text-muted hover:text-text-secondary hover:bg-surface-hover',
                     )}
                 >
                     {s.icon}
@@ -774,7 +774,7 @@ function HelpContent() {
                     <HelpCircle size={24} className="text-primary" />
                     Help & Reference
                 </h1>
-                <p className="text-sm text-gray-400 mt-1">Everything you need to get the most out of PrismJournal</p>
+                <p className="text-sm text-text-muted mt-1">Everything you need to get the most out of PrismJournal</p>
             </div>
 
             <div className="flex gap-8 items-start">

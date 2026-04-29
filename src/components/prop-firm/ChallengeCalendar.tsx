@@ -83,7 +83,7 @@ export function ChallengeCalendar({
     }
 
     const getCellStyle = (data: DailyData | null): { bg: string; border: string; text: string } => {
-        if (!data) return { bg: 'bg-white/5', border: 'border-white/10', text: 'text-gray-400' };
+        if (!data) return { bg: 'bg-surface-elevated', border: 'border-border-color', text: 'text-text-muted' };
         
         if (data.isLimitBreached) {
             return { bg: 'bg-red-500/30', border: 'border-red-500/50', text: 'text-red-300' };
@@ -97,7 +97,7 @@ export function ChallengeCalendar({
         if (data.pnl < 0) {
             return { bg: 'bg-loss/10', border: 'border-loss/20', text: 'text-loss' };
         }
-        return { bg: 'bg-white/5', border: 'border-white/10', text: 'text-gray-400' };
+        return { bg: 'bg-surface-elevated', border: 'border-border-color', text: 'text-text-muted' };
     };
 
     return (
@@ -106,17 +106,17 @@ export function ChallengeCalendar({
             <div className="flex items-center justify-between">
                 <button
                     onClick={() => setCurrentMonth(dayjs(currentMonth).subtract(1, 'month').toDate())}
-                    className="p-1 rounded bg-white/5 hover:bg-white/10 transition-colors"
+                    className="p-1 rounded bg-surface-elevated hover:bg-surface-hover transition-colors"
                 >
-                    <ChevronLeft className="w-4 h-4 text-gray-400" />
+                    <ChevronLeft className="w-4 h-4 text-text-muted" />
                 </button>
                 <div className="text-center">
                     <h3 className="text-xs font-bold text-white">{monthStart.format('MMMM YYYY')}</h3>
                     <div className="flex items-center justify-center gap-2 text-[10px] mt-0.5">
                         <span className="text-profit">{monthStats.winDays} win {monthStats.winDays === 1 ? 'day' : 'days'}</span>
-                        <span className="text-gray-600">·</span>
+                        <span className="text-text-muted">·</span>
                         <span className="text-loss">{monthStats.lossDays} loss {monthStats.lossDays === 1 ? 'day' : 'days'}</span>
-                        <span className="text-gray-600">·</span>
+                        <span className="text-text-muted">·</span>
                         <span className={monthStats.pnl >= 0 ? 'text-profit' : 'text-loss'}>
                             {monthStats.pnl >= 0 ? '+' : ''}{fmt(monthStats.pnl, { compact: true })} profit
                         </span>
@@ -124,16 +124,16 @@ export function ChallengeCalendar({
                 </div>
                 <button
                     onClick={() => setCurrentMonth(dayjs(currentMonth).add(1, 'month').toDate())}
-                    className="p-1 rounded bg-white/5 hover:bg-white/10 transition-colors"
+                    className="p-1 rounded bg-surface-elevated hover:bg-surface-hover transition-colors"
                 >
-                    <ChevronRight className="w-4 h-4 text-gray-400" />
+                    <ChevronRight className="w-4 h-4 text-text-muted" />
                 </button>
             </div>
 
             {/* Day Headers */}
             <div className="grid grid-cols-7 gap-0.5">
                 {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-                    <div key={day} className="text-center text-[10px] text-gray-500 font-medium py-0.5">
+                    <div key={day} className="text-center text-[10px] text-text-muted font-medium py-0.5">
                         {day}
                     </div>
                 ))}
@@ -175,7 +175,7 @@ export function ChallengeCalendar({
             </div>
 
             {/* Legend */}
-            <div className="flex items-center justify-center gap-3 text-xs text-gray-500">
+            <div className="flex items-center justify-center gap-3 text-xs text-text-muted">
                 <div className="flex items-center gap-1">
                     <div className="w-2.5 h-2.5 rounded-sm bg-profit/10 border border-profit/20" />
                     <span>Profit</span>
@@ -196,31 +196,31 @@ export function ChallengeCalendar({
 
             {/* Selected Day Detail */}
             {selectedDay && (
-                <div className="p-2 bg-white/5 rounded-lg border border-white/10">
+                <div className="p-2 bg-surface-elevated rounded-lg border border-border-color">
                     <div className="flex items-center justify-between mb-1">
                         <h4 className="text-xs font-bold text-white">
                             {dayjs(selectedDay.date).format('dddd, MMM D')}
                         </h4>
                         <button
                             onClick={() => setSelectedDay(null)}
-                            className="text-gray-500 hover:text-white text-xs"
+                            className="text-text-muted hover:text-text-primary text-xs"
                         >
                             ✕
                         </button>
                     </div>
                     {selectedDay.tradeCount === 0 && selectedDay.pnl === 0 && !dailyData.find(d => d.date === selectedDay.date) ? (
-                        <p className="text-xs text-gray-500">No trades recorded on this day.</p>
+                        <p className="text-xs text-text-muted">No trades recorded on this day.</p>
                     ) : (
                         <>
                             <div className="grid grid-cols-2 gap-2 text-xs">
                                 <div>
-                                    <span className="text-gray-500">Daily P&L:</span>
+                                    <span className="text-text-muted">Daily P&L:</span>
                                     <span className={`ml-1 font-bold ${selectedDay.pnl >= 0 ? 'text-profit' : 'text-loss'}`}>
                                         {selectedDay.pnl >= 0 ? '+' : ''}{fmt(selectedDay.pnl)}
                                     </span>
                                 </div>
                                 <div>
-                                    <span className="text-gray-500">Daily loss used:</span>
+                                    <span className="text-text-muted">Daily loss used:</span>
                                     <span className={`ml-1 font-bold ${selectedDay.dailyLossUsedPercent > 80 ? 'text-yellow-400' : 'text-white'}`}>
                                         {formatPercent(selectedDay.dailyLossUsedPercent, 0)} of limit
                                     </span>

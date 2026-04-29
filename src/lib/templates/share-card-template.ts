@@ -28,6 +28,8 @@ export type { ShareCardTemplateData };
 export function generateShareCardHtml(data: ShareCardTemplateData): string {
   const { trade, screenshotUrl, showPrismScore, prismScore, winRate, profitFactor, comment } = data;
   
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
   const isProfit = trade.pnl > 0;
   const pnlColor = trade.pnl === 0 ? '#9ca3af' : isProfit ? '#4ade80' : '#f87171';
   const pnlSign = isProfit ? '+' : trade.pnl < 0 ? '-' : '';
@@ -297,16 +299,16 @@ export function generateShareCardHtml(data: ShareCardTemplateData): string {
         ${screenshotUrl 
           ? `<img class="chart-image" src="${screenshotUrl}" alt="Chart" />`
           : `<div class="chart-placeholder">
-              <div class="symbol">${trade.symbol}</div>
-              <div class="direction-badge">${trade.direction}</div>
+              <div class="symbol">${esc(trade.symbol)}</div>
+              <div class="direction-badge">${esc(trade.direction)}</div>
             </div>`
         }
       </div>
       
       <div class="details-section">
         <div class="symbol-row">
-          <span class="symbol">${trade.symbol}</span>
-          <span class="direction-badge">${trade.direction}</span>
+          <span class="symbol">${esc(trade.symbol)}</span>
+          <span class="direction-badge">${esc(trade.direction)}</span>
         </div>
         
         <div class="stats-group">
@@ -336,7 +338,7 @@ export function generateShareCardHtml(data: ShareCardTemplateData): string {
       </div>
     </div>
     
-    ${comment ? `<div class="comment">${comment.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>` : ''}
+    ${comment ? `<div class="comment">${esc(comment)}</div>` : ''}
 
     ${showPrismScore ? `
     <div class="footer">

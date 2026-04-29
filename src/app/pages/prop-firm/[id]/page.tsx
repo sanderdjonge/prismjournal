@@ -218,7 +218,7 @@ function PropFirmAccountContent() {
             case 'WARNING': return 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30';
             case 'CRITICAL': return 'text-orange-400 bg-orange-500/10 border-orange-500/30';
             case 'BREACH': return 'text-loss bg-loss/10 border-loss/30';
-            default: return 'text-gray-400 bg-gray-500/10 border-gray-500/30';
+            default: return 'text-text-muted bg-gray-500/10 border-gray-500/30';
         }
     };
 
@@ -291,7 +291,7 @@ function PropFirmAccountContent() {
                     <p className="text-loss">{error || 'Account not found'}</p>
                     <button
                         onClick={() => router.push('/settings')}
-                        className="mt-4 px-4 py-2 bg-white/5 rounded-lg hover:bg-white/10 transition-all"
+                        className="mt-4 px-4 py-2 bg-surface-elevated rounded-lg hover:bg-surface-hover transition-all"
                     >
                         Back to Settings
                     </button>
@@ -340,7 +340,7 @@ function PropFirmAccountContent() {
                 <div className="flex items-center gap-4">
                     <button
                         onClick={() => router.push('/pages/accounts')}
-                        className="p-2 rounded-lg border border-white/10 hover:bg-white/5 transition-all"
+                        className="p-2 rounded-lg border border-border-color hover:bg-surface-hover transition-all"
                     >
                         <ArrowLeft size={20} />
                     </button>
@@ -351,7 +351,7 @@ function PropFirmAccountContent() {
                                 {account.propFirm?.name || 'Prop Firm'}
                             </span>
                         </div>
-                        <p className="text-sm text-gray-400 mt-1">
+                        <p className="text-sm text-text-muted mt-1">
                             {account.platform} {account.platformAccountId && `• #${account.platformAccountId}`}
                         </p>
                     </div>
@@ -362,7 +362,7 @@ function PropFirmAccountContent() {
                     {/* Left Column - Challenge Progress */}
                     <div className="lg:col-span-2 space-y-6">
                         {/* Current Phase Card */}
-                        <div className="glass-card p-6 border-white/5">
+                        <div className="glass-card p-6 border-border-subtle">
                             <div className="flex items-center justify-between mb-6">
                                 <h2 className="text-lg font-bold text-white flex items-center gap-2">
                                     <Target size={20} className="text-primary" />
@@ -383,12 +383,12 @@ function PropFirmAccountContent() {
                             {/* Phase Progress Bar */}
                             <div className="mb-6">
                                 <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm text-gray-400">Profit Target Progress</span>
+                                    <span className="text-sm text-text-muted">Profit Target Progress</span>
                                     <span className="text-sm font-bold text-white">
                                         {formatPercent(progressPercent)} / {formatPercent(currentPhase?.profitTarget || 10)}
                                     </span>
                                 </div>
-                                <div className="h-4 bg-black/40 rounded-full overflow-hidden">
+                                <div className="h-4 bg-surface-elevated rounded-full overflow-hidden">
                                     <div
                                         className={cn(
                                             "h-full rounded-full transition-all duration-500",
@@ -401,7 +401,7 @@ function PropFirmAccountContent() {
                                         }}
                                     />
                                 </div>
-                                <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
+                                <div className="flex items-center justify-between mt-2 text-xs text-text-muted">
                                     <span>{fmtCurrency(totalPnl)} realized</span>
                                     <span>Target: {fmtCurrency((currentPhase?.profitTargetAmount || (accountSize * (currentPhase?.profitTarget || 10) / 100)))}</span>
                                 </div>
@@ -410,9 +410,9 @@ function PropFirmAccountContent() {
                             {/* Risk Meters */}
                             <div className="grid grid-cols-2 gap-4">
                                 {/* Daily Loss */}
-                                <div className="p-4 rounded-xl bg-black/20 border border-white/5">
+                                <div className="p-4 rounded-xl bg-surface-elevated border border-border-subtle">
                                     <div className="flex items-center justify-between mb-2">
-                                        <span className="text-xs text-gray-400 uppercase tracking-wider">Daily Loss Used</span>
+                                        <span className="text-xs text-text-muted uppercase tracking-wider">Daily Loss Used</span>
                                         <span className={cn(
                                             "text-sm font-bold",
                                             dailyLossPercentOfLimit >= 80 ? "text-loss" : "text-white"
@@ -420,7 +420,7 @@ function PropFirmAccountContent() {
                                             {formatPercent(dailyLossPercent)}
                                         </span>
                                     </div>
-                                    <div className="h-2 bg-black/40 rounded-full overflow-hidden">
+                                    <div className="h-2 bg-surface-elevated rounded-full overflow-hidden">
                                         <div
                                             className={cn(
                                                 "h-full rounded-full transition-all",
@@ -430,13 +430,13 @@ function PropFirmAccountContent() {
                                             style={{ width: `${Math.min(100, dailyLossPercentOfLimit)}%` }}
                                         />
                                     </div>
-                                    <p className="text-xs text-gray-500 mt-2">Limit: {dailyLossLimit}%</p>
+                                    <p className="text-xs text-text-muted mt-2">Limit: {dailyLossLimit}%</p>
                                 </div>
 
                                 {/* Max Drawdown */}
-                                <div className="p-4 rounded-xl bg-black/20 border border-white/5">
+                                <div className="p-4 rounded-xl bg-surface-elevated border border-border-subtle">
                                     <div className="flex items-center justify-between mb-2">
-                                        <span className="text-xs text-gray-400 uppercase tracking-wider">Current Drawdown</span>
+                                        <span className="text-xs text-text-muted uppercase tracking-wider">Current Drawdown</span>
                                         <span className={cn(
                                             "text-sm font-bold",
                                             drawdownPercent >= maxDrawdown * 0.8 ? "text-loss" : "text-white"
@@ -444,7 +444,7 @@ function PropFirmAccountContent() {
                                             {formatPercent(drawdownPercent)}
                                         </span>
                                     </div>
-                                    <div className="h-2 bg-black/40 rounded-full overflow-hidden">
+                                    <div className="h-2 bg-surface-elevated rounded-full overflow-hidden">
                                         <div
                                             className={cn(
                                                 "h-full rounded-full transition-all",
@@ -454,23 +454,23 @@ function PropFirmAccountContent() {
                                             style={{ width: `${Math.min(100, (drawdownPercent / maxDrawdown) * 100)}%` }}
                                         />
                                     </div>
-                                    <p className="text-xs text-gray-500 mt-2">Limit: {maxDrawdown}%</p>
+                                    <p className="text-xs text-text-muted mt-2">Limit: {maxDrawdown}%</p>
                                 </div>
                             </div>
 
                             {/* Trading Days */}
                             {currentPhase?.minTradingDays && (
-                                <div className="mt-4 p-4 rounded-xl bg-black/20 border border-white/5">
+                                <div className="mt-4 p-4 rounded-xl bg-surface-elevated border border-border-subtle">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
-                                            <Calendar size={16} className="text-gray-400" />
-                                            <span className="text-sm text-gray-400">Trading Days</span>
+                                            <Calendar size={16} className="text-text-muted" />
+                                            <span className="text-sm text-text-muted">Trading Days</span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <span className="text-lg font-bold text-white">
                                                 {currentPhase.tradingDaysCount}
                                             </span>
-                                            <span className="text-sm text-gray-400">
+                                            <span className="text-sm text-text-muted">
                                                 / {currentPhase.minTradingDays} minimum
                                             </span>
                                             {currentPhase.tradingDaysCount >= currentPhase.minTradingDays && (
@@ -485,7 +485,7 @@ function PropFirmAccountContent() {
                         {/* Challenge Phases & Analytics Side by Side */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             {/* Phase Timeline */}
-                            <div className="glass-card p-6 border-white/5">
+                            <div className="glass-card p-6 border-border-subtle">
                                 <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                                     <BarChart3 size={20} className="text-primary" />
                                     Challenge Phases
@@ -505,7 +505,7 @@ function PropFirmAccountContent() {
                                                     isActive && "border-primary/50 bg-primary/5",
                                                     isPassed && "border-profit/30 bg-profit/5",
                                                     isFailed && "border-loss/30 bg-loss/5",
-                                                    !isActive && !isPassed && !isFailed && "border-white/5 bg-black/20"
+                                                    !isActive && !isPassed && !isFailed && "border-border-subtle bg-surface-elevated"
                                                 )}
                                             >
                                                 <div className="flex items-center justify-between">
@@ -515,13 +515,13 @@ function PropFirmAccountContent() {
                                                             isActive && "bg-primary text-white",
                                                             isPassed && "bg-profit text-white",
                                                             isFailed && "bg-loss text-white",
-                                                            !isActive && !isPassed && !isFailed && "bg-gray-700 text-gray-400"
+                                                            !isActive && !isPassed && !isFailed && "bg-gray-700 text-text-muted"
                                                         )}>
                                                             {phase.phaseNumber}
                                                         </div>
                                                         <div>
                                                             <p className="font-medium text-white text-sm">{phase.phaseName}</p>
-                                                            <p className="text-xs text-gray-400">
+                                                            <p className="text-xs text-text-muted">
                                                                 {phase.profitTarget}% / {phase.maxDrawdown}%
                                                             </p>
                                                         </div>
@@ -551,7 +551,7 @@ function PropFirmAccountContent() {
                             </div>
 
                             {/* Challenge Analytics */}
-                            <div className="glass-card p-6 border-white/5">
+                            <div className="glass-card p-6 border-border-subtle">
                                 <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                                     <PieChart size={20} className="text-primary" />
                                     Challenge Analytics
@@ -562,10 +562,10 @@ function PropFirmAccountContent() {
                                         <Loader2 className="w-6 h-6 animate-spin text-primary" />
                                     </div>
                                 ) : !analytics || analytics.symbolData.length === 0 ? (
-                                    <div className="text-center py-8 text-gray-400">
+                                    <div className="text-center py-8 text-text-muted">
                                         <PieChart size={32} className="mx-auto mb-2 opacity-50" />
                                         <p className="text-sm">No trade data available</p>
-                                        <p className="text-xs text-gray-500 mt-1">
+                                        <p className="text-xs text-text-muted mt-1">
                                             Analytics will appear after trades are synced
                                         </p>
                                     </div>
@@ -573,8 +573,8 @@ function PropFirmAccountContent() {
                                     <div className="space-y-4">
                                         {/* Key Stats Row */}
                                         <div className="grid grid-cols-2 gap-3">
-                                            <div className="text-center p-2 rounded-lg bg-black/20 border border-white/5">
-                                                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Profit Factor</p>
+                                            <div className="text-center p-2 rounded-lg bg-surface-elevated border border-border-subtle">
+                                                <p className="text-xs text-text-muted uppercase tracking-wider mb-1">Profit Factor</p>
                                                 <p className={cn(
                                                     "text-base font-bold",
                                                     analytics.profitFactor >= 1.5 ? "text-profit" :
@@ -583,8 +583,8 @@ function PropFirmAccountContent() {
                                                     {fmtDecimals(analytics.profitFactor, 2)}
                                                 </p>
                                             </div>
-                                            <div className="text-center p-2 rounded-lg bg-black/20 border border-white/5">
-                                                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Expectancy</p>
+                                            <div className="text-center p-2 rounded-lg bg-surface-elevated border border-border-subtle">
+                                                <p className="text-xs text-text-muted uppercase tracking-wider mb-1">Expectancy</p>
                                                 <p className={cn(
                                                     "text-base font-bold",
                                                     analytics.expectancy >= 0 ? "text-profit" : "text-loss"
@@ -592,8 +592,8 @@ function PropFirmAccountContent() {
                                                     {analytics.expectancy >= 0 ? '+' : ''}{fmtCurrency(analytics.expectancy)}
                                                 </p>
                                             </div>
-                                            <div className="text-center p-2 rounded-lg bg-black/20 border border-white/5">
-                                                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Avg R:R</p>
+                                            <div className="text-center p-2 rounded-lg bg-surface-elevated border border-border-subtle">
+                                                <p className="text-xs text-text-muted uppercase tracking-wider mb-1">Avg R:R</p>
                                                 <p className={cn(
                                                     "text-base font-bold",
                                                     analytics.avgRR >= 1 ? "text-profit" :
@@ -602,8 +602,8 @@ function PropFirmAccountContent() {
                                                     {fmtDecimals(analytics.avgRR, 2)}
                                                 </p>
                                             </div>
-                                            <div className="text-center p-2 rounded-lg bg-black/20 border border-white/5">
-                                                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Avg Loss</p>
+                                            <div className="text-center p-2 rounded-lg bg-surface-elevated border border-border-subtle">
+                                                <p className="text-xs text-text-muted uppercase tracking-wider mb-1">Avg Loss</p>
                                                 <p className="text-base font-bold text-orange-400">
                                                     {fmtCurrency(analytics.meanDrawdown)}
                                                 </p>
@@ -612,12 +612,12 @@ function PropFirmAccountContent() {
 
                                         {/* Symbol Performance */}
                                         <div>
-                                            <h3 className="text-xs font-bold text-gray-300 mb-2">Symbol Performance</h3>
+                                            <h3 className="text-xs font-bold text-text-secondary mb-2">Symbol Performance</h3>
                                             <div className="space-y-1 max-h-32 overflow-y-auto">
                                                 {analytics.symbolData.slice(0, 6).map((symbol) => (
                                                     <div
                                                         key={symbol.symbol}
-                                                        className="flex items-center justify-between p-1.5 rounded bg-black/20 border border-white/5"
+                                                        className="flex items-center justify-between p-1.5 rounded bg-surface-elevated border border-border-subtle"
                                                     >
                                                         <div className="flex items-center gap-2">
                                                             <span className="text-xs font-bold text-white">{symbol.symbol}</span>
@@ -643,7 +643,7 @@ function PropFirmAccountContent() {
 
                                         {/* Session Distribution */}
                                         <div>
-                                            <h3 className="text-xs font-bold text-gray-300 mb-2">Trading Hours</h3>
+                                            <h3 className="text-xs font-bold text-text-secondary mb-2">Trading Hours</h3>
                                             {(() => {
                                                 const maxCount = Math.max(...analytics.sessionData.map(s => s.count), 1);
                                                 return (
@@ -654,13 +654,13 @@ function PropFirmAccountContent() {
                                                                 className="flex-1 rounded-t transition-all group/bar relative cursor-default"
                                                                 style={{ height: s.count > 0 ? `${Math.max((s.count / maxCount) * 100, 4)}%` : '4px' }}
                                                             >
-                                                                <div className={`w-full h-full rounded-t ${s.count > 0 ? 'bg-primary/50 group-hover/bar:bg-primary/80' : 'bg-white/5'} transition-colors`} />
+                                                                <div className={`w-full h-full rounded-t ${s.count > 0 ? 'bg-primary/50 group-hover/bar:bg-primary/80' : 'bg-surface-elevated'} transition-colors`} />
                                                             </div>
                                                         ))}
                                                     </div>
                                                 );
                                             })()}
-                                            <div className="flex justify-between text-[8px] font-black text-gray-700 uppercase tracking-widest">
+                                            <div className="flex justify-between text-[8px] font-black text-text-muted uppercase tracking-widest">
                                                 <span>00</span><span>06</span><span>12</span><span>18</span><span>23</span>
                                             </div>
                                         </div>
@@ -670,7 +670,7 @@ function PropFirmAccountContent() {
                         </div>
 
                         {/* Daily Performance Report */}
-                        <div className="glass-card p-6 border-white/5">
+                        <div className="glass-card p-6 border-border-subtle">
                             <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                                 <BarChart3 size={20} className="text-primary" />
                                 Daily Performance
@@ -680,10 +680,10 @@ function PropFirmAccountContent() {
                                     <Loader2 size={20} className="animate-spin text-primary" />
                                 </div>
                             ) : snapshots.length === 0 ? (
-                                <div className="text-center py-8 text-gray-400">
+                                <div className="text-center py-8 text-text-muted">
                                     <BarChart3 size={32} className="mx-auto mb-2 opacity-50" />
                                     <p className="text-sm">No daily data yet</p>
-                                    <p className="text-xs text-gray-500 mt-1">Snapshots are generated automatically each day via the cron job</p>
+                                    <p className="text-xs text-text-muted mt-1">Snapshots are generated automatically each day via the cron job</p>
                                 </div>
                             ) : (() => {
                                 const recent = snapshots.slice(-30);
@@ -701,8 +701,8 @@ function PropFirmAccountContent() {
                                                             style={{ height: `${Math.max(pct, 2)}%` }}
                                                         />
                                                         <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 pointer-events-none z-10 whitespace-nowrap">
-                                                            <div className="bg-white/95 dark:bg-black/90 border border-gray-200 dark:border-white/20 rounded px-2 py-1 text-[9px]">
-                                                                <p className="text-gray-600 dark:text-gray-400">{new Date(s.snapshotDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
+                                                            <div className="bg-white/95 dark:bg-black/90 border border-gray-200 dark:border-border-color rounded px-2 py-1 text-[9px]">
+                                                                <p className="text-text-muted dark:text-text-muted">{new Date(s.snapshotDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
                                                                 <p className={cn("font-bold", isPos ? "text-profit" : "text-loss")}>
                                                                     {isPos ? '+' : ''}{fmtCurrency(s.dailyPnl)}
                                                                 </p>
@@ -712,7 +712,7 @@ function PropFirmAccountContent() {
                                                 );
                                             })}
                                         </div>
-                                        <div className="flex justify-between text-[9px] text-gray-600 mt-1">
+                                        <div className="flex justify-between text-[9px] text-text-muted mt-1">
                                             <span>{new Date(recent[0].snapshotDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                                             <span>{recent.length} days</span>
                                             <span>{new Date(recent[recent.length - 1].snapshotDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
@@ -723,7 +723,7 @@ function PropFirmAccountContent() {
                         </div>
 
                         {/* Challenge Calendar - Compact */}
-                        <div className="glass-card p-6 border-white/5">
+                        <div className="glass-card p-6 border-border-subtle">
                             <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                                 <Calendar size={20} className="text-primary" />
                                 Challenge Calendar
@@ -733,7 +733,7 @@ function PropFirmAccountContent() {
                                     <Loader2 size={20} className="animate-spin text-primary" />
                                 </div>
                             ) : snapshots.length === 0 ? (
-                                <div className="text-center py-4 text-gray-400">
+                                <div className="text-center py-4 text-text-muted">
                                     <Calendar size={24} className="mx-auto mb-2 opacity-50" />
                                     <p className="text-sm">No daily data yet</p>
                                 </div>
@@ -758,22 +758,22 @@ function PropFirmAccountContent() {
                     {/* Right Column - Stats & Violations */}
                     <div className="space-y-6">
                         {/* Account Stats */}
-                        <div className="glass-card p-6 border-white/5">
+                        <div className="glass-card p-6 border-border-subtle">
                             <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                                 <DollarSign size={20} className="text-primary" />
                                 Account Stats
                             </h2>
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm text-gray-400">Account Size</span>
+                                    <span className="text-sm text-text-muted">Account Size</span>
                                     <span className="font-bold text-white">{fmtCurrency(accountSize)}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm text-gray-400">Current Balance</span>
+                                    <span className="text-sm text-text-muted">Current Balance</span>
                                     <span className="font-bold text-white">{fmtCurrency(currentBalance)}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm text-gray-400">Total P&L</span>
+                                    <span className="text-sm text-text-muted">Total P&L</span>
                                     <span className={cn(
                                         "font-bold",
                                         totalPnl >= 0 ? "text-profit" : "text-loss"
@@ -782,11 +782,11 @@ function PropFirmAccountContent() {
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm text-gray-400">Profit Split</span>
+                                    <span className="text-sm text-text-muted">Profit Split</span>
                                     <span className="font-bold text-profit">{account.profitSplit || 80}%</span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm text-gray-400">Total Trades</span>
+                                    <span className="text-sm text-text-muted">Total Trades</span>
                                     <span className="font-bold text-white">{account.tradeCount}</span>
                                 </div>
                             </div>
@@ -794,39 +794,39 @@ function PropFirmAccountContent() {
 
                         {/* Prop Firm Rules */}
                         {account.propFirm && (
-                            <div className="glass-card p-6 border-white/5">
+                            <div className="glass-card p-6 border-border-subtle">
                                 <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                                     <Shield size={20} className="text-primary" />
                                     Trading Rules
                                 </h2>
                                 <div className="space-y-3">
                                     <div className="flex items-center justify-between text-sm">
-                                        <span className="text-gray-400">Daily Loss Limit</span>
+                                        <span className="text-text-muted">Daily Loss Limit</span>
                                         <span className="text-orange-400 font-bold">{account.propFirm.dailyLossLimit}%</span>
                                     </div>
                                     <div className="flex items-center justify-between text-sm">
-                                        <span className="text-gray-400">Max Drawdown</span>
+                                        <span className="text-text-muted">Max Drawdown</span>
                                         <span className="text-orange-400 font-bold">{account.propFirm.maxDrawdown}%</span>
                                     </div>
                                     <div className="flex items-center justify-between text-sm">
-                                        <span className="text-gray-400">Drawdown Type</span>
+                                        <span className="text-text-muted">Drawdown Type</span>
                                         <span className="text-white">{account.propFirm.drawdownType}</span>
                                     </div>
-                                    <hr className="border-white/5" />
+                                    <hr className="border-border-subtle" />
                                     <div className="flex items-center justify-between text-sm">
-                                        <span className="text-gray-400">News Trading</span>
+                                        <span className="text-text-muted">News Trading</span>
                                         <span className={account.propFirm.allowNewsTrading ? "text-profit" : "text-loss"}>
                                             {account.propFirm.allowNewsTrading ? "Allowed" : "Restricted"}
                                         </span>
                                     </div>
                                     <div className="flex items-center justify-between text-sm">
-                                        <span className="text-gray-400">Weekend Holding</span>
+                                        <span className="text-text-muted">Weekend Holding</span>
                                         <span className={account.propFirm.allowWeekendHolding ? "text-profit" : "text-loss"}>
                                             {account.propFirm.allowWeekendHolding ? "Allowed" : "Restricted"}
                                         </span>
                                     </div>
                                     <div className="flex items-center justify-between text-sm">
-                                        <span className="text-gray-400">EA Trading</span>
+                                        <span className="text-text-muted">EA Trading</span>
                                         <span className={account.propFirm.allowEA ? "text-profit" : "text-loss"}>
                                             {account.propFirm.allowEA ? "Allowed" : "Restricted"}
                                         </span>
@@ -864,7 +864,7 @@ function PropFirmAccountContent() {
                             if (!scalingConfig) return null;
                             
                             return (
-                                <div className="glass-card p-6 border-white/5">
+                                <div className="glass-card p-6 border-border-subtle">
                                     <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                                         <TrendingUp size={20} className="text-primary" />
                                         Scaling Plan
@@ -873,16 +873,16 @@ function PropFirmAccountContent() {
                                     {/* FTMO-style scaling */}
                                     {scalingConfig.initialBalance && scalingConfig.increment && (
                                         <div className="space-y-4">
-                                            <p className="text-sm text-gray-400">
+                                            <p className="text-sm text-text-muted">
                                                 Scale your account up to {fmtCurrency(scalingConfig.initialBalance + (scalingConfig.increment || 0) * 4)}
                                             </p>
                                             
                                             <div className="space-y-2">
-                                                <div className="flex items-center justify-between text-xs text-gray-400">
+                                                <div className="flex items-center justify-between text-xs text-text-muted">
                                                     <span>Current: {fmtCurrency(accountSize)}</span>
                                                     <span>Max: {fmtCurrency(scalingConfig.initialBalance)}</span>
                                                 </div>
-                                                <div className="h-2 bg-black/40 rounded-full overflow-hidden">
+                                                <div className="h-2 bg-surface-elevated rounded-full overflow-hidden">
                                                     <div
                                                         className="h-full bg-gradient-to-r from-primary to-green-400 rounded-full"
                                                         style={{
@@ -893,21 +893,21 @@ function PropFirmAccountContent() {
                                             </div>
                                             
                                             {scalingConfig.conditions && (
-                                                <div className="p-3 rounded-lg bg-black/20 border border-white/5">
-                                                    <p className="text-xs text-gray-400 mb-2">Requirements per scale:</p>
+                                                <div className="p-3 rounded-lg bg-surface-elevated border border-border-subtle">
+                                                    <p className="text-xs text-text-muted mb-2">Requirements per scale:</p>
                                                     <div className="flex flex-wrap gap-2">
                                                         {scalingConfig.conditions.profitMonths && (
-                                                            <span className="text-xs px-2 py-1 rounded bg-white/5 text-gray-300">
+                                                            <span className="text-xs px-2 py-1 rounded bg-surface-elevated text-text-secondary">
                                                                 {scalingConfig.conditions.profitMonths} profitable months
                                                             </span>
                                                         )}
                                                         {scalingConfig.conditions.minProfit && (
-                                                            <span className="text-xs px-2 py-1 rounded bg-white/5 text-gray-300">
+                                                            <span className="text-xs px-2 py-1 rounded bg-surface-elevated text-text-secondary">
                                                                 {scalingConfig.conditions.minProfit}%+ profit
                                                             </span>
                                                         )}
                                                         {scalingConfig.conditions.maxDrawdown && (
-                                                            <span className="text-xs px-2 py-1 rounded bg-white/5 text-gray-300">
+                                                            <span className="text-xs px-2 py-1 rounded bg-surface-elevated text-text-secondary">
                                                                 {`<${scalingConfig.conditions.maxDrawdown}% DD`}
                                                             </span>
                                                         )}
@@ -915,7 +915,7 @@ function PropFirmAccountContent() {
                                                 </div>
                                             )}
                                             
-                                            <p className="text-xs text-gray-500">
+                                            <p className="text-xs text-text-muted">
                                                 Each scale: +{fmtCurrency(scalingConfig.increment)} balance
                                             </p>
                                         </div>
@@ -924,7 +924,7 @@ function PropFirmAccountContent() {
                                     {/* The5ers-style level-based scaling */}
                                     {scalingConfig.type === 'automatic' && scalingConfig.levels && (
                                         <div className="space-y-4">
-                                            <p className="text-sm text-gray-400">
+                                            <p className="text-sm text-text-muted">
                                                 Automatic scaling based on performance
                                             </p>
                                             
@@ -932,13 +932,13 @@ function PropFirmAccountContent() {
                                                 {scalingConfig.levels.map((level, index) => (
                                                     <div
                                                         key={index}
-                                                        className="flex items-center justify-between p-3 rounded-lg bg-black/20 border border-white/5"
+                                                        className="flex items-center justify-between p-3 rounded-lg bg-surface-elevated border border-border-subtle"
                                                     >
                                                         <div className="flex items-center gap-3">
                                                             <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
                                                                 {index + 1}
                                                             </div>
-                                                            <span className="text-sm text-gray-300">
+                                                            <span className="text-sm text-text-secondary">
                                                                 {fmtDecimals(level.profit, 1)}% profit
                                                             </span>
                                                         </div>
@@ -955,7 +955,7 @@ function PropFirmAccountContent() {
                         })()}
 
                         {/* Compliance Status */}
-                        <div className="glass-card p-6 border-white/5">
+                        <div className="glass-card p-6 border-border-subtle">
                             <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                                 <Shield size={20} className="text-primary" />
                                 Compliance Status
@@ -963,7 +963,7 @@ function PropFirmAccountContent() {
                             <div className="space-y-3">
                                 {/* Daily Loss Status */}
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm text-gray-400">Daily Loss</span>
+                                    <span className="text-sm text-text-muted">Daily Loss</span>
                                     <div className="flex items-center gap-2">
                                         {account.latestSnapshot?.isDailyLimitBreached ? (
                                             <span className="px-2 py-1 rounded text-xs font-bold bg-loss/20 text-loss">
@@ -978,7 +978,7 @@ function PropFirmAccountContent() {
                                                 Healthy
                                             </span>
                                         )}
-                                        <span className="text-xs text-gray-500">
+                                        <span className="text-xs text-text-muted">
                                             {formatPercent(dailyLossPercent)} / {dailyLossLimit}%
                                         </span>
                                     </div>
@@ -986,7 +986,7 @@ function PropFirmAccountContent() {
                                 
                                 {/* Max Drawdown Status */}
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm text-gray-400">Max Drawdown</span>
+                                    <span className="text-sm text-text-muted">Max Drawdown</span>
                                     <div className="flex items-center gap-2">
                                         {account.latestSnapshot?.isMaxDrawdownBreached ? (
                                             <span className="px-2 py-1 rounded text-xs font-bold bg-loss/20 text-loss">
@@ -1001,16 +1001,16 @@ function PropFirmAccountContent() {
                                                 Healthy
                                             </span>
                                         )}
-                                        <span className="text-xs text-gray-500">
+                                        <span className="text-xs text-text-muted">
                                             {formatPercent(drawdownPercent)} / {maxDrawdown}%
                                         </span>
                                     </div>
                                 </div>
 
                                 {/* Clean Trading Days Streak */}
-                                <div className="pt-3 border-t border-white/5">
+                                <div className="pt-3 border-t border-border-subtle">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-sm text-gray-400">Clean Days Streak</span>
+                                        <span className="text-sm text-text-muted">Clean Days Streak</span>
                                         <div className="flex items-center gap-2">
                                             <span className="text-lg font-bold text-profit">
                                                 {account.violations.filter(v => !v.isResolved && v.severity === 'BREACH').length === 0
@@ -1018,10 +1018,10 @@ function PropFirmAccountContent() {
                                                     : 0
                                                 }
                                             </span>
-                                            <span className="text-xs text-gray-500">days</span>
+                                            <span className="text-xs text-text-muted">days</span>
                                         </div>
                                     </div>
-                                    <p className="text-xs text-gray-500 mt-1">
+                                    <p className="text-xs text-text-muted mt-1">
                                         {account.violations.filter(v => !v.isResolved).length === 0
                                             ? 'No active violations'
                                             : `${account.violations.filter(v => !v.isResolved).length} unresolved violation(s)`
@@ -1032,7 +1032,7 @@ function PropFirmAccountContent() {
                         </div>
 
                         {/* Violations */}
-                        <div className="glass-card p-6 border-white/5">
+                        <div className="glass-card p-6 border-border-subtle">
                             <div className="flex items-center justify-between mb-4">
                                 <h2 className="text-lg font-bold text-white flex items-center gap-2">
                                     <AlertTriangle size={20} className="text-primary" />
@@ -1050,7 +1050,7 @@ function PropFirmAccountContent() {
                             {account.violations.length === 0 ? (
                                 <div className="text-center py-6">
                                     <CheckCircle size={32} className="mx-auto text-profit mb-2" />
-                                    <p className="text-sm text-gray-400">No violations recorded</p>
+                                    <p className="text-sm text-text-muted">No violations recorded</p>
                                 </div>
                             ) : (
                                 <div className="space-y-3">
@@ -1076,19 +1076,19 @@ function PropFirmAccountContent() {
                                                         </span>
                                                     )}
                                                 </div>
-                                                <span className="text-xs text-gray-400">
+                                                <span className="text-xs text-text-muted">
                                                     {formatShortDate(violation.occurredAt)}
                                                 </span>
                                             </div>
-                                            <p className="text-xs text-gray-300 mb-2">{violation.description}</p>
+                                            <p className="text-xs text-text-secondary mb-2">{violation.description}</p>
                                             {!violation.isResolved && (
                                                 <button
                                                     onClick={() => handleAcknowledgeViolation(violation.id)}
                                                     disabled={acknowledgingId === violation.id}
                                                     className={cn(
                                                         "text-xs px-3 py-1 rounded-lg transition-all",
-                                                        "bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white",
-                                                        "border border-white/10 hover:border-white/20",
+                                                        "bg-surface-elevated hover:bg-surface-hover text-text-secondary hover:text-text-primary",
+                                                        "border border-border-color hover:border-border-color",
                                                         acknowledgingId === violation.id && "opacity-50 cursor-not-allowed"
                                                     )}
                                                 >
@@ -1096,7 +1096,7 @@ function PropFirmAccountContent() {
                                                 </button>
                                             )}
                                             {violation.isResolved && violation.resolvedAt && (
-                                                <p className="text-xs text-gray-500">
+                                                <p className="text-xs text-text-muted">
                                                     Resolved: {formatShortDate(violation.resolvedAt)}
                                                 </p>
                                             )}

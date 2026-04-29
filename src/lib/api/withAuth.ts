@@ -4,6 +4,8 @@ import logger from '@/lib/logger';
 import { checkLimit, Limiters } from '@/lib/rate-limit-redis';
 import type { Session } from 'next-auth';
 
+const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+
 type AuthedHandler = (
   req: NextRequest,
   ctx: Record<string, unknown>,
@@ -19,6 +21,23 @@ export function withAuth(handler: AuthedHandler) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    if (MUTATING_METHODS.has(req.method)) {
+      const origin = req.headers.get('origin');
+      const host = req.headers.get('x-forwarded-host') ?? req.headers.get('host');
+      if (origin && host) {
+        try {
+          const originHost = new URL(origin).host;
+          if (originHost !== host) {
+            logger.warn({ origin, host, url: req.url }, '[withAuth] CSRF origin mismatch');
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+          }
+        } catch {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
+      }
+    }
+
     try {
       return await handler(req, ctx, session as Session & { user: { id: string } });
     } catch (error) {

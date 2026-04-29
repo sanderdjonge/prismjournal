@@ -146,7 +146,7 @@ export default function PrismScoreWidget({ accountId }: Props) {
     if (isError || !data) {
         return (
             <div className="glass-card p-4 flex items-center justify-center min-h-[120px]">
-                <p className="text-gray-500 text-sm">Prism Score unavailable</p>
+                <p className="text-text-muted text-sm">Prism Score unavailable</p>
             </div>
         );
     }
@@ -160,7 +160,7 @@ export default function PrismScoreWidget({ accountId }: Props) {
             <div className="flex items-center justify-between mb-3">
                 <div>
                     <h3 className="text-sm font-semibold text-gray-100">Prism Score</h3>
-                    <p className="text-[10px] text-gray-500">Composite performance</p>
+                    <p className="text-[10px] text-text-muted">Composite performance</p>
                 </div>
                 <div
                     className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border"
@@ -185,7 +185,7 @@ export default function PrismScoreWidget({ accountId }: Props) {
                         return (
                             <div key={key} className="space-y-0.5 group relative">
                                 <div className="flex justify-between items-center">
-                                    <span className="text-[9px] text-gray-500 cursor-help" title={COMPONENT_LABELS[key]}>
+                                    <span className="text-[9px] text-text-muted cursor-help" title={COMPONENT_LABELS[key]}>
                                         {COMPONENT_LABELS[key]}
                                     </span>
                                     <span className="text-[9px] font-bold" style={{ color: barColor }}>{fmtDecimals(val, 1)}</span>

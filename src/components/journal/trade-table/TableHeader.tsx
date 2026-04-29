@@ -28,13 +28,13 @@ export function TableHeader({
     onSelectAll
 }: TableHeaderProps) {
     return (
-        <thead className="bg-white/5">
+        <thead className="bg-surface-elevated">
             <Reorder.Group
                 axis="x"
                 values={columns}
                 onReorder={onReorderColumns}
                 as="tr"
-                className="text-[10px] font-black uppercase tracking-widest text-gray-500"
+                className="text-[10px] font-black uppercase tracking-widest text-text-muted"
             >
                 {columns.filter(c => c.visible).map((col) => (
                     <Reorder.Item
@@ -43,7 +43,7 @@ export function TableHeader({
                         as="th"
                         className={cn(
                             "px-4 py-3 select-none transition-colors",
-                            col.sortable ? 'cursor-pointer hover:bg-white/5' : 'cursor-grab active:cursor-grabbing',
+                            col.sortable ? 'cursor-pointer hover:bg-surface-hover' : 'cursor-grab active:cursor-grabbing',
                             !col.mobileVisible && "hidden md:table-cell"
                         )}
                         onClick={() => col.sortable && onSort(col.id)}
@@ -58,11 +58,11 @@ export function TableHeader({
                                     }}
                                     onChange={onSelectAll}
                                     onClick={(e) => e.stopPropagation()}
-                                    className="w-4 h-4 rounded border-white/20 bg-white/5 text-primary focus:ring-primary/50 cursor-pointer"
+                                    className="w-4 h-4 rounded border-border-color bg-surface-elevated text-primary focus:ring-primary/50 cursor-pointer"
                                 />
                             ) : (
                                 <>
-                                    {!col.sortable && <GripVertical size={10} className="text-gray-700" />}
+                                    {!col.sortable && <GripVertical size={10} className="text-text-muted" />}
                                     {col.label}
                                     {col.sortable && sortCol === col.id && (
                                         sortDir === 'desc'

@@ -11,14 +11,14 @@ interface MoodSelectorProps {
 
 const MOOD_OPTIONS = [
     { id: 'CALM', icon: Smile, color: 'text-profit', bg: 'bg-profit/10 border-profit/20' },
-    { id: 'NEUTRAL', icon: Meh, color: 'text-gray-500', bg: 'bg-white/5 border-white/10' },
+    { id: 'NEUTRAL', icon: Meh, color: 'text-text-muted', bg: 'bg-surface-elevated border-border-color' },
     { id: 'ANXIOUS', icon: Frown, color: 'text-loss', bg: 'bg-loss/10 border-loss/20' },
 ];
 
 export function MoodSelector({ value, onChange }: MoodSelectorProps) {
     return (
         <section>
-            <h3 className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500 border-b border-white/5 pb-2 mb-3 flex items-center gap-2">
+            <h3 className="text-[9px] font-black uppercase tracking-[0.3em] text-text-muted border-b border-border-subtle pb-2 mb-3 flex items-center gap-2">
                 <Brain size={12} className="text-secondary" /> Psychological Profile
             </h3>
             <div className="flex gap-3">
@@ -28,7 +28,7 @@ export function MoodSelector({ value, onChange }: MoodSelectorProps) {
                         onClick={() => onChange(m.id)}
                         className={cn(
                             "flex-1 glass-card p-3 border flex flex-col items-center gap-1.5 transition-all",
-                            value === m.id ? m.bg : "bg-white/5 border-transparent opacity-50"
+                            value === m.id ? m.bg : "bg-surface-elevated border-transparent opacity-50"
                         )}
                     >
                         <m.icon size={20} className={m.color} />

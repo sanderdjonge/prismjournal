@@ -156,6 +156,17 @@ describe('calculateMaxDrawdownPercent', () => {
   it('returns 0 when never goes above zero cumulative', () => {
     expect(calculateMaxDrawdownPercent([-100, -50, -200])).toBe(0);
   });
+
+  it('caps at 100% when equity starts near zero (near-zero-peak explosion)', () => {
+    // Peak reaches only 0.50, then drops to -13.00. Without cap: (0.50-(-13))/0.50*100 = 2700%
+    // With cap: 100%
+    expect(calculateMaxDrawdownPercent([0.50, -13.50])).toBe(100);
+  });
+
+  it('caps at 100% for extreme drawdown scenarios', () => {
+    // Peak = 1.0, drops to -99. Without cap: 10000%. With cap: 100%
+    expect(calculateMaxDrawdownPercent([1, -100])).toBe(100);
+  });
 });
 
 describe('calculateMaxDrawdownFromBalance', () => {

@@ -37,7 +37,7 @@ export function cleanupPendingSecrets(): void {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-    session: { strategy: 'jwt' },
+    session: { strategy: 'jwt', maxAge: 7 * 24 * 60 * 60 },
     providers: [
         Credentials({
             name: 'credentials',
@@ -47,7 +47,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 totpCode: { label: '2FA Code', type: 'text' },
             },
             async authorize(credentials) {
+                // Security note (1.5): No per-account lockout — rate limiting is IP-based.
+                // Distributed credential stuffing bypasses this. Accepted: single-user app
+                // behind Cloudflare with bot protection.
+                //
+                // Security note (1.6): Password reset does not invalidate existing JWT
+                // sessions — they expire naturally via maxAge. Accepted: short session
+                // lifetime (7d) limits the exposure window.
                 if (!credentials?.email || !credentials?.password) return null;
+                // Security note (1.7): loginSchema exists but is not used here —
+                // NextAuth credentials provider handles its own null checks.
 
                 const user = await prisma.user.findUnique({
                     where: { email: credentials.email as string },

@@ -7,7 +7,8 @@
  *   - Profit Factor: grossLoss=0 & grossProfit=0 → Infinity (no trades = breakeven)
  *   - Win Rate: 0 trades → 0
  *   - Win definition: pnl > 0 (strict — breakeven is NOT a win)
- *   - Max Drawdown: always returns percentage (0–100), never absolute dollars
+ *   - Max Drawdown: calculateMaxDrawdownPercent returns percentage (0–100);
+ *   calculateMaxDrawdownAbsolute returns absolute currency amount
  *   - Dollar Expectancy: 0 trades → 0
  *   - R-Expectancy: denominator = trades WITH rMultiple (nulls excluded)
  *   - Avg R-Multiple: denominator = trades WITH rMultiple (nulls excluded)
@@ -91,6 +92,24 @@ export function calculateMaxDrawdownPercent(pnlValues: number[]): number {
         runningSum += pnl;
         if (runningSum > peak) peak = runningSum;
         const dd = peak > 0 ? ((peak - runningSum) / peak) * 100 : 0;
+        if (dd > maxDD) maxDD = dd;
+    }
+    // Cap at 100% — when equity starts near zero, the ratio (peak-running)/peak
+    // can produce astronomical percentages (e.g. peak=0.50 → 2697%).
+    // Use calculateMaxDrawdownFromBalance() when account balance is available
+    // for meaningful percentage drawdown.
+    return Math.min(maxDD, 100);
+}
+
+export function calculateMaxDrawdownAbsolute(pnlValues: number[]): number {
+    if (pnlValues.length === 0) return 0;
+    let peak = 0;
+    let maxDD = 0;
+    let runningSum = 0;
+    for (const pnl of pnlValues) {
+        runningSum += pnl;
+        if (runningSum > peak) peak = runningSum;
+        const dd = peak - runningSum;
         if (dd > maxDD) maxDD = dd;
     }
     return maxDD;

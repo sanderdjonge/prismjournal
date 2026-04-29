@@ -21,7 +21,7 @@ import { cn } from '@/lib/cn';
 import NotificationCenter from './NotificationCenter';
 import AccountSwitcher from './AccountSwitcher';
 import { ThemeToggle } from './ThemeToggle';
-import { APP_VERSION, BUILD_DATE, BUILD_NOTES } from '@/lib/version';
+import { APP_VERSION, BUILD_DATE } from '@/lib/version';
 
 const MENU_ITEMS = [
     { label: 'Dashboard', href: '/' },
@@ -73,7 +73,7 @@ export default function TopNav() {
 
     return (
         <>
-            <nav className="fixed top-0 left-0 right-0 z-50 glass-card border-b border-border-subtle backdrop-blur-xl h-20 px-4 md:px-8 flex items-center justify-between">
+            <nav className="fixed top-0 left-0 right-0 z-50 bg-[var(--surface-solid)] border-b border-border-subtle h-20 px-4 md:px-8 flex items-center justify-between">
                 <div className="flex items-center gap-4 md:gap-10">
                     <Link href="/" className="flex items-center gap-2 group">
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-primary to-secondary flex items-center justify-center shrink-0 shadow-[0_0_15px_var(--glow-primary)]">
@@ -160,7 +160,6 @@ export default function TopNav() {
                                 </button>
                                 <div className="border-t border-border-subtle px-4 py-3">
                                     <p className="text-[9px] font-mono text-text-muted">v{APP_VERSION} &middot; {BUILD_DATE}</p>
-                                    <p className="text-[9px] text-text-muted mt-0.5 leading-tight">{BUILD_NOTES}</p>
                                 </div>
                             </div>
                         )}
@@ -178,7 +177,7 @@ export default function TopNav() {
             {isMobileMenuOpen && (
                 <div className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm lg:hidden" onClick={() => setIsMobileMenuOpen(false)}>
                     <div
-                        className="fixed top-20 left-0 right-0 glass-card border-b border-border-color p-4 space-y-2"
+                        className="fixed top-20 left-0 right-0 bg-[var(--surface-solid)] border-b border-border-color p-4 space-y-2"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {MENU_ITEMS.map((item) => {

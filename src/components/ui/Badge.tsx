@@ -9,7 +9,7 @@ const variants: Record<BadgeVariant, string> = {
     open:    'bg-primary/10 text-primary border-primary/20',
     long:    'bg-profit/10 text-profit border-profit/20',
     short:   'bg-loss/10 text-loss border-loss/20',
-    neutral: 'bg-white/5 text-gray-400 border-white/10',
+    neutral: 'bg-surface-elevated text-text-muted border-border-color',
     primary: 'bg-primary/10 text-primary border-primary/20',
 };
 

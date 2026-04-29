@@ -83,7 +83,7 @@ export function ScreenshotUpload({
 
     return (
         <div className="space-y-3">
-            <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-1 flex items-center gap-1.5">
+            <label className="text-[9px] font-black uppercase tracking-widest text-text-muted px-1 flex items-center gap-1.5">
                 <ImagePlus size={10} /> Screenshots (Optional)
             </label>
 
@@ -97,7 +97,7 @@ export function ScreenshotUpload({
                     "relative border-2 border-dashed rounded-xl p-4 cursor-pointer transition-all",
                     dragOver
                         ? "border-primary bg-primary/5"
-                        : "border-white/10 hover:border-white/20 hover:bg-white/[0.02]"
+                        : "border-border-color hover:border-border-color hover:bg-surface-hover"
                 )}
             >
                 <input
@@ -110,14 +110,14 @@ export function ScreenshotUpload({
                 />
 
                 <div className="flex flex-col items-center gap-2 text-center">
-                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
-                        <Upload size={18} className="text-gray-400" />
+                    <div className="w-10 h-10 rounded-full bg-surface-elevated flex items-center justify-center">
+                        <Upload size={18} className="text-text-muted" />
                     </div>
                     <div>
-                        <p className="text-xs font-bold text-gray-300">
+                        <p className="text-xs font-bold text-text-secondary">
                             Drop screenshots here or click to upload
                         </p>
-                        <p className="text-[10px] text-gray-500 mt-0.5">
+                        <p className="text-[10px] text-text-muted mt-0.5">
                             PNG, JPG up to 10MB • Max {maxFiles} files
                         </p>
                     </div>
@@ -130,7 +130,7 @@ export function ScreenshotUpload({
                     {screenshots.map((file, index) => (
                         <div
                             key={index}
-                            className="relative aspect-square rounded-lg overflow-hidden bg-white/5 group"
+                            className="relative aspect-square rounded-lg overflow-hidden bg-surface-elevated group"
                         >
                             {previews[index] ? (
                                 <img
@@ -140,7 +140,7 @@ export function ScreenshotUpload({
                                 />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center">
-                                    <Loader2 size={16} className="text-gray-500 animate-spin" />
+                                    <Loader2 size={16} className="text-text-muted animate-spin" />
                                 </div>
                             )}
                             

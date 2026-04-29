@@ -95,11 +95,11 @@ export function TradingHoursWidget({ data, currency = 'USD' }: TradingHoursWidge
                     <div className="text-white font-bold">{timeStr}</div>
                     <div className="flex items-center gap-2 mt-1">
                         <span className="text-profit">{hour.wins}W</span>
-                        <span className="text-gray-400">/</span>
+                        <span className="text-text-muted">/</span>
                         <span className="text-loss">{hour.losses}L</span>
                     </div>
                     {hour.count > 0 && (
-                        <div className="text-gray-400 text-[9px] mt-0.5">
+                        <div className="text-text-muted text-[9px] mt-0.5">
                             {fmtDecimals(hour.winRate, 1)}% WR
                         </div>
                     )}
@@ -111,7 +111,7 @@ export function TradingHoursWidget({ data, currency = 'USD' }: TradingHoursWidge
                 <>
                     <div className="text-white font-bold">{timeStr}</div>
                     <div className="text-primary mt-1">{fmtDecimals(hour.winRate, 1)}% Win Rate</div>
-                    <div className="text-gray-400 text-[9px] mt-0.5">
+                    <div className="text-text-muted text-[9px] mt-0.5">
                         {hour.wins}W / {hour.losses}L
                     </div>
                 </>
@@ -124,7 +124,7 @@ export function TradingHoursWidget({ data, currency = 'USD' }: TradingHoursWidge
                     <div className={cn('mt-1 font-bold', hour.totalPnl >= 0 ? 'text-profit' : 'text-loss')}>
                         {fmt(hour.totalPnl, { compact: true })}
                     </div>
-                    <div className="text-gray-400 text-[9px] mt-0.5">
+                    <div className="text-text-muted text-[9px] mt-0.5">
                         {hour.count} trade{hour.count !== 1 ? 's' : ''}
                     </div>
                 </>
@@ -137,7 +137,7 @@ export function TradingHoursWidget({ data, currency = 'USD' }: TradingHoursWidge
                 <div className={cn('mt-1 font-bold', hour.avgRR >= 0 ? 'text-profit' : 'text-loss')}>
                     {fmtDecimals(hour.avgRR, 2)}R
                 </div>
-                <div className="text-gray-400 text-[9px] mt-0.5">
+                <div className="text-text-muted text-[9px] mt-0.5">
                     {hour.count} trade{hour.count !== 1 ? 's' : ''}
                 </div>
             </>
@@ -145,17 +145,17 @@ export function TradingHoursWidget({ data, currency = 'USD' }: TradingHoursWidge
     };
 
     return (
-        <div className="glass-card border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl p-6">
+        <div className="glass-card border-border-color bg-surface-elevated backdrop-blur-xl rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">
                 <div>
                     <h3 className="text-sm font-semibold text-gray-100">Trades by Hour of Day</h3>
-                    <p className="text-xs text-gray-500">When you open trades — find your most active trading hours</p>
+                    <p className="text-xs text-text-muted">When you open trades — find your most active trading hours</p>
                 </div>
                 {/* Dropdown Selector */}
                 <div className="relative">
                     <button
                         onClick={() => setDropdownOpen(!dropdownOpen)}
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-xs font-medium text-gray-300"
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface-elevated border border-border-color hover:bg-surface-hover transition-colors text-xs font-medium text-text-secondary"
                     >
                         {currentView.label}
                         <ChevronDown size={12} className={cn('transition-transform', dropdownOpen && 'rotate-180')} />
@@ -163,7 +163,7 @@ export function TradingHoursWidget({ data, currency = 'USD' }: TradingHoursWidge
                     {dropdownOpen && (
                         <>
                             <div className="fixed inset-0 z-10" onClick={() => setDropdownOpen(false)} />
-                            <div className="absolute right-0 top-full mt-1 z-20 min-w-[100px] py-1 rounded-lg bg-[var(--surface-solid)] border border-white/10 shadow-xl">
+                            <div className="absolute right-0 top-full mt-1 z-20 min-w-[100px] py-1 rounded-lg bg-[var(--surface-solid)] border border-border-color shadow-xl">
                                 {VIEW_OPTIONS.map((option) => (
                                     <button
                                         key={option.value}
@@ -175,7 +175,7 @@ export function TradingHoursWidget({ data, currency = 'USD' }: TradingHoursWidge
                                             'w-full px-3 py-1.5 text-left text-xs font-medium transition-colors',
                                             viewMode === option.value
                                                 ? 'text-primary bg-primary/10'
-                                                : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                                : 'text-text-muted hover:text-text-primary hover:bg-surface-hover'
                                         )}
                                     >
                                         {option.label}
@@ -221,21 +221,21 @@ export function TradingHoursWidget({ data, currency = 'USD' }: TradingHoursWidge
                                     ) : (
                                         <div className={cn(
                                             'w-full h-full rounded-t transition-colors',
-                                            hasData ? colors : 'bg-white/5',
+                                            hasData ? colors : 'bg-surface-elevated',
                                             hasData && 'group-hover/bar:opacity-80'
                                         )} />
                                     )}
                                     
                                     {/* Tooltip */}
                                     {hasData && (
-                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1.5 rounded bg-black/95 border border-white/10 text-[9px] font-bold whitespace-nowrap opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none z-10">
+                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1.5 rounded bg-black/95 border border-border-color text-[9px] font-bold whitespace-nowrap opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none z-10">
                                             {getTooltipContent(hour)}
                                         </div>
                                     )}
                                 </div>
                             </div>
                             {/* Time label under each bar */}
-                            <span className="text-[10px] font-bold text-gray-600 tabular-nums shrink-0">
+                            <span className="text-[10px] font-bold text-text-muted tabular-nums shrink-0">
                                 {hour.hour.toString().padStart(2, '0')}
                             </span>
                         </div>
@@ -248,11 +248,11 @@ export function TradingHoursWidget({ data, currency = 'USD' }: TradingHoursWidge
                 <div className="flex items-center justify-center gap-4 mt-3 text-[9px] font-medium">
                     <div className="flex items-center gap-1">
                         <div className="w-2 h-2 rounded-sm bg-profit" />
-                        <span className="text-gray-400">Wins</span>
+                        <span className="text-text-muted">Wins</span>
                     </div>
                     <div className="flex items-center gap-1">
                         <div className="w-2 h-2 rounded-sm bg-loss" />
-                        <span className="text-gray-400">Losses</span>
+                        <span className="text-text-muted">Losses</span>
                     </div>
                 </div>
             )}

@@ -1,5 +1,5 @@
 import prisma from '@/lib/prisma'
-import { calculateProfitFactor, serializeProfitFactor, calculateMaxDrawdownPercent } from '@/lib/analytics'
+import { calculateProfitFactor, serializeProfitFactor, calculateMaxDrawdownFromBalance } from '@/lib/analytics'
 import { formatPercent } from '@/lib/formatNumber'
 import { formatDateKey } from '@/lib/formatTime'
 import type { WeeklyDigestData } from '@/lib/email'
@@ -126,7 +126,7 @@ export async function computeWeeklyDigestData(accountId: string, userId: string)
     .slice(0, 5)
 
   const pnlValues = trades.map(t => t.pnl || 0)
-  const maxDrawdown = calculateMaxDrawdownPercent(pnlValues)
+  const maxDrawdown = calculateMaxDrawdownFromBalance(pnlValues, accountBalance)
   const largestWin = Math.max(0, ...pnlValues)
   const largestLoss = Math.min(0, ...pnlValues)
   const avgWin = wins.length > 0 ? wins.reduce((sum, t) => sum + (t.pnl || 0), 0) / wins.length : 0

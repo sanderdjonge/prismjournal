@@ -11,11 +11,11 @@ interface TradeFormActionsProps {
 
 export function TradeFormActions({ saving, onCancel, onSubmit }: TradeFormActionsProps) {
     return (
-        <div className="p-6 border-t border-white/5 bg-white/[0.02] flex gap-3">
+        <div className="p-6 border-t border-border-subtle bg-surface-elevated flex gap-3">
             <button
                 type="button"
                 onClick={onCancel}
-                className="px-6 py-3 rounded-xl border border-white/10 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 hover:text-white transition-all flex-1"
+                className="px-6 py-3 rounded-xl border border-border-color text-[10px] font-black uppercase tracking-[0.2em] text-text-muted hover:text-text-primary transition-all flex-1"
             >
                 Discard
             </button>

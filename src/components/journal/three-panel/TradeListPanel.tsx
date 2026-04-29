@@ -42,10 +42,10 @@ interface TradeListPanelProps {
 
 export function TradeListPanel({ trades, selectedId, onSelect }: TradeListPanelProps) {
     return (
-        <div className="flex flex-col min-h-0 overflow-hidden border-r border-white/[0.06]" style={{ width: 268 }}>
-            <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] flex-shrink-0">
-                <span className="text-[9px] font-black uppercase tracking-[0.22em] text-gray-500">Trade List</span>
-                <span className="text-[9px] font-black uppercase tracking-[0.15em] text-gray-600">{trades.length}</span>
+        <div className="flex flex-col min-h-0 overflow-hidden border-r border-border-subtle" style={{ width: 268 }}>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle flex-shrink-0">
+                <span className="text-[9px] font-black uppercase tracking-[0.22em] text-text-muted">Trade List</span>
+                <span className="text-[9px] font-black uppercase tracking-[0.15em] text-text-muted">{trades.length}</span>
             </div>
 
             <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
@@ -71,7 +71,7 @@ export function TradeListPanel({ trades, selectedId, onSelect }: TradeListPanelP
                             key={t.id}
                             onClick={() => onSelect(t)}
                             className={`relative w-full text-left flex border-b border-white/[0.03] transition-colors ${
-                                isSelected ? 'bg-primary/[0.05]' : 'hover:bg-white/[0.03]'
+                                isSelected ? 'bg-primary/[0.05]' : 'hover:bg-surface-hover'
                             }`}
                         >
                             {/* Left colour bar */}
@@ -88,7 +88,7 @@ export function TradeListPanel({ trades, selectedId, onSelect }: TradeListPanelP
                                     <span className="font-mono text-[13px] font-bold text-white tracking-[0.04em] truncate">
                                         {t.symbol}
                                     </span>
-                                    <span className="text-[9px] font-semibold text-gray-600 whitespace-nowrap flex-shrink-0">
+                                    <span className="text-[9px] font-semibold text-text-muted whitespace-nowrap flex-shrink-0">
                                         {dateStr}{timeStr ? ` · ${timeStr}` : ''}
                                     </span>
                                 </div>
@@ -104,7 +104,7 @@ export function TradeListPanel({ trades, selectedId, onSelect }: TradeListPanelP
                                             {t.type}
                                         </span>
                                         {zone && (
-                                            <span className="text-[9px] font-bold uppercase tracking-[0.06em] text-gray-500 truncate">
+                                            <span className="text-[9px] font-bold uppercase tracking-[0.06em] text-text-muted truncate">
                                                 {zone}
                                             </span>
                                         )}

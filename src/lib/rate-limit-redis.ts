@@ -4,6 +4,11 @@
  * Uses INCR + EXPIRE for atomic fixed-window counting in Redis.
  * Falls back to an in-process Map when Redis is unavailable or REDIS_URL is unset,
  * so the app stays functional if Redis is down (fail-open).
+ *
+ * Security note (6.3): This limiter fails open (returns null) when Redis is
+ * unavailable. This is a deliberate availability-over-security trade-off —
+ * the app stays functional during Redis outages. In-memory fallback provides
+ * basic protection per-instance.
  */
 
 import { NextResponse } from 'next/server';
@@ -131,8 +136,13 @@ function tooManyRequests(limit: number, retryAfter: number): NextResponse {
 // ── Pre-configured limiters ────────────────────────────────────────────────────
 
 export const Limiters = {
-  register: { name: 'register', limit: 5,   windowMs: 60_000 } as RateLimiterConfig,
-  sync:     { name: 'sync',     limit: parseInt(process.env.RATE_LIMIT_SYNC ?? '600'), windowMs: 60_000 } as RateLimiterConfig,
-  api:      { name: 'api',      limit: parseInt(process.env.RATE_LIMIT_API  ?? '100'), windowMs: 60_000 } as RateLimiterConfig,
-  admin:    { name: 'admin',    limit: 30,  windowMs: 60_000 } as RateLimiterConfig,
+  register:        { name: 'register',        limit: 5,   windowMs: 60_000 } as RateLimiterConfig,
+  sync:            { name: 'sync',            limit: parseInt(process.env.RATE_LIMIT_SYNC ?? '600'), windowMs: 60_000 } as RateLimiterConfig,
+  api:             { name: 'api',             limit: parseInt(process.env.RATE_LIMIT_API  ?? '100'), windowMs: 60_000 } as RateLimiterConfig,
+  admin:           { name: 'admin',           limit: 30,  windowMs: 60_000 } as RateLimiterConfig,
+  twoFaSetup:      { name: '2fa-setup',       limit: 5,   windowMs: 60_000 } as RateLimiterConfig,
+  twoFaVerify:     { name: '2fa-verify',       limit: 5,   windowMs: 60_000 } as RateLimiterConfig,
+  twoFaDisable:    { name: '2fa-disable',      limit: 5,   windowMs: 60_000 } as RateLimiterConfig,
+  forgotPassword:  { name: 'forgot-password',  limit: 3,   windowMs: 60_000 } as RateLimiterConfig,
+  resetPassword:   { name: 'reset-password',   limit: 3,   windowMs: 60_000 } as RateLimiterConfig,
 };

@@ -51,8 +51,8 @@ model User {
   preTradeNotes       PreTradeNote[]
   challenges          TradingChallenge[]
   checklists          Checklist[]
-  createdInviteTokens InviteToken[]  @relation("CreatedInvites")
-  usedInviteToken     InviteToken?   @relation("UsedInvite")
+  createdInviteTokens InviteToken[]        @relation("CreatedInvites")
+  usedInviteToken     InviteToken?         @relation("UsedInvite")
 
   // Social Sharing Settings
   showPrismScoreOnShare Boolean @default(false)
@@ -63,7 +63,8 @@ model User {
   publicProfileStats   Json? // { showWinRate: bool, showEquityCurve: bool, showPrismScore: bool, showGrowth: bool }
 
   // Relations
-  shareCards ShareCard[]
+  shareCards        ShareCard[]
+  pushSubscriptions PushSubscription[]
 }
 
 // ============================================
@@ -458,12 +459,15 @@ model Trade {
   followedPlan     Boolean?
 
   // Classification (from TradeLens)
-  source          TradeSource @default(MANUAL)
-  platform        TradePlatform @default(MANUAL)
-  setupType       String?
-  
+  source    TradeSource   @default(MANUAL)
+  platform  TradePlatform @default(MANUAL)
+  setupType String?
+
   // Phase 24: Hypothetical/Missed Trade Tracking
   hypotheticalData Json? // Would-be entry/exit data for missed trades
+
+  // Related Trades (Scaling In/Out linking)
+  relatedTradeIds String[] @default([])
 
   // Notes
   notes          String?
@@ -513,7 +517,7 @@ enum TradeSource {
   PAPER
   LIVE
   MANUAL
-  MT5_SYNC     // Synced from MT5 platform
+  MT5_SYNC // Synced from MT5 platform
   HYPOTHETICAL // Missed trade - trade not taken but tracked
 }
 
@@ -590,23 +594,23 @@ model PendingScreenshot {
 // ============================================
 
 model ShareCard {
-  id        String   @id @default(cuid())
-  tradeId   String
-  trade     Trade    @relation(fields: [tradeId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id      String @id @default(cuid())
+  tradeId String
+  trade   Trade  @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Card configuration
   includeScreenshot Boolean @default(true)
   showPrismScore    Boolean @default(false)
-  platform          String  // "discord" | "twitter" | "reddit" | "general"
+  platform          String // "discord" | "twitter" | "reddit" | "general"
 
   // Visibility - cards are private by default
   isPublic Boolean @default(false)
 
   // Generated file
   mediaId String? @unique
-  media   Media?   @relation(fields: [mediaId], references: [id], onDelete: SetNull)
+  media   Media?  @relation(fields: [mediaId], references: [id], onDelete: SetNull)
 
   // Metadata
   createdAt DateTime @default(now())
@@ -726,6 +730,8 @@ model AlertConfig {
   digestFrequency    String  @default("WEEKLY") // WEEKLY or DAILY
   digestSendHour     Int     @default(9) // UTC hour 0-23
   inAppToast         Boolean @default(true)
+  slackWebhookUrl    String?
+  enableSlack        Boolean @default(false)
 }
 
 // ============================================
@@ -806,7 +812,7 @@ model PasswordResetToken {
 model InviteToken {
   id        String    @id @default(cuid())
   token     String    @unique // Random token string
-  email     String?   // Optional: pre-assigned email
+  email     String? // Optional: pre-assigned email
   createdBy String
   creator   User      @relation("CreatedInvites", fields: [createdBy], references: [id], onDelete: Cascade)
   usedBy    String?   @unique
@@ -826,9 +832,9 @@ model InviteToken {
 // ============================================
 
 model SystemSettings {
-  id              String  @id @default("system")
-  inviteOnlyMode  Boolean @default(false)
-  updatedAt       DateTime @updatedAt
+  id             String   @id @default("system")
+  inviteOnlyMode Boolean  @default(false)
+  updatedAt      DateTime @updatedAt
 }
 
 // ============================================
@@ -1098,4 +1104,22 @@ model ChecklistCompletion {
   @@unique([tradeId])
   @@index([strategyId])
   @@index([completionPct])
+}
+
+// ============================================
+// Push Subscriptions (Browser Push Notifications)
+// ============================================
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, endpoint])
+  @@index([userId])
 }

@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { sendPasswordResetEmail } from '@/lib/email';
-import { passwordLimiter } from '@/lib/rate-limit';
+import { checkLimit, Limiters } from '@/lib/rate-limit-redis';
 import { randomBytes } from 'crypto';
 import bcrypt from 'bcryptjs';
 import { validateBody } from '@/lib/validations/common';
@@ -14,7 +14,7 @@ const forgotPasswordSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  const rateLimitResult = await passwordLimiter.check(request, 3);
+  const rateLimitResult = await checkLimit(request, { ...Limiters.register, name: 'forgot-password', limit: 3 });
   if (rateLimitResult) return rateLimitResult;
 
   try {

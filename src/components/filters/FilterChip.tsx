@@ -17,7 +17,7 @@ export function FilterChip({ filter, onRemove }: FilterChipProps) {
         type="button"
         onClick={() => onRemove(filter)}
         aria-label={`Remove ${filter.label} filter`}
-        className="opacity-60 hover:opacity-100 transition-opacity ml-0.5 hover:text-white"
+        className="opacity-60 hover:opacity-100 transition-opacity ml-0.5 hover:text-text-primary"
       >
         <X size={10} />
       </button>

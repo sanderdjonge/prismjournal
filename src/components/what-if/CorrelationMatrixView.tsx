@@ -40,30 +40,30 @@ export function CorrelationMatrixView({ matrix, onCellClick }: CorrelationMatrix
   return (
     <div className="rounded-xl bg-surface-card border border-border-color overflow-hidden">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-white/5">
+      <div className="px-4 py-3 border-b border-border-subtle">
         <div className="flex items-center justify-between">
           <h3 className="text-[11px] font-black uppercase tracking-widest text-white">
             Filter Correlation Matrix
           </h3>
-          <span className="text-[9px] text-gray-500">
+          <span className="text-[9px] text-text-muted">
             {matrix.tradeCount} trades • {formatShortDate(matrix.generatedAt)}
           </span>
         </div>
       </div>
       
       {/* Legend */}
-      <div className="px-4 py-2 border-b border-white/5 flex items-center gap-4">
+      <div className="px-4 py-2 border-b border-border-subtle flex items-center gap-4">
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 rounded bg-green-500" />
-          <span className="text-[8px] text-gray-400">Strong Positive</span>
+          <span className="text-[8px] text-text-muted">Strong Positive</span>
         </div>
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 rounded bg-red-500" />
-          <span className="text-[8px] text-gray-400">Strong Negative</span>
+          <span className="text-[8px] text-text-muted">Strong Negative</span>
         </div>
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 rounded bg-gray-700" />
-          <span className="text-[8px] text-gray-400">No Correlation</span>
+          <span className="text-[8px] text-text-muted">No Correlation</span>
         </div>
       </div>
       
@@ -79,7 +79,7 @@ export function CorrelationMatrixView({ matrix, onCellClick }: CorrelationMatrix
               key={`col-${varName}`}
               className="p-1 text-center"
             >
-              <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap transform -rotate-45 origin-center block">
+              <span className="text-[8px] font-bold text-text-muted uppercase tracking-widest whitespace-nowrap transform -rotate-45 origin-center block">
                 {varName.length > 8 ? varName.slice(0, 8) + '...' : varName}
               </span>
             </div>
@@ -93,7 +93,7 @@ export function CorrelationMatrixView({ matrix, onCellClick }: CorrelationMatrix
                 key={`row-${rowVar}`}
                 className="p-2 flex items-center"
               >
-                <span className="text-[9px] font-bold text-gray-300 uppercase tracking-widest truncate">
+                <span className="text-[9px] font-bold text-text-secondary uppercase tracking-widest truncate">
                   {rowVar}
                 </span>
               </div>
@@ -152,17 +152,17 @@ export function MiniCorrelationView({ matrix, highlightFilter }: MiniCorrelation
   
   return (
     <div className="space-y-1">
-      <h4 className="text-[9px] font-black uppercase tracking-widest text-gray-500 mb-2">
+      <h4 className="text-[9px] font-black uppercase tracking-widest text-text-muted mb-2">
         Top Filter Correlations
       </h4>
       {correlations.map(({ filter, avgCorr }) => (
         <div
           key={filter}
           className={`flex items-center justify-between p-2 rounded-lg ${
-            filter === highlightFilter ? 'bg-primary/20 ring-1 ring-primary/40' : 'bg-white/5'
+            filter === highlightFilter ? 'bg-primary/20 ring-1 ring-primary/40' : 'bg-surface-elevated'
           }`}
         >
-          <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest truncate">
+          <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest truncate">
             {filter}
           </span>
           <div className="flex items-center gap-1">
@@ -171,7 +171,7 @@ export function MiniCorrelationView({ matrix, highlightFilter }: MiniCorrelation
                 avgCorr > 0 ? 'bg-green-500' : avgCorr < 0 ? 'bg-red-500' : 'bg-gray-600'
               }`}
             />
-            <span className="text-[10px] font-bold text-gray-400">
+            <span className="text-[10px] font-bold text-text-muted">
               {avgCorr > 0 ? '+' : ''}{avgCorr.toFixed(2)}
             </span>
           </div>
@@ -220,7 +220,7 @@ export function FilterEffectivenessSummary({ matrix }: FilterEffectivenessProps)
               : 'bg-gray-800/50 border-gray-700'
           }`}
         >
-          <div className="text-[9px] font-black uppercase tracking-widest text-gray-400 truncate">
+          <div className="text-[9px] font-black uppercase tracking-widest text-text-muted truncate">
             {filter}
           </div>
           <div className={`text-lg font-bold ${
@@ -228,7 +228,7 @@ export function FilterEffectivenessSummary({ matrix }: FilterEffectivenessProps)
               ? 'text-green-400'
               : effectiveness === 'negative'
               ? 'text-red-400'
-              : 'text-gray-500'
+              : 'text-text-muted'
           }`}>
             {correlation > 0 ? '+' : ''}{correlation.toFixed(2)}
           </div>
