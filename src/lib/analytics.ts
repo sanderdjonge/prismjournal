@@ -7,7 +7,8 @@
  *   - Profit Factor: grossLoss=0 & grossProfit=0 → Infinity (no trades = breakeven)
  *   - Win Rate: 0 trades → 0
  *   - Win definition: pnl > 0 (strict — breakeven is NOT a win)
- *   - Max Drawdown: always returns percentage (0–100), never absolute dollars
+ *   - Max Drawdown: calculateMaxDrawdownPercent returns percentage (0–100);
+ *   calculateMaxDrawdownAbsolute returns absolute currency amount
  *   - Dollar Expectancy: 0 trades → 0
  *   - R-Expectancy: denominator = trades WITH rMultiple (nulls excluded)
  *   - Avg R-Multiple: denominator = trades WITH rMultiple (nulls excluded)

@@ -111,7 +111,7 @@ export async function sendWeeklyDigestEmail(data: WeeklyDigestData): Promise<Ema
     const pnlColor = pnl >= 0 ? '#4ade80' : '#f87171';
     return `
       <tr>
-        <td width="36" style="font-size:12px;color:#94a3b8;padding:3px 0;">${day}</td>
+        <td width="36" style="font-size:12px;color:#94a3b8;padding:3px 0;">${escapeHtml(day)}</td>
         <td style="padding:3px 8px;">
           <table role="presentation" cellpadding="0" cellspacing="0"><tr>
             <td style="background-color:${barColor};height:14px;width:${barWidth}px;border-radius:3px;"></td>
@@ -127,7 +127,7 @@ export async function sendWeeklyDigestEmail(data: WeeklyDigestData): Promise<Ema
     const padding = idx === 0 ? '10px 0 0' : '8px 0 0';
     return `
       <tr>
-        <td style="font-size:13px;color:#e2e8f0;font-weight:600;padding:${padding};">${inst.symbol}</td>
+        <td style="font-size:13px;color:#e2e8f0;font-weight:600;padding:${padding};">${escapeHtml(inst.symbol)}</td>
         <td style="font-size:13px;color:#94a3b8;padding:${padding};text-align:center;">${inst.trades}</td>
         <td style="font-size:13px;color:#94a3b8;padding:${padding};text-align:center;">${formatPercent(inst.winRate, 1)}</td>
         <td style="font-size:13px;color:${instPnlColor};font-weight:600;padding:${padding};text-align:right;">${formatCurrency(inst.pnl)}</td>
@@ -217,7 +217,7 @@ export async function sendWeeklyDigestEmail(data: WeeklyDigestData): Promise<Ema
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#1a1a2e;border:1px solid #2d2d44;border-radius:10px;">
           <tr><td style="padding:16px 20px;">
             <p style="margin:0;font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Profit Factor</p>
-            <p style="margin:4px 0 0;font-size:24px;font-weight:700;color:#e2e8f0;">${profitFactor.toFixed(2)}</p>
+            <p style="margin:4px 0 0;font-size:24px;font-weight:700;color:#e2e8f0;">${formatProfitFactor(profitFactor)}</p>
             <p style="margin:2px 0 0;font-size:12px;color:#64748b;">Target: > 1.5</p>
           </td></tr>
         </table>

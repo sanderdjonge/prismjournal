@@ -13,6 +13,8 @@ type AdminHandler = (
   session: AdminSession
 ) => Promise<Response>;
 
+const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+
 export function withAdmin(handler: AdminHandler) {
   return async (req: NextRequest, ctx: Record<string, unknown>): Promise<Response> => {
     const rateLimitResponse = await checkLimit(req, Limiters.admin);
@@ -21,6 +23,23 @@ export function withAdmin(handler: AdminHandler) {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // CSRF: verify Origin header on state-mutating requests
+    if (MUTATING_METHODS.has(req.method)) {
+      const origin = req.headers.get('origin');
+      const host = req.headers.get('x-forwarded-host') ?? req.headers.get('host');
+      if (origin && host) {
+        try {
+          const originHost = new URL(origin).host;
+          if (originHost !== host) {
+            logger.warn({ origin, host, url: req.url }, '[withAdmin] CSRF origin mismatch');
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+          }
+        } catch {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
+      }
     }
 
     const user = await prisma.user.findUnique({
