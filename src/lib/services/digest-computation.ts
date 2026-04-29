@@ -126,7 +126,6 @@ export async function computeWeeklyDigestData(accountId: string, userId: string)
     .slice(0, 5)
 
   const pnlValues = trades.map(t => t.pnl || 0)
-  const accountBalance = accounts[0]?.balance ?? accounts[0]?.accountSize ?? 10000
   const maxDrawdown = calculateMaxDrawdownFromBalance(pnlValues, accountBalance)
   const largestWin = Math.max(0, ...pnlValues)
   const largestLoss = Math.min(0, ...pnlValues)
