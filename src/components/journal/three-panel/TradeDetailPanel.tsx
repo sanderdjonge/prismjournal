@@ -126,9 +126,9 @@ export function TradeDetailPanel({ trade, onNavigateTrade }: TradeDetailPanelPro
                 .then(data => {
                     setStrategy(data)
                     apiFetch(`/api/checklist-completions?tradeId=${trade.id}`)
-                        .then((compData: Record<string, unknown>) => {
-                            if (compData.hasStrategy && compData.checkedState) {
-                                setCheckedItems(compData.checkedState as Record<string, boolean>)
+                        .then((compData: unknown) => {
+                            if (typeof compData === "object" && compData !== null && "hasStrategy" in compData && "checkedState" in compData) {
+                                setCheckedItems((compData as { checkedState: Record<string, boolean> }).checkedState)
                             } else {
                                 setCheckedItems({})
                             }
