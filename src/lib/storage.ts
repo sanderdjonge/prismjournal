@@ -27,7 +27,8 @@ export async function ensureStorageDir(): Promise<void> {
 const ALLOWED_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif']);
 
 function assertSafeFilename(filename: string): void {
-    if (!/^[\w.-]+$/.test(filename) || filename.includes('..')) {
+    // Reject: path traversal, leading dots (hidden files), non-word characters
+    if (!/^[\w.-]+$/.test(filename) || filename.includes('..') || filename.startsWith('.')) {
         throw new Error('Invalid filename');
     }
 }
@@ -71,6 +72,9 @@ export async function readFile(filename: string): Promise<Buffer> {
 
 // Check if file exists
 export async function fileExists(filename: string): Promise<boolean> {
+    if (!/^\d+-[a-z0-9]+\.(png|jpg|jpeg|webp|gif)$/i.test(filename)) {
+        throw new Error('Invalid filename');
+    }
     const filepath = path.join(SCREENSHOTS_DIR, filename);
     try {
         await access(filepath);
@@ -82,6 +86,9 @@ export async function fileExists(filename: string): Promise<boolean> {
 
 // Get file stats
 export async function getFileStats(filename: string): Promise<fs.Stats | null> {
+    if (!/^\d+-[a-z0-9]+\.(png|jpg|jpeg|webp|gif)$/i.test(filename)) {
+        throw new Error('Invalid filename');
+    }
     const filepath = path.join(SCREENSHOTS_DIR, filename);
     try {
         return await fs.promises.stat(filepath);

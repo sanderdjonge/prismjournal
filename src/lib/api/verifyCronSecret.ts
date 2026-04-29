@@ -16,8 +16,19 @@ export function verifyCronSecret(request: NextRequest): NextResponse | null {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (provided.length !== expectedSecret.length ||
-        !timingSafeEqual(Buffer.from(provided), Buffer.from(expectedSecret))) {
+    // Use timingSafeEqual exclusively — the previous length check leaked timing info
+    // by fast-rejecting wrong-length inputs. Pad shorter value to match longer so
+    // timingSafeEqual always compares buffers of equal length.
+    const providedBuf = Buffer.from(provided);
+    const expectedBuf = Buffer.from(expectedSecret);
+    const maxLen = Math.max(providedBuf.length, expectedBuf.length);
+
+    const paddedProvided = Buffer.alloc(maxLen);
+    providedBuf.copy(paddedProvided);
+    const paddedExpected = Buffer.alloc(maxLen);
+    expectedBuf.copy(paddedExpected);
+
+    if (!timingSafeEqual(paddedProvided, paddedExpected)) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

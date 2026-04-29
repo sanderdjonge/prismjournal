@@ -30,3 +30,11 @@ describe('generateFilename', () => {
         expect(generateFilename('a.PNG')).toMatch(/\.png$/);
     });
 });
+
+describe('assertSafeFilename (via generateFilename output)', () => {
+    it('never produces filenames starting with a dot', () => {
+        const result = generateFilename('.hidden.png');
+        expect(result).toMatch(/^\d+-/);
+        expect(result.startsWith('.')).toBe(false);
+    });
+});

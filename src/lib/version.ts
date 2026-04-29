@@ -11,7 +11,7 @@ export const APP_VERSION = pkg.version; // e.g. "2.17.0"
  */
 export const BUILD_DATE = '2026-04-28';
 
-export const BUILD_NOTES = 'Fix dashboard max drawdown: now shows absolute currency amount instead of broken percentage';
+export const BUILD_NOTES = 'Security hardening: CSP unsafe-inline removed from prod, dashboard max drawdown fix';
 
 /** Maps version to a human-readable phase label, e.g. "2.17.0" → "Phase 17" */
 export function versionToPhase(version: string): string {
