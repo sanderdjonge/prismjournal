@@ -52,6 +52,7 @@ import { useCurrency } from '@/lib/currency';
 import { useQueryClient } from '@tanstack/react-query';
 import { apiFetch, apiPost, apiPatch, apiDelete } from '@/lib/api/client';
 import { toast } from 'sonner';
+import { requestNotificationPermission, subscribeToPush, unsubscribeFromPush, getPushSubscription } from '@/lib/push-client';
 
 const CURRENCY_OPTIONS = [
     { label: 'USD - United States Dollar', value: 'USD' },
@@ -84,6 +85,9 @@ interface NotifState {
     enableMddEmailAlerts: boolean;
     digestFrequency: 'DAILY' | 'WEEKLY';
     digestSendHour: number;
+    // Slack notification settings
+    slackWebhookUrl: string;
+    enableSlack: boolean;
 }
 
 interface TradingAccount {
@@ -190,11 +194,22 @@ function SettingsContent() {
         enableMddEmailAlerts: false,
         digestFrequency: 'WEEKLY' as const,
         digestSendHour: 9,
+        // Slack
+        slackWebhookUrl: '',
+        enableSlack: false,
     });
     const [testingSend, setTestingSend] = useState(false);
     const [testResult, setTestResult] = useState<string | null>(null);
     const [testingEmail, setTestingEmail] = useState(false);
     const [emailTestResult, setEmailTestResult] = useState<string | null>(null);
+
+    // Push notification state
+    const [pushEnabled, setPushEnabled] = useState(false);
+    const [pushLoading, setPushLoading] = useState(false);
+
+    // Slack test state
+    const [testingSlack, setTestingSlack] = useState(false);
+    const [slackTestResult, setSlackTestResult] = useState<string | null>(null);
 
     // 2FA state
     const [twoFAEnabled, setTwoFAEnabled] = useState(false);
@@ -304,6 +319,8 @@ function SettingsContent() {
                     digestFrequency: (data.digestFrequency ?? 'WEEKLY') as 'DAILY' | 'WEEKLY',
                     digestSendHour: data.digestSendHour ?? 9,
                     inAppToast: data.inAppToast ?? true,
+                    slackWebhookUrl: data.slackWebhookUrl ?? '',
+                    enableSlack: data.enableSlack ?? false,
                 }));
             })
             .catch(() => toast.error('Failed to update settings'));
@@ -319,6 +336,9 @@ function SettingsContent() {
         loadAccountsData();
         loadPropFirms();
         loadTags();
+
+        // Check if push notifications are already enabled
+        getPushSubscription().then(sub => setPushEnabled(!!sub)).catch(() => {});
     }, []);
     
     const loadAccountDetails = async (accountId: string) => {
@@ -458,6 +478,8 @@ function SettingsContent() {
                     digestFrequency: notifs.digestFrequency,
                     digestSendHour: notifs.digestSendHour,
                     inAppToast: notifs.inAppToast,
+                    slackWebhookUrl: notifs.slackWebhookUrl.trim() || null,
+                    enableSlack: notifs.enableSlack,
                 });
             }
             setSaved(true);
@@ -882,6 +904,123 @@ function SettingsContent() {
                                         placeholder="e.g. 5"
                                         className="w-32 glass-card px-4 py-3 border-border-subtle bg-surface-card font-mono text-sm text-white outline-none focus:border-primary/50 transition-all placeholder:text-text-muted"
                                     />
+                                </div>
+                            </div>
+
+                            {/* Browser Push Notifications */}
+                            <div className="space-y-4">
+                                <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-text-muted border-b border-border-subtle pb-2">Browser Push Notifications</h4>
+                                <div className="glass-card p-6 border-border-subtle bg-surface-elevated space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h5 className="text-sm font-bold text-white">Push Notifications</h5>
+                                            <p className="text-[10px] text-text-muted">Receive instant browser notifications for trade events and alerts</p>
+                                        </div>
+                                        <button
+                                            onClick={async () => {
+                                                setPushLoading(true)
+                                                try {
+                                                    if (pushEnabled) {
+                                                        await unsubscribeFromPush()
+                                                        await apiPost('/api/push/unsubscribe', {
+                                                            endpoint: (await navigator.serviceWorker?.ready?.then(r => r.pushManager.getSubscription()))?.endpoint,
+                                                        }).catch(() => {})
+                                                        setPushEnabled(false)
+                                                    } else {
+                                                        const permission = await requestNotificationPermission()
+                                                        if (permission !== 'granted') {
+                                                            toast.error('Notification permission denied')
+                                                            return
+                                                        }
+                                                        const subscription = await subscribeToPush()
+                                                        if (!subscription) {
+                                                            toast.error('Failed to create push subscription')
+                                                            return
+                                                        }
+                                                        await apiPost('/api/push/subscribe', subscription)
+                                                        setPushEnabled(true)
+                                                        toast.success('Push notifications enabled')
+                                                    }
+                                                } catch (e) {
+                                                    toast.error(e instanceof Error ? e.message : 'Failed to toggle push notifications')
+                                                } finally {
+                                                    setPushLoading(false)
+                                                }
+                                            }}
+                                            disabled={pushLoading}
+                                            className={cn(
+                                                "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50",
+                                                pushEnabled
+                                                    ? "bg-danger/10 text-danger border border-danger/30 hover:bg-danger/20"
+                                                    : "bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20"
+                                            )}
+                                        >
+                                            {pushLoading ? <Loader2 size={14} className="animate-spin" /> : null}
+                                            {pushEnabled ? 'Disable Push' : 'Enable Push Notifications'}
+                                        </button>
+                                    </div>
+                                    {pushEnabled && (
+                                        <p className="text-[9px] font-bold text-accent">Push notifications are active on this browser</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Slack Integration */}
+                            <div className="space-y-4">
+                                <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-text-muted border-b border-border-subtle pb-2">Slack Integration</h4>
+                                <div className="glass-card p-6 border-border-subtle bg-surface-elevated space-y-4">
+                                    <p className="text-xs text-text-muted leading-relaxed">
+                                        Create a <a href="https://api.slack.com/messaging/webhooks" target="_blank" rel="noopener" className="text-primary font-bold hover:underline">Slack Incoming Webhook</a> and paste the URL below to receive alerts in your Slack channel.
+                                    </p>
+                                    <div className="space-y-2">
+                                        <label className="text-[9px] font-black uppercase tracking-widest text-text-muted">Slack Webhook URL</label>
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="url"
+                                                value={notifs.slackWebhookUrl}
+                                                onChange={(e) => setNotifs(prev => ({ ...prev, slackWebhookUrl: e.target.value }))}
+                                                placeholder="https://hooks.slack.com/services/..."
+                                                className="flex-1 glass-card px-4 py-3 border-border-subtle bg-surface-card font-mono text-sm text-white outline-none focus:border-primary/50 transition-all placeholder:text-text-muted"
+                                            />
+                                            <button
+                                                onClick={async () => {
+                                                    setTestingSlack(true)
+                                                    setSlackTestResult(null)
+                                                    try {
+                                                        const data = await apiPost<any>('/api/slack/test', { webhookUrl: notifs.slackWebhookUrl.trim() || undefined })
+                                                        setSlackTestResult(data.success ? 'sent' : 'Failed')
+                                                    } catch { setSlackTestResult('Failed') }
+                                                    finally { setTestingSlack(false); setTimeout(() => setSlackTestResult(null), 3000) }
+                                                }}
+                                                disabled={testingSlack || !notifs.slackWebhookUrl}
+                                                className="px-4 py-3 rounded-xl border border-border-color hover:bg-surface-hover transition-all disabled:opacity-40 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-text-muted hover:text-text-primary"
+                                                title="Send test message to Slack"
+                                            >
+                                                {testingSlack ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                                                Test
+                                            </button>
+                                        </div>
+                                        {slackTestResult === 'sent' && <p className="text-[9px] font-bold text-accent">Test message sent! Check Slack.</p>}
+                                        {slackTestResult && slackTestResult !== 'sent' && <p className="text-[9px] font-bold text-danger">{slackTestResult}</p>}
+                                    </div>
+                                    <div className="flex items-center justify-between py-2">
+                                        <div>
+                                            <h5 className="text-sm font-bold text-white">Enable Slack Notifications</h5>
+                                            <p className="text-[10px] text-text-muted">Send trade alerts and risk notifications to Slack</p>
+                                        </div>
+                                        <button
+                                            onClick={() => setNotifs((prev) => ({ ...prev, enableSlack: !prev.enableSlack }))}
+                                            className={cn(
+                                                "w-12 h-6 rounded-full transition-all relative shrink-0",
+                                                notifs.enableSlack ? "bg-primary/40" : "bg-surface-hover"
+                                            )}
+                                        >
+                                            <div className={cn(
+                                                "absolute top-1 w-4 h-4 rounded-full transition-all shadow-lg",
+                                                notifs.enableSlack ? "right-1 bg-primary" : "left-1 bg-gray-700"
+                                            )} />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>

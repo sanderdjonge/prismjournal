@@ -10,6 +10,11 @@ import {
   TrendingUp, 
   Settings, 
   BookOpen,
+  PenLine,
+  BarChart3,
+  Target,
+  Brain,
+  Bell,
   X
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
@@ -93,6 +98,213 @@ const STEPS = [
           </div>
           <ArrowRight size={16} className="text-text-muted" />
         </Link>
+      </div>
+    ),
+  },
+  {
+    id: 'first-trade',
+    title: 'Journal Your First Trade',
+    description: 'Log a trade with symbol, direction, prices, and notes to build your journal.',
+    icon: PenLine,
+    content: (
+      <div className="space-y-3">
+        <div className="glass-card bg-surface-elevated border border-border-color rounded-xl p-4">
+          <h4 className="font-bold text-white text-sm mb-3">Trade Entry Fields</h4>
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-primary text-[10px] font-bold">S</div>
+              <div>
+                <p className="text-white text-xs font-semibold">Symbol</p>
+                <p className="text-text-muted text-[10px]">e.g. EURUSD, GBPJPY</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 rounded bg-profit/10 flex items-center justify-center text-profit text-[10px] font-bold">D</div>
+              <div>
+                <p className="text-white text-xs font-semibold">Direction</p>
+                <p className="text-text-muted text-[10px]">LONG or SHORT</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 rounded bg-secondary/10 flex items-center justify-center text-secondary text-[10px] font-bold">E</div>
+              <div>
+                <p className="text-white text-xs font-semibold">Entry / Exit Price</p>
+                <p className="text-text-muted text-[10px]">Where you entered and exited</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 rounded bg-accent/10 flex items-center justify-center text-accent text-[10px] font-bold">N</div>
+              <div>
+                <p className="text-white text-xs font-semibold">Notes</p>
+                <p className="text-text-muted text-[10px]">Your thoughts and reasoning</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <Link
+          href="/journal"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary text-xs font-black uppercase rounded-lg hover:bg-primary/20 transition-all"
+        >
+          Open Journal
+          <ArrowRight size={12} />
+        </Link>
+      </div>
+    ),
+  },
+  {
+    id: 'dashboard',
+    title: 'Understand Your Dashboard',
+    description: 'Your dashboard shows key performance metrics at a glance.',
+    icon: BarChart3,
+    content: (
+      <div className="space-y-3">
+        <div className="glass-card bg-surface-elevated border border-border-color rounded-xl p-4 space-y-3">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-profit/10 flex items-center justify-center text-profit shrink-0">
+              <TrendingUp size={16} />
+            </div>
+            <div>
+              <p className="text-white text-xs font-bold">P&L</p>
+              <p className="text-text-muted text-[10px]">Total profit or loss across all trades</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+              <BarChart3 size={16} />
+            </div>
+            <div>
+              <p className="text-white text-xs font-bold">Win Rate</p>
+              <p className="text-text-muted text-[10px]">Percentage of profitable trades</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary shrink-0">
+              <Target size={16} />
+            </div>
+            <div>
+              <p className="text-white text-xs font-bold">Profit Factor</p>
+              <p className="text-text-muted text-[10px]">Ratio of gross profit to gross loss</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-loss/10 flex items-center justify-center text-loss shrink-0">
+              <TrendingUp size={16} className="rotate-180" />
+            </div>
+            <div>
+              <p className="text-white text-xs font-bold">Drawdown</p>
+              <p className="text-text-muted text-[10px]">Largest peak-to-trough equity decline</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: 'strategies',
+    title: 'Explore Strategies',
+    description: 'Create strategies with rules to measure your plan adherence and improve discipline.',
+    icon: Target,
+    content: (
+      <div className="space-y-4">
+        <div className="glass-card bg-surface-elevated border border-border-color rounded-xl p-4">
+          <h4 className="font-bold text-white text-sm mb-2">How Strategies Work</h4>
+          <p className="text-text-muted text-xs mb-2">
+            Define a strategy with specific rules like max daily loss, minimum R:R ratio, or mandatory stop losses.
+          </p>
+          <p className="text-text-muted text-xs">
+            Each trade is automatically checked against your rules, and violations are tracked so you can spot patterns.
+          </p>
+        </div>
+        <div className="glass-card bg-surface-elevated border border-border-color rounded-xl p-4">
+          <h4 className="font-bold text-white text-sm mb-2">Example Rules</h4>
+          <div className="flex flex-wrap gap-2">
+            <span className="px-2 py-1 rounded-md bg-profit/10 text-profit text-[10px] font-bold">Max Daily Loss</span>
+            <span className="px-2 py-1 rounded-md bg-primary/10 text-primary text-[10px] font-bold">Min R:R Ratio</span>
+            <span className="px-2 py-1 rounded-md bg-secondary/10 text-secondary text-[10px] font-bold">No Overtrading</span>
+            <span className="px-2 py-1 rounded-md bg-warning/10 text-warning text-[10px] font-bold">Mandatory SL</span>
+          </div>
+        </div>
+        <Link
+          href="/pages/strategies"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary text-xs font-black uppercase rounded-lg hover:bg-primary/20 transition-all"
+        >
+          Create Strategy
+          <ArrowRight size={12} />
+        </Link>
+      </div>
+    ),
+  },
+  {
+    id: 'psychology',
+    title: 'Track Your Psychology',
+    description: 'Log your mood, follow your plan, and monitor your tiltmeter to manage emotions.',
+    icon: Brain,
+    content: (
+      <div className="space-y-3">
+        <div className="glass-card bg-surface-elevated border border-border-color rounded-xl p-4 space-y-2">
+          <div className="flex items-center gap-3">
+            <Brain size={16} className="text-primary shrink-0" />
+            <div>
+              <p className="text-white text-xs font-bold">Mood Logging</p>
+              <p className="text-text-muted text-[10px]">Tag each trade: CALM, CONFIDENT, NEUTRAL, ANXIOUS, FOMO, or REVENGE</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <CheckCircle2 size={16} className="text-profit shrink-0" />
+            <div>
+              <p className="text-white text-xs font-bold">Plan Compliance</p>
+              <p className="text-text-muted text-[10px]">Rate whether you followed your trading plan on each trade</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <TrendingUp size={16} className="text-warning shrink-0" />
+            <div>
+              <p className="text-white text-xs font-bold">Tiltmeter</p>
+              <p className="text-text-muted text-[10px]">Auto-calculated score (0–100) based on rule violations and loss streaks</p>
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <span className="px-2 py-1 rounded-md bg-[#4ade80]/10 text-[#4ade80] text-[10px] font-bold">🧘 CALM</span>
+          <span className="px-2 py-1 rounded-md bg-[#f87171]/10 text-[#f87171] text-[10px] font-bold">😰 ANXIOUS</span>
+          <span className="px-2 py-1 rounded-md bg-[#f59e0b]/10 text-[#f59e0b] text-[10px] font-bold">😤 REVENGE</span>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: 'notifications',
+    title: 'Set Up Notifications',
+    description: 'Get alerts via Telegram and email so you never miss important events.',
+    icon: Bell,
+    content: (
+      <div className="space-y-3">
+        <div className="glass-card bg-surface-elevated border border-border-color rounded-xl p-4">
+          <h4 className="font-bold text-white text-sm mb-2">Telegram Bot</h4>
+          <p className="text-text-muted text-xs mb-3">
+            Get instant alerts for trade opens/closes, rule violations, and drawdown warnings.
+          </p>
+          <Link
+            href="/settings?tab=notifications"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary text-xs font-black uppercase rounded-lg hover:bg-primary/20 transition-all"
+          >
+            Set Up Telegram
+            <ArrowRight size={12} />
+          </Link>
+        </div>
+        <div className="glass-card bg-surface-elevated border border-border-color rounded-xl p-4">
+          <h4 className="font-bold text-white text-sm mb-2">Email Digest</h4>
+          <p className="text-text-muted text-xs mb-3">
+            Receive a weekly or daily summary of your performance, stats, and trends.
+          </p>
+          <Link
+            href="/settings?tab=notifications"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-secondary/10 text-secondary text-xs font-black uppercase rounded-lg hover:bg-secondary/20 transition-all"
+          >
+            Enable Digest
+            <ArrowRight size={12} />
+          </Link>
+        </div>
       </div>
     ),
   },
@@ -210,7 +422,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
           </div>
 
           {/* Content */}
-          <div className="p-6">
+          <div className="p-6 max-h-[50vh] overflow-y-auto">
             <p className="text-sm text-text-muted mb-6">{step.description}</p>
             {step.content}
           </div>
@@ -224,7 +436,7 @@ export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
                 onChange={(e) => setDontShowAgain(e.target.checked)}
                 className="w-4 h-4 rounded border-border-color bg-surface-elevated text-primary focus:ring-primary/50"
               />
-              <span className="text-xs text-text-muted">Don't show this again</span>
+              <span className="text-xs text-text-muted">Don&apos;t show this again</span>
             </label>
             <div className="flex items-center justify-between">
               <div className="flex gap-1.5">

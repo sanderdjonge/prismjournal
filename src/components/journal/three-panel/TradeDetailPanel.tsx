@@ -1,6 +1,6 @@
-'use client';
+'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { toast } from 'sonner'
 import { Share2, Plus, X, ChevronDown } from 'lucide-react'
 import { useUpdateTrade } from '@/hooks/useTrades'
@@ -10,6 +10,9 @@ import { useCurrency } from '@/lib/currency'
 import { fmtDecimals } from '@/lib/formatNumber'
 import { apiFetch } from '@/lib/api/client'
 import { ExcursionBar } from '@/components/journal/ExcursionBar'
+import { TradePnlCurve } from '@/components/journal/TradePnlCurve'
+import { RelatedTrades } from '@/components/journal/RelatedTrades'
+import { RichTextEditor } from '@/components/ui/RichTextEditor'
 import { computeDuration, deriveListZone } from './TradeListPanel'
 import { MOOD_OPTIONS, COMPLIANCE_OPTIONS } from '@/constants/tradeConfig'
 import { SetupChecklist, SetupChecklistRef } from '@/components/pre-trade/SetupChecklist'
@@ -35,6 +38,7 @@ interface StrategyWithChecklist {
 
 interface TradeDetailPanelProps {
     trade: JournalTrade;
+    onNavigateTrade?: (tradeId: string) => void;
 }
 
 function Stars({
@@ -74,7 +78,7 @@ function Cell({ label, children }: { label: string; children: React.ReactNode })
     );
 }
 
-export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
+export function TradeDetailPanel({ trade, onNavigateTrade }: TradeDetailPanelProps) {
     const { formatPnl } = useCurrency()
     const update = useUpdateTrade();
     const { data: tagsData } = useTags();
@@ -98,6 +102,7 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
     const [entryRating, setEntryRating] = useState<number | null>(trade.entryRating ?? null);
     const [exitRating, setExitRating] = useState<number | null>(trade.exitRating ?? null);
     const [managementRating, setManagementRating] = useState<number | null>(trade.managementRating ?? null);
+    const [relatedTradeIds, setRelatedTradeIds] = useState<string[]>([]);
 
     useEffect(() => {
         setNotes(trade.notes ?? '');
@@ -112,6 +117,7 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
         setEntryRating(trade.entryRating ?? null);
         setExitRating(trade.exitRating ?? null);
         setManagementRating(trade.managementRating ?? null);
+        setRelatedTradeIds((trade as JournalTrade & { relatedTradeIds?: string[] }).relatedTradeIds ?? []);
     }, [trade.id]);
 
     useEffect(() => {
@@ -120,9 +126,9 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                 .then(data => {
                     setStrategy(data)
                     apiFetch(`/api/checklist-completions?tradeId=${trade.id}`)
-                        .then((compData: any) => {
+                        .then((compData: Record<string, unknown>) => {
                             if (compData.hasStrategy && compData.checkedState) {
-                                setCheckedItems(compData.checkedState)
+                                setCheckedItems(compData.checkedState as Record<string, boolean>)
                             } else {
                                 setCheckedItems({})
                             }
@@ -139,7 +145,6 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
     }, [selectedStrategyId, trade.id])
 
     const handleRating = (field: 'entryRating' | 'exitRating' | 'managementRating', val: number) => {
-        // Update local state immediately for responsive UI
         if (field === 'entryRating') setEntryRating(val);
         else if (field === 'exitRating') setExitRating(val);
         else if (field === 'managementRating') setManagementRating(val);
@@ -224,6 +229,15 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
         }
     };
 
+    const handleLinkedChange = useCallback(async () => {
+        try {
+            const data = await apiFetch<{ relatedTradeIds: string[] }>(`/api/trades/${trade.id}`)
+            setRelatedTradeIds(data.relatedTradeIds ?? [])
+        } catch {
+            toast.error('Failed to refresh linked trades')
+        }
+    }, [trade.id])
+
     const isForex = /USD|EUR|GBP|JPY|CHF|AUD|CAD|NZD/i.test(trade.symbol);
     const fmt = (v: number) => isForex ? v.toFixed(5) : v.toFixed(0);
 
@@ -303,7 +317,6 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                     <Cell label="Stop Loss">
                         <div className="flex flex-col">
                             <span className="font-mono text-[13px] font-semibold text-loss">{trade.stopLoss ? fmt(trade.stopLoss) : '—'}</span>
-                            {/* Show initial SL if different from current SL */}
                             {(trade as { initialStopLoss?: number | null }).initialStopLoss != null &&
                              (trade as { initialStopLoss?: number | null }).initialStopLoss !== trade.stopLoss && (
                                 <span className="text-[9px] text-text-muted mt-0.5">
@@ -340,6 +353,26 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                         />
                     </div>
                 )}
+
+                <TradePnlCurve
+                    trade={{
+                        entryPrice: trade.entry,
+                        exitPrice: trade.exit && trade.exit > 0 ? trade.exit : null,
+                        mae: trade.mae ?? null,
+                        mfe: trade.mfe ?? null,
+                        volume: trade.volume,
+                        type: trade.type,
+                        entryTime: trade.entryTime ?? null,
+                        exitTime: trade.exitTime ?? null,
+                    }}
+                />
+
+                <RelatedTrades
+                    tradeId={trade.id}
+                    relatedTradeIds={relatedTradeIds}
+                    onNavigate={onNavigateTrade ?? (() => {})}
+                    onLinkedChange={handleLinkedChange}
+                />
 
                 <div className="space-y-3">
                     <div className="text-[9px] font-black uppercase tracking-[0.18em] text-text-muted">Ratings</div>
@@ -439,7 +472,6 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                     </div>
                 </div>
 
-                {/* Setup Checklist - shown when a strategy with checklist is selected */}
                 {selectedStrategyId && strategy?.checklist?.items && strategy.checklist.items.length > 0 && (
                     <div className="space-y-2">
                         <div className="text-[9px] font-black uppercase tracking-[0.18em] text-text-muted">
@@ -521,11 +553,10 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
 
                 <div className="space-y-2">
                     <div className="text-[9px] font-black uppercase tracking-[0.18em] text-text-muted">Notes</div>
-                    <textarea
+                    <RichTextEditor
                         value={notes}
-                        onChange={e => setNotes(e.target.value)}
+                        onChange={setNotes}
                         placeholder="Add notes about this trade..."
-                        className="w-full h-24 bg-surface-elevated border border-border-subtle rounded-lg px-3 py-2 text-[12px] text-gray-200 placeholder-gray-600 resize-none focus:outline-none focus:border-primary/40 transition-colors"
                     />
                 </div>
 
@@ -538,7 +569,6 @@ export function TradeDetailPanel({ trade }: TradeDetailPanelProps) {
                 </button>
             </div>
 
-            {/* Share Trade Modal */}
             <ShareTradeModal
                 isOpen={shareModalOpen}
                 onClose={() => setShareModalOpen(false)}

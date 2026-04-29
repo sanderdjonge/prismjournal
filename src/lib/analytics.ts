@@ -94,7 +94,11 @@ export function calculateMaxDrawdownPercent(pnlValues: number[]): number {
         const dd = peak > 0 ? ((peak - runningSum) / peak) * 100 : 0;
         if (dd > maxDD) maxDD = dd;
     }
-    return maxDD;
+    // Cap at 100% — when equity starts near zero, the ratio (peak-running)/peak
+    // can produce astronomical percentages (e.g. peak=0.50 → 2697%).
+    // Use calculateMaxDrawdownFromBalance() when account balance is available
+    // for meaningful percentage drawdown.
+    return Math.min(maxDD, 100);
 }
 
 export function calculateMaxDrawdownAbsolute(pnlValues: number[]): number {

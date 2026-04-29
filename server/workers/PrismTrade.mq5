@@ -25,10 +25,12 @@ input int      Slippage       = 10;
 #define  PRISM_PREFIX       "Prsm_"
 #define  ERROR_TIP_SECS     5
 
-#define  TOOLBAR_W  160
-#define  TOOLBAR_BTN_H  32
-#define  TOOLBAR_GAP   4
-#define  CONFIRM_W  240
+#define  TOOLBAR_W      210
+#define  TOOLBAR_HDR_H  24
+#define  TOOLBAR_BTN_H  36
+#define  TOOLBAR_SML_H  20
+#define  TOOLBAR_GAP    3
+#define  CONFIRM_W      260
 
 enum PLANNER_STATE
 {
@@ -157,40 +159,48 @@ string CloseReasonStr(long reason)
 //+------------------------------------------------------------------+
 void CreateToolbar()
 {
-   int px = g_PanelX;
-   int py = g_PanelY;
-   int w = TOOLBAR_W;
-   int bh = TOOLBAR_BTN_H;
+   int px  = g_PanelX;
+   int py  = g_PanelY;
+   int w   = TOOLBAR_W;
+   int hh  = TOOLBAR_HDR_H;
+   int bh  = TOOLBAR_BTN_H;
+   int sh  = TOOLBAR_SML_H;
    int gap = TOOLBAR_GAP;
+   int totalH = hh + gap + bh + gap + bh + gap * 2 + sh + gap + sh;
 
    // Background
-   MakeBtn(PRISM_PREFIX + "BG", px - 4, py - 4, w + 8, 5 * (bh + gap) + 12,
-           C'20,20,35', C'50,45,80', "");
+   MakeBtn(PRISM_PREFIX + "BG", px - 3, py - 3, w + 6, totalH + 6,
+           C'14,14,26', C'55,50,100', "", 1);
 
-   // Title bar
-   MakeBtn(PRISM_PREFIX + "Title", px, py, w, bh,
-           C'80,60,180', C'120,100,240', "PRISM v5.3");
+   // Header / drag grip
+   MakeBtn(PRISM_PREFIX + "Title", px, py, w, hh,
+           C'50,40,110', C'90,75,200', ":: PRISM  v5.3", 8);
+
+   int y = py + hh + gap;
 
    // BUY
-   MakeBtn(PRISM_PREFIX + "Buy", px, py + (bh + gap), w, bh,
-           C'16,120,80', C'38,166,154', "BUY / LONG");
+   MakeBtn(PRISM_PREFIX + "Buy", px, y, w, bh,
+           C'12,95,65', C'25,155,110', "\x25B2  BUY / LONG", 10);
+   y += bh + gap;
 
    // SELL
-   MakeBtn(PRISM_PREFIX + "Sell", px, py + 2 * (bh + gap), w, bh,
-           C'150,30,30', C'239,83,80', "SELL / SHORT");
+   MakeBtn(PRISM_PREFIX + "Sell", px, y, w, bh,
+           C'120,22,22', C'200,55,55', "\x25BC  SELL / SHORT", 10);
+   y += bh + gap * 2;
 
-   // Status (shows settings on click or step info)
-   MakeBtn(PRISM_PREFIX + "Status", px, py + 3 * (bh + gap), w, 22,
-           C'25,25,40', C'40,40,60', "Click BUY or SELL");
+   // Status
+   MakeBtn(PRISM_PREFIX + "Status", px, y, w, sh,
+           C'18,18,34', C'32,32,55', "Click BUY or SELL", 8);
+   y += sh + gap;
 
-   // Cancel/Reset
-   MakeBtn(PRISM_PREFIX + "Reset", px, py + 3 * (bh + gap) + 26, w, bh - 4,
-           C'60,40,40', C'100,60,60', "Reset / Cancel");
+   // Reset
+   MakeBtn(PRISM_PREFIX + "Reset", px, y, w, sh,
+           C'75,28,28', C'120,45,45', "x  Cancel", 8);
 
    ChartRedraw(0);
 }
 
-void MakeBtn(string name, int x, int y, int w, int h, color bg, color border, string text)
+void MakeBtn(string name, int x, int y, int w, int h, color bg, color border, string text, int fontSize = 9)
 {
    ObjectDelete(0, name);
    ObjectCreate(0, name, OBJ_BUTTON, 0, 0, 0);
@@ -200,8 +210,8 @@ void MakeBtn(string name, int x, int y, int w, int h, color bg, color border, st
    ObjectSetInteger(0, name, OBJPROP_YSIZE, h);
    ObjectSetInteger(0, name, OBJPROP_BGCOLOR, bg);
    ObjectSetInteger(0, name, OBJPROP_BORDER_COLOR, border);
-   ObjectSetInteger(0, name, OBJPROP_COLOR, C'220,220,240');
-   ObjectSetInteger(0, name, OBJPROP_FONTSIZE, 10);
+   ObjectSetInteger(0, name, OBJPROP_COLOR, C'215,215,235');
+   ObjectSetInteger(0, name, OBJPROP_FONTSIZE, fontSize);
    ObjectSetString(0, name, OBJPROP_TEXT, text);
    ObjectSetString(0, name, OBJPROP_FONT, "Arial");
    ObjectSetInteger(0, name, OBJPROP_CORNER, CORNER_LEFT_UPPER);
@@ -247,14 +257,21 @@ void UpdateStatus()
    ObjectSetString(0, PRISM_PREFIX + "Status", OBJPROP_TEXT, s);
 }
 
+bool IsOverTitleBar(int x, int y)
+{
+   return (x >= g_PanelX && x <= g_PanelX + TOOLBAR_W &&
+           y >= g_PanelY && y <= g_PanelY + TOOLBAR_HDR_H);
+}
+
 bool IsOverToolbar(int x, int y)
 {
-   int px = g_PanelX;
-   int py = g_PanelY;
-   int bh = TOOLBAR_BTN_H;
+   int hh  = TOOLBAR_HDR_H;
+   int bh  = TOOLBAR_BTN_H;
+   int sh  = TOOLBAR_SML_H;
    int gap = TOOLBAR_GAP;
-   return (x >= px - 4 && x <= px + TOOLBAR_W + 4 &&
-           y >= py - 4 && y <= py + 4 * (bh + gap) + 30);
+   int totalH = hh + gap + bh + gap + bh + gap * 2 + sh + gap + sh;
+   return (x >= g_PanelX - 3 && x <= g_PanelX + TOOLBAR_W + 3 &&
+           y >= g_PanelY - 3 && y <= g_PanelY + totalH + 3);
 }
 
 int ToolbarRight() { return g_PanelX + TOOLBAR_W + 10; }
@@ -662,17 +679,6 @@ void OnChartEvent(const int id, const long& lparam, const double& dparam, const 
          return;
       }
 
-      // Title bar — start drag
-      if(sparam == PRISM_PREFIX + "Title")
-      {
-         g_DraggingPanel = true;
-         g_DragOffsetX = (int)lparam - g_PanelX;
-         g_DragOffsetY = (int)dparam - g_PanelY;
-         if(g_DragOffsetX < 0) g_DragOffsetX = 0;
-         if(g_DragOffsetY < 0) g_DragOffsetY = 0;
-         return;
-      }
-
       // Reset / Cancel
       if(sparam == PRISM_PREFIX + "Reset")
       {
@@ -709,25 +715,30 @@ void OnChartEvent(const int id, const long& lparam, const double& dparam, const 
    //--- Panel drag via mouse move
    if(id == CHARTEVENT_MOUSE_MOVE)
    {
-      if(g_DraggingPanel)
-      {
-         int mx = (int)lparam;
-         int my = (int)dparam;
-         bool leftBtn = ((long)StringToInteger(sparam) & 1) == 1;
+      int mx = (int)lparam;
+      int my = (int)dparam;
+      bool leftDown = ((long)StringToInteger(sparam) & 1) == 1;
 
-         if(leftBtn)
-         {
-            int newX = mx - g_DragOffsetX;
-            int newY = my - g_DragOffsetY;
-            int dx = newX - g_PanelX;
-            int dy = newY - g_PanelY;
-            if(dx != 0 || dy != 0) MoveToolbar(dx, dy);
-         }
-         else
-            g_DraggingPanel = false;
+      if(!leftDown)
+      {
+         g_DraggingPanel = false;
+      }
+      else if(!g_DraggingPanel && IsOverTitleBar(mx, my))
+      {
+         g_DraggingPanel = true;
+         g_DragOffsetX = mx - g_PanelX;
+         g_DragOffsetY = my - g_PanelY;
+      }
+
+      if(g_DraggingPanel && leftDown)
+      {
+         int newX = mx - g_DragOffsetX;
+         int newY = my - g_DragOffsetY;
+         int dx = newX - g_PanelX;
+         int dy = newY - g_PanelY;
+         if(dx != 0 || dy != 0) MoveToolbar(dx, dy);
          return;
       }
-      // Don't return here — let other MOUSE_MOVE events through for line dragging
    }
 
    //--- Chart click for trade planning

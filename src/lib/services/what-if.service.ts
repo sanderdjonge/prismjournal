@@ -22,6 +22,12 @@ import {
   applyTrailingStop,
   applyPartialExit,
 } from './what-if/filters/risk-filters';
+import {
+  applyVolatilityFilter,
+  applyNewsEventFilter,
+  fetchVolatilityFromTwelveData,
+  fetchNewsFromEconomicEvents,
+} from './what-if/filters/market-filters';
 import type { EquityPointDetailed } from '@/types/trade'
 
 export type { EquityPointDetailed as EquityPoint } from '@/types/trade'
@@ -54,9 +60,6 @@ export interface WhatIfResult {
     filters: WhatIfFilters;
 }
 
-/**
- * Calculate equity curve from trades
- */
 function calculateEquityCurve(trades: TradeData[], startingBalance = 10000): EquityPoint[] {
     const sortedTrades = [...trades]
         .filter(t => t.exitTime && t.pnl !== null)
@@ -78,9 +81,6 @@ function calculateEquityCurve(trades: TradeData[], startingBalance = 10000): Equ
     return curve;
 }
 
-/**
- * Calculate max drawdown from equity curve
- */
 function calculateMaxDrawdown(equityCurve: EquityPoint[]): number {
     if (equityCurve.length === 0) return 0;
 
@@ -97,12 +97,9 @@ function calculateMaxDrawdown(equityCurve: EquityPoint[]): number {
         }
     }
 
-    return maxDrawdown * 100; // Return as percentage
+    return maxDrawdown * 100;
 }
 
-/**
- * Calculate simulation metrics from trades
- */
 function calculateMetrics(trades: TradeData[]): SimulationResult {
     const closedTrades = trades.filter(t => t.pnl !== null);
     const wins = closedTrades.filter(t => (t.pnl ?? 0) > 0);
@@ -135,10 +132,7 @@ function calculateMetrics(trades: TradeData[]): SimulationResult {
     };
 }
 
-/**
- * Apply filters to trades and return filtered subset
- */
-function applyFilters(trades: TradeData[], filters: WhatIfFilters): TradeData[] {
+function applySyncFilters(trades: TradeData[], filters: WhatIfFilters): TradeData[] {
     const normalized = normalizeFilters(filters);
     
     let filtered = trades.filter(trade => {
@@ -241,13 +235,49 @@ function applyFilters(trades: TradeData[], filters: WhatIfFilters): TradeData[] 
     return filtered;
 }
 
-/**
- * Simulate stop loss multiplier effect
- * This is a simplified simulation - in reality, different SL would affect trade outcome
- */
+async function applyAsyncMarketFilters(
+    trades: TradeData[],
+    filters: WhatIfFilters
+): Promise<TradeData[]> {
+    let filtered = trades
+    const hasMarketFilters = filters.market && (
+        filters.market.minVolatility !== undefined ||
+        filters.market.maxVolatility !== undefined ||
+        filters.market.avoidNewsEvents
+    )
+
+    if (!hasMarketFilters) return filtered
+
+    const apiKey = process.env.TWELVE_DATA_API_KEY
+
+    if (filters.market!.minVolatility !== undefined || filters.market!.maxVolatility !== undefined) {
+        const mode = filters.market!.minVolatility !== undefined ? 'prefer' : 'avoid'
+        const threshold = mode === 'prefer'
+            ? filters.market!.minVolatility!
+            : filters.market!.maxVolatility!
+
+        const volatilityProvider = apiKey
+            ? (symbol: string, date: Date) => fetchVolatilityFromTwelveData(symbol, date, apiKey)
+            : undefined
+
+        filtered = await applyVolatilityFilter(filtered, {
+            mode,
+            atrPercentThreshold: threshold,
+        }, volatilityProvider)
+    }
+
+    if (filters.market!.avoidNewsEvents) {
+        filtered = await applyNewsEventFilter(filtered, {
+            avoidHighImpact: true,
+            avoidMediumImpact: true,
+            windowMinutes: filters.market!.newsBufferMinutes ?? 30,
+        }, fetchNewsFromEconomicEvents)
+    }
+
+    return filtered
+}
+
 function simulateStopLossMultiplier(trades: TradeData[], multiplier: number): TradeData[] {
-    // For now, we just mark trades that would have been stopped out differently
-    // A more sophisticated version would fetch price data and recalculate
     return trades.map(trade => {
         if (!trade.initialStopLoss || !trade.exitPrice) return trade;
 
@@ -255,8 +285,6 @@ function simulateStopLossMultiplier(trades: TradeData[], multiplier: number): Tr
             ? trade.entryPrice - (trade.entryPrice - trade.initialStopLoss) * multiplier
             : trade.entryPrice + (trade.initialStopLoss - trade.entryPrice) * multiplier;
 
-        // Simplified: if SL is wider, trade might survive longer (or get worse)
-        // This is a placeholder for actual price simulation
         return {
             ...trade,
             stopLoss: newSL,
@@ -264,17 +292,13 @@ function simulateStopLossMultiplier(trades: TradeData[], multiplier: number): Tr
     });
 }
 
-/**
- * Main what-if simulation function
- */
 export async function runWhatIfSimulation(
     userId: string,
     filters: WhatIfFilters
 ): Promise<WhatIfResult> {
-    // Build where clause for fetching trades
     const whereClause: Record<string, unknown> = {
         account: { userId },
-        exitTime: { not: null }, // Only closed trades
+        exitTime: { not: null },
     };
 
     if (filters.startDate) {
@@ -287,7 +311,6 @@ export async function runWhatIfSimulation(
         whereClause.accountId = { in: filters.accountIds };
     }
 
-    // Fetch all trades
     const trades = await prisma.trade.findMany({
         where: whereClause,
         select: {
@@ -319,26 +342,21 @@ export async function runWhatIfSimulation(
         volume: t.volume ?? undefined,
     }));
 
-    // Calculate actual metrics
     const actualMetrics = calculateMetrics(tradeData);
 
-    // Apply stop loss multiplier if specified
     let simulatedTrades = tradeData;
     if (filters.stopLossMultiplier && filters.stopLossMultiplier !== 1) {
         simulatedTrades = simulateStopLossMultiplier(tradeData, filters.stopLossMultiplier);
     }
 
-    // Apply filters to get simulated subset
-    const filteredTrades = applyFilters(simulatedTrades, filters);
+    let filteredTrades = applySyncFilters(simulatedTrades, filters)
+    filteredTrades = await applyAsyncMarketFilters(filteredTrades, filters)
 
-    // Calculate simulated metrics
     const simulatedMetrics = calculateMetrics(filteredTrades);
 
-    // Build combined equity curve for comparison
     const actualCurve = actualMetrics.equityCurve;
     const simulatedCurve = simulatedMetrics.equityCurve;
 
-    // Create comparison equity curve
     const comparisonCurve: EquityPoint[] = [];
     const simulatedByDate = new Map(simulatedCurve.map(p => [p.date, p.value]));
 
@@ -351,11 +369,9 @@ export async function runWhatIfSimulation(
         });
     }
 
-    // Update metrics with comparison curve
     actualMetrics.equityCurve = comparisonCurve;
     simulatedMetrics.equityCurve = comparisonCurve;
 
-    // Calculate differences
     const pnlDiff = simulatedMetrics.totalPnl - actualMetrics.totalPnl;
     const wrDiff = simulatedMetrics.winRate - actualMetrics.winRate;
     const pfDiff = simulatedMetrics.profitFactor - actualMetrics.profitFactor;
@@ -374,9 +390,6 @@ export async function runWhatIfSimulation(
     };
 }
 
-/**
- * Run multiple scenarios at once
- */
 export async function runMultipleScenarios(
     userId: string,
     scenarios: WhatIfFilters[]

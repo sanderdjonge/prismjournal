@@ -3,10 +3,10 @@ import { pendingTotpSecrets, cleanupPendingSecrets } from '@/lib/auth';
 import { withAuth } from '@/lib/api/withAuth';
 import prisma from '@/lib/prisma';
 import { generateSecret, generateURI } from 'otplib';
-import { authLimiter } from '@/lib/rate-limit';
+import { checkLimit, Limiters } from '@/lib/rate-limit-redis';
 
 export const POST = withAuth(async (request: NextRequest, _ctx, session) => {
-    const rateLimitResult = await authLimiter.check(request, 5);
+    const rateLimitResult = await checkLimit(request, { ...Limiters.register, name: '2fa-setup' });
     if (rateLimitResult) return rateLimitResult;
 
     // Generate a new TOTP secret using otplib v13 API

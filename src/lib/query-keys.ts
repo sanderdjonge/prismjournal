@@ -101,6 +101,10 @@ export const queryKeys = {
     all: ['what-if'] as const,
     detail: (filters?: Record<string, unknown>) => [...queryKeys['what-if'].all, filters] as const,
   },
+  'what-if-correlation': {
+    all: ['what-if-correlation'] as const,
+    detail: (params?: { accountIds?: string[]; period?: number }) => [...queryKeys['what-if-correlation'].all, params] as const,
+  },
   notifications: {
     all: ['notifications'] as const,
   },
